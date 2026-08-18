@@ -10,5 +10,5 @@ No ELK or elk-swift source is included in the MIT modules. Eclipse Layout
 Kernel and elk-swift are EPL-2.0 software; a future optional adapter must remain
 separately licensed and published with the required notices and source offer.
 
-Exact upstream revisions used by the Phase 0 compatibility corpus are recorded
+Exact upstream revisions used by the compatibility corpus are recorded
 in `compatibility/upstreams.lock`.

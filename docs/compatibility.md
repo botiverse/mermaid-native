@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-This table describes the intentionally small Phase 0 contract. It is not a
+This table describes the intentionally small current contract. It is not a
 claim of full Mermaid compatibility.
 
 | Family | Supported now | Explicitly deferred |

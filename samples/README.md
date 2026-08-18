@@ -1,0 +1,16 @@
+# Mermaid Native examples
+
+These files are small, runnable source examples for the syntax currently
+accepted by `mermaid-core`. They are adapted from the `Simple Flow`,
+`Direction: Left-Right (LR)`, and `Sequence: Basic Messages` samples in the
+pinned [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid)
+corpus (`2ac8bbbb060ca0a65a6a21f3200bd99b1587b488`). The source project is MIT
+licensed; these examples are compatibility inputs, not copied renderer code.
+
+The upstream flow samples use chained edges. The files here split those edges
+onto separate statements because chained-edge syntax is not yet in this
+parser's support matrix. The testkit keeps normalized AST expectations for the
+same sources, so every example is exercised by the multiplatform test suite.
+
+Current examples are parser inputs. Native layout and SVG/Kuikly host samples
+will be added as those modules acquire their public runnable APIs.

@@ -1,7 +1,7 @@
 package build.raft.mermaid.core
 
 /**
- * Parser for the explicitly declared Phase 0 Mermaid-compatible subset.
+ * Parser for the explicitly declared Mermaid-compatible subset.
  *
  * Unsupported input fails with typed diagnostics. It is never reinterpreted as
  * another diagram family and never returns a partially parsed diagram.
@@ -70,7 +70,7 @@ public object MermaidParser {
                 return@forEach
             }
 
-            diagnostics += unsupported(statement, "Unsupported Phase 0 flowchart syntax")
+            diagnostics += unsupported(statement, "Unsupported flowchart syntax")
         }
 
         return if (diagnostics.isEmpty()) {
@@ -100,7 +100,7 @@ public object MermaidParser {
         statements.drop(1).forEach { statement ->
             val message = SEQUENCE_MESSAGE.matchEntire(statement.text)
             if (message == null) {
-                diagnostics += unsupported(statement, "Unsupported Phase 0 sequence syntax")
+                diagnostics += unsupported(statement, "Unsupported sequence syntax")
                 return@forEach
             }
 

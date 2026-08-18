@@ -1,6 +1,6 @@
 # Testing contract
 
-Run the Phase 0 gates locally:
+Run the current compatibility gates locally:
 
 ```bash
 ./gradlew :mermaid-core:allTests :mermaid-testkit:allTests --no-daemon --offline

@@ -5,7 +5,7 @@ rendering:
 
 1. `mermaid-core` turns source into a typed AST and source-located diagnostics.
 2. `mermaid-layout-api` defines layout input/output and draw-command seams.
-3. `mermaid-layout-simple` supplies the permissive deterministic Phase 0
+3. `mermaid-layout-simple` supplies the permissive deterministic starter
    layout. A future ELK adapter is isolated because ELK/elk-swift are
    EPL-2.0, not MIT.
 4. `mermaid-render-svg` serializes common data; an ASCII renderer may be added
