@@ -30,6 +30,7 @@ import kotlin.math.sqrt
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.PI
+import kotlin.math.round
 
 /** Deterministic text metrics for goldens and hosts without platform font metrics. */
 public object FixedWidthTextMeasurer : TextMeasurer {
@@ -313,11 +314,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (fraction > 0.0) {
                 val points = buildList {
                     add(center)
-                    add(ScenePoint(center.x + radius * cos(angle), center.y + radius * sin(angle)))
+                    add(ScenePoint((center.x + radius * cos(angle)).pieCoordinate(), (center.y + radius * sin(angle)).pieCoordinate()))
                     val steps = maxOf(2, (fraction * 48.0).toInt())
                     for (step in 1..steps) {
                         val a = angle + (end - angle) * step / steps
-                        add(ScenePoint(center.x + radius * cos(a), center.y + radius * sin(a)))
+                        add(ScenePoint((center.x + radius * cos(a)).pieCoordinate(), (center.y + radius * sin(a)).pieCoordinate()))
                     }
                 }
                 commands += DrawPolygon(points, fill = SceneColor(PIE_COLORS[index % PIE_COLORS.size]))
@@ -349,4 +350,6 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
+
+    private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
 }

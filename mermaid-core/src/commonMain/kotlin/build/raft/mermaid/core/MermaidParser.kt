@@ -207,7 +207,7 @@ public object MermaidParser {
             val trimmed = text.trim()
             when {
                 trimmed.equals("showData", ignoreCase = true) -> showData = true
-                trimmed.startsWith("title", ignoreCase = true) -> title = trimmed.drop(5).trim().ifEmpty { null }
+                trimmed.startsWith("title ", ignoreCase = true) -> title = trimmed.drop(6).trim().ifEmpty { null }
                 trimmed.startsWith("accTitle:", ignoreCase = true) -> accTitle = trimmed.substringAfter(':').trim().ifEmpty { null }
                 trimmed.startsWith("accDescr:", ignoreCase = true) -> accDescription = trimmed.substringAfter(':').trim().ifEmpty { null }
                 else -> return false

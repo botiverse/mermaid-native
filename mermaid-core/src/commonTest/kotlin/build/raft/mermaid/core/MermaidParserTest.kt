@@ -227,4 +227,12 @@ class MermaidParserTest {
         assertEquals(MermaidDiagnosticCode.INVALID_VALUE, failure.diagnostics.single().code)
         assertEquals(SourceLocation(2, 3), failure.diagnostics.single().location)
     }
+
+    @Test
+    fun malformedPieTitleTokenFailsClosed() {
+        val failure = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("pie titlefoo\n\"Dogs\" : 1"),
+        )
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
+    }
 }
