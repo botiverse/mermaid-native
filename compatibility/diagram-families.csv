@@ -2,7 +2,7 @@ family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes
 architecture,architecture,not_started,no,no,no,no,Official syntax family; implementation is not started.
 block,block,not_started,no,no,no,no,Official syntax family; implementation is not started.
 c4,c4,not_started,no,no,no,no,Official syntax family; implementation is not started.
-class,classDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
 cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.
 entityRelationshipDiagram,entityRelationshipDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
 eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.

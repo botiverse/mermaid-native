@@ -117,12 +117,21 @@ class MermaidParserTest {
     }
 
     @Test
-    fun unsupportedDiagramDoesNotFallback() {
-        val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("classDiagram\nA <|-- B"),
+    fun parsesClassDiagramMembersAndRelationships() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                classDiagram
+                class Animal
+                Animal : +String name
+                Animal <|-- Duck
+                """.trimIndent(),
+            ),
         )
-
-        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_DIAGRAM, failure.diagnostics.single().code)
+        val diagram = assertIs<ClassDiagram>(result.diagram)
+        assertEquals(listOf("Animal", "Duck"), diagram.classes.map { it.id })
+        assertEquals("String name", diagram.classes.first().members.single().signature)
+        assertEquals(ClassRelationshipKind.INHERITANCE, diagram.relationships.single().kind)
     }
 
     @Test

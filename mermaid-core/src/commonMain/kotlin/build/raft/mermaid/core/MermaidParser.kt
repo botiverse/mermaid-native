@@ -18,6 +18,7 @@ public object MermaidParser {
 
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> parseSequence(statements)
+            header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -135,6 +136,48 @@ public object MermaidParser {
         }
     }
 
+    private fun parseClass(statements: List<SourceStatement>): MermaidParseResult {
+        val classes = linkedMapOf<String, ClassDefinition>()
+        val relationships = mutableListOf<ClassRelationship>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+
+        fun ensure(id: String) { if (id !in classes) classes[id] = ClassDefinition(id) }
+        statements.drop(1).forEach { statement ->
+            CLASS_DECLARATION.matchEntire(statement.text)?.let {
+                val id = it.groupValues[1]
+                val label = it.groupValues[2].ifEmpty { id }
+                classes[id] = classes[id]?.copy(label = label) ?: ClassDefinition(id, label)
+                return@forEach
+            }
+            CLASS_MEMBER.matchEntire(statement.text)?.let {
+                val id = it.groupValues[1]
+                ensure(id)
+                val visibility = when (it.groupValues[2]) {
+                    "-" -> ClassVisibility.PRIVATE
+                    "#" -> ClassVisibility.PROTECTED
+                    "~" -> ClassVisibility.PACKAGE
+                    else -> ClassVisibility.PUBLIC
+                }
+                val member = ClassMember(it.groupValues[3].trim(), visibility)
+                classes[id] = classes.getValue(id).copy(members = classes.getValue(id).members + member)
+                return@forEach
+            }
+            CLASS_RELATION.matchEntire(statement.text)?.let {
+                val kind = when (it.groupValues[2]) {
+                    "<|--" -> ClassRelationshipKind.INHERITANCE
+                    else -> ClassRelationshipKind.ASSOCIATION
+                }
+                ensure(it.groupValues[1]); ensure(it.groupValues[3])
+                relationships += ClassRelationship(it.groupValues[1], it.groupValues[3], kind)
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -165,6 +208,9 @@ public object MermaidParser {
         // starts with the same character. The arrow must win at the boundary.
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
+    private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
+    private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
+    private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")
 }
 
 private data class SourceStatement(

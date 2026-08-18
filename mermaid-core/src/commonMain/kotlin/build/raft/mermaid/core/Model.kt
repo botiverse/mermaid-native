@@ -45,6 +45,32 @@ public data class SequenceMessage(
     val arrowHead: SequenceArrowHead,
 )
 
+public data class ClassDiagram(
+    val classes: List<ClassDefinition>,
+    val relationships: List<ClassRelationship>,
+) : MermaidDiagram
+
+public data class ClassDefinition(
+    val id: String,
+    val label: String = id,
+    val members: List<ClassMember> = emptyList(),
+)
+
+public data class ClassMember(
+    val signature: String,
+    val visibility: ClassVisibility = ClassVisibility.PUBLIC,
+)
+
+public enum class ClassVisibility { PUBLIC, PRIVATE, PROTECTED, PACKAGE }
+
+public data class ClassRelationship(
+    val from: String,
+    val to: String,
+    val kind: ClassRelationshipKind,
+)
+
+public enum class ClassRelationshipKind { INHERITANCE, ASSOCIATION }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
