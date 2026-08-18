@@ -1,0 +1,6 @@
+stateDiagram-v2
+  direction LR
+  [*] --> Idle
+  state "Processing request" as Working
+  Idle --> Working: start
+  Working --> [*]: finish

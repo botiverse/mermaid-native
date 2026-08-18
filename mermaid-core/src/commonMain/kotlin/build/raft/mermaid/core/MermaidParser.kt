@@ -18,6 +18,7 @@ public object MermaidParser {
 
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> parseSequence(statements)
+            STATE_HEADER.matches(header.text) -> parseState(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -135,6 +136,63 @@ public object MermaidParser {
         }
     }
 
+    private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
+        val states = linkedMapOf<String, StateNode>()
+        val transitions = mutableListOf<StateTransition>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var direction = FlowDirection.TB
+        var pseudoStateIndex = 0
+
+        fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
+            val resolved = when {
+                kind != StateNodeKind.STATE -> label.orEmpty()
+                !label.isNullOrEmpty() -> label
+                else -> states[id]?.label ?: id
+            }
+            states[id] = StateNode(id = id, label = resolved, kind = kind)
+        }
+
+        fun endpoint(raw: String, isSource: Boolean): String {
+            if (raw != "[*]") {
+                register(raw)
+                return raw
+            }
+            val kind = if (isSource) StateNodeKind.START else StateNodeKind.END
+            val id = "__${kind.name.lowercase()}_${pseudoStateIndex++}"
+            register(id = id, label = "", kind = kind)
+            return id
+        }
+
+        statements.drop(1).forEach { statement ->
+            val directionMatch = STATE_DIRECTION.matchEntire(statement.text)
+            if (directionMatch != null) {
+                direction = FlowDirection.valueOf(directionMatch.groupValues[1].uppercase())
+                return@forEach
+            }
+            val alias = STATE_ALIAS.matchEntire(statement.text)
+            if (alias != null) {
+                register(alias.groupValues[2], alias.groupValues[1])
+                return@forEach
+            }
+            val transition = STATE_TRANSITION.matchEntire(statement.text)
+            if (transition != null) {
+                val from = endpoint(transition.groupValues[1], isSource = true)
+                val to = endpoint(transition.groupValues[2], isSource = false)
+                transitions += StateTransition(from = from, to = to, label = transition.groupValues[3])
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported state diagram syntax")
+        }
+
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(
+                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList()),
+            )
+        } else {
+            MermaidParseResult.Failure(diagnostics)
+        }
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -154,6 +212,12 @@ public object MermaidParser {
     private val FLOW_HEADER = Regex(
         pattern = "^(?:graph|flowchart)\\s+(TD|TB|LR|BT|RL)$",
         option = RegexOption.IGNORE_CASE,
+    )
+    private val STATE_HEADER = Regex("^stateDiagram(?:-v2)?$", RegexOption.IGNORE_CASE)
+    private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
+    private val STATE_ALIAS = Regex("^state\\s+\"([^\"]+)\"\\s+as\\s+($IDENTIFIER)$")
+    private val STATE_TRANSITION = Regex(
+        "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
     private val FLOW_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
     private val FLOW_EDGE = Regex(
