@@ -10,6 +10,12 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.PieDiagram
+import build.raft.mermaid.core.PieSection
+import build.raft.mermaid.core.StateDiagram
+import build.raft.mermaid.core.StateNode
+import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.StateTransition
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -24,6 +30,21 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val piePets: MermaidExample = MermaidExample(
+        path = "samples/pie-pets.mmd",
+        source = """
+            pie showData title Pets adopted
+              "Dogs" : 386
+              "Cats" : 85
+              "Rats" : 15
+        """.trimIndent(),
+        expected = PieDiagram(
+            title = "Pets adopted",
+            showData = true,
+            sections = listOf(PieSection("Dogs", 386.0), PieSection("Cats", 85.0), PieSection("Rats", 15.0)),
+        ),
+    )
+
     public val flowchartLinear: MermaidExample = MermaidExample(
         path = "samples/flowchart-linear.mmd",
         source = """
@@ -91,9 +112,37 @@ public object MermaidExamples {
         ),
     )
 
+    public val stateLifecycle: MermaidExample = MermaidExample(
+        path = "samples/state-lifecycle.mmd",
+        source = """
+            stateDiagram-v2
+              direction LR
+              [*] --> Idle
+              state "Processing request" as Working
+              Idle --> Working: start
+              Working --> [*]: finish
+        """.trimIndent(),
+        expected = StateDiagram(
+            direction = FlowDirection.LR,
+            states = listOf(
+                StateNode("__start_0", "", StateNodeKind.START),
+                StateNode("Idle", "Idle"),
+                StateNode("Working", "Processing request"),
+                StateNode("__end_1", "", StateNodeKind.END),
+            ),
+            transitions = listOf(
+                StateTransition("__start_0", "Idle"),
+                StateTransition("Idle", "Working", "start"),
+                StateTransition("Working", "__end_1", "finish"),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
+        piePets,
         flowchartLinear,
         flowchartLeftToRight,
         sequenceRequestResponse,
+        stateLifecycle,
     )
 }

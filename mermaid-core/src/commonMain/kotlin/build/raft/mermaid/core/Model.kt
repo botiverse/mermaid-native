@@ -45,6 +45,37 @@ public data class SequenceMessage(
     val arrowHead: SequenceArrowHead,
 )
 
+/** State diagram model for the Mermaid stateDiagram/stateDiagram-v2 family. */
+public data class StateDiagram(
+    val direction: FlowDirection = FlowDirection.TB,
+    val states: List<StateNode>,
+    val transitions: List<StateTransition>,
+) : MermaidDiagram
+
+public data class StateNode(
+    val id: String,
+    val label: String,
+    val kind: StateNodeKind = StateNodeKind.STATE,
+)
+
+public enum class StateNodeKind { STATE, START, END }
+
+public data class StateTransition(
+    val from: String,
+    val to: String,
+    val label: String = "",
+)
+
+public data class PieDiagram(
+    val title: String?,
+    val showData: Boolean,
+    val sections: List<PieSection>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+) : MermaidDiagram
+
+public data class PieSection(val label: String, val value: Double)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

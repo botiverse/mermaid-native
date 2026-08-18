@@ -6,6 +6,50 @@ import kotlin.test.assertIs
 
 class MermaidParserTest {
     @Test
+    fun parsesStateDiagramAliasesDirectionAndTerminalTransitions() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                stateDiagram-v2
+                  direction LR
+                  [*] --> Idle
+                  state "Processing request" as Working
+                  Idle --> Working: start
+                  Working --> [*]: finish
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(
+            StateDiagram(
+                direction = FlowDirection.LR,
+                states = listOf(
+                    StateNode("__start_0", "", StateNodeKind.START),
+                    StateNode("Idle", "Idle"),
+                    StateNode("Working", "Processing request"),
+                    StateNode("__end_1", "", StateNodeKind.END),
+                ),
+                transitions = listOf(
+                    StateTransition("__start_0", "Idle"),
+                    StateTransition("Idle", "Working", "start"),
+                    StateTransition("Working", "__end_1", "finish"),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun unsupportedStateSyntaxFailsWithoutPartialSuccess() {
+        val failure = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("stateDiagram-v2\nA --> B\nstate Composite {"),
+        )
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
+        assertEquals(SourceLocation(line = 3, column = 1), failure.diagnostics.single().location)
+    }
+
+    @Test
     fun parsesMinimalFlowchartAndPreservesNodeOrder() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(
@@ -149,5 +193,38 @@ class MermaidParserTest {
         )
 
         assertEquals(SourceLocation(line = 1, column = 22), failure.diagnostics.single().location)
+    }
+
+    @Test
+    fun parsesOfficialPieMetadataSectionsAndDuplicateFirstWins() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                pie showData title Pets adopted
+                  accTitle: Adoption chart
+                  accDescr: Counts by animal
+                  "Dogs" : 386
+                  "Cats" : 85.5
+                  "Dogs" : 1
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            PieDiagram(
+                title = "Pets adopted",
+                showData = true,
+                sections = listOf(PieSection("Dogs", 386.0), PieSection("Cats", 85.5)),
+                accessibilityTitle = "Adoption chart",
+                accessibilityDescription = "Counts by animal",
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun negativePieValueFailsClosedAtTheSection() {
+        val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("pie\n  \"Dogs\" : -1"))
+        assertEquals(MermaidDiagnosticCode.INVALID_VALUE, failure.diagnostics.single().code)
+        assertEquals(SourceLocation(2, 3), failure.diagnostics.single().location)
     }
 }

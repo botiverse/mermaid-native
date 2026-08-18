@@ -18,6 +18,8 @@ public object MermaidParser {
 
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> parseSequence(statements)
+            STATE_HEADER.matches(header.text) -> parseState(statements)
+            header.text.startsWith("pie", ignoreCase = true) -> parsePie(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -135,6 +137,108 @@ public object MermaidParser {
         }
     }
 
+    private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
+        val states = linkedMapOf<String, StateNode>()
+        val transitions = mutableListOf<StateTransition>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var direction = FlowDirection.TB
+        var pseudoStateIndex = 0
+
+        fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
+            val resolved = when {
+                kind != StateNodeKind.STATE -> label.orEmpty()
+                !label.isNullOrEmpty() -> label
+                else -> states[id]?.label ?: id
+            }
+            states[id] = StateNode(id = id, label = resolved, kind = kind)
+        }
+
+        fun endpoint(raw: String, isSource: Boolean): String {
+            if (raw != "[*]") {
+                register(raw)
+                return raw
+            }
+            val kind = if (isSource) StateNodeKind.START else StateNodeKind.END
+            val id = "__${kind.name.lowercase()}_${pseudoStateIndex++}"
+            register(id = id, label = "", kind = kind)
+            return id
+        }
+
+        statements.drop(1).forEach { statement ->
+            val directionMatch = STATE_DIRECTION.matchEntire(statement.text)
+            if (directionMatch != null) {
+                direction = FlowDirection.valueOf(directionMatch.groupValues[1].uppercase())
+                return@forEach
+            }
+            val alias = STATE_ALIAS.matchEntire(statement.text)
+            if (alias != null) {
+                register(alias.groupValues[2], alias.groupValues[1])
+                return@forEach
+            }
+            val transition = STATE_TRANSITION.matchEntire(statement.text)
+            if (transition != null) {
+                val from = endpoint(transition.groupValues[1], isSource = true)
+                val to = endpoint(transition.groupValues[2], isSource = false)
+                transitions += StateTransition(from = from, to = to, label = transition.groupValues[3])
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported state diagram syntax")
+        }
+
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(
+                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList()),
+            )
+        } else {
+            MermaidParseResult.Failure(diagnostics)
+        }
+    }
+
+    private fun parsePie(statements: List<SourceStatement>): MermaidParseResult {
+        val header = statements.first()
+        var remainingHeader = header.text.removePrefix("pie").trim()
+        var showData = false
+        var title: String? = null
+        var accTitle: String? = null
+        var accDescription: String? = null
+        val sections = linkedMapOf<String, PieSection>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        fun consumeMetadata(text: String): Boolean {
+            val trimmed = text.trim()
+            when {
+                trimmed.equals("showData", ignoreCase = true) -> showData = true
+                trimmed.startsWith("title", ignoreCase = true) -> title = trimmed.drop(5).trim().ifEmpty { null }
+                trimmed.startsWith("accTitle:", ignoreCase = true) -> accTitle = trimmed.substringAfter(':').trim().ifEmpty { null }
+                trimmed.startsWith("accDescr:", ignoreCase = true) -> accDescription = trimmed.substringAfter(':').trim().ifEmpty { null }
+                else -> return false
+            }
+            return true
+        }
+        if (remainingHeader.startsWith("showData", ignoreCase = true)) {
+            showData = true
+            remainingHeader = remainingHeader.drop("showData".length).trim()
+        }
+        if (remainingHeader.isNotEmpty() && !consumeMetadata(remainingHeader)) diagnostics += unsupported(header, "Unsupported pie header syntax")
+        statements.drop(1).forEach { statement ->
+            if (consumeMetadata(statement.text)) return@forEach
+            val section = PIE_SECTION.matchEntire(statement.text)
+            if (section == null) {
+                diagnostics += unsupported(statement, "Unsupported pie syntax")
+                return@forEach
+            }
+            val value = section.groupValues[2].toDouble()
+            if (value < 0.0) {
+                diagnostics += MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, "Pie slice values must be non-negative", statement.location)
+            } else {
+                val label = section.groupValues[1].substring(1, section.groupValues[1].length - 1)
+                if (label !in sections) sections[label] = PieSection(label, value)
+            }
+        }
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(
+            PieDiagram(title, showData, sections.values.toList(), accTitle, accDescription),
+        ) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -155,6 +259,12 @@ public object MermaidParser {
         pattern = "^(?:graph|flowchart)\\s+(TD|TB|LR|BT|RL)$",
         option = RegexOption.IGNORE_CASE,
     )
+    private val STATE_HEADER = Regex("^stateDiagram(?:-v2)?$", RegexOption.IGNORE_CASE)
+    private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
+    private val STATE_ALIAS = Regex("^state\\s+\"([^\"]+)\"\\s+as\\s+($IDENTIFIER)$")
+    private val STATE_TRANSITION = Regex(
+        "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
+    )
     private val FLOW_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
     private val FLOW_EDGE = Regex(
         "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*-->\\s*" +
@@ -165,6 +275,7 @@ public object MermaidParser {
         // starts with the same character. The arrow must win at the boundary.
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
+    private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
 }
 
 private data class SourceStatement(
