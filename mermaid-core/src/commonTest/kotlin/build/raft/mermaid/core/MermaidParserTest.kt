@@ -39,6 +39,10 @@ class MermaidParserTest {
             "xychart-beta\nx-axis [A, B]\ny-axis 0 --> 10\nline [1]",
             "xychart-beta\nx-axis [A]\ny-axis 10 --> 0\nline [1]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [nope]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [NaN]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [Infinity]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [-Infinity]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [+Infinity]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [11]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10",
         ).forEach { source ->

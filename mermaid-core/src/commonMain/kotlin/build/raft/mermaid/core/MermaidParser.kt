@@ -421,7 +421,7 @@ public object MermaidParser {
             XY_SERIES.matchEntire(statement.text)?.let { match ->
                 val values = match.groupValues[2].csvTokens().mapNotNull { it.toDoubleOrNull() }
                 val rawCount = match.groupValues[2].split(',').size
-                if (values.isEmpty() || values.size != rawCount) {
+                if (values.isEmpty() || values.size != rawCount || values.any { !it.isFinite() }) {
                     diagnostics += unsupported(statement, "xychart series requires numeric values")
                 } else {
                     series += XySeries(XySeriesKind.valueOf(match.groupValues[1].uppercase()), values)
