@@ -6,6 +6,47 @@ import kotlin.test.assertIs
 
 class MermaidParserTest {
     @Test
+    fun parsesXyChartAxesAndSeries() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                xychart-beta
+                  title "Quarterly sales"
+                  x-axis "Quarter" [Q1, Q2, Q3]
+                  y-axis "Revenue" 0 --> 100
+                  bar [20, 50, 80]
+                  line [25, 45, 90]
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            XyChartDiagram(
+                title = "Quarterly sales",
+                xAxis = XyAxis("Quarter", listOf("Q1", "Q2", "Q3")),
+                yAxis = NumericAxis("Revenue", 0.0, 100.0),
+                series = listOf(
+                    XySeries(XySeriesKind.BAR, listOf(20.0, 50.0, 80.0)),
+                    XySeries(XySeriesKind.LINE, listOf(25.0, 45.0, 90.0)),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedXyChartFailsClosed() {
+        listOf(
+            "xychart-beta\nx-axis [A, B]\ny-axis 0 --> 10\nline [1]",
+            "xychart-beta\nx-axis [A]\ny-axis 10 --> 0\nline [1]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [nope]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [11]",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
+        }
+    }
+
+    @Test
     fun parsesStateDiagramAliasesDirectionAndTerminalTransitions() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

@@ -28,6 +28,11 @@ import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.StateTransition
+import build.raft.mermaid.core.XyAxis
+import build.raft.mermaid.core.XyChartDiagram
+import build.raft.mermaid.core.XySeries
+import build.raft.mermaid.core.XySeriesKind
+import build.raft.mermaid.core.NumericAxis
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -39,6 +44,24 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun xyChartProducesDeterministicAxesBarsAndLine() {
+        val diagram = XyChartDiagram(
+            title = "Sales",
+            xAxis = XyAxis("Quarter", listOf("Q1", "Q2", "Q3")),
+            yAxis = NumericAxis("Revenue", 0.0, 100.0),
+            series = listOf(
+                XySeries(XySeriesKind.BAR, listOf(20.0, 50.0, 80.0)),
+                XySeries(XySeriesKind.LINE, listOf(25.0, 45.0, 90.0)),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(1, first.commands.filterIsInstance<DrawPolyline>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Q2" })
+    }
+
     @Test
     fun entityRelationshipDiagramRendersCardinalityAndAttributesDeterministically() {
         val diagram = EntityRelationshipDiagram(

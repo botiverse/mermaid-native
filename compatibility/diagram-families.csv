@@ -29,5 +29,5 @@ usecase,usecase,not_started,no,no,no,no,Official syntax family; implementation i
 userJourney,userJourney,not_started,no,no,no,no,Official syntax family; implementation is not started.
 venn,venn,not_started,no,no,no,no,Official syntax family; implementation is not started.
 wardley,wardley,not_started,no,no,no,no,Official syntax family; implementation is not started.
-xyChart,xyChart,not_started,no,no,no,no,Official syntax family; implementation is not started.
+xyChart,xyChart,in_progress,partial,partial,partial,partial,Vertical slice supports categorical x-axis numeric y-axis and line/bar series; full family parity is not complete.
 zenuml,zenuml,not_started,no,no,no,no,Official Mermaid documentation for an external diagram package; compatibility remains not started.

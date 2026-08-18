@@ -29,3 +29,8 @@ documented `stateDiagram-v2` syntax at pinned Mermaid revision
 documented `entityRelationshipDiagram` syntax at the pinned Mermaid revision;
 it demonstrates entities, typed attributes, key markers, and explicit
 cardinalities without claiming complete ER family parity.
+
+`xy-quarterly-sales.mmd` is an original compatibility fixture based on the
+documented `xychart-beta` syntax at the pinned Mermaid revision. It covers a
+categorical x-axis, numeric y-axis, and deterministic bar/line series without
+claiming complete xychart family parity.
