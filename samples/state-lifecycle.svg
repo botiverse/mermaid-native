@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="535.2" height="88" viewBox="0 0 535.2 88" role="img">
+  <line x1="48" y1="44" x2="104" y2="44" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="104,44 95,48.5 95,39.5" fill="#475569"/>
+  <line x1="192" y1="44" x2="248" y2="44" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="248,44 239,48.5 239,39.5" fill="#475569"/>
+  <text x="220" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">start</text>
+  <line x1="431.2" y1="44" x2="487.2" y2="44" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="487.2,44 478.2,48.5 478.2,39.5" fill="#475569"/>
+  <text x="459.2" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">finish</text>
+  <rect x="24" y="32" width="24" height="24" rx="12" fill="#334155" stroke="#334155" stroke-width="1.5"/>
+  <rect x="104" y="24" width="88" height="40" rx="8" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="148" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Idle</text>
+  <rect x="248" y="24" width="183.2" height="40" rx="8" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="339.6" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Processing request</text>
+  <rect x="487.2" y="32" width="24" height="24" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <rect x="492.2" y="37" width="14" height="14" rx="7" fill="#334155" stroke="#334155" stroke-width="1.5"/>
+</svg>

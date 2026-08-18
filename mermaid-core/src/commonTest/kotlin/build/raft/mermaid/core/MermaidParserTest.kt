@@ -6,6 +6,50 @@ import kotlin.test.assertIs
 
 class MermaidParserTest {
     @Test
+    fun parsesStateDiagramAliasesDirectionAndTerminalTransitions() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                stateDiagram-v2
+                  direction LR
+                  [*] --> Idle
+                  state "Processing request" as Working
+                  Idle --> Working: start
+                  Working --> [*]: finish
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(
+            StateDiagram(
+                direction = FlowDirection.LR,
+                states = listOf(
+                    StateNode("__start_0", "", StateNodeKind.START),
+                    StateNode("Idle", "Idle"),
+                    StateNode("Working", "Processing request"),
+                    StateNode("__end_1", "", StateNodeKind.END),
+                ),
+                transitions = listOf(
+                    StateTransition("__start_0", "Idle"),
+                    StateTransition("Idle", "Working", "start"),
+                    StateTransition("Working", "__end_1", "finish"),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun unsupportedStateSyntaxFailsWithoutPartialSuccess() {
+        val failure = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("stateDiagram-v2\nA --> B\nstate Composite {"),
+        )
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
+        assertEquals(SourceLocation(line = 3, column = 1), failure.diagnostics.single().location)
+    }
+
+    @Test
     fun parsesMinimalFlowchartAndPreservesNodeOrder() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

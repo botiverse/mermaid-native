@@ -10,6 +10,10 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.StateDiagram
+import build.raft.mermaid.core.StateNode
+import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.StateTransition
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -91,9 +95,36 @@ public object MermaidExamples {
         ),
     )
 
+    public val stateLifecycle: MermaidExample = MermaidExample(
+        path = "samples/state-lifecycle.mmd",
+        source = """
+            stateDiagram-v2
+              direction LR
+              [*] --> Idle
+              state "Processing request" as Working
+              Idle --> Working: start
+              Working --> [*]: finish
+        """.trimIndent(),
+        expected = StateDiagram(
+            direction = FlowDirection.LR,
+            states = listOf(
+                StateNode("__start_0", "", StateNodeKind.START),
+                StateNode("Idle", "Idle"),
+                StateNode("Working", "Processing request"),
+                StateNode("__end_1", "", StateNodeKind.END),
+            ),
+            transitions = listOf(
+                StateTransition("__start_0", "Idle"),
+                StateTransition("Idle", "Working", "start"),
+                StateTransition("Working", "__end_1", "finish"),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         flowchartLinear,
         flowchartLeftToRight,
         sequenceRequestResponse,
+        stateLifecycle,
     )
 }

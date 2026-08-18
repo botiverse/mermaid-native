@@ -9,6 +9,10 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.StateDiagram
+import build.raft.mermaid.core.StateNode
+import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.StateTransition
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -20,6 +24,35 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun stateDiagramRendersTerminalStatesAndTransitionLabelsDeterministically() {
+        val diagram = StateDiagram(
+            direction = FlowDirection.LR,
+            states = listOf(
+                StateNode("__start_0", "", StateNodeKind.START),
+                StateNode("Idle", "Idle"),
+                StateNode("Working", "Processing request"),
+                StateNode("__end_1", "", StateNodeKind.END),
+            ),
+            transitions = listOf(
+                StateTransition("__start_0", "Idle"),
+                StateTransition("Idle", "Working", "start"),
+                StateTransition("Working", "__end_1", "finish"),
+            ),
+        )
+
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+
+        assertEquals(first, second)
+        val stateRects = first.commands.filterIsInstance<DrawRect>()
+        assertEquals(5, stateRects.size)
+        assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
+        assertEquals("#334155", stateRects.first().fill.value)
+        assertEquals("#334155", stateRects.last().fill.value)
+        assertTrue(stateRects.first().cornerRadius > 0.0)
+    }
+
     @Test
     fun flowchartDirectionsProduceDeterministicOrderedGeometry() {
         FlowDirection.entries.forEach { direction ->
