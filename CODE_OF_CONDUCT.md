@@ -21,6 +21,8 @@ acceptable.
 
 ## Enforcement
 
-Report concerns privately to the repository maintainers. Reports will be
+Report concerns privately through the repository's
+[private advisory form](https://github.com/botiverse/mermaid-native/security/advisories/new).
+Reports will be
 reviewed promptly and handled confidentially where possible. Maintainers may
 remove content or restrict participation when needed to protect contributors.

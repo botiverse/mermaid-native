@@ -32,4 +32,3 @@ body:
       description: Note new dependencies, notices, untrusted-input boundaries, and artifact impact.
     validations:
       required: true
-
