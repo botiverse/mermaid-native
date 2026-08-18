@@ -99,3 +99,28 @@ tasks.register("verifyThirdPartyNotices") {
         }
     }
 }
+
+tasks.register("verifyDiagramFamilyRegistry") {
+    val registry = layout.projectDirectory.file("compatibility/diagram-families.csv")
+    inputs.file(registry)
+    doLast {
+        val rows = registry.asFile.readLines().filter { it.isNotBlank() }
+        check(rows.firstOrNull() == "family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes") {
+            "Diagram-family registry header changed unexpectedly"
+        }
+        val entries = rows.drop(1).map { it.split(',', limit = 8) }
+        check(entries.size == 32) { "Expected 32 official Mermaid family entries, found ${entries.size}" }
+        check(entries.map { it[0] }.toSet().size == entries.size) { "Family IDs must be unique" }
+        val allowedStatus = setOf("implemented", "in_progress", "not_started", "blocked")
+        check(entries.all { it.size == 8 && it[2] in allowedStatus }) {
+            "Every registry row must have eight columns and an allowed status"
+        }
+        check(entries.filter { it[2] == "implemented" }.all {
+            it[3] == "yes" && it[4] == "yes" && it[5] == "yes" && it[6] == "yes"
+        }) { "A family may be implemented only when parser, AST, layout, and SVG are complete" }
+    }
+}
+
+tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("verifyDiagramFamilyRegistry")
+}
