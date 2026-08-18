@@ -4,6 +4,7 @@ import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceDiagram
+import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNodeKind
@@ -17,8 +18,8 @@ import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.ScenePoint
-import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.SceneColor
+import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.SceneSize
 import build.raft.mermaid.layout.StrokePattern
 import build.raft.mermaid.layout.TextAnchor
@@ -26,6 +27,9 @@ import build.raft.mermaid.layout.TextMeasurer
 import build.raft.mermaid.layout.TextStyle
 import kotlin.math.max
 import kotlin.math.sqrt
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
 
 /** Deterministic text metrics for goldens and hosts without platform font metrics. */
 public object FixedWidthTextMeasurer : TextMeasurer {
@@ -44,6 +48,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene = when (diagram) {
         is FlowchartDiagram -> layoutFlowchart(diagram, textMeasurer, config)
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
+        is PieDiagram -> layoutPie(diagram, textMeasurer, config)
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
     }
 
@@ -291,6 +296,45 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    private fun layoutPie(diagram: PieDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val bodyStyle = TextStyle(fontSize = 13.0)
+        val center = ScenePoint(config.padding + 150.0, config.padding + 170.0)
+        val radius = 120.0
+        val legendX = config.padding + 320.0
+        val legendStartY = config.padding + 48.0
+        val total = diagram.sections.sumOf { it.value }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.takeIf { it.isNotEmpty() }?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + titleStyle.fontSize), style = titleStyle) }
+        var angle = -PI / 2.0
+        diagram.sections.forEachIndexed { index, section ->
+            val fraction = if (total > 0.0) section.value / total else 0.0
+            val end = angle + fraction * 2.0 * PI
+            if (fraction > 0.0) {
+                val points = buildList {
+                    add(center)
+                    add(ScenePoint(center.x + radius * cos(angle), center.y + radius * sin(angle)))
+                    val steps = maxOf(2, (fraction * 48.0).toInt())
+                    for (step in 1..steps) {
+                        val a = angle + (end - angle) * step / steps
+                        add(ScenePoint(center.x + radius * cos(a), center.y + radius * sin(a)))
+                    }
+                }
+                commands += DrawPolygon(points, fill = SceneColor(PIE_COLORS[index % PIE_COLORS.size]))
+            }
+            val legendY = legendStartY + index * 28.0
+            commands += DrawRect(SceneRect(legendX, legendY - 11.0, 14.0, 14.0), cornerRadius = 2.0, fill = SceneColor(PIE_COLORS[index % PIE_COLORS.size]))
+            commands += DrawText(if (diagram.showData) "${section.label}: ${section.value}" else section.label, ScenePoint(legendX + 22.0, legendY), style = bodyStyle)
+            angle = end
+        }
+        val legendWidth = diagram.sections.maxOfOrNull { textMeasurer.measure(it.label, bodyStyle).width } ?: 0.0
+        return LayoutScene(
+            width = maxOf(config.padding * 2 + 480.0, legendX + 24.0 + legendWidth + config.padding),
+            height = maxOf(config.padding * 2 + 2.0 * radius + 30.0, legendStartY + diagram.sections.size * 28.0 + config.padding),
+            commands = commands,
+        )
+    }
+
     private fun arrowHead(from: ScenePoint, to: ScenePoint): DrawPolygon {
         val dx = to.x - from.x
         val dy = to.y - from.y
@@ -303,4 +347,6 @@ public object SimpleMermaidLayout : DiagramLayout {
         val perpendicularY = unitX * 4.5
         return DrawPolygon(listOf(to, ScenePoint(baseX + perpendicularX, baseY + perpendicularY), ScenePoint(baseX - perpendicularX, baseY - perpendicularY)))
     }
+
+    private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
 }

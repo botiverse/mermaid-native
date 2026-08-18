@@ -194,4 +194,37 @@ class MermaidParserTest {
 
         assertEquals(SourceLocation(line = 1, column = 22), failure.diagnostics.single().location)
     }
+
+    @Test
+    fun parsesOfficialPieMetadataSectionsAndDuplicateFirstWins() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                pie showData title Pets adopted
+                  accTitle: Adoption chart
+                  accDescr: Counts by animal
+                  "Dogs" : 386
+                  "Cats" : 85.5
+                  "Dogs" : 1
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            PieDiagram(
+                title = "Pets adopted",
+                showData = true,
+                sections = listOf(PieSection("Dogs", 386.0), PieSection("Cats", 85.5)),
+                accessibilityTitle = "Adoption chart",
+                accessibilityDescription = "Counts by animal",
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun negativePieValueFailsClosedAtTheSection() {
+        val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("pie\n  \"Dogs\" : -1"))
+        assertEquals(MermaidDiagnosticCode.INVALID_VALUE, failure.diagnostics.single().code)
+        assertEquals(SourceLocation(2, 3), failure.diagnostics.single().location)
+    }
 }

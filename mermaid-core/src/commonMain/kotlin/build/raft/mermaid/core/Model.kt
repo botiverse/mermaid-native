@@ -66,6 +66,16 @@ public data class StateTransition(
     val label: String = "",
 )
 
+public data class PieDiagram(
+    val title: String?,
+    val showData: Boolean,
+    val sections: List<PieSection>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+) : MermaidDiagram
+
+public data class PieSection(val label: String, val value: Double)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

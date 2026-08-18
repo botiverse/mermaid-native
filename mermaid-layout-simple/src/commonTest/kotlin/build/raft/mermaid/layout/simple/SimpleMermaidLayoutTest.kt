@@ -9,6 +9,10 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.PieDiagram
+import build.raft.mermaid.core.PieSection
+import build.raft.mermaid.layout.DrawPolygon
+import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
@@ -24,6 +28,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun pieProducesDeterministicSlicesAndShowDataLegend() {
+        val diagram = PieDiagram(title = "Pets", showData = true, sections = listOf(PieSection("Dogs", 3.0), PieSection("Cats", 1.0)))
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Dogs: 3.0" })
+    }
+
     @Test
     fun stateDiagramRendersTerminalStatesAndTransitionLabelsDeterministically() {
         val diagram = StateDiagram(
