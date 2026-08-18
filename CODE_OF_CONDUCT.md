@@ -21,8 +21,8 @@ acceptable.
 
 ## Enforcement
 
-Report concerns privately through the repository's
-[private advisory form](https://github.com/botiverse/mermaid-native/security/advisories/new).
+Report concerns privately by emailing the Botiverse maintainers at
+[contact@botiverse.dev](mailto:contact@botiverse.dev?subject=Mermaid%20Native%20Code%20of%20Conduct).
 Reports will be
 reviewed promptly and handled confidentially where possible. Maintainers may
 remove content or restrict participation when needed to protect contributors.
