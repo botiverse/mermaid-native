@@ -4,7 +4,7 @@ block,block,not_started,no,no,no,no,Official syntax family; implementation is no
 c4,c4,not_started,no,no,no,no,Official syntax family; implementation is not started.
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
 cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.
-entityRelationshipDiagram,entityRelationshipDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports entity declarations attributes keys and basic cardinality relationships; full family parity is not complete.
 eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.
 gantt,gantt,not_started,no,no,no,no,Official syntax family; implementation is not started.

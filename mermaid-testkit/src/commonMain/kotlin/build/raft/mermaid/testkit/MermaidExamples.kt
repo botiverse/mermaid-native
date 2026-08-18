@@ -9,6 +9,12 @@ import build.raft.mermaid.core.ClassDefinition
 import build.raft.mermaid.core.ClassMember
 import build.raft.mermaid.core.ClassRelationship
 import build.raft.mermaid.core.ClassRelationshipKind
+import build.raft.mermaid.core.EntityAttribute
+import build.raft.mermaid.core.EntityCardinality
+import build.raft.mermaid.core.EntityDefinition
+import build.raft.mermaid.core.EntityKey
+import build.raft.mermaid.core.EntityRelationship
+import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceActor
 import build.raft.mermaid.core.SequenceArrowHead
@@ -35,6 +41,28 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val entityRelationshipCustomerOrder: MermaidExample = MermaidExample(
+        path = "samples/entity-customer-order.mmd",
+        source = """
+            erDiagram
+              CUSTOMER {
+                int id PK
+                string name
+              }
+              ORDER {
+                int id PK
+                int customerId FK
+              }
+              CUSTOMER ||--o{ ORDER : places
+        """.trimIndent(),
+        expected = EntityRelationshipDiagram(
+            entities = listOf(
+                EntityDefinition("CUSTOMER", listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("string", "name"))),
+                EntityDefinition("ORDER", listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("int", "customerId", EntityKey.FK))),
+            ),
+            relationships = listOf(EntityRelationship("CUSTOMER", "ORDER", EntityCardinality.ONLY_ONE, EntityCardinality.ZERO_OR_MORE, "places")),
+        ),
+    )
     public val classAnimal: MermaidExample = MermaidExample(
         path = "samples/class-animal.mmd",
         source = """
@@ -163,6 +191,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        entityRelationshipCustomerOrder,
         classAnimal,
         piePets,
         flowchartLinear,

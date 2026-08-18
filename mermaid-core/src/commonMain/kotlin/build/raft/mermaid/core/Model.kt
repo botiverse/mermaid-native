@@ -101,6 +101,35 @@ public data class ClassRelationship(
 
 public enum class ClassRelationshipKind { INHERITANCE, ASSOCIATION }
 
+/** Minimal platform-neutral model for the entityRelationshipDiagram family. */
+public data class EntityRelationshipDiagram(
+    val entities: List<EntityDefinition>,
+    val relationships: List<EntityRelationship>,
+) : MermaidDiagram
+
+public data class EntityDefinition(
+    val id: String,
+    val attributes: List<EntityAttribute> = emptyList(),
+)
+
+public data class EntityAttribute(
+    val type: String,
+    val name: String,
+    val key: EntityKey = EntityKey.NONE,
+)
+
+public enum class EntityKey { NONE, PK, FK, UK }
+
+public data class EntityRelationship(
+    val from: String,
+    val to: String,
+    val fromCardinality: EntityCardinality,
+    val toCardinality: EntityCardinality,
+    val label: String = "",
+)
+
+public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
