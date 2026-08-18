@@ -30,3 +30,27 @@ The first vertical slices are:
 Both must pass parser diagnostics, deterministic geometry, SVG output, and
 Android/iOS/OHOS native rendering evidence before their compatibility entries
 are marked supported.
+
+## Quick start
+
+```kotlin
+val result = MermaidParser.parse("flowchart LR; A[Start] --> B[Finish]")
+when (result) {
+    is MermaidParseResult.Success -> {
+        // Pass the typed diagram to a layout/render module.
+    }
+    is MermaidParseResult.Failure -> result.diagnostics.forEach(::println)
+}
+```
+
+The parser is deliberately fail-closed: syntax outside the declared support
+matrix returns a typed diagnostic instead of silently changing diagram type or
+dropping statements. See [compatibility](docs/compatibility.md),
+[architecture](docs/architecture.md), and [testing](docs/testing.md).
+
+## Contributing
+
+This is an independent, non-official Mermaid-compatible implementation. New
+syntax needs a support-matrix entry, parser tests, a negative/unsupported case,
+and a fixture or differential vector before it is considered complete. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
