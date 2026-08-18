@@ -32,8 +32,29 @@ class SimpleMermaidLayoutTest {
             val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
             assertEquals(first, second, direction.name)
             assertTrue(first.width > 0.0 && first.height > 0.0, direction.name)
-            assertEquals(2, first.commands.filterIsInstance<DrawRect>().size, direction.name)
-            assertEquals(1, first.commands.filterIsInstance<DrawLine>().size, direction.name)
+            val nodeRects = first.commands.filterIsInstance<DrawRect>().map { it.rect }
+            val edge = first.commands.filterIsInstance<DrawLine>().single()
+            assertEquals(2, nodeRects.size, direction.name)
+            when (direction) {
+                FlowDirection.TD,
+                FlowDirection.TB,
+                -> {
+                    assertTrue(nodeRects[0].y < nodeRects[1].y, direction.name)
+                    assertTrue(edge.from.y < edge.to.y, direction.name)
+                }
+                FlowDirection.BT -> {
+                    assertTrue(nodeRects[0].y > nodeRects[1].y, direction.name)
+                    assertTrue(edge.from.y > edge.to.y, direction.name)
+                }
+                FlowDirection.LR -> {
+                    assertTrue(nodeRects[0].x < nodeRects[1].x, direction.name)
+                    assertTrue(edge.from.x < edge.to.x, direction.name)
+                }
+                FlowDirection.RL -> {
+                    assertTrue(nodeRects[0].x > nodeRects[1].x, direction.name)
+                    assertTrue(edge.from.x > edge.to.x, direction.name)
+                }
+            }
         }
     }
 
