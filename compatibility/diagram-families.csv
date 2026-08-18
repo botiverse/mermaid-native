@@ -13,7 +13,7 @@ ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation
 kanban,kanban,not_started,no,no,no,no,Official syntax family; implementation is not started.
 mindmap,mindmap,not_started,no,no,no,no,Official syntax family; implementation is not started.
 packet,packet,not_started,no,no,no,no,Official syntax family; implementation is not started.
-pie,pie,not_started,no,no,no,no,Official syntax family; implementation is not started.
+pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData and numeric sections; full family parity is not complete.
 quadrantChart,quadrantChart,not_started,no,no,no,no,Official syntax family; implementation is not started.
 radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.
 railroad,railroad,not_started,no,no,no,no,Four official railroad dialects share this family entry.

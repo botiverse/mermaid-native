@@ -12,6 +12,7 @@ public enum class MermaidDiagnosticCode {
     UNSUPPORTED_DIAGRAM,
     INVALID_HEADER,
     UNSUPPORTED_SYNTAX,
+    INVALID_VALUE,
 }
 
 public data class MermaidDiagnostic(

@@ -10,6 +10,8 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.PieDiagram
+import build.raft.mermaid.core.PieSection
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
@@ -28,6 +30,21 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val piePets: MermaidExample = MermaidExample(
+        path = "samples/pie-pets.mmd",
+        source = """
+            pie showData title Pets adopted
+              "Dogs" : 386
+              "Cats" : 85
+              "Rats" : 15
+        """.trimIndent(),
+        expected = PieDiagram(
+            title = "Pets adopted",
+            showData = true,
+            sections = listOf(PieSection("Dogs", 386.0), PieSection("Cats", 85.0), PieSection("Rats", 15.0)),
+        ),
+    )
+
     public val flowchartLinear: MermaidExample = MermaidExample(
         path = "samples/flowchart-linear.mmd",
         source = """
@@ -122,6 +139,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        piePets,
         flowchartLinear,
         flowchartLeftToRight,
         sequenceRequestResponse,

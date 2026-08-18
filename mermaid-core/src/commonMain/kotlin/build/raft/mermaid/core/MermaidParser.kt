@@ -19,6 +19,7 @@ public object MermaidParser {
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> parseSequence(statements)
             STATE_HEADER.matches(header.text) -> parseState(statements)
+            header.text.startsWith("pie", ignoreCase = true) -> parsePie(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -193,6 +194,51 @@ public object MermaidParser {
         }
     }
 
+    private fun parsePie(statements: List<SourceStatement>): MermaidParseResult {
+        val header = statements.first()
+        var remainingHeader = header.text.removePrefix("pie").trim()
+        var showData = false
+        var title: String? = null
+        var accTitle: String? = null
+        var accDescription: String? = null
+        val sections = linkedMapOf<String, PieSection>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        fun consumeMetadata(text: String): Boolean {
+            val trimmed = text.trim()
+            when {
+                trimmed.equals("showData", ignoreCase = true) -> showData = true
+                trimmed.startsWith("title ", ignoreCase = true) -> title = trimmed.drop(6).trim().ifEmpty { null }
+                trimmed.startsWith("accTitle:", ignoreCase = true) -> accTitle = trimmed.substringAfter(':').trim().ifEmpty { null }
+                trimmed.startsWith("accDescr:", ignoreCase = true) -> accDescription = trimmed.substringAfter(':').trim().ifEmpty { null }
+                else -> return false
+            }
+            return true
+        }
+        if (remainingHeader.startsWith("showData", ignoreCase = true)) {
+            showData = true
+            remainingHeader = remainingHeader.drop("showData".length).trim()
+        }
+        if (remainingHeader.isNotEmpty() && !consumeMetadata(remainingHeader)) diagnostics += unsupported(header, "Unsupported pie header syntax")
+        statements.drop(1).forEach { statement ->
+            if (consumeMetadata(statement.text)) return@forEach
+            val section = PIE_SECTION.matchEntire(statement.text)
+            if (section == null) {
+                diagnostics += unsupported(statement, "Unsupported pie syntax")
+                return@forEach
+            }
+            val value = section.groupValues[2].toDouble()
+            if (value < 0.0) {
+                diagnostics += MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, "Pie slice values must be non-negative", statement.location)
+            } else {
+                val label = section.groupValues[1].substring(1, section.groupValues[1].length - 1)
+                if (label !in sections) sections[label] = PieSection(label, value)
+            }
+        }
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(
+            PieDiagram(title, showData, sections.values.toList(), accTitle, accDescription),
+        ) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -229,6 +275,7 @@ public object MermaidParser {
         // starts with the same character. The arrow must win at the boundary.
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
+    private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
 }
 
 private data class SourceStatement(
