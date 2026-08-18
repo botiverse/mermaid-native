@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="172.8" height="246" viewBox="0 0 172.8 246" role="img">
+  <line x1="84" y1="162" x2="86.4" y2="106" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="86.4,106 90.51051248564984,115.18442633512386 81.51876642329081,114.7990657895942" fill="#475569"/>
+  <rect x="24" y="24" width="124.8" height="82" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="42" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Animal</text>
+  <text x="36" y="64" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">+String name</text>
+  <text x="36" y="86" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">+eat()</text>
+  <rect x="24" y="162" width="120" height="60" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="180" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Duck</text>
+  <text x="36" y="202" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">+swim()</text>
+</svg>

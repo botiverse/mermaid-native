@@ -4,6 +4,11 @@ import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
+import build.raft.mermaid.core.ClassDiagram
+import build.raft.mermaid.core.ClassDefinition
+import build.raft.mermaid.core.ClassMember
+import build.raft.mermaid.core.ClassRelationship
+import build.raft.mermaid.core.ClassRelationshipKind
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceActor
 import build.raft.mermaid.core.SequenceArrowHead
@@ -30,6 +35,25 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val classAnimal: MermaidExample = MermaidExample(
+        path = "samples/class-animal.mmd",
+        source = """
+            classDiagram
+            class Animal
+            Animal : +String name
+            Animal : +eat()
+            Animal <|-- Duck
+            class Duck
+            Duck : +swim()
+        """.trimIndent(),
+        expected = ClassDiagram(
+            classes = listOf(
+                ClassDefinition("Animal", members = listOf(ClassMember("String name"), ClassMember("eat()"))),
+                ClassDefinition("Duck", members = listOf(ClassMember("swim()"))),
+            ),
+            relationships = listOf(ClassRelationship("Animal", "Duck", ClassRelationshipKind.INHERITANCE)),
+        ),
+    )
     public val piePets: MermaidExample = MermaidExample(
         path = "samples/pie-pets.mmd",
         source = """
@@ -139,6 +163,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        classAnimal,
         piePets,
         flowchartLinear,
         flowchartLeftToRight,

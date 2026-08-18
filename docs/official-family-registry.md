@@ -21,8 +21,8 @@ The status contract is deliberately strict:
 - `not_started` means no implementation work has been accepted.
 - `blocked` is reserved for a concrete external or technical blocker.
 
-The current flowchart, sequence, stateDiagram, and pie vertical slices therefore
-remain `in_progress`: they are executable and tested, but they are not full
-family parity.
+The current flowchart, sequence, stateDiagram, pie, and class vertical slices
+therefore remain `in_progress`: they are executable and tested, but they are not
+full family parity.
 The registry must be updated in the same PR that closes a family's parser,
 layout, render, and tests; registering a name alone never means support.
