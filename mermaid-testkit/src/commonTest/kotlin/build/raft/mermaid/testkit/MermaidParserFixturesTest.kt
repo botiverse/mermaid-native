@@ -6,10 +6,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-class Phase0ParserFixturesTest {
+class MermaidParserFixturesTest {
     @Test
     fun pinnedReferenceFixturesMatchNormalizedAst() {
-        Phase0ParserFixtures.all.forEach { fixture ->
+        MermaidParserFixtures.all.forEach { fixture ->
             val success = assertIs<MermaidParseResult.Success>(
                 MermaidParser.parse(fixture.source),
                 fixture.name,

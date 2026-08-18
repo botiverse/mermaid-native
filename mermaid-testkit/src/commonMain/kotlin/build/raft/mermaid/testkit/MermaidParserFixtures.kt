@@ -18,7 +18,7 @@ public data class MermaidParserFixture(
     val expected: MermaidDiagram,
 )
 
-public object Phase0ParserFixtures {
+public object MermaidParserFixtures {
     public val flowchart: MermaidParserFixture = MermaidParserFixture(
         name = "minimal-flowchart",
         source = "flowchart LR; A[Start] --> B[Finish]",

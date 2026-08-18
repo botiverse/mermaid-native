@@ -11,7 +11,7 @@ diagnostics rather than silently rendering a different diagram.
 
 - `mermaid-core`: parser, typed AST, and diagnostics.
 - `mermaid-layout-api`: toolkit-neutral scene graph, draw commands, and layout SPI.
-- `mermaid-layout-simple`: deterministic MIT-licensed Phase 0 layout.
+- `mermaid-layout-simple`: deterministic MIT-licensed starter layout.
 - `mermaid-render-svg`: common SVG serializer.
 - `mermaid-kuikly`: Kuikly Canvas/Text adapter for Raft Mobile.
 - `mermaid-testkit`: compatibility fixtures and geometry goldens.
@@ -20,16 +20,16 @@ All artifacts share one version and are published under `build.raft.mermaid`.
 ELK support is deliberately outside the MIT core; any future `layout-elk`
 artifact must carry its own EPL-2.0 obligations.
 
-## Phase 0
+## Current parser support
 
-The first vertical slices are:
+The first supported syntax slices are:
 
 - `sequenceDiagram` with one `A->>B` message;
 - `flowchart` with one `A-->B` edge.
 
-Both must pass parser diagnostics, deterministic geometry, SVG output, and
-Android/iOS/OHOS native rendering evidence before their compatibility entries
-are marked supported.
+Parser support is covered on Android and iOS. Layout, SVG, and native host
+support remain separate compatibility entries and are not implied by parser
+support.
 
 ## Quick start
 
@@ -47,6 +47,13 @@ The parser is deliberately fail-closed: syntax outside the declared support
 matrix returns a typed diagnostic instead of silently changing diagram type or
 dropping statements. See [compatibility](docs/compatibility.md),
 [architecture](docs/architecture.md), and [testing](docs/testing.md).
+
+## Examples
+
+The [`samples`](samples/) directory contains flowchart and sequence sources
+adapted from the pinned beautiful-mermaid corpus. The same inputs have
+normalized AST expectations in `mermaid-testkit`, so the examples are executed
+by the multiplatform test suite instead of drifting as documentation-only text.
 
 ## Contributing
 
