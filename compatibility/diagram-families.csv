@@ -1,0 +1,33 @@
+family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes
+architecture,architecture,not_started,no,no,no,no,Official syntax family; implementation is not started.
+block,block,not_started,no,no,no,no,Official syntax family; implementation is not started.
+c4,c4,not_started,no,no,no,no,Official syntax family; implementation is not started.
+class,classDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.
+entityRelationshipDiagram,entityRelationshipDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.
+flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.
+gantt,gantt,not_started,no,no,no,no,Official syntax family; implementation is not started.
+gitgraph,gitgraph,not_started,no,no,no,no,Official syntax family; implementation is not started.
+ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation is not started.
+kanban,kanban,not_started,no,no,no,no,Official syntax family; implementation is not started.
+mindmap,mindmap,not_started,no,no,no,no,Official syntax family; implementation is not started.
+packet,packet,not_started,no,no,no,no,Official syntax family; implementation is not started.
+pie,pie,not_started,no,no,no,no,Official syntax family; implementation is not started.
+quadrantChart,quadrantChart,not_started,no,no,no,no,Official syntax family; implementation is not started.
+radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.
+railroad,railroad,not_started,no,no,no,no,Four official railroad dialects share this family entry.
+requirementDiagram,requirementDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+sankey,sankey,not_started,no,no,no,no,Official syntax family; implementation is not started.
+sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset only; full family parity is not complete.
+stateDiagram,stateDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+swimlanes,swimlanes,not_started,no,no,no,no,Official syntax family; implementation is not started.
+timeline,timeline,not_started,no,no,no,no,Official syntax family; implementation is not started.
+treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
+treemap,treemap,not_started,no,no,no,no,Official syntax family; implementation is not started.
+usecase,usecase,not_started,no,no,no,no,Official syntax family; implementation is not started.
+userJourney,userJourney,not_started,no,no,no,no,Official syntax family; implementation is not started.
+venn,venn,not_started,no,no,no,no,Official syntax family; implementation is not started.
+wardley,wardley,not_started,no,no,no,no,Official syntax family; implementation is not started.
+xyChart,xyChart,not_started,no,no,no,no,Official syntax family; implementation is not started.
+zenuml,zenuml,not_started,no,no,no,no,Official Mermaid documentation for an external diagram package; compatibility remains not started.
