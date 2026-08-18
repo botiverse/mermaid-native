@@ -6,6 +6,12 @@ import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassMember
 import build.raft.mermaid.core.ClassRelationship
 import build.raft.mermaid.core.ClassRelationshipKind
+import build.raft.mermaid.core.EntityAttribute
+import build.raft.mermaid.core.EntityCardinality
+import build.raft.mermaid.core.EntityDefinition
+import build.raft.mermaid.core.EntityKey
+import build.raft.mermaid.core.EntityRelationship
+import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
@@ -33,6 +39,31 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun entityRelationshipDiagramRendersCardinalityAndAttributesDeterministically() {
+        val diagram = EntityRelationshipDiagram(
+            entities = listOf(
+                EntityDefinition("CUSTOMER", listOf(EntityAttribute("int", "id", EntityKey.PK))),
+                EntityDefinition("ORDER", listOf(EntityAttribute("int", "customerId", EntityKey.FK))),
+            ),
+            relationships = listOf(
+                EntityRelationship(
+                    "CUSTOMER",
+                    "ORDER",
+                    EntityCardinality.ONLY_ONE,
+                    EntityCardinality.ZERO_OR_MORE,
+                    "places",
+                ),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(1, first.commands.filterIsInstance<DrawLine>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "0..*" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "int id PK" })
+    }
+
     @Test
     fun classDiagramProducesDeterministicBoxAndRelationship() {
         val diagram = ClassDiagram(

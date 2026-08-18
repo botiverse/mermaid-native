@@ -190,6 +190,61 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesEntityAttributesKeysAndRelationshipCardinality() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                erDiagram
+                  CUSTOMER {
+                    int id PK
+                    string name
+                  }
+                  ORDER {
+                    int id PK
+                    int customerId FK
+                  }
+                  CUSTOMER ||--o{ ORDER : places
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            EntityRelationshipDiagram(
+                entities = listOf(
+                    EntityDefinition(
+                        "CUSTOMER",
+                        listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("string", "name")),
+                    ),
+                    EntityDefinition(
+                        "ORDER",
+                        listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("int", "customerId", EntityKey.FK)),
+                    ),
+                ),
+                relationships = listOf(
+                    EntityRelationship(
+                        "CUSTOMER",
+                        "ORDER",
+                        EntityCardinality.ONLY_ONE,
+                        EntityCardinality.ZERO_OR_MORE,
+                        "places",
+                    ),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedEntityBodyAndRelationshipFailClosed() {
+        listOf(
+            "erDiagram\nCUSTOMER {\nstring name",
+            "erDiagram\nCUSTOMER {\nunknown\n}",
+            "erDiagram\nCUSTOMER XX--o{ ORDER : places",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
+        }
+    }
+
+    @Test
     fun malformedFlowchartHeaderHasTypedDiagnostic() {
         val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("flowchart SIDEWAYS"))
 

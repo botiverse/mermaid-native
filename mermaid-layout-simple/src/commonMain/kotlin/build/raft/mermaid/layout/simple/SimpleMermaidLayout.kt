@@ -5,6 +5,9 @@ import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassVisibility
 import build.raft.mermaid.core.ClassRelationshipKind
+import build.raft.mermaid.core.EntityCardinality
+import build.raft.mermaid.core.EntityRelationshipDiagram
+import build.raft.mermaid.core.EntityKey
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
@@ -55,6 +58,67 @@ public object SimpleMermaidLayout : DiagramLayout {
         is PieDiagram -> layoutPie(diagram, textMeasurer, config)
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
         is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
+        is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
+    }
+
+    private fun layoutEntityRelationship(
+        diagram: EntityRelationshipDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val style = TextStyle()
+        fun attributeLine(type: String, name: String, key: EntityKey): String = buildString {
+            append(type).append(' ').append(name)
+            if (key != EntityKey.NONE) append(' ').append(key.name)
+        }
+        fun cardinalityLabel(cardinality: EntityCardinality): String = when (cardinality) {
+            EntityCardinality.ONLY_ONE -> "1"
+            EntityCardinality.ZERO_OR_ONE -> "0..1"
+            EntityCardinality.ONE_OR_MORE -> "1..*"
+            EntityCardinality.ZERO_OR_MORE -> "0..*"
+        }
+        val sizes = diagram.entities.associate { entity ->
+            val lines = listOf(entity.id) + entity.attributes.map { attributeLine(it.type, it.name, it.key) }
+            entity.id to SceneSize(
+                max(140.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0),
+                max(48.0, lines.size * 22.0 + 16.0),
+            )
+        }
+        val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
+        val height = sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1) + config.padding * 2
+        val rects = linkedMapOf<String, SceneRect>()
+        var y = config.padding
+        diagram.entities.forEach { entity ->
+            val size = sizes.getValue(entity.id)
+            rects[entity.id] = SceneRect(config.padding, y, size.width, size.height)
+            y += size.height + config.nodeGap
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.relationships.forEach { relationship ->
+            val source = rects[relationship.from] ?: return@forEach
+            val target = rects[relationship.to] ?: return@forEach
+            val from = ScenePoint(source.x + source.width / 2, source.y + source.height)
+            val to = ScenePoint(target.x + target.width / 2, target.y)
+            commands += DrawLine(from, to)
+            commands += DrawText(cardinalityLabel(relationship.fromCardinality), ScenePoint(from.x + 8.0, from.y + 16.0), style = style)
+            commands += DrawText(cardinalityLabel(relationship.toCardinality), ScenePoint(to.x + 8.0, to.y - 8.0), style = style)
+            if (relationship.label.isNotEmpty()) {
+                commands += DrawText(
+                    relationship.label,
+                    ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
+                    style = style,
+                )
+            }
+        }
+        diagram.entities.forEach { entity ->
+            val rect = rects.getValue(entity.id)
+            commands += DrawRect(rect, cornerRadius = 4.0)
+            val lines = listOf(entity.id) + entity.attributes.map { attributeLine(it.type, it.name, it.key) }
+            lines.forEachIndexed { index, line ->
+                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutClass(diagram: ClassDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

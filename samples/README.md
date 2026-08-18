@@ -24,3 +24,8 @@ APIs.
 `state-lifecycle.mmd` is an original compatibility fixture based on the
 documented `stateDiagram-v2` syntax at pinned Mermaid revision
 `04ee3364045d6573f84034d3c9368cc50233a92f`; it is not copied renderer output.
+
+`entity-customer-order.mmd` is an original compatibility fixture based on the
+documented `entityRelationshipDiagram` syntax at the pinned Mermaid revision;
+it demonstrates entities, typed attributes, key markers, and explicit
+cardinalities without claiming complete ER family parity.
