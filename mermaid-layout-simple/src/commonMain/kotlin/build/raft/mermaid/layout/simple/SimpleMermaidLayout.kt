@@ -14,6 +14,8 @@ import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.XyChartDiagram
+import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -59,6 +61,71 @@ public object SimpleMermaidLayout : DiagramLayout {
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
         is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
         is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
+        is XyChartDiagram -> layoutXyChart(diagram, config)
+    }
+
+    private fun layoutXyChart(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
+        val bodyStyle = TextStyle(fontSize = 12.0)
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val width = 640.0
+        val height = 400.0
+        val left = config.padding + 52.0
+        val top = config.padding + 48.0
+        val plotWidth = width - left - config.padding
+        val plotHeight = height - top - config.padding - 52.0
+        val bottom = top + plotHeight
+        val categories = diagram.xAxis.categories
+        val step = plotWidth / categories.size
+        val range = diagram.yAxis.maximum - diagram.yAxis.minimum
+        fun x(index: Int): Double = (left + step * (index + 0.5)).xyCoordinate()
+        fun y(value: Double): Double = (bottom - ((value - diagram.yAxis.minimum) / range) * plotHeight).xyCoordinate()
+
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, config.padding + 18.0), TextAnchor.MIDDLE, titleStyle) }
+        commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
+        commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
+        commands += DrawText(diagram.yAxis.maximum.toString(), ScenePoint(left - 8.0, top + 4.0), TextAnchor.END, bodyStyle)
+        commands += DrawText(diagram.yAxis.minimum.toString(), ScenePoint(left - 8.0, bottom + 4.0), TextAnchor.END, bodyStyle)
+        diagram.yAxis.title?.let { commands += DrawText(it, ScenePoint(left, top - 12.0), style = bodyStyle) }
+        diagram.xAxis.title?.let { commands += DrawText(it, ScenePoint(left + plotWidth / 2.0, height - config.padding), TextAnchor.MIDDLE, bodyStyle) }
+        categories.forEachIndexed { index, category ->
+            commands += DrawText(category, ScenePoint(x(index), bottom + 20.0), TextAnchor.MIDDLE, bodyStyle)
+        }
+
+        val barSeries = diagram.series.filter { it.kind == XySeriesKind.BAR }
+        val barWidth = (step * 0.64 / max(1, barSeries.size)).coerceAtMost(36.0)
+        var barIndex = 0
+        diagram.series.forEachIndexed { seriesIndex, series ->
+            val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
+            when (series.kind) {
+                XySeriesKind.BAR -> {
+                    series.values.forEachIndexed { index, value ->
+                        val baseline = y(diagram.yAxis.minimum.coerceAtLeast(0.0).coerceAtMost(diagram.yAxis.maximum))
+                        val valueY = y(value)
+                        commands += DrawRect(
+                            rect = SceneRect(
+                                x = (x(index) - barSeries.size * barWidth / 2.0 + barIndex * barWidth).xyCoordinate(),
+                                y = minOf(baseline, valueY),
+                                width = barWidth.xyCoordinate(),
+                                height = max(1.0, kotlin.math.abs(valueY - baseline)).xyCoordinate(),
+                            ),
+                            fill = color,
+                            stroke = color,
+                            strokeWidth = 1.0,
+                        )
+                    }
+                    barIndex += 1
+                }
+                XySeriesKind.LINE -> {
+                    commands += DrawPolyline(
+                        points = series.values.mapIndexed { index, value -> ScenePoint(x(index), y(value)) },
+                        stroke = color,
+                        strokeWidth = 2.0,
+                    )
+                }
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutEntityRelationship(
@@ -473,6 +540,8 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
+    private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
 
     private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
+    private fun Double.xyCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
 }

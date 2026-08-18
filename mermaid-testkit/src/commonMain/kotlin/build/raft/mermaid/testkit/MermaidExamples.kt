@@ -27,6 +27,11 @@ import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.StateTransition
+import build.raft.mermaid.core.NumericAxis
+import build.raft.mermaid.core.XyAxis
+import build.raft.mermaid.core.XyChartDiagram
+import build.raft.mermaid.core.XySeries
+import build.raft.mermaid.core.XySeriesKind
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -41,6 +46,26 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val xyQuarterlySales: MermaidExample = MermaidExample(
+        path = "samples/xy-quarterly-sales.mmd",
+        source = """
+            xychart-beta
+              title "Quarterly sales"
+              x-axis "Quarter" [Q1, Q2, Q3, Q4]
+              y-axis "Revenue" 0 --> 100
+              bar [20, 45, 70, 85]
+              line [25, 40, 75, 90]
+        """.trimIndent(),
+        expected = XyChartDiagram(
+            title = "Quarterly sales",
+            xAxis = XyAxis("Quarter", listOf("Q1", "Q2", "Q3", "Q4")),
+            yAxis = NumericAxis("Revenue", 0.0, 100.0),
+            series = listOf(
+                XySeries(XySeriesKind.BAR, listOf(20.0, 45.0, 70.0, 85.0)),
+                XySeries(XySeriesKind.LINE, listOf(25.0, 40.0, 75.0, 90.0)),
+            ),
+        ),
+    )
     public val entityRelationshipCustomerOrder: MermaidExample = MermaidExample(
         path = "samples/entity-customer-order.mmd",
         source = """
@@ -191,6 +216,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        xyQuarterlySales,
         entityRelationshipCustomerOrder,
         classAnimal,
         piePets,

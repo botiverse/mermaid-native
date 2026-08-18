@@ -130,6 +130,32 @@ public data class EntityRelationship(
 
 public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE }
 
+/** Minimal platform-neutral model for the Mermaid xychart family. */
+public data class XyChartDiagram(
+    val title: String? = null,
+    val xAxis: XyAxis,
+    val yAxis: NumericAxis,
+    val series: List<XySeries>,
+) : MermaidDiagram
+
+public data class XyAxis(
+    val title: String? = null,
+    val categories: List<String>,
+)
+
+public data class NumericAxis(
+    val title: String? = null,
+    val minimum: Double,
+    val maximum: Double,
+)
+
+public data class XySeries(
+    val kind: XySeriesKind,
+    val values: List<Double>,
+)
+
+public enum class XySeriesKind { LINE, BAR }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

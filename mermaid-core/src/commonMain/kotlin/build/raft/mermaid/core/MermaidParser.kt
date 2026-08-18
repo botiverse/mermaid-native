@@ -22,6 +22,7 @@ public object MermaidParser {
             header.text.startsWith("pie", ignoreCase = true) -> parsePie(statements)
             header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
             header.text.equals("erDiagram", ignoreCase = true) -> parseEntityRelationship(statements)
+            XY_HEADER.matches(header.text) -> parseXyChart(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -367,6 +368,97 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseXyChart(statements: List<SourceStatement>): MermaidParseResult {
+        var title: String? = null
+        var titleSeen = false
+        var xAxis: XyAxis? = null
+        var yAxis: NumericAxis? = null
+        val series = mutableListOf<XySeries>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+
+        statements.drop(1).forEach { statement ->
+            XY_TITLE.matchEntire(statement.text)?.let { match ->
+                val parsedTitle = match.groupValues[1].trim().unquote()
+                if (titleSeen || parsedTitle.isEmpty()) {
+                    diagnostics += unsupported(statement, "Duplicate xychart title")
+                } else {
+                    titleSeen = true
+                    title = parsedTitle
+                }
+                return@forEach
+            }
+            XY_X_AXIS.matchEntire(statement.text)?.let { match ->
+                if (xAxis != null) {
+                    diagnostics += unsupported(statement, "Duplicate xychart x-axis")
+                } else {
+                    val categories = match.groupValues[2].csvTokens()
+                    if (categories.isEmpty() || categories.any { it.isEmpty() }) {
+                        diagnostics += unsupported(statement, "x-axis requires non-empty categories")
+                    } else {
+                        xAxis = XyAxis(match.groupValues[1].ifEmpty { null }, categories)
+                    }
+                }
+                return@forEach
+            }
+            XY_Y_AXIS.matchEntire(statement.text)?.let { match ->
+                if (yAxis != null) {
+                    diagnostics += unsupported(statement, "Duplicate xychart y-axis")
+                } else {
+                    val minimum = match.groupValues[2].toDouble()
+                    val maximum = match.groupValues[3].toDouble()
+                    if (minimum >= maximum) {
+                        diagnostics += MermaidDiagnostic(
+                            MermaidDiagnosticCode.INVALID_VALUE,
+                            "y-axis minimum must be lower than maximum",
+                            statement.location,
+                        )
+                    } else {
+                        yAxis = NumericAxis(match.groupValues[1].ifEmpty { null }, minimum, maximum)
+                    }
+                }
+                return@forEach
+            }
+            XY_SERIES.matchEntire(statement.text)?.let { match ->
+                val values = match.groupValues[2].csvTokens().mapNotNull { it.toDoubleOrNull() }
+                val rawCount = match.groupValues[2].split(',').size
+                if (values.isEmpty() || values.size != rawCount || values.any { !it.isFinite() }) {
+                    diagnostics += unsupported(statement, "xychart series requires numeric values")
+                } else {
+                    series += XySeries(XySeriesKind.valueOf(match.groupValues[1].uppercase()), values)
+                }
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported xychart syntax")
+        }
+
+        val x = xAxis
+        val y = yAxis
+        if (x == null) diagnostics += unsupported(statements.first(), "xychart requires one x-axis")
+        if (y == null) diagnostics += unsupported(statements.first(), "xychart requires one y-axis")
+        if (series.isEmpty()) diagnostics += unsupported(statements.first(), "xychart requires at least one series")
+        if (x != null) {
+            series.forEachIndexed { index, item ->
+                if (item.values.size != x.categories.size) {
+                    diagnostics += MermaidDiagnostic(
+                        MermaidDiagnosticCode.INVALID_VALUE,
+                        "Series ${index + 1} has ${item.values.size} values for ${x.categories.size} categories",
+                        statements.first().location,
+                    )
+                }
+                if (y != null && item.values.any { it < y.minimum || it > y.maximum }) {
+                    diagnostics += MermaidDiagnostic(
+                        MermaidDiagnosticCode.INVALID_VALUE,
+                        "Series ${index + 1} contains a value outside the y-axis range",
+                        statements.first().location,
+                    )
+                }
+            }
+        }
+        return if (diagnostics.isEmpty() && x != null && y != null) {
+            MermaidParseResult.Success(XyChartDiagram(title, x, y, series.toList()))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -414,7 +506,20 @@ public object MermaidParser {
         "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)--" +
             "(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
+    private val NUMBER = "-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?"
+    private val XY_HEADER = Regex("^xychart-beta$", RegexOption.IGNORE_CASE)
+    private val XY_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
+    private val XY_X_AXIS = Regex("^x-axis(?:\\s+\"([^\"]+)\")?\\s+\\[([^]]+)]$", RegexOption.IGNORE_CASE)
+    private val XY_Y_AXIS = Regex("^y-axis(?:\\s+\"([^\"]+)\")?\\s+($NUMBER)\\s*-->\\s*($NUMBER)$", RegexOption.IGNORE_CASE)
+    private val XY_SERIES = Regex("^(line|bar)\\s+\\[([^]]+)]$", RegexOption.IGNORE_CASE)
 }
+
+private fun String.csvTokens(): List<String> = split(',').map { it.trim().unquote() }
+
+private fun String.unquote(): String =
+    if (length >= 2 && ((first() == '"' && last() == '"') || (first() == '\'' && last() == '\''))) {
+        substring(1, lastIndex)
+    } else this
 
 private data class SourceStatement(
     val text: String,
