@@ -43,4 +43,3 @@ body:
       description: Platform, Kotlin/Gradle versions, and relevant host details.
     validations:
       required: true
-

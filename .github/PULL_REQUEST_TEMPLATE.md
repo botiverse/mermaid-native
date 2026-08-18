@@ -30,4 +30,3 @@
 - [ ] PR title uses Conventional Commits (`feat(core): ...`, `fix(parser): ...`, `docs: ...`)
 - [ ] Commit author/committer and `Signed-off-by` identify the actual contributor
 - [ ] This PR is small enough for an independent review
-
