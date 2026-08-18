@@ -5,6 +5,8 @@ import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
+import build.raft.mermaid.core.StateDiagram
+import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -16,6 +18,7 @@ import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.ScenePoint
 import build.raft.mermaid.layout.SceneRect
+import build.raft.mermaid.layout.SceneColor
 import build.raft.mermaid.layout.SceneSize
 import build.raft.mermaid.layout.StrokePattern
 import build.raft.mermaid.layout.TextAnchor
@@ -41,6 +44,105 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene = when (diagram) {
         is FlowchartDiagram -> layoutFlowchart(diagram, textMeasurer, config)
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
+        is StateDiagram -> layoutState(diagram, textMeasurer, config)
+    }
+
+    private fun layoutState(
+        diagram: StateDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val style = TextStyle()
+        val sizes = diagram.states.associate { state ->
+            state.id to if (state.kind != StateNodeKind.STATE) {
+                SceneSize(24.0, 24.0)
+            } else {
+                val text = textMeasurer.measure(state.label, style)
+                SceneSize(max(88.0, text.width + 32.0), max(40.0, text.height + 20.0))
+            }
+        }
+        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
+        val contentWidth = if (horizontal) {
+            sizes.values.sumOf { it.width } + config.nodeGap * max(0, sizes.size - 1)
+        } else {
+            sizes.values.maxOfOrNull { it.width } ?: 0.0
+        }
+        val contentHeight = if (horizontal) {
+            sizes.values.maxOfOrNull { it.height } ?: 0.0
+        } else {
+            sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1)
+        }
+        val width = contentWidth + config.padding * 2
+        val height = contentHeight + config.padding * 2
+        val rects = linkedMapOf<String, SceneRect>()
+        var cursor = config.padding
+        diagram.states.forEach { state ->
+            val size = sizes.getValue(state.id)
+            val forward = if (horizontal) {
+                SceneRect(cursor, config.padding + (contentHeight - size.height) / 2, size.width, size.height)
+            } else {
+                SceneRect(config.padding + (contentWidth - size.width) / 2, cursor, size.width, size.height)
+            }
+            rects[state.id] = when (diagram.direction) {
+                FlowDirection.RL -> forward.copy(x = width - config.padding - (forward.x - config.padding) - size.width)
+                FlowDirection.BT -> forward.copy(y = height - config.padding - (forward.y - config.padding) - size.height)
+                else -> forward
+            }
+            cursor += (if (horizontal) size.width else size.height) + config.nodeGap
+        }
+
+        val commands = mutableListOf<DrawCommand>()
+        diagram.transitions.forEach { transition ->
+            val source = rects[transition.from] ?: return@forEach
+            val target = rects[transition.to] ?: return@forEach
+            val anchors = edgeAnchors(source, target, horizontal)
+            commands += DrawLine(anchors.first, anchors.second)
+            commands += arrowHead(anchors.first, anchors.second)
+            if (transition.label.isNotEmpty()) {
+                commands += DrawText(
+                    transition.label,
+                    ScenePoint((anchors.first.x + anchors.second.x) / 2, (anchors.first.y + anchors.second.y) / 2 - 8.0),
+                    TextAnchor.MIDDLE,
+                    style,
+                )
+            }
+        }
+        diagram.states.forEach { state ->
+            val rect = rects.getValue(state.id)
+            when (state.kind) {
+                StateNodeKind.STATE -> {
+                    commands += DrawRect(rect = rect, cornerRadius = 8.0)
+                    commands += DrawText(
+                        state.label,
+                        ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),
+                        TextAnchor.MIDDLE,
+                        style,
+                    )
+                }
+                StateNodeKind.START -> commands += DrawRect(
+                    rect = rect,
+                    cornerRadius = rect.width / 2,
+                    fill = SceneColor("#334155"),
+                    stroke = SceneColor("#334155"),
+                )
+                StateNodeKind.END -> {
+                    commands += DrawRect(rect = rect, cornerRadius = rect.width / 2)
+                    val inset = 5.0
+                    commands += DrawRect(
+                        rect = SceneRect(
+                            x = rect.x + inset,
+                            y = rect.y + inset,
+                            width = rect.width - inset * 2,
+                            height = rect.height - inset * 2,
+                        ),
+                        cornerRadius = (rect.width - inset * 2) / 2,
+                        fill = SceneColor("#334155"),
+                        stroke = SceneColor("#334155"),
+                    )
+                }
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutFlowchart(

@@ -10,6 +10,10 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.StateDiagram
+import build.raft.mermaid.core.StateNode
+import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.StateTransition
 
 /** A normalized parser vector derived from the pinned beautiful-mermaid reference. */
 public data class MermaidParserFixture(
@@ -46,5 +50,21 @@ public object MermaidParserFixtures {
         ),
     )
 
-    public val all: List<MermaidParserFixture> = listOf(flowchart, sequence)
+    public val state: MermaidParserFixture = MermaidParserFixture(
+        name = "minimal-state",
+        source = "stateDiagram-v2; [*] --> Idle; Idle --> [*]: stop",
+        expected = StateDiagram(
+            states = listOf(
+                StateNode("__start_0", "", StateNodeKind.START),
+                StateNode("Idle", "Idle"),
+                StateNode("__end_1", "", StateNodeKind.END),
+            ),
+            transitions = listOf(
+                StateTransition("__start_0", "Idle"),
+                StateTransition("Idle", "__end_1", "stop"),
+            ),
+        ),
+    )
+
+    public val all: List<MermaidParserFixture> = listOf(flowchart, sequence, state)
 }

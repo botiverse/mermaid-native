@@ -20,3 +20,7 @@ byte-for-byte, so the image cannot silently drift from the renderer.
 The SVGs are deterministic goldens for the common renderer. Kuikly and other
 native host samples will be added as those adapters acquire public runnable
 APIs.
+
+`state-lifecycle.mmd` is an original compatibility fixture based on the
+documented `stateDiagram-v2` syntax at pinned Mermaid revision
+`04ee3364045d6573f84034d3c9368cc50233a92f`; it is not copied renderer output.
