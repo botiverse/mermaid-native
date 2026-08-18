@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="240" viewBox="0 0 280 240" role="img">
+  <line x1="68" y1="64" x2="68" y2="216" stroke="#475569" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <line x1="212" y1="64" x2="212" y2="216" stroke="#475569" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <line x1="68" y1="104" x2="212" y2="104" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="212,104 203,108.5 203,99.5" fill="#475569"/>
+  <text x="140" y="96" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Hello Bob!</text>
+  <line x1="212" y1="160" x2="68" y2="160" stroke="#475569" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="68,160 77,155.5 77,164.5" fill="#475569"/>
+  <text x="140" y="152" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Hi Alice!</text>
+  <rect x="24" y="24" width="88" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="68" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Alice</text>
+  <rect x="168" y="24" width="88" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="212" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Bob</text>
+</svg>

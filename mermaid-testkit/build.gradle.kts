@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":mermaid-core"))
             api(project(":mermaid-layout-api"))
+            api(project(":mermaid-layout-simple"))
             api(project(":mermaid-render-svg"))
         }
         commonTest.dependencies { implementation(kotlin("test")) }

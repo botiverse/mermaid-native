@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="138.8" height="280" viewBox="0 0 138.8 280" role="img">
+  <line x1="69.4" y1="64" x2="69.4" y2="120" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="69.4,120 64.9,111 73.9,111" fill="#475569"/>
+  <line x1="69.4" y1="160" x2="69.4" y2="216" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="69.4,216 64.9,207 73.9,207" fill="#475569"/>
+  <rect x="29.4" y="24" width="80" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="69.4" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Start</text>
+  <rect x="24" y="120" width="90.8" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="69.4" y="144.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Process</text>
+  <rect x="29.4" y="216" width="80" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="69.4" y="240.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">End</text>
+</svg>
