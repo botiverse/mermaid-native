@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible parser, layout, renderer, or publication problem
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include secrets or private diagram content. Remove sensitive source before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Exact artifact version or commit SHA.
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - mermaid-core
+        - mermaid-layout-api
+        - mermaid-layout-simple
+        - mermaid-render-svg
+        - mermaid-kuikly
+        - mermaid-testkit
+        - publication or CI
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal redacted source, expected result, actual result, and exact command.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Platform, Kotlin/Gradle versions, and relevant host details.
+    validations:
+      required: true
+
