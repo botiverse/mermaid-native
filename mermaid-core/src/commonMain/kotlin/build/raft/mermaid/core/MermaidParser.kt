@@ -20,6 +20,7 @@ public object MermaidParser {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> parseSequence(statements)
             STATE_HEADER.matches(header.text) -> parseState(statements)
             header.text.startsWith("pie", ignoreCase = true) -> parsePie(statements)
+            header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -239,6 +240,54 @@ public object MermaidParser {
         ) else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseClass(statements: List<SourceStatement>): MermaidParseResult {
+        val classes = linkedMapOf<String, ClassDefinition>()
+        val relationships = mutableListOf<ClassRelationship>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+
+        fun ensure(id: String) { if (id !in classes) classes[id] = ClassDefinition(id) }
+        statements.drop(1).forEach { statement ->
+            CLASS_DECLARATION.matchEntire(statement.text)?.let {
+                val id = it.groupValues[1]
+                val label = it.groupValues[2].ifEmpty { id }
+                classes[id] = classes[id]?.copy(label = label) ?: ClassDefinition(id, label)
+                return@forEach
+            }
+            CLASS_MEMBER.matchEntire(statement.text)?.let {
+                val id = it.groupValues[1]
+                val marker = it.groupValues[2]
+                val signature = it.groupValues[3].trim()
+                if (marker.isEmpty() && signature in CLASS_VISIBILITY_MARKERS) {
+                    diagnostics += unsupported(statement, "Class member visibility requires a signature")
+                    return@forEach
+                }
+                ensure(id)
+                val visibility = when (marker) {
+                    "-" -> ClassVisibility.PRIVATE
+                    "#" -> ClassVisibility.PROTECTED
+                    "~" -> ClassVisibility.PACKAGE
+                    else -> ClassVisibility.PUBLIC
+                }
+                val member = ClassMember(signature, visibility)
+                classes[id] = classes.getValue(id).copy(members = classes.getValue(id).members + member)
+                return@forEach
+            }
+            CLASS_RELATION.matchEntire(statement.text)?.let {
+                val kind = when (it.groupValues[2]) {
+                    "<|--" -> ClassRelationshipKind.INHERITANCE
+                    else -> ClassRelationshipKind.ASSOCIATION
+                }
+                ensure(it.groupValues[1]); ensure(it.groupValues[3])
+                relationships += ClassRelationship(it.groupValues[1], it.groupValues[3], kind)
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -276,6 +325,10 @@ public object MermaidParser {
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
     private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
+    private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
+    private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
+    private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")
+    private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
 }
 
 private data class SourceStatement(

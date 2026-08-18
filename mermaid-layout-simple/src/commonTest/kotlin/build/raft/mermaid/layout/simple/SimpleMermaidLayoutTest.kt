@@ -1,6 +1,11 @@
 package build.raft.mermaid.layout.simple
 
 import build.raft.mermaid.core.FlowDirection
+import build.raft.mermaid.core.ClassDefinition
+import build.raft.mermaid.core.ClassDiagram
+import build.raft.mermaid.core.ClassMember
+import build.raft.mermaid.core.ClassRelationship
+import build.raft.mermaid.core.ClassRelationshipKind
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
@@ -28,6 +33,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun classDiagramProducesDeterministicBoxAndRelationship() {
+        val diagram = ClassDiagram(
+            classes = listOf(
+                ClassDefinition("Animal", members = listOf(ClassMember("String name"))),
+                ClassDefinition("Duck"),
+            ),
+            relationships = listOf(ClassRelationship("Animal", "Duck", ClassRelationshipKind.INHERITANCE)),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawLine>().size)
+    }
+
     @Test
     fun pieProducesDeterministicSlicesAndShowDataLegend() {
         val diagram = PieDiagram(title = "Pets", showData = true, sections = listOf(PieSection("Dogs", 3.0), PieSection("Cats", 1.0)))

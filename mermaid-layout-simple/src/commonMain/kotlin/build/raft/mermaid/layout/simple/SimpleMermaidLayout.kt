@@ -2,6 +2,9 @@ package build.raft.mermaid.layout.simple
 
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowchartDiagram
+import build.raft.mermaid.core.ClassDiagram
+import build.raft.mermaid.core.ClassVisibility
+import build.raft.mermaid.core.ClassRelationshipKind
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
@@ -51,6 +54,62 @@ public object SimpleMermaidLayout : DiagramLayout {
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
         is PieDiagram -> layoutPie(diagram, textMeasurer, config)
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
+        is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
+    }
+
+    private fun layoutClass(diagram: ClassDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val style = TextStyle()
+        val sizes = diagram.classes.associate { klass ->
+            val lines = listOf(klass.label) + klass.members.map { member ->
+                val prefix = when (member.visibility) {
+                    ClassVisibility.PUBLIC -> "+"
+                    ClassVisibility.PRIVATE -> "-"
+                    ClassVisibility.PROTECTED -> "#"
+                    ClassVisibility.PACKAGE -> "~"
+                }
+                "$prefix${member.signature}"
+            }
+            klass.id to SceneSize(max(120.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0), max(48.0, lines.size * 22.0 + 16.0))
+        }
+        val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
+        val height = sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1) + config.padding * 2
+        val rects = linkedMapOf<String, SceneRect>()
+        var y = config.padding
+        diagram.classes.forEach { klass ->
+            val size = sizes.getValue(klass.id)
+            rects[klass.id] = SceneRect(config.padding, y, size.width, size.height)
+            y += size.height + config.nodeGap
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.relationships.forEach { relation ->
+            val source = rects[relation.from] ?: return@forEach
+            val target = rects[relation.to] ?: return@forEach
+            val sourceBottom = ScenePoint(source.x + source.width / 2, source.y + source.height)
+            val targetTop = ScenePoint(target.x + target.width / 2, target.y)
+            val (from, to) = when (relation.kind) {
+                ClassRelationshipKind.INHERITANCE -> targetTop to sourceBottom
+                ClassRelationshipKind.ASSOCIATION -> sourceBottom to targetTop
+            }
+            commands += DrawLine(from, to)
+            commands += arrowHead(from, to)
+        }
+        diagram.classes.forEach { klass ->
+            val rect = rects.getValue(klass.id)
+            commands += DrawRect(rect, cornerRadius = 4.0)
+            val lines = listOf(klass.label) + klass.members.map { member ->
+                val prefix = when (member.visibility) {
+                    ClassVisibility.PUBLIC -> "+"
+                    ClassVisibility.PRIVATE -> "-"
+                    ClassVisibility.PROTECTED -> "#"
+                    ClassVisibility.PACKAGE -> "~"
+                }
+                "$prefix${member.signature}"
+            }
+            lines.forEachIndexed { index, line ->
+                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutState(
