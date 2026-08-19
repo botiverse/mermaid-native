@@ -17,7 +17,7 @@ pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports titl
 quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels and finite normalized points; full family parity is not complete.
 radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.
 railroad,railroad,not_started,no,no,no,no,Four official railroad dialects share this family entry.
-requirementDiagram,requirementDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
+requirementDiagram,requirementDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports requirement and element blocks plus satisfies/verifies relationships; full family parity is not complete.
 sankey,sankey,not_started,no,no,no,no,Official syntax family; implementation is not started.
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset only; full family parity is not complete.
 stateDiagram,stateDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports stateDiagram/stateDiagram-v2 aliases directions aliases transitions and terminal states; full family parity is not complete.
