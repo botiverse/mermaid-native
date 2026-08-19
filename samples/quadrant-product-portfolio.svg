@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="460" viewBox="0 0 640 460" role="img">
+  <text x="320" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Product portfolio</text>
+  <rect x="92" y="58" width="524" height="350" rx="0" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <line x1="354" y1="58" x2="354" y2="408" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="92" y1="233" x2="616" y2="233" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <text x="92" y="430" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Low reach</text>
+  <text x="616" y="430" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">High reach</text>
+  <text x="82" y="408" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Low engagement</text>
+  <text x="82" y="68" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">High engagement</text>
+  <text x="606" y="78" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Expand</text>
+  <text x="102" y="78" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Promote</text>
+  <text x="102" y="396" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Re-evaluate</text>
+  <text x="606" y="396" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Improve</text>
+  <polygon points="249.2,193 254.2,198 249.2,203 244.2,198" fill="#2563eb"/>
+  <text x="257.2" y="191" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Campaign A</text>
+  <polygon points="485,315.5 490,320.5 485,325.5 480,320.5" fill="#2563eb"/>
+  <text x="493" y="313.5" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Campaign B</text>
+</svg>

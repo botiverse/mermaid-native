@@ -41,6 +41,9 @@ import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.GanttSection
 import build.raft.mermaid.core.GanttTask
 import build.raft.mermaid.core.GanttTaskStatus
+import build.raft.mermaid.core.QuadrantAxis
+import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.QuadrantPoint
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -276,6 +279,29 @@ public object MermaidExamples {
         )),
     )
 
+    public val quadrantProductPortfolio: MermaidExample = MermaidExample(
+        path = "samples/quadrant-product-portfolio.mmd",
+        source = """
+            quadrantChart
+              title Product portfolio
+              x-axis Low reach --> High reach
+              y-axis Low engagement --> High engagement
+              quadrant-1 Expand
+              quadrant-2 Promote
+              quadrant-3 Re-evaluate
+              quadrant-4 Improve
+              Campaign A: [0.3, 0.6]
+              Campaign B: [0.75, 0.25]
+        """.trimIndent(),
+        expected = QuadrantChartDiagram(
+            "Product portfolio",
+            QuadrantAxis("Low reach", "High reach"),
+            QuadrantAxis("Low engagement", "High engagement"),
+            listOf("Expand", "Promote", "Re-evaluate", "Improve"),
+            listOf(QuadrantPoint("Campaign A", 0.3, 0.6), QuadrantPoint("Campaign B", 0.75, 0.25)),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         mindmapProjectPlan,
         xyQuarterlySales,
@@ -288,5 +314,6 @@ public object MermaidExamples {
         stateLifecycle,
         ganttReleasePlan,
         timelineProductHistory,
+        quadrantProductPortfolio,
     )
 }

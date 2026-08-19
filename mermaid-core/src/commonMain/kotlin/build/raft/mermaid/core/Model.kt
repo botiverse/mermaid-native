@@ -179,6 +179,16 @@ public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 public data class TimelineDiagram(val title: String?, val events: List<TimelineEvent>) : MermaidDiagram
 public data class TimelineEvent(val period: String, val labels: List<String>)
 
+public data class QuadrantChartDiagram(
+    val title: String?,
+    val xAxis: QuadrantAxis,
+    val yAxis: QuadrantAxis,
+    val quadrantLabels: List<String?>,
+    val points: List<QuadrantPoint>,
+) : MermaidDiagram
+public data class QuadrantAxis(val lowLabel: String, val highLabel: String)
+public data class QuadrantPoint(val label: String, val x: Double, val y: Double)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
