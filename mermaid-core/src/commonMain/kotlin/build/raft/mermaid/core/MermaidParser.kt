@@ -525,6 +525,14 @@ public object MermaidParser {
                 )
                 return@forEach
             }
+            if (parsed.explicitId && parsed.id.startsWith("__mindmap_")) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.INVALID_VALUE,
+                    "Mindmap explicit ids cannot use the reserved generated prefix: ${parsed.id}",
+                    line.location,
+                )
+                return@forEach
+            }
 
             val parent = if (depth == 0) null else ancestors.getOrNull(depth - 1)
             if (depth > 0 && parent == null) {

@@ -163,6 +163,7 @@ class MermaidParserTest {
             "mindmap\n  root((Root))\n\tChild",
             "mindmap\n  root((Root))\n    Child\n        Grandchild",
             "mindmap\n  root((Root))\n    unsupported { shape",
+            "mindmap\n  root((Root))\n    __mindmap_1[Reserved]",
         ).forEach { source ->
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
