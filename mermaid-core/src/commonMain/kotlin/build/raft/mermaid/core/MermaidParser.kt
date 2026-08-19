@@ -30,6 +30,7 @@ public object MermaidParser {
             header.text.equals("journey", ignoreCase = true) -> parseUserJourney(statements)
             header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
             header.text.equals("requirementDiagram", ignoreCase = true) -> parseRequirement(statements)
+            header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -929,6 +930,42 @@ public object MermaidParser {
         }
     }
 
+    private fun parseKanban(source: String): MermaidParseResult {
+        val lines = source.toMindmapLines()
+        val columns = mutableListOf<KanbanColumn>()
+        val ids = mutableSetOf<String>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var current: KanbanColumn? = null
+        fun finish(line: MindmapSourceLine) {
+            current?.let {
+                if (it.cards.isEmpty()) diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban columns require at least one card")
+                columns += it
+            }
+        }
+        lines.drop(1).forEach { line ->
+            val match = KANBAN_ITEM.matchEntire(line.text)
+            if (line.hasTab || match == null || line.indent !in setOf(0, 2)) {
+                diagnostics += unsupported(SourceStatement(line.text, line.location), "Unsupported kanban syntax or indentation")
+                return@forEach
+            }
+            val id = match.groupValues[1]
+            val label = match.groupValues[2].trim()
+            if (label.isEmpty() || !ids.add(id)) {
+                diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban IDs and labels must be unique and non-empty")
+            } else if (line.indent == 0) {
+                finish(line)
+                current = KanbanColumn(id, label, emptyList())
+            } else {
+                val column = current
+                if (column == null) diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban cards require a parent column")
+                else current = column.copy(cards = column.cards + KanbanCard(id, label))
+            }
+        }
+        lines.lastOrNull()?.let(::finish)
+        if (columns.isEmpty()) diagnostics += unsupported(SourceStatement("kanban", SourceLocation(1, 1)), "Kanban requires at least one column")
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(KanbanDiagram(columns)) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1000,6 +1037,7 @@ public object MermaidParser {
         "^merge\\s+($IDENTIFIER)(?:\\s+id\\s*:\\s*\"([^\"]+)\")?(?:\\s+type\\s*:\\s*(NORMAL|REVERSE|HIGHLIGHT))?(?:\\s+tag\\s*:\\s*\"([^\"]+)\")?$",
         RegexOption.IGNORE_CASE,
     )
+    private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
 }
 
 private fun parseIsoDay(value: String): Int? {

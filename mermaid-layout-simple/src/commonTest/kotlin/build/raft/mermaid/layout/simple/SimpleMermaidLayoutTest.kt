@@ -59,6 +59,9 @@ import build.raft.mermaid.core.GitGraphBranch
 import build.raft.mermaid.core.GitGraphCommit
 import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
+import build.raft.mermaid.core.KanbanCard
+import build.raft.mermaid.core.KanbanColumn
+import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -333,6 +336,18 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.commands.filterIsInstance<DrawLine>().size >= 7)
         assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("main", "develop", "beta", "merge")))
         assertTrue(first.width >= 480.0 && first.height > 0.0)
+    }
+
+    @Test fun kanbanProducesMeasuredDeterministicColumnsAndCards() {
+        val longLabel = "A".repeat(100)
+        val diagram = KanbanDiagram(listOf(KanbanColumn("todo", "Todo", listOf(KanbanCard("a", longLabel))), KanbanColumn("done", "Done", listOf(KanbanCard("b", "Ship")))))
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(4, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == longLabel })
+        val measuredLabel = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 12.0))
+        assertTrue(first.commands.filterIsInstance<DrawRect>().first().rect.width >= measuredLabel.width + 32.0)
+        assertTrue(first.width > 0.0 && first.height > 0.0)
     }
 
     @Test
