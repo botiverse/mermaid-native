@@ -79,6 +79,11 @@ import build.raft.mermaid.core.UsecaseActor
 import build.raft.mermaid.core.UsecaseNode
 import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.core.UsecaseRelationship
+import build.raft.mermaid.core.ArchitectureDiagram
+import build.raft.mermaid.core.ArchitectureGroup
+import build.raft.mermaid.core.ArchitectureService
+import build.raft.mermaid.core.ArchitectureEdge
+import build.raft.mermaid.core.ArchitecturePort
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -93,6 +98,15 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val architectureApiStack: MermaidExample = MermaidExample(
+        "samples/architecture-api-stack.mmd",
+        "architecture-beta\ngroup api(cloud)[API & gateway]\nservice db(database)[Database] in api\nservice server(server)[Application server] in api\ndb:B --> T:server",
+        ArchitectureDiagram(
+            groups = listOf(ArchitectureGroup("api", "cloud", "API & gateway")),
+            services = listOf(ArchitectureService("db", "database", "Database", "api"), ArchitectureService("server", "server", "Application server", "api")),
+            edges = listOf(ArchitectureEdge("db", ArchitecturePort.BOTTOM, "server", ArchitecturePort.TOP, true)),
+        ),
+    )
     public val usecaseOrderFlow: MermaidExample = MermaidExample(
         "samples/usecase-order-flow.mmd",
         "usecase-beta\ndirection LR\nactor Customer(\"Customer\")\nCheckout(\"Place order\")\nReceipt[Create receipt]\nCustomer -- \"starts\" --> Checkout\nCheckout --> Receipt",
@@ -520,6 +534,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        architectureApiStack,
         usecaseOrderFlow,
         vennTeamOverlap,
         treemapProductMix,

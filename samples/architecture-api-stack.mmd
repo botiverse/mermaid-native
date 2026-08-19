@@ -1,0 +1,5 @@
+architecture-beta
+group api(cloud)[API & gateway]
+service db(database)[Database] in api
+service server(server)[Application server] in api
+db:B --> T:server
