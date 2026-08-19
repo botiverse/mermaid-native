@@ -258,18 +258,21 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene {
         val body = TextStyle(fontSize = 12.0)
         val heading = TextStyle(fontSize = 14.0, fontWeight = 600)
-        val contentLines = diagram.requirements.flatMap { requirement ->
+        val headingLines = diagram.requirements.map { "requirement ${it.name}" } +
+            diagram.elements.map { "element ${it.name}" }
+        val bodyLines = diagram.requirements.flatMap { requirement ->
             listOf(
-                "requirement ${requirement.name}",
                 "id: ${requirement.id}",
                 "text: ${requirement.text}",
                 "risk: ${requirement.risk.name.lowercase()}",
                 "verify: ${requirement.verifyMethod.name.lowercase()}",
             )
         } + diagram.elements.flatMap { element ->
-            listOf("element ${element.name}", "type: ${element.type}", "docref: ${element.docRef}")
+            listOf("type: ${element.type}", "docref: ${element.docRef}")
         }
-        val cardWidth = max(270.0, contentLines.maxOf { textMeasurer.measure(it, body).width } + 24.0)
+        val measuredHeadingWidth = headingLines.maxOf { textMeasurer.measure(it, heading).width }
+        val measuredBodyWidth = bodyLines.maxOf { textMeasurer.measure(it, body).width }
+        val cardWidth = max(270.0, max(measuredHeadingWidth, measuredBodyWidth) + 24.0)
         val requirementHeight = 132.0
         val elementHeight = 96.0
         val columnGap = 150.0
@@ -284,14 +287,38 @@ public object SimpleMermaidLayout : DiagramLayout {
             rects[element.name] = SceneRect(elementX, config.padding + index * (elementHeight + rowGap), cardWidth, elementHeight)
         }
         val commands = mutableListOf<DrawCommand>()
+        var relationshipRightExtent = rects.values.maxOf { it.x + it.width }
         diagram.relationships.forEach { relationship ->
             val from = rects.getValue(relationship.from)
             val to = rects.getValue(relationship.to)
+            val sameColumn = from.x == to.x
             val leftward = from.x > to.x
             val start = ScenePoint(if (leftward) from.x else from.x + from.width, from.y + from.height / 2.0)
-            val end = ScenePoint(if (leftward) to.x + to.width else to.x, to.y + to.height / 2.0)
-            commands += DrawLine(start, end)
-            val direction = if (leftward) -1.0 else 1.0
+            val end = ScenePoint(if (leftward || sameColumn) to.x + to.width else to.x, to.y + to.height / 2.0)
+            val label = when (relationship.kind) {
+                RequirementRelationshipKind.SATISFIES -> "satisfies"
+                RequirementRelationshipKind.VERIFIES -> "verifies"
+            }
+            val labelPosition = if (sameColumn) {
+                val outerX = max(from.x + from.width, to.x + to.width) + 36.0
+                commands += DrawPolyline(
+                    listOf(
+                        start,
+                        ScenePoint(outerX, start.y),
+                        ScenePoint(outerX, end.y),
+                        end,
+                    ),
+                )
+                relationshipRightExtent = max(
+                    relationshipRightExtent,
+                    outerX + 8.0 + textMeasurer.measure(label, body).width,
+                )
+                ScenePoint(outerX + 8.0, (start.y + end.y) / 2.0 - 4.0)
+            } else {
+                commands += DrawLine(start, end)
+                ScenePoint((start.x + end.x) / 2.0, (start.y + end.y) / 2.0 - 8.0)
+            }
+            val direction = if (leftward || sameColumn) -1.0 else 1.0
             commands += DrawPolygon(
                 listOf(
                     end,
@@ -300,11 +327,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 ),
                 fill = SceneColor("#111827"),
             )
-            val label = when (relationship.kind) {
-                RequirementRelationshipKind.SATISFIES -> "satisfies"
-                RequirementRelationshipKind.VERIFIES -> "verifies"
-            }
-            commands += DrawText(label, ScenePoint((start.x + end.x) / 2.0, (start.y + end.y) / 2.0 - 8.0), TextAnchor.MIDDLE, body)
+            commands += DrawText(
+                label,
+                labelPosition,
+                if (sameColumn) TextAnchor.START else TextAnchor.MIDDLE,
+                body,
+            )
         }
         diagram.requirements.forEach { requirement ->
             val rect = rects.getValue(requirement.name)
@@ -328,7 +356,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText("type: ${element.type}", ScenePoint(rect.x + 12.0, rect.y + 54.0), style = body)
             commands += DrawText("docref: ${element.docRef}", ScenePoint(rect.x + 12.0, rect.y + 74.0), style = body)
         }
-        val width = rects.values.maxOf { it.x + it.width } + config.padding
+        val width = relationshipRightExtent + config.padding
         val height = rects.values.maxOf { it.y + it.height } + config.padding
         return LayoutScene(width, height, commands)
     }

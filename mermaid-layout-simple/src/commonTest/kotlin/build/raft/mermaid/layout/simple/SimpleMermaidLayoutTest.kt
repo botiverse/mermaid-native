@@ -84,6 +84,56 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "satisfies" })
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "id: AUTH-1" })
     }
+
+    @Test
+    fun requirementCardsMeasureLongHeadingsWithTheRenderedStyle() {
+        val requirementName = "r".repeat(100)
+        val elementName = "e".repeat(100)
+        val diagram = RequirementDiagram(
+            requirements = listOf(RequirementDefinition(requirementName, "REQ-1", "Text", RequirementRisk.LOW, RequirementVerifyMethod.TEST)),
+            elements = listOf(RequirementElement(elementName, "application", "docs/example.md")),
+            relationships = emptyList(),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val heading = build.raft.mermaid.layout.TextStyle(fontSize = 14.0, fontWeight = 600)
+        val requiredWidth = maxOf(
+            FixedWidthTextMeasurer.measure("requirement $requirementName", heading).width,
+            FixedWidthTextMeasurer.measure("element $elementName", heading).width,
+        ) + 24.0
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.width >= requiredWidth })
+    }
+
+    @Test
+    fun sameColumnRequirementRelationshipsRouteOutsideCardsInBothDirections() {
+        val diagram = RequirementDiagram(
+            requirements = listOf(
+                RequirementDefinition("r1", "REQ-1", "First", RequirementRisk.LOW, RequirementVerifyMethod.TEST),
+                RequirementDefinition("r2", "REQ-2", "Second", RequirementRisk.MEDIUM, RequirementVerifyMethod.INSPECTION),
+            ),
+            elements = listOf(
+                RequirementElement("e1", "application", "docs/one.md"),
+                RequirementElement("e2", "service", "docs/two.md"),
+            ),
+            relationships = listOf(
+                RequirementRelationship("r1", "r2", RequirementRelationshipKind.SATISFIES),
+                RequirementRelationship("e2", "e1", RequirementRelationshipKind.VERIFIES),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val routes = scene.commands.filterIsInstance<DrawPolyline>()
+        assertEquals(2, routes.size)
+        routes.forEach { route ->
+            assertEquals(4, route.points.size)
+            val (start, outerStart, outerEnd, end) = route.points
+            assertEquals(start.x, end.x)
+            assertTrue(outerStart.x > start.x)
+            assertEquals(outerStart.x, outerEnd.x)
+            assertEquals(start.y, outerStart.y)
+            assertEquals(end.y, outerEnd.y)
+            assertTrue(start.y != end.y)
+        }
+    }
+
     @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
