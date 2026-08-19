@@ -191,17 +191,28 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutPacket(diagram: PacketDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val labelStyle = TextStyle(fontSize = 11.0)
         val rangeStyle = TextStyle(fontSize = 9.0, color = SceneColor("#475569"))
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val bitWidth = max(24.0, diagram.fields.maxOf { field ->
-            textMeasurer.measure(field.label, labelStyle).width / (field.endBit - field.startBit + 1) + 10.0
+            val firstRow = field.startBit / PACKET_BITS_PER_ROW
+            val lastRow = field.endBit / PACKET_BITS_PER_ROW
+            val narrowestSegmentBits = (firstRow..lastRow).minOf { row ->
+                val rowStart = row * PACKET_BITS_PER_ROW
+                val segmentStart = maxOf(field.startBit, rowStart)
+                val segmentEnd = minOf(field.endBit, rowStart + PACKET_BITS_PER_ROW - 1)
+                segmentEnd - segmentStart + 1
+            }
+            (textMeasurer.measure(field.label, labelStyle).width + 20.0) / narrowestSegmentBits
         })
         val titleHeight = if (diagram.title == null) 0.0 else 34.0
         val rowHeight = 60.0
         val rowCount = diagram.fields.maxOf { it.endBit } / PACKET_BITS_PER_ROW + 1
-        val width = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
+        val gridWidth = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
+        val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
+        val width = max(gridWidth, titleWidth)
         val height = config.padding * 2 + titleHeight + rowCount * rowHeight
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let {
-            commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600))
+            commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = titleStyle)
         }
         diagram.fields.forEach { field ->
             val firstRow = field.startBit / PACKET_BITS_PER_ROW

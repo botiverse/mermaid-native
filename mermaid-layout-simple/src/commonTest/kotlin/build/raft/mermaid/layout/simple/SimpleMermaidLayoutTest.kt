@@ -154,6 +154,34 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun packetCrossRowSegmentsMeasureRepeatedLabelsIndependently() {
+        val label = "A".repeat(50)
+        val scene = SimpleMermaidLayout.layout(
+            PacketDiagram(null, listOf(PacketField(31, 32, label))),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        val labelStyle = build.raft.mermaid.layout.TextStyle(fontSize = 11.0)
+        val requiredWidth = FixedWidthTextMeasurer.measure(label, labelStyle).width + 20.0
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.width >= requiredWidth })
+    }
+
+    @Test
+    fun packetSceneMeasuresLongTitleWithRenderedStyle() {
+        val title = "T".repeat(100)
+        val config = LayoutConfig()
+        val scene = SimpleMermaidLayout.layout(
+            PacketDiagram(title, listOf(PacketField(0, 0, "F"))),
+            FixedWidthTextMeasurer,
+            config,
+        )
+        val titleStyle = build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600)
+        val requiredWidth = FixedWidthTextMeasurer.measure(title, titleStyle).width + config.padding * 2
+        assertTrue(scene.width >= requiredWidth)
+    }
+
+    @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
             title = "Sales",
