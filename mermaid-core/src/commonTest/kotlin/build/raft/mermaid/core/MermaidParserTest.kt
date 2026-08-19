@@ -814,4 +814,34 @@ class MermaidParserTest {
             "usecase-beta;\nactor User\nLogin(\"Login\")",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesArchitectureGroupsServicesAndPorts() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in api\nservice app(server)[Server] in api\ndb:R --> L:app\napp:T -- B:db"))
+        assertEquals(
+            ArchitectureDiagram(
+                groups = listOf(ArchitectureGroup("api", "cloud", "API")),
+                services = listOf(ArchitectureService("db", "database", "Database", "api"), ArchitectureService("app", "server", "Server", "api")),
+                edges = listOf(
+                    ArchitectureEdge("db", ArchitecturePort.RIGHT, "app", ArchitecturePort.LEFT, true),
+                    ArchitectureEdge("app", ArchitecturePort.TOP, "db", ArchitecturePort.BOTTOM, false),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedArchitectureFailsClosed() {
+        listOf(
+            "architecture-beta",
+            "architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in missing",
+            "architecture-beta\nservice db(database)[Database]\nservice db(server)[Duplicate]",
+            "architecture-beta\ngroup api(cloud)[API]\nservice api(server)[Duplicate namespace]",
+            "architecture-beta\nservice db(database)[Database]\ndb:R --> L:missing",
+            "architecture-beta\nservice db(database)[Database]\ndb:R --> L:db",
+            "architecture-beta\nservice db(database)[Database]\ndb:R ..> L:db",
+            "architecture-beta\ngroup api(cloud)[API]\ngroup child(cloud)[Child] in api\nservice db(database)[Database] in api",
+            "architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in api\nstyle db fill:red",
+            "architecture-beta;\nservice db(database)[Database]",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

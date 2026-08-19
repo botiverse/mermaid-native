@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img">
+  <rect x="24" y="24" width="214.4" height="296" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="38" y="48" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#111827">API &amp; gateway</text>
+  <text x="224.4" y="48" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="400" fill="#475569">cloud</text>
+  <polyline points="131.2,142 131.2,154 131.2,174 131.2,186" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="131.2,186 126.7,177 135.7,177" fill="#475569"/>
+  <rect x="40" y="66" width="182.4" height="76" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="131.2" y="93" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#475569">database</text>
+  <text x="131.2" y="117" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Database</text>
+  <rect x="40" y="186" width="182.4" height="76" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="131.2" y="213" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#475569">server</text>
+  <text x="131.2" y="237" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Application server</text>
+</svg>

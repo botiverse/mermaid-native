@@ -36,6 +36,8 @@ import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.core.VennDiagram
 import build.raft.mermaid.core.UsecaseDiagram
 import build.raft.mermaid.core.UsecaseShape
+import build.raft.mermaid.core.ArchitectureDiagram
+import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -99,6 +101,81 @@ public object SimpleMermaidLayout : DiagramLayout {
         is TreemapDiagram -> layoutTreemap(diagram, textMeasurer, config)
         is VennDiagram -> layoutVenn(diagram, textMeasurer, config)
         is UsecaseDiagram -> layoutUsecase(diagram, textMeasurer, config)
+        is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
+    }
+
+    private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val textStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val groupStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
+        val iconStyle = TextStyle(fontSize = 10.0, color = SceneColor("#475569"))
+        val serviceLabelWidth = diagram.services.maxOfOrNull { textMeasurer.measure(it.label, textStyle).width } ?: 0.0
+        val serviceIconWidth = diagram.services.maxOfOrNull { textMeasurer.measure(it.icon, iconStyle).width } ?: 0.0
+        val groupLabelWidth = diagram.groups.maxOfOrNull { textMeasurer.measure(it.label, groupStyle).width } ?: 0.0
+        val groupIconWidth = diagram.groups.maxOfOrNull { textMeasurer.measure(it.icon, iconStyle).width } ?: 0.0
+        val nodeWidth = max(150.0, max(serviceLabelWidth, serviceIconWidth) + 42.0)
+        val columnWidth = max(nodeWidth + 32.0, groupLabelWidth + groupIconWidth + 60.0)
+        val hasStandalone = diagram.services.any { it.groupId == null }
+        val columns = diagram.groups.map { it.id } + if (hasStandalone) listOf<String?>(null) else emptyList()
+        val columnIndex = columns.withIndex().associate { it.value to it.index }
+        val servicePoints = diagram.services.map { service ->
+            val localIndex = diagram.services.filter { it.groupId == service.groupId }.indexOf(service)
+            val index = columnIndex.getValue(service.groupId)
+            service.id to ScenePoint(config.padding + index * (columnWidth + 40.0) + columnWidth / 2.0, config.padding + 80.0 + localIndex * 120.0)
+        }.toMap()
+        val groupRects = diagram.groups.mapIndexed { index, group ->
+            val members = diagram.services.filter { it.groupId == group.id }
+            group.id to SceneRect(config.padding + index * (columnWidth + 40.0), config.padding, columnWidth, max(140.0, members.size * 120.0 + 56.0))
+        }.toMap()
+        val maxRows = columns.maxOf { column -> diagram.services.count { it.groupId == column } }
+        val width = max(720.0, config.padding * 2 + columns.size * columnWidth + (columns.size - 1) * 40.0)
+        val height = max(420.0, config.padding * 2 + maxRows * 120.0 + 56.0)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.groups.forEach { group ->
+            val rect = groupRects.getValue(group.id)
+            commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
+            commands += DrawText(group.label, ScenePoint(rect.x + 14.0, rect.y + 24.0), style = groupStyle)
+            commands += DrawText(group.icon, ScenePoint(rect.x + rect.width - 14.0, rect.y + 24.0), anchor = TextAnchor.END, style = iconStyle)
+        }
+        diagram.edges.forEach { edge ->
+            val from = servicePoints.getValue(edge.sourceId)
+            val to = servicePoints.getValue(edge.targetId)
+            val start = architecturePortPoint(from, edge.sourcePort, nodeWidth / 2.0, 38.0)
+            val end = architecturePortPoint(to, edge.targetPort, nodeWidth / 2.0, 38.0)
+            val startVector = architecturePortVector(edge.sourcePort)
+            val endVector = architecturePortVector(edge.targetPort)
+            val startOutside = ScenePoint(start.x + startVector.x * 12.0, start.y + startVector.y * 12.0)
+            val endOutside = ScenePoint(end.x + endVector.x * 12.0, end.y + endVector.y * 12.0)
+            val bridge = if (startVector.x != 0.0) ScenePoint(endOutside.x, startOutside.y) else ScenePoint(startOutside.x, endOutside.y)
+            val points = listOf(start, startOutside, bridge, endOutside, end).map { it.canonical() }.fold(emptyList<ScenePoint>()) { result, point ->
+                if (result.lastOrNull() == point) result else result + point
+            }
+            commands += DrawPolyline(points, stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            if (edge.directed) {
+                val arrow = arrowHead(endOutside, end)
+                commands += arrow.copy(points = arrow.points.map { it.canonical() })
+            }
+        }
+        diagram.services.forEach { service ->
+            val point = servicePoints.getValue(service.id)
+            commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 6.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+            commands += DrawText(service.icon, point.copy(y = point.y - 11.0).canonical(), anchor = TextAnchor.MIDDLE, style = iconStyle)
+            commands += DrawText(service.label, point.copy(y = point.y + 13.0).canonical(), anchor = TextAnchor.MIDDLE, style = textStyle)
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun architecturePortPoint(center: ScenePoint, port: ArchitecturePort, halfWidth: Double, halfHeight: Double): ScenePoint = when (port) {
+        ArchitecturePort.TOP -> ScenePoint(center.x, center.y - halfHeight)
+        ArchitecturePort.BOTTOM -> ScenePoint(center.x, center.y + halfHeight)
+        ArchitecturePort.LEFT -> ScenePoint(center.x - halfWidth, center.y)
+        ArchitecturePort.RIGHT -> ScenePoint(center.x + halfWidth, center.y)
+    }
+
+    private fun architecturePortVector(port: ArchitecturePort): ScenePoint = when (port) {
+        ArchitecturePort.TOP -> ScenePoint(0.0, -1.0)
+        ArchitecturePort.BOTTOM -> ScenePoint(0.0, 1.0)
+        ArchitecturePort.LEFT -> ScenePoint(-1.0, 0.0)
+        ArchitecturePort.RIGHT -> ScenePoint(1.0, 0.0)
     }
 
     private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

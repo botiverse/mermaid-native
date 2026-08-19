@@ -80,6 +80,11 @@ import build.raft.mermaid.core.UsecaseActor
 import build.raft.mermaid.core.UsecaseNode
 import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.core.UsecaseRelationship
+import build.raft.mermaid.core.ArchitectureDiagram
+import build.raft.mermaid.core.ArchitectureGroup
+import build.raft.mermaid.core.ArchitectureService
+import build.raft.mermaid.core.ArchitectureEdge
+import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -513,6 +518,39 @@ class SimpleMermaidLayoutTest {
         val firstEdge = scene.commands.filterIsInstance<DrawLine>().first()
         assertTrue(firstEdge.from.x > LayoutConfig().padding + measured.width / 2.0)
         assertTrue(firstEdge.to.x < scene.width - LayoutConfig().padding - measured.width / 2.0)
+    }
+
+    @Test fun architectureProducesDeterministicGroupsServicesAndPortEdges() {
+        val diagram = ArchitectureDiagram(
+            groups = listOf(ArchitectureGroup("api", "cloud", "API")),
+            services = listOf(ArchitectureService("db", "database", "Database", "api"), ArchitectureService("app", "server", "Server", "api")),
+            edges = listOf(ArchitectureEdge("db", ArchitecturePort.BOTTOM, "app", ArchitecturePort.TOP, true)),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "cloud", "Database", "database", "Server", "server")))
+        val edge = first.commands.filterIsInstance<DrawPolyline>().single()
+        assertTrue(edge.points.first().y < edge.points.last().y)
+    }
+
+    @Test fun architectureMeasuresLongGroupsAndKeepsServicesInsideTheirColumns() {
+        val longGroup = "G".repeat(100)
+        val diagram = ArchitectureDiagram(
+            groups = listOf(ArchitectureGroup("one", "cloud", longGroup), ArchitectureGroup("two", "cloud", "Two")),
+            services = listOf(ArchitectureService("a", "server", "A", "one"), ArchitectureService("b", "server", "B", "two")),
+            edges = emptyList(),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val rectangles = scene.commands.filterIsInstance<DrawRect>()
+        val groupOne = rectangles[0].rect
+        val groupTwo = rectangles[1].rect
+        val serviceOne = rectangles[2].rect
+        val serviceTwo = rectangles[3].rect
+        assertTrue(serviceOne.x >= groupOne.x && serviceOne.x + serviceOne.width <= groupOne.x + groupOne.width)
+        assertTrue(serviceTwo.x >= groupTwo.x && serviceTwo.x + serviceTwo.width <= groupTwo.x + groupTwo.width)
+        val measured = FixedWidthTextMeasurer.measure(longGroup, build.raft.mermaid.layout.TextStyle(fontSize = 15.0, fontWeight = 600))
+        assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 32.0)
     }
 
     @Test

@@ -315,6 +315,22 @@ public enum class UsecaseShape { ELLIPSE, RECTANGLE }
 public data class UsecaseNode(val id: String, val label: String, val shape: UsecaseShape)
 public data class UsecaseRelationship(val sourceId: String, val targetId: String, val label: String? = null)
 
+public data class ArchitectureDiagram(
+    val groups: List<ArchitectureGroup>,
+    val services: List<ArchitectureService>,
+    val edges: List<ArchitectureEdge>,
+) : MermaidDiagram
+public data class ArchitectureGroup(val id: String, val icon: String, val label: String)
+public data class ArchitectureService(val id: String, val icon: String, val label: String, val groupId: String? = null)
+public enum class ArchitecturePort { TOP, BOTTOM, LEFT, RIGHT }
+public data class ArchitectureEdge(
+    val sourceId: String,
+    val sourcePort: ArchitecturePort,
+    val targetId: String,
+    val targetPort: ArchitecturePort,
+    val directed: Boolean,
+)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
