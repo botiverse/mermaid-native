@@ -437,7 +437,7 @@ class MermaidParserTest {
 
     @Test
     fun malformedTimelineFailsClosed() {
-        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\ntitle One\ntitle Two\n2024 : Launch")
+        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\n2024 : Launch,", "timeline\ntitle One\ntitle Two\n2024 : Launch")
             .forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
     }
 }
