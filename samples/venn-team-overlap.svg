@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="500" viewBox="0 0 720 500" role="img">
+  <text x="360" y="32" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Team overlap</text>
+  <ellipse cx="268" cy="239" rx="132" ry="132" fill="#60a5fa" fill-opacity="0.28" stroke="#2563eb" stroke-width="2"/>
+  <text x="210.840776" y="215.66298" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Frontend &amp; design</text>
+  <ellipse cx="452" cy="239" rx="127.354796" ry="127.354796" fill="#34d399" fill-opacity="0.28" stroke="#059669" stroke-width="2"/>
+  <text x="507.147737" y="216.624995" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Backend</text>
+  <ellipse cx="360" cy="371" rx="122.082253" ry="122.082253" fill="#fbbf24" fill-opacity="0.28" stroke="#d97706" stroke-width="2"/>
+  <text x="360" y="433.599481" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Platform</text>
+  <text x="360" y="243" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#334155">APIs</text>
+  <text x="360" y="287" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#334155">Shared tooling</text>
+</svg>

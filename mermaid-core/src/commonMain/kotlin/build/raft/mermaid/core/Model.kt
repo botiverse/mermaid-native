@@ -295,6 +295,15 @@ public data class TreemapNode(
     val children: List<TreemapNode> = emptyList(),
 )
 
+/** Minimal platform-neutral model for the Mermaid venn family. */
+public data class VennDiagram(
+    val title: String? = null,
+    val sets: List<VennSet>,
+    val unions: List<VennUnion> = emptyList(),
+) : MermaidDiagram
+public data class VennSet(val id: String, val label: String, val size: Double? = null)
+public data class VennUnion(val setIds: List<String>, val label: String? = null, val size: Double? = null)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

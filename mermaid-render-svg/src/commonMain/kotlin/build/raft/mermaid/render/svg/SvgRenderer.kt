@@ -1,6 +1,7 @@
 package build.raft.mermaid.render.svg
 
 import build.raft.mermaid.layout.DrawCommand
+import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolygon
 import build.raft.mermaid.layout.DrawPolyline
@@ -37,6 +38,12 @@ private fun DrawCommand.toSvg(): String = when (this) {
         append(" width=\"${rect.width.svgNumber()}\" height=\"${rect.height.svgNumber()}\"")
         append(" rx=\"${cornerRadius.svgNumber()}\" fill=\"${fill.value.escapeXml()}\"")
         append(" stroke=\"${stroke.value.escapeXml()}\" stroke-width=\"${strokeWidth.svgNumber()}\"/>")
+    }
+    is DrawEllipse -> buildString {
+        append("<ellipse cx=\"").append(center.x.svgNumber()).append("\" cy=\"").append(center.y.svgNumber())
+        append("\" rx=\"").append(radiusX.svgNumber()).append("\" ry=\"").append(radiusY.svgNumber())
+        append("\" fill=\"").append(fill.value.escapeXml()).append("\" fill-opacity=\"").append(fillOpacity.svgNumber())
+        append("\" stroke=\"").append(stroke.value.escapeXml()).append("\" stroke-width=\"").append(strokeWidth.svgNumber()).append("\"/>")
     }
     is DrawLine -> buildString {
         append("<line x1=\"${from.x.svgNumber()}\" y1=\"${from.y.svgNumber()}\"")
