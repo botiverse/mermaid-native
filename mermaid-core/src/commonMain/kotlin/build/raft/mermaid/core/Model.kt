@@ -189,6 +189,23 @@ public data class QuadrantChartDiagram(
 public data class QuadrantAxis(val lowLabel: String, val highLabel: String)
 public data class QuadrantPoint(val label: String, val x: Double, val y: Double)
 
+/** Minimal platform-neutral model for the Mermaid user journey family. */
+public data class UserJourneyDiagram(
+    val title: String?,
+    val sections: List<UserJourneySection>,
+) : MermaidDiagram
+
+public data class UserJourneySection(
+    val name: String,
+    val tasks: List<UserJourneyTask>,
+)
+
+public data class UserJourneyTask(
+    val label: String,
+    val score: Int,
+    val actors: List<String>,
+)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

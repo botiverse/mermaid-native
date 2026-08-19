@@ -34,3 +34,8 @@ cardinalities without claiming complete ER family parity.
 documented `xychart-beta` syntax at the pinned Mermaid revision. It covers a
 categorical x-axis, numeric y-axis, and deterministic bar/line series without
 claiming complete xychart family parity.
+
+`user-journey-checkout.mmd` is an original compatibility fixture based on the
+documented `journey` syntax at the pinned Mermaid revision. It covers a title,
+ordered sections, bounded scores, and actor lists without claiming complete
+user journey family parity.

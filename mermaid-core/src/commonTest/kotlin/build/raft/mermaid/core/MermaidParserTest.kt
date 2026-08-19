@@ -468,6 +468,38 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesUserJourneySectionsTasksScoresAndActors() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            journey
+              title Checkout journey
+              section Discover
+              Find product: 4: Shopper
+              Review & compare: 3: Shopper, Advisor
+              section Purchase
+              Pay securely: 5: Shopper, Payment service
+        """.trimIndent()))
+        assertEquals(
+            UserJourneyDiagram(
+                "Checkout journey",
+                listOf(
+                    UserJourneySection(
+                        "Discover",
+                        listOf(
+                            UserJourneyTask("Find product", 4, listOf("Shopper")),
+                            UserJourneyTask("Review & compare", 3, listOf("Shopper", "Advisor")),
+                        ),
+                    ),
+                    UserJourneySection(
+                        "Purchase",
+                        listOf(UserJourneyTask("Pay securely", 5, listOf("Shopper", "Payment service"))),
+                    ),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
     fun malformedQuadrantChartFailsClosed() {
         listOf(
             "quadrantChart\nx-axis Low --> High\nCampaign: [0.2, 0.3]",
@@ -477,5 +509,22 @@ class MermaidParserTest {
             "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nquadrant-1 One\nquadrant-1 Two\nCampaign: [0.2, 0.3]",
             "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nclick Campaign\nCampaign: [0.2, 0.3]",
         ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+    }
+
+    @Test
+    fun malformedUserJourneyFailsClosed() {
+        listOf(
+            "journey",
+            "journey\nTask: 4: Actor",
+            "journey\nsection Empty",
+            "journey\nsection A\nTask: 0: Actor",
+            "journey\nsection A\nTask: 6: Actor",
+            "journey\nsection A\nTask: 4:",
+            "journey\ntitle One\ntitle Two\nsection A\nTask: 4: Actor",
+            "journey\nsection A\nTask: 4: Actor,",
+            "journey\nsection A\nunsupported statement",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
+        }
     }
 }

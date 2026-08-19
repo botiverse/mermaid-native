@@ -45,6 +45,9 @@ import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.core.QuadrantPoint
+import build.raft.mermaid.core.UserJourneyDiagram
+import build.raft.mermaid.core.UserJourneySection
+import build.raft.mermaid.core.UserJourneyTask
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -198,6 +201,44 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
         assertEquals(5, first.commands.filterIsInstance<DrawText>().size)
         assertTrue(first.width >= 420.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun userJourneyProducesDeterministicSectionAndTaskCards() {
+        val diagram = UserJourneyDiagram(
+            "Checkout journey",
+            listOf(
+                UserJourneySection(
+                    "Discover",
+                    listOf(
+                        UserJourneyTask("Find product", 4, listOf("Shopper")),
+                        UserJourneyTask("Review & compare", 3, listOf("Shopper", "Advisor")),
+                    ),
+                ),
+                UserJourneySection("Purchase", listOf(UserJourneyTask("Pay securely", 5, listOf("Shopper")))),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Score 3 · Shopper, Advisor" })
+        assertEquals(
+            listOf("#dcfce7", "#fef3c7", "#bbf7d0"),
+            first.commands.filterIsInstance<DrawRect>().filter { it.fill.value != "#e2e8f0" }.map { it.fill.value },
+        )
+        assertTrue(first.width >= 640.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun userJourneyWidthContainsLongTitle() {
+        val title = "A".repeat(100)
+        val diagram = UserJourneyDiagram(
+            title,
+            listOf(UserJourneySection("Section", listOf(UserJourneyTask("Task", 3, listOf("Actor"))))),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
+        assertTrue(scene.width >= measuredTitle.width + 48.0)
     }
 
     @Test

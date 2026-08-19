@@ -26,7 +26,7 @@ timeline,timeline,in_progress,partial,partial,partial,partial,Vertical slice sup
 treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
 treemap,treemap,not_started,no,no,no,no,Official syntax family; implementation is not started.
 usecase,usecase,not_started,no,no,no,no,Official syntax family; implementation is not started.
-userJourney,userJourney,not_started,no,no,no,no,Official syntax family; implementation is not started.
+userJourney,userJourney,in_progress,partial,partial,partial,partial,Vertical slice supports title sections scored tasks and actor lists; full family parity is not complete.
 venn,venn,not_started,no,no,no,no,Official syntax family; implementation is not started.
 wardley,wardley,not_started,no,no,no,no,Official syntax family; implementation is not started.
 xyChart,xyChart,in_progress,partial,partial,partial,partial,Vertical slice supports categorical x-axis numeric y-axis and line/bar series; full family parity is not complete.
