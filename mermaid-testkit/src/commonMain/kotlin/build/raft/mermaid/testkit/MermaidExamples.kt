@@ -71,6 +71,9 @@ import build.raft.mermaid.core.SankeyNode
 import build.raft.mermaid.core.SankeyLink
 import build.raft.mermaid.core.TreemapDiagram
 import build.raft.mermaid.core.TreemapNode
+import build.raft.mermaid.core.VennDiagram
+import build.raft.mermaid.core.VennSet
+import build.raft.mermaid.core.VennUnion
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -85,6 +88,22 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val vennTeamOverlap: MermaidExample = MermaidExample(
+        "samples/venn-team-overlap.mmd",
+        "venn-beta\ntitle \"Team overlap\"\nset Frontend[\"Frontend & design\"]:20\nset Backend:16\nset Platform:12\nunion Frontend,Backend[\"APIs\"]:5\nunion Frontend,Backend,Platform[\"Shared tooling\"]:2",
+        VennDiagram(
+            title = "Team overlap",
+            sets = listOf(
+                VennSet("Frontend", "Frontend & design", 20.0),
+                VennSet("Backend", "Backend", 16.0),
+                VennSet("Platform", "Platform", 12.0),
+            ),
+            unions = listOf(
+                VennUnion(listOf("Frontend", "Backend"), "APIs", 5.0),
+                VennUnion(listOf("Frontend", "Backend", "Platform"), "Shared tooling", 2.0),
+            ),
+        ),
+    )
     public val treemapProductMix: MermaidExample = MermaidExample(
         "samples/treemap-product-mix.mmd",
         "treemap-beta\n\"Products & services\"\n  \"Mobile\": 45\n  \"Web\": 35\n  \"API\": 20",
@@ -486,6 +505,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        vennTeamOverlap,
         treemapProductMix,
         sankeyEnergyFlow,
         blockServiceMap,

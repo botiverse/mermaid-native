@@ -33,8 +33,10 @@ import build.raft.mermaid.core.BlockDiagram
 import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.core.TreemapDiagram
 import build.raft.mermaid.core.TreemapNode
+import build.raft.mermaid.core.VennDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
+import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolygon
 import build.raft.mermaid.layout.DrawPolyline
@@ -93,6 +95,71 @@ public object SimpleMermaidLayout : DiagramLayout {
         is BlockDiagram -> layoutBlock(diagram, textMeasurer, config)
         is SankeyDiagram -> layoutSankey(diagram, textMeasurer, config)
         is TreemapDiagram -> layoutTreemap(diagram, textMeasurer, config)
+        is VennDiagram -> layoutVenn(diagram, textMeasurer, config)
+    }
+
+    private fun layoutVenn(diagram: VennDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val unionStyle = TextStyle(fontSize = 12.0, fontWeight = 600, color = SceneColor("#334155"))
+        val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label }
+        val measuredWidth = max(
+            labels.maxOf { textMeasurer.measure(it, labelStyle).width },
+            diagram.title?.let { textMeasurer.measure(it, titleStyle).width } ?: 0.0,
+        )
+        val width = max(720.0, measuredWidth + config.padding * 2 + 80.0).xyCoordinate()
+        val height = if (diagram.sets.size == 2) 420.0 else 500.0
+        val centerX = width / 2.0
+        val titleOffset = if (diagram.title == null) 0.0 else 34.0
+        val centers = if (diagram.sets.size == 2) {
+            listOf(ScenePoint(centerX - 82.0, 220.0 + titleOffset), ScenePoint(centerX + 82.0, 220.0 + titleOffset))
+        } else {
+            listOf(
+                ScenePoint(centerX - 92.0, 205.0 + titleOffset),
+                ScenePoint(centerX + 92.0, 205.0 + titleOffset),
+                ScenePoint(centerX, 337.0 + titleOffset),
+            )
+        }
+        val maxSize = diagram.sets.mapNotNull { it.size }.maxOrNull()
+        val radii = diagram.sets.map { set ->
+            val size = set.size
+            if (maxSize == null || size == null) 132.0 else (88.0 + 44.0 * sqrt(size / maxSize)).xyCoordinate()
+        }
+        val centroid = ScenePoint(centers.sumOf { it.x } / centers.size, centers.sumOf { it.y } / centers.size)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let {
+            commands += DrawText(it, ScenePoint(centerX, 32.0), anchor = TextAnchor.MIDDLE, style = titleStyle)
+        }
+        diagram.sets.forEachIndexed { index, set ->
+            val center = centers[index]
+            val radius = radii[index]
+            commands += DrawEllipse(
+                center = center.canonical(),
+                radiusX = radius,
+                radiusY = radius,
+                fill = SceneColor(VENN_COLORS[index % VENN_COLORS.size]),
+                fillOpacity = 0.28,
+                stroke = SceneColor(VENN_STROKES[index % VENN_STROKES.size]),
+                strokeWidth = 2.0,
+            )
+            val dx = center.x - centroid.x
+            val dy = center.y - centroid.y
+            val length = sqrt(dx * dx + dy * dy).coerceAtLeast(1.0)
+            val labelPoint = ScenePoint(center.x + dx / length * radius * 0.48, center.y + dy / length * radius * 0.48 + 4.0)
+            commands += DrawText(set.label, labelPoint.canonical(), anchor = TextAnchor.MIDDLE, style = labelStyle)
+        }
+        val centerById = diagram.sets.mapIndexed { index, set -> set.id to centers[index] }.toMap()
+        diagram.unions.forEach { union ->
+            union.label?.let { label ->
+                val memberCenters = union.setIds.map { centerById.getValue(it) }
+                val point = ScenePoint(
+                    memberCenters.sumOf { it.x } / memberCenters.size,
+                    memberCenters.sumOf { it.y } / memberCenters.size + 4.0,
+                )
+                commands += DrawText(label, point.canonical(), anchor = TextAnchor.MIDDLE, style = unionStyle)
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutTreemap(diagram: TreemapDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
@@ -1250,6 +1317,8 @@ public object SimpleMermaidLayout : DiagramLayout {
     private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
     private val JOURNEY_SCORE_COLORS = listOf("#fee2e2", "#fecaca", "#fed7aa", "#fef3c7", "#dcfce7", "#bbf7d0")
     private val TREEMAP_COLORS = listOf(SceneColor("#dbeafe"), SceneColor("#dcfce7"), SceneColor("#fef3c7"), SceneColor("#fce7f3"))
+    private val VENN_COLORS = listOf("#60a5fa", "#34d399", "#fbbf24")
+    private val VENN_STROKES = listOf("#2563eb", "#059669", "#d97706")
 
     private fun TreemapNode.treemapWeight(): Double = value ?: children.sumOf { it.treemapWeight() }
     private fun List<TreemapNode>.flattenTreemap(): List<TreemapNode> = flatMap { listOf(it) + it.children.flattenTreemap() }

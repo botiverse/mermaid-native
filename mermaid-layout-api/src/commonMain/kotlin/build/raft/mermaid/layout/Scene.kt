@@ -36,6 +36,16 @@ public data class DrawRect(
     val strokeWidth: Double = 1.5,
 ) : DrawCommand
 
+public data class DrawEllipse(
+    val center: ScenePoint,
+    val radiusX: Double,
+    val radiusY: Double,
+    val fill: SceneColor = SceneColor("#ffffff"),
+    val fillOpacity: Double = 1.0,
+    val stroke: SceneColor = SceneColor("#334155"),
+    val strokeWidth: Double = 1.5,
+) : DrawCommand
+
 public data class DrawLine(
     val from: ScenePoint,
     val to: ScenePoint,

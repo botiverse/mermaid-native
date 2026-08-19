@@ -741,4 +741,49 @@ class MermaidParserTest {
             "treemap-beta;\n\"Root\"\n  \"Leaf\": 1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesVennSetsAndUnions() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                "venn-beta\ntitle \"Product overlap\"\nset A[\"Mobile\"]:20\nset \"Web Team\":12\nset API\nunion A,\"Web Team\"[\"Shared UI\"]:3\nunion A,\"Web Team\",API[\"Platform\"]",
+            ),
+        )
+        assertEquals(
+            VennDiagram(
+                title = "Product overlap",
+                sets = listOf(VennSet("A", "Mobile", 20.0), VennSet("Web Team", "Web Team", 12.0), VennSet("API", "API")),
+                unions = listOf(
+                    VennUnion(listOf("A", "Web Team"), "Shared UI", 3.0),
+                    VennUnion(listOf("A", "Web Team", "API"), "Platform"),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test fun parsesVennUnionWithCommaInsideQuotedSetId() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("venn-beta\nset \"A,B\"\nset C\nunion \"A,B\",C[\"Shared\"]"),
+        )
+        val diagram = assertIs<VennDiagram>(result.diagram)
+        assertEquals(listOf("A,B", "C"), diagram.unions.single().setIds)
+    }
+
+    @Test fun malformedVennFailsClosed() {
+        listOf(
+            "venn-beta",
+            "venn-beta\nset A\nset A",
+            "venn-beta\nset A\nset B\nset C\nset D",
+            "venn-beta\nset A:0\nset B",
+            "venn-beta\nset A:NaN\nset B",
+            "venn-beta\nset A\nset B\nunion A,C",
+            "venn-beta\nset A\nset B\nunion A,A",
+            "venn-beta\nset A\nset B\nunion A,B\nunion B,A",
+            "venn-beta\nset A\nset B\nunion A",
+            "venn-beta\nset A\nset B\nunion A,B:Infinity",
+            "venn-beta\nset A\nset B\ntext T[\"Deferred\"]",
+            "venn-beta\nset A\nset B\nstyle A fill:red",
+            "venn-beta;\nset A\nset B",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

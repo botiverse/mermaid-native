@@ -6,9 +6,11 @@ import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.StateTransition
 import build.raft.mermaid.layout.DrawText
+import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.ScenePoint
+import build.raft.mermaid.layout.SceneColor
 import build.raft.mermaid.layout.TextAnchor
 import build.raft.mermaid.layout.TextStyle
 import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
@@ -55,5 +57,18 @@ class SvgRendererTest {
         assertTrue(svg.contains("font-family=\"A&amp;B&quot;\""))
         assertFalse(svg.contains("<unsafe"))
         assertTrue(svg.endsWith("</svg>\n"))
+    }
+
+    @Test
+    fun serializerWritesEllipseGeometryOpacityAndEscapedColors() {
+        val svg = SvgRenderer.render(
+            LayoutScene(
+                100.0,
+                80.0,
+                listOf(DrawEllipse(ScenePoint(50.0, 40.0), 30.0, 20.0, SceneColor("url(&unsafe)"), 0.28)),
+            ),
+        )
+        assertTrue(svg.contains("<ellipse cx=\"50\" cy=\"40\" rx=\"30\" ry=\"20\""))
+        assertTrue(svg.contains("fill=\"url(&amp;unsafe)\" fill-opacity=\"0.28\""))
     }
 }

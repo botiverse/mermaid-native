@@ -72,9 +72,13 @@ import build.raft.mermaid.core.SankeyNode
 import build.raft.mermaid.core.SankeyLink
 import build.raft.mermaid.core.TreemapDiagram
 import build.raft.mermaid.core.TreemapNode
+import build.raft.mermaid.core.VennDiagram
+import build.raft.mermaid.core.VennSet
+import build.raft.mermaid.core.VennUnion
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
+import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
@@ -457,6 +461,33 @@ class SimpleMermaidLayoutTest {
             assertTrue(rectangle.rect.width >= 0.0)
             assertTrue(rectangle.rect.height >= 0.0)
         }
+    }
+
+    @Test fun vennProducesMeasuredDeterministicOverlappingEllipsesAndLabels() {
+        val longLabel = "V".repeat(100)
+        val diagram = VennDiagram(
+            title = "Overlap",
+            sets = listOf(VennSet("A", longLabel, 20.0), VennSet("B", "Beta", 12.0), VennSet("C", "Gamma")),
+            unions = listOf(VennUnion(listOf("A", "B"), "AB"), VennUnion(listOf("A", "B", "C"), "All")),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(first.commands.filterIsInstance<DrawEllipse>().all { it.radiusX > 0.0 && it.radiusY > 0.0 })
+        assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Overlap", longLabel, "Beta", "Gamma", "AB", "All")))
+        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600))
+        assertTrue(first.width >= measured.width + 80.0)
+    }
+
+    @Test fun vennMeasuresLongTitleWithItsRenderedStyle() {
+        val title = "T".repeat(100)
+        val scene = SimpleMermaidLayout.layout(
+            VennDiagram(title, listOf(VennSet("A", "Alpha"), VennSet("B", "Beta"))),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        val measured = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
+        assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 80.0)
     }
 
     @Test
