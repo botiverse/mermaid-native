@@ -1,0 +1,12 @@
+requirementDiagram
+  requirement secure_login {
+    id: AUTH-1
+    text: Users authenticate securely
+    risk: high
+    verifymethod: test
+  }
+  element mobile_client {
+    type: application
+    docref: docs/auth.md
+  }
+  mobile_client - satisfies -> secure_login

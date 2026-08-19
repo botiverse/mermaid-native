@@ -51,6 +51,13 @@ import build.raft.mermaid.core.GitGraphBranch
 import build.raft.mermaid.core.GitGraphCommit
 import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
+import build.raft.mermaid.core.RequirementDefinition
+import build.raft.mermaid.core.RequirementDiagram
+import build.raft.mermaid.core.RequirementElement
+import build.raft.mermaid.core.RequirementRelationship
+import build.raft.mermaid.core.RequirementRelationshipKind
+import build.raft.mermaid.core.RequirementRisk
+import build.raft.mermaid.core.RequirementVerifyMethod
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -83,6 +90,39 @@ public object MermaidExamples {
                 GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
                 GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
                 GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true),
+            ),
+        ),
+    )
+
+    public val requirementLogin: MermaidExample = MermaidExample(
+        path = "samples/requirement-login.mmd",
+        source = """
+            requirementDiagram
+              requirement secure_login {
+                id: AUTH-1
+                text: Users authenticate securely
+                risk: high
+                verifymethod: test
+              }
+              element mobile_client {
+                type: application
+                docref: docs/auth.md
+              }
+              mobile_client - satisfies -> secure_login
+        """.trimIndent(),
+        expected = RequirementDiagram(
+            requirements = listOf(
+                RequirementDefinition(
+                    name = "secure_login",
+                    id = "AUTH-1",
+                    text = "Users authenticate securely",
+                    risk = RequirementRisk.HIGH,
+                    verifyMethod = RequirementVerifyMethod.TEST,
+                ),
+            ),
+            elements = listOf(RequirementElement("mobile_client", "application", "docs/auth.md")),
+            relationships = listOf(
+                RequirementRelationship("mobile_client", "secure_login", RequirementRelationshipKind.SATISFIES),
             ),
         ),
     )
@@ -365,6 +405,7 @@ public object MermaidExamples {
 
     public val all: List<MermaidExample> = listOf(
         gitGraphReleaseFlow,
+        requirementLogin,
         mindmapProjectPlan,
         xyQuarterlySales,
         entityRelationshipCustomerOrder,

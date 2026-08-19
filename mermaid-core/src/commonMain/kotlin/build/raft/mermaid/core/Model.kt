@@ -228,6 +228,38 @@ public data class GitGraphCommit(
 
 public enum class GitGraphCommitType { NORMAL, REVERSE, HIGHLIGHT }
 
+/** Minimal platform-neutral model for the Mermaid requirementDiagram family. */
+public data class RequirementDiagram(
+    val requirements: List<RequirementDefinition>,
+    val elements: List<RequirementElement>,
+    val relationships: List<RequirementRelationship>,
+) : MermaidDiagram
+
+public data class RequirementDefinition(
+    val name: String,
+    val id: String,
+    val text: String,
+    val risk: RequirementRisk,
+    val verifyMethod: RequirementVerifyMethod,
+)
+
+public enum class RequirementRisk { LOW, MEDIUM, HIGH }
+public enum class RequirementVerifyMethod { ANALYSIS, DEMONSTRATION, INSPECTION, TEST }
+
+public data class RequirementElement(
+    val name: String,
+    val type: String,
+    val docRef: String,
+)
+
+public data class RequirementRelationship(
+    val from: String,
+    val to: String,
+    val kind: RequirementRelationshipKind,
+)
+
+public enum class RequirementRelationshipKind { SATISFIES, VERIFIES }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

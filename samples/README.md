@@ -39,3 +39,8 @@ claiming complete xychart family parity.
 documented `journey` syntax at the pinned Mermaid revision. It covers a title,
 ordered sections, bounded scores, and actor lists without claiming complete
 user journey family parity.
+
+`requirement-login.mmd` is an original compatibility fixture based on the
+documented `requirementDiagram` syntax at the pinned Mermaid revision. It
+covers a requirement, an element, and a satisfies relationship without
+claiming complete requirement family parity.

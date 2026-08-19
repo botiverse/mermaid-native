@@ -500,6 +500,38 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesRequirementAndElementWithTypedRelationship() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                requirementDiagram
+                  requirement secure_login {
+                    id: AUTH-1
+                    text: Users authenticate securely
+                    risk: high
+                    verifymethod: test
+                  }
+                  element mobile_client {
+                    type: application
+                    docref: docs/auth.md
+                  }
+                  mobile_client - verifies -> secure_login
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            RequirementDiagram(
+                requirements = listOf(
+                    RequirementDefinition("secure_login", "AUTH-1", "Users authenticate securely", RequirementRisk.HIGH, RequirementVerifyMethod.TEST),
+                ),
+                elements = listOf(RequirementElement("mobile_client", "application", "docs/auth.md")),
+                relationships = listOf(RequirementRelationship("mobile_client", "secure_login", RequirementRelationshipKind.VERIFIES)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
     fun malformedQuadrantChartFailsClosed() {
         listOf(
             "quadrantChart\nx-axis Low --> High\nCampaign: [0.2, 0.3]",
@@ -565,5 +597,19 @@ class MermaidParserTest {
             "gitGraph\ncommit type: UNKNOWN",
             "gitGraph\ncherry-pick id: \"one\"",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
+    fun malformedRequirementDiagramFailsClosed() {
+        listOf(
+            "requirementDiagram\n  requirement r {\n    id: R-1\n  }",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    id: R-2\n    text: Text\n    risk: low\n    verifymethod: test\n  }",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: extreme\n    verifymethod: test\n  }",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: low\n    verifymethod: test",
+            "requirementDiagram\n  element e {\n    type: app\n    docref: doc.md\n  }\n  e - copies -> missing",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: low\n    verifymethod: test\n  }\n  e - satisfies -> r",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
+        }
     }
 }

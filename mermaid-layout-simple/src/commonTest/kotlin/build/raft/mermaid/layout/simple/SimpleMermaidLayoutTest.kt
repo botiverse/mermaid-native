@@ -36,6 +36,13 @@ import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.GanttSection
 import build.raft.mermaid.core.GanttTask
 import build.raft.mermaid.core.GanttTaskStatus
+import build.raft.mermaid.core.RequirementDefinition
+import build.raft.mermaid.core.RequirementDiagram
+import build.raft.mermaid.core.RequirementElement
+import build.raft.mermaid.core.RequirementRelationship
+import build.raft.mermaid.core.RequirementRelationshipKind
+import build.raft.mermaid.core.RequirementRisk
+import build.raft.mermaid.core.RequirementVerifyMethod
 import build.raft.mermaid.core.NumericAxis
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNode
@@ -63,6 +70,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun requirementProducesDeterministicCardsAndRelationship() {
+        val diagram = RequirementDiagram(
+            requirements = listOf(RequirementDefinition("secure_login", "AUTH-1", "Users authenticate securely", RequirementRisk.HIGH, RequirementVerifyMethod.TEST)),
+            elements = listOf(RequirementElement("mobile_client", "application", "docs/auth.md")),
+            relationships = listOf(RequirementRelationship("mobile_client", "secure_login", RequirementRelationshipKind.SATISFIES)),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, second)
+        assertEquals(2, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "satisfies" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "id: AUTH-1" })
+    }
     @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(

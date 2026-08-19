@@ -25,6 +25,8 @@ import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
+import build.raft.mermaid.core.RequirementDiagram
+import build.raft.mermaid.core.RequirementRelationshipKind
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -77,6 +79,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
+        is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
     }
 
     private fun layoutGitGraph(
@@ -245,6 +248,88 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
+        return LayoutScene(width, height, commands)
+    }
+
+    private fun layoutRequirement(
+        diagram: RequirementDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val heading = TextStyle(fontSize = 14.0, fontWeight = 600)
+        val contentLines = diagram.requirements.flatMap { requirement ->
+            listOf(
+                "requirement ${requirement.name}",
+                "id: ${requirement.id}",
+                "text: ${requirement.text}",
+                "risk: ${requirement.risk.name.lowercase()}",
+                "verify: ${requirement.verifyMethod.name.lowercase()}",
+            )
+        } + diagram.elements.flatMap { element ->
+            listOf("element ${element.name}", "type: ${element.type}", "docref: ${element.docRef}")
+        }
+        val cardWidth = max(270.0, contentLines.maxOf { textMeasurer.measure(it, body).width } + 24.0)
+        val requirementHeight = 132.0
+        val elementHeight = 96.0
+        val columnGap = 150.0
+        val rowGap = 28.0
+        val requirementX = config.padding
+        val elementX = config.padding + cardWidth + columnGap
+        val rects = linkedMapOf<String, SceneRect>()
+        diagram.requirements.forEachIndexed { index, requirement ->
+            rects[requirement.name] = SceneRect(requirementX, config.padding + index * (requirementHeight + rowGap), cardWidth, requirementHeight)
+        }
+        diagram.elements.forEachIndexed { index, element ->
+            rects[element.name] = SceneRect(elementX, config.padding + index * (elementHeight + rowGap), cardWidth, elementHeight)
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.relationships.forEach { relationship ->
+            val from = rects.getValue(relationship.from)
+            val to = rects.getValue(relationship.to)
+            val leftward = from.x > to.x
+            val start = ScenePoint(if (leftward) from.x else from.x + from.width, from.y + from.height / 2.0)
+            val end = ScenePoint(if (leftward) to.x + to.width else to.x, to.y + to.height / 2.0)
+            commands += DrawLine(start, end)
+            val direction = if (leftward) -1.0 else 1.0
+            commands += DrawPolygon(
+                listOf(
+                    end,
+                    ScenePoint(end.x - direction * 9.0, end.y - 5.0),
+                    ScenePoint(end.x - direction * 9.0, end.y + 5.0),
+                ),
+                fill = SceneColor("#111827"),
+            )
+            val label = when (relationship.kind) {
+                RequirementRelationshipKind.SATISFIES -> "satisfies"
+                RequirementRelationshipKind.VERIFIES -> "verifies"
+            }
+            commands += DrawText(label, ScenePoint((start.x + end.x) / 2.0, (start.y + end.y) / 2.0 - 8.0), TextAnchor.MIDDLE, body)
+        }
+        diagram.requirements.forEach { requirement ->
+            val rect = rects.getValue(requirement.name)
+            commands += DrawRect(rect, cornerRadius = 4.0)
+            commands += DrawText("requirement ${requirement.name}", ScenePoint(rect.x + 12.0, rect.y + 22.0), style = heading)
+            commands += DrawLine(ScenePoint(rect.x, rect.y + 32.0), ScenePoint(rect.x + rect.width, rect.y + 32.0))
+            listOf(
+                "id: ${requirement.id}",
+                "text: ${requirement.text}",
+                "risk: ${requirement.risk.name.lowercase()}",
+                "verify: ${requirement.verifyMethod.name.lowercase()}",
+            ).forEachIndexed { index, line ->
+                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 52.0 + index * 18.0), style = body)
+            }
+        }
+        diagram.elements.forEach { element ->
+            val rect = rects.getValue(element.name)
+            commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor("#eff6ff"))
+            commands += DrawText("element ${element.name}", ScenePoint(rect.x + 12.0, rect.y + 22.0), style = heading)
+            commands += DrawLine(ScenePoint(rect.x, rect.y + 32.0), ScenePoint(rect.x + rect.width, rect.y + 32.0))
+            commands += DrawText("type: ${element.type}", ScenePoint(rect.x + 12.0, rect.y + 54.0), style = body)
+            commands += DrawText("docref: ${element.docRef}", ScenePoint(rect.x + 12.0, rect.y + 74.0), style = body)
+        }
+        val width = rects.values.maxOf { it.x + it.width } + config.padding
+        val height = rects.values.maxOf { it.y + it.height } + config.padding
         return LayoutScene(width, height, commands)
     }
 
