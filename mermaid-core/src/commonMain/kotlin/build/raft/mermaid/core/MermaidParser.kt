@@ -28,6 +28,7 @@ public object MermaidParser {
             header.text.equals("timeline", ignoreCase = true) -> parseTimeline(statements)
             header.text.equals("quadrantChart", ignoreCase = true) -> parseQuadrantChart(statements)
             header.text.equals("journey", ignoreCase = true) -> parseUserJourney(statements)
+            header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -740,6 +741,82 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseGitGraph(statements: List<SourceStatement>): MermaidParseResult {
+        val branches = linkedMapOf("main" to GitGraphBranch("main", null))
+        val heads = mutableMapOf<String, String?>("main" to null)
+        val commits = mutableListOf<GitGraphCommit>()
+        val commitIds = mutableSetOf<String>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var currentBranch = "main"
+        var autoId = 1
+
+        fun nextId(): String {
+            while ("commit-$autoId" in commitIds) autoId += 1
+            return "commit-${autoId++}"
+        }
+
+        fun appendCommit(statement: SourceStatement, match: MatchResult, isMerge: Boolean, sourceBranch: String? = null) {
+            val id = match.groupValues[if (isMerge) 2 else 1].ifEmpty { nextId() }
+            val typeValue = match.groupValues[if (isMerge) 3 else 2]
+            val tag = match.groupValues[if (isMerge) 4 else 3].ifEmpty { null }
+            if (!commitIds.add(id)) {
+                diagnostics += unsupported(statement, "gitGraph commit IDs must be unique")
+                return
+            }
+            val currentHead = heads[currentBranch]
+            val parents = if (isMerge) {
+                val sourceHead = heads[sourceBranch]
+                if (currentHead == null || sourceHead == null) {
+                    commitIds.remove(id)
+                    diagnostics += unsupported(statement, "gitGraph merge requires commits on both branches")
+                    return
+                }
+                listOf(currentHead, sourceHead)
+            } else listOfNotNull(currentHead)
+            val type = typeValue.takeIf { it.isNotEmpty() }
+                ?.uppercase()
+                ?.let(GitGraphCommitType::valueOf)
+                ?: GitGraphCommitType.NORMAL
+            commits += GitGraphCommit(id, currentBranch, parents, type, tag, isMerge)
+            heads[currentBranch] = id
+        }
+
+        statements.drop(1).forEach { statement ->
+            when {
+                GIT_COMMIT.matches(statement.text) -> appendCommit(statement, GIT_COMMIT.matchEntire(statement.text)!!, false)
+                GIT_BRANCH.matches(statement.text) -> {
+                    val name = GIT_BRANCH.matchEntire(statement.text)!!.groupValues[1]
+                    if (name in branches) diagnostics += unsupported(statement, "gitGraph branch names must be unique")
+                    else {
+                        branches[name] = GitGraphBranch(name, heads[currentBranch])
+                        heads[name] = heads[currentBranch]
+                        currentBranch = name
+                    }
+                }
+                GIT_CHECKOUT.matches(statement.text) -> {
+                    val name = GIT_CHECKOUT.matchEntire(statement.text)!!.groupValues[2]
+                    if (name !in branches) diagnostics += unsupported(statement, "gitGraph checkout requires an existing branch")
+                    else currentBranch = name
+                }
+                GIT_MERGE.matches(statement.text) -> {
+                    val match = GIT_MERGE.matchEntire(statement.text)!!
+                    val source = match.groupValues[1]
+                    when {
+                        source !in branches -> diagnostics += unsupported(statement, "gitGraph merge requires an existing branch")
+                        source == currentBranch -> diagnostics += unsupported(statement, "gitGraph cannot merge a branch into itself")
+                        heads[source] == heads[currentBranch] -> diagnostics += unsupported(statement, "gitGraph merge requires divergent branch heads")
+                        else -> appendCommit(statement, match, true, source)
+                    }
+                }
+                else -> diagnostics += unsupported(statement, "Unsupported gitGraph statement")
+            }
+        }
+        if (commits.isEmpty()) diagnostics += unsupported(statements.first(), "gitGraph requires at least one commit")
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(GitGraphDiagram(branches.values.toList(), commits))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -801,6 +878,16 @@ public object MermaidParser {
     private val QUADRANT_LABEL = Regex("^quadrant-([1-4])\\s+(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_POINT = Regex("^(.+?)\\s*:\\s*\\[($NUMBER)\\s*,\\s*($NUMBER)]$")
     private val USER_JOURNEY_TASK = Regex("^(.+?)\\s*:\\s*([1-5])\\s*:\\s*(.+)$")
+    private val GIT_COMMIT = Regex(
+        "^commit(?:\\s+id\\s*:\\s*\"([^\"]+)\")?(?:\\s+type\\s*:\\s*(NORMAL|REVERSE|HIGHLIGHT))?(?:\\s+tag\\s*:\\s*\"([^\"]+)\")?$",
+        RegexOption.IGNORE_CASE,
+    )
+    private val GIT_BRANCH = Regex("^branch\\s+($IDENTIFIER)$", RegexOption.IGNORE_CASE)
+    private val GIT_CHECKOUT = Regex("^(checkout|switch)\\s+($IDENTIFIER)$", RegexOption.IGNORE_CASE)
+    private val GIT_MERGE = Regex(
+        "^merge\\s+($IDENTIFIER)(?:\\s+id\\s*:\\s*\"([^\"]+)\")?(?:\\s+type\\s*:\\s*(NORMAL|REVERSE|HIGHLIGHT))?(?:\\s+tag\\s*:\\s*\"([^\"]+)\")?$",
+        RegexOption.IGNORE_CASE,
+    )
 }
 
 private fun parseIsoDay(value: String): Int? {

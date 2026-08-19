@@ -47,6 +47,10 @@ import build.raft.mermaid.core.QuadrantPoint
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.UserJourneySection
 import build.raft.mermaid.core.UserJourneyTask
+import build.raft.mermaid.core.GitGraphBranch
+import build.raft.mermaid.core.GitGraphCommit
+import build.raft.mermaid.core.GitGraphCommitType
+import build.raft.mermaid.core.GitGraphDiagram
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -61,6 +65,27 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val gitGraphReleaseFlow: MermaidExample = MermaidExample(
+        path = "samples/gitgraph-release-flow.mmd",
+        source = """
+            gitGraph
+              commit id: "base" tag: "v1.0"
+              branch develop
+              commit id: "feature" type: HIGHLIGHT
+              checkout main
+              commit id: "release" type: REVERSE
+              merge develop id: "merge" tag: "v2 & stable"
+        """.trimIndent(),
+        expected = GitGraphDiagram(
+            listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
+            listOf(
+                GitGraphCommit("base", "main", emptyList(), tag = "v1.0"),
+                GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
+                GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
+                GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true),
+            ),
+        ),
+    )
     public val mindmapProjectPlan: MermaidExample = MermaidExample(
         path = "samples/mindmap-project-plan.mmd",
         source = """
@@ -339,6 +364,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        gitGraphReleaseFlow,
         mindmapProjectPlan,
         xyQuarterlySales,
         entityRelationshipCustomerOrder,

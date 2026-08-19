@@ -23,6 +23,8 @@ import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.GitGraphCommitType
+import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -74,6 +76,79 @@ public object SimpleMermaidLayout : DiagramLayout {
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
         is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
+        is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
+    }
+
+    private fun layoutGitGraph(
+        diagram: GitGraphDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val commitStyle = TextStyle(fontSize = 12.0)
+        val tagStyle = TextStyle(fontSize = 11.0, color = SceneColor("#7c3aed"))
+        val labelWidth = (diagram.branches.maxOf { textMeasurer.measure(it.name, labelStyle).width } + 28.0).xyCoordinate()
+        val columnWidths = diagram.commits.map { commit ->
+            max(
+                80.0,
+                max(
+                    textMeasurer.measure(commit.id, commitStyle).width,
+                    commit.tag?.let { textMeasurer.measure(it, tagStyle).width } ?: 0.0,
+                ) + 20.0,
+            )
+        }
+        val startX = (config.padding + labelWidth).xyCoordinate()
+        val centersX = mutableListOf<Double>()
+        var cursor = startX
+        columnWidths.forEach { width ->
+            centersX += (cursor + width / 2.0).xyCoordinate()
+            cursor = (cursor + width + 20.0).xyCoordinate()
+        }
+        val width = max(480.0, cursor + config.padding - 20.0).xyCoordinate()
+        val laneGap = 92.0
+        val firstLaneY = config.padding + 42.0
+        val height = firstLaneY + (diagram.branches.size - 1) * laneGap + 72.0
+        val laneByName = diagram.branches.mapIndexed { index, branch -> branch.name to index }.toMap()
+        val centerById = diagram.commits.mapIndexed { index, commit ->
+            commit.id to ScenePoint(centersX[index], firstLaneY + laneByName.getValue(commit.branch) * laneGap)
+        }.toMap()
+        val colors = listOf("#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#0891b2")
+        val commands = mutableListOf<DrawCommand>()
+
+        diagram.branches.forEachIndexed { index, branch ->
+            val y = firstLaneY + index * laneGap
+            val color = SceneColor(colors[index % colors.size])
+            val branchStartX = branch.parentCommitId?.let { centerById.getValue(it).x } ?: startX
+            val branchEndX = diagram.commits
+                .filter { it.branch == branch.name }
+                .maxOfOrNull { centerById.getValue(it.id).x }
+                ?.let { max(it, branchStartX) }
+                ?: branchStartX
+            commands += DrawText(branch.name, ScenePoint(config.padding, y + 5.0), style = labelStyle.copy(color = color))
+            commands += DrawLine(ScenePoint(branchStartX, y), ScenePoint(branchEndX, y), stroke = color, strokeWidth = 2.0)
+        }
+        diagram.commits.forEach { commit ->
+            val center = centerById.getValue(commit.id)
+            val color = SceneColor(colors[laneByName.getValue(commit.branch) % colors.size])
+            commit.parentIds.forEach { parentId ->
+                commands += DrawLine(centerById.getValue(parentId), center, stroke = color, strokeWidth = 2.0)
+            }
+            val rect = when (commit.type) {
+                GitGraphCommitType.HIGHLIGHT -> SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0)
+                else -> SceneRect(center.x - 9.0, center.y - 9.0, 18.0, 18.0)
+            }
+            commands += DrawRect(rect, cornerRadius = if (commit.type == GitGraphCommitType.HIGHLIGHT) 2.0 else 9.0, fill = color, stroke = color)
+            if (commit.isMerge) {
+                commands += DrawRect(SceneRect(center.x - 5.0, center.y - 5.0, 10.0, 10.0), cornerRadius = 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"), strokeWidth = 1.0)
+            }
+            if (commit.type == GitGraphCommitType.REVERSE) {
+                commands += DrawLine(ScenePoint(center.x - 5.0, center.y - 5.0), ScenePoint(center.x + 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
+                commands += DrawLine(ScenePoint(center.x + 5.0, center.y - 5.0), ScenePoint(center.x - 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
+            }
+            commit.tag?.let { commands += DrawText(it, ScenePoint(center.x, center.y - 18.0), TextAnchor.MIDDLE, tagStyle) }
+            commands += DrawText(commit.id, ScenePoint(center.x, center.y + 27.0), TextAnchor.MIDDLE, commitStyle)
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, config: LayoutConfig): LayoutScene {

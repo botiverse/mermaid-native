@@ -206,6 +206,28 @@ public data class UserJourneyTask(
     val actors: List<String>,
 )
 
+/** Minimal platform-neutral model for the Mermaid gitGraph family. */
+public data class GitGraphDiagram(
+    val branches: List<GitGraphBranch>,
+    val commits: List<GitGraphCommit>,
+) : MermaidDiagram
+
+public data class GitGraphBranch(
+    val name: String,
+    val parentCommitId: String?,
+)
+
+public data class GitGraphCommit(
+    val id: String,
+    val branch: String,
+    val parentIds: List<String>,
+    val type: GitGraphCommitType = GitGraphCommitType.NORMAL,
+    val tag: String? = null,
+    val isMerge: Boolean = false,
+)
+
+public enum class GitGraphCommitType { NORMAL, REVERSE, HIGHLIGHT }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

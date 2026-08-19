@@ -48,6 +48,10 @@ import build.raft.mermaid.core.QuadrantPoint
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.UserJourneySection
 import build.raft.mermaid.core.UserJourneyTask
+import build.raft.mermaid.core.GitGraphBranch
+import build.raft.mermaid.core.GitGraphCommit
+import build.raft.mermaid.core.GitGraphCommitType
+import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -239,6 +243,25 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
         assertTrue(scene.width >= measuredTitle.width + 48.0)
+    }
+
+    @Test
+    fun gitGraphProducesDeterministicLanesParentsAndCommitKinds() {
+        val diagram = GitGraphDiagram(
+            listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
+            listOf(
+                GitGraphCommit("base", "main", emptyList()),
+                GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT, "beta"),
+                GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
+                GitGraphCommit("merge", "main", listOf("release", "feature"), isMerge = true),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawLine>().size >= 7)
+        assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("main", "develop", "beta", "merge")))
+        assertTrue(first.width >= 480.0 && first.height > 0.0)
     }
 
     @Test

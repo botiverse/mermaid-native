@@ -8,7 +8,7 @@ entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,
 eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.
 gantt,gantt,in_progress,partial,partial,partial,partial,Vertical slice supports title ISO dateFormat sections fixed-date tasks durations and basic statuses; full family parity is not complete.
-gitgraph,gitgraph,not_started,no,no,no,no,Official syntax family; implementation is not started.
+gitgraph,gitgraph,in_progress,partial,partial,partial,partial,Vertical slice supports main branch commits custom id type and tag branch checkout or switch and merge; full family parity is not complete.
 ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation is not started.
 kanban,kanban,not_started,no,no,no,no,Official syntax family; implementation is not started.
 mindmap,mindmap,in_progress,partial,partial,partial,partial,Vertical slice supports indentation hierarchy bare/rectangle/double-circle nodes; full family parity is not complete.
