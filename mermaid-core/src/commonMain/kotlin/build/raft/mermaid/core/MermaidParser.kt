@@ -588,8 +588,13 @@ public object MermaidParser {
                         val duration = match.groupValues[5].toIntOrNull()
                         if (start == null || duration == null || duration <= 0) diagnostics += MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, "Invalid gantt date or duration", statement.location)
                         else {
-                            val status = match.groupValues[2].split(',').map { it.trim().lowercase() }.firstNotNullOfOrNull { GANTT_STATUS[it] } ?: GanttTaskStatus.TODO
-                            current = section.copy(tasks = section.tasks + GanttTask(match.groupValues[1].trim(), match.groupValues[3], start, duration, status))
+                            val rawStatus = match.groupValues[2].split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+                            val status = rawStatus.firstNotNullOfOrNull { GANTT_STATUS[it] }
+                            if (rawStatus.size > 1 || (rawStatus.isNotEmpty() && status == null)) {
+                                diagnostics += unsupported(statement, "Unsupported gantt task status")
+                            } else {
+                                current = section.copy(tasks = section.tasks + GanttTask(match.groupValues[1].trim(), match.groupValues[3], start, duration, status ?: GanttTaskStatus.TODO))
+                            }
                         }
                     }
                 }

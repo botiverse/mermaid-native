@@ -421,5 +421,6 @@ class MermaidParserTest {
             "gantt\ndateFormat DD-MM-YYYY\nsection Build\nTask :id, 2026-08-19, 2d",
             "gantt\ndateFormat YYYY-MM-DD\nTask :id, 2026-08-19, 2d",
         ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\ndateFormat YYYY-MM-DD\nsection Build\nTask :blocked, id, 2026-08-19, 2d"))
     }
 }
