@@ -29,6 +29,7 @@ import build.raft.mermaid.core.RequirementDiagram
 import build.raft.mermaid.core.RequirementRelationshipKind
 import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
+import build.raft.mermaid.core.BlockDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -86,6 +87,69 @@ public object SimpleMermaidLayout : DiagramLayout {
         is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
         is KanbanDiagram -> layoutKanban(diagram, textMeasurer, config)
         is PacketDiagram -> layoutPacket(diagram, textMeasurer, config)
+        is BlockDiagram -> layoutBlock(diagram, textMeasurer, config)
+    }
+
+    private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
+        val columnGap = 24.0
+        val rowGap = 40.0
+        val nodeHeight = 64.0
+        val cellWidth = max(
+            160.0,
+            diagram.nodes.maxOf { node ->
+                val measured = textMeasurer.measure(node.label, textStyle).width + 32.0
+                (measured - columnGap * (node.columnSpan - 1)) / node.columnSpan
+            },
+        ).xyCoordinate()
+        val placements = linkedMapOf<String, SceneRect>()
+        var row = 0
+        var column = 0
+        diagram.nodes.forEach { node ->
+            if (column + node.columnSpan > diagram.columns) {
+                row += 1
+                column = 0
+            }
+            val x = config.padding + column * (cellWidth + columnGap)
+            val y = config.padding + row * (nodeHeight + rowGap)
+            val width = cellWidth * node.columnSpan + columnGap * (node.columnSpan - 1)
+            placements[node.id] = SceneRect(x.xyCoordinate(), y.xyCoordinate(), width.xyCoordinate(), nodeHeight)
+            column += node.columnSpan
+            if (column == diagram.columns) {
+                row += 1
+                column = 0
+            }
+        }
+        val rowCount = if (column == 0) row else row + 1
+        val width = (config.padding * 2 + diagram.columns * cellWidth + (diagram.columns - 1) * columnGap).xyCoordinate()
+        val height = (config.padding * 2 + rowCount * nodeHeight + max(0, rowCount - 1) * rowGap).xyCoordinate()
+        val commands = mutableListOf<DrawCommand>()
+        diagram.edges.forEach { edge ->
+            val fromRect = placements.getValue(edge.from)
+            val toRect = placements.getValue(edge.to)
+            val fromCenter = ScenePoint(fromRect.x + fromRect.width / 2, fromRect.y + fromRect.height / 2)
+            val toCenter = ScenePoint(toRect.x + toRect.width / 2, toRect.y + toRect.height / 2)
+            val (from, to) = when {
+                toCenter.y > fromCenter.y -> ScenePoint(fromCenter.x, fromRect.y + fromRect.height) to ScenePoint(toCenter.x, toRect.y)
+                toCenter.y < fromCenter.y -> ScenePoint(fromCenter.x, fromRect.y) to ScenePoint(toCenter.x, toRect.y + toRect.height)
+                toCenter.x > fromCenter.x -> ScenePoint(fromRect.x + fromRect.width, fromCenter.y) to ScenePoint(toRect.x, toCenter.y)
+                else -> ScenePoint(fromRect.x, fromCenter.y) to ScenePoint(toRect.x + toRect.width, toCenter.y)
+            }
+            commands += DrawLine(from, to)
+            val head = arrowHead(from, to)
+            commands += head.copy(points = head.points.map { ScenePoint(it.x.xyCoordinate(), it.y.xyCoordinate()) })
+        }
+        diagram.nodes.forEach { node ->
+            val rect = placements.getValue(node.id)
+            commands += DrawRect(rect, cornerRadius = 6.0, fill = SceneColor("#f8fafc"))
+            commands += DrawText(
+                node.label,
+                ScenePoint(rect.x + rect.width / 2, rect.y + 38.0),
+                anchor = TextAnchor.MIDDLE,
+                style = textStyle,
+            )
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

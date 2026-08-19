@@ -32,6 +32,7 @@ public object MermaidParser {
             header.text.equals("requirementDiagram", ignoreCase = true) -> parseRequirement(statements)
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
             header.text.equals("packet", ignoreCase = true) -> parsePacket(statements)
+            header.text.equals("block", ignoreCase = true) -> parseBlock(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1003,6 +1004,73 @@ public object MermaidParser {
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(KanbanDiagram(columns)) else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseBlock(statements: List<SourceStatement>): MermaidParseResult {
+        var columns: Int? = null
+        val nodes = mutableListOf<BlockNode>()
+        val nodeIds = mutableSetOf<String>()
+        val edges = mutableListOf<BlockEdge>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+
+        statements.drop(1).forEach { statement ->
+            BLOCK_COLUMNS.matchEntire(statement.text)?.let { match ->
+                val value = match.groupValues[1].toIntOrNull()
+                if (columns != null || value == null || value !in 1..16) {
+                    diagnostics += unsupported(statement, "block requires one columns value from 1 to 16")
+                } else {
+                    columns = value
+                }
+                return@forEach
+            }
+            BLOCK_EDGE.matchEntire(statement.text)?.let { match ->
+                val from = match.groupValues[1]
+                val to = match.groupValues[2]
+                if (from == to) diagnostics += unsupported(statement, "block self edges are not supported")
+                else edges += BlockEdge(from, to)
+                return@forEach
+            }
+            BLOCK_NODE.matchEntire(statement.text)?.let { match ->
+                val id = match.groupValues[1]
+                val label = match.groupValues[2].ifEmpty { id }.trim()
+                val span = match.groupValues[3].ifEmpty { "1" }.toIntOrNull()
+                if (span == null) {
+                    diagnostics += unsupported(statement, "block column span is too large")
+                } else if (!nodeIds.add(id) || label.isEmpty()) {
+                    diagnostics += unsupported(statement, "block IDs must be unique and labels non-empty")
+                } else {
+                    nodes += BlockNode(id, label, span)
+                }
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported block diagram syntax")
+        }
+
+        val columnCount = columns
+        if (columnCount == null) {
+            diagnostics += unsupported(statements.first(), "block requires a columns declaration")
+        } else {
+            nodes.filter { it.columnSpan > columnCount }.forEach {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.INVALID_VALUE,
+                    "Block ${it.id} spans more than $columnCount columns",
+                    statements.first().location,
+                )
+            }
+        }
+        if (nodes.isEmpty()) diagnostics += unsupported(statements.first(), "block requires at least one node")
+        edges.forEach { edge ->
+            if (edge.from !in nodeIds || edge.to !in nodeIds) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.INVALID_VALUE,
+                    "Block edge references an unknown node: ${edge.from} -> ${edge.to}",
+                    statements.first().location,
+                )
+            }
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(BlockDiagram(columnCount!!, nodes, edges))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1075,6 +1143,9 @@ public object MermaidParser {
         RegexOption.IGNORE_CASE,
     )
     private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
+    private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
+    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?(?::([1-9][0-9]*))?$")
+    private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
 }
 
 private fun parseIsoDay(value: String): Int? {

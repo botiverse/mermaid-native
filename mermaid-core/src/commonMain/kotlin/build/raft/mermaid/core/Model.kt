@@ -268,6 +268,16 @@ public data class KanbanCard(val id: String, val label: String)
 public data class PacketDiagram(val title: String?, val fields: List<PacketField>) : MermaidDiagram
 public data class PacketField(val startBit: Int, val endBit: Int, val label: String)
 
+/** Minimal platform-neutral model for the Mermaid block diagram family. */
+public data class BlockDiagram(
+    val columns: Int,
+    val nodes: List<BlockNode>,
+    val edges: List<BlockEdge>,
+) : MermaidDiagram
+
+public data class BlockNode(val id: String, val label: String, val columnSpan: Int = 1)
+public data class BlockEdge(val from: String, val to: String)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

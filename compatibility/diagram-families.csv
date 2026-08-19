@@ -1,6 +1,6 @@
 family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes
 architecture,architecture,not_started,no,no,no,no,Official syntax family; implementation is not started.
-block,block,not_started,no,no,no,no,Official syntax family; implementation is not started.
+block,block,in_progress,partial,partial,partial,partial,Vertical slice supports explicit columns rectangular blocks spans and directed edges; shapes nesting styling and full family parity are not complete.
 c4,c4,not_started,no,no,no,no,Official syntax family; implementation is not started.
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
 cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.

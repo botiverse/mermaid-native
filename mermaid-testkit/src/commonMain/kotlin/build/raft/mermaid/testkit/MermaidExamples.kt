@@ -63,6 +63,9 @@ import build.raft.mermaid.core.KanbanColumn
 import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.core.PacketField
+import build.raft.mermaid.core.BlockDiagram
+import build.raft.mermaid.core.BlockNode
+import build.raft.mermaid.core.BlockEdge
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -77,6 +80,15 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val blockServiceMap: MermaidExample = MermaidExample(
+        "samples/block-service-map.mmd",
+        "block\ncolumns 3\napi[Public & partner API]:2\ndb[Database]\nworker[Worker]:2\napi --> worker\ndb --> worker",
+        BlockDiagram(
+            3,
+            listOf(BlockNode("api", "Public & partner API", 2), BlockNode("db", "Database"), BlockNode("worker", "Worker", 2)),
+            listOf(BlockEdge("api", "worker"), BlockEdge("db", "worker")),
+        ),
+    )
     public val kanbanReleaseBoard: MermaidExample = MermaidExample(
         "samples/kanban-release-board.mmd",
         "kanban\ntodo[Todo]\n  spec[Write & review spec]\n  tests[Add tests]\ndone[Done]\n  release[Ship release]",
@@ -440,6 +452,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        blockServiceMap,
         kanbanReleaseBoard,
         gitGraphReleaseFlow,
         requirementLogin,

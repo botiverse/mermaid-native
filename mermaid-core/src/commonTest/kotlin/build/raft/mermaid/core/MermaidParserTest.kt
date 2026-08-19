@@ -661,4 +661,29 @@ class MermaidParserTest {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
     }
+
+    @Test fun parsesBlockGridSpansAndEdges() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 3\napi[Public API]:2\ndb[Database]\napi --> db"))
+        assertEquals(
+            BlockDiagram(3, listOf(BlockNode("api", "Public API", 2), BlockNode("db", "Database")), listOf(BlockEdge("api", "db"))),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedBlockFailsClosed() {
+        listOf(
+            "block",
+            "block\ncolumns 0\na",
+            "block\ncolumns 999999999999999999999\na",
+            "block\ncolumns 2\ncolumns 3\na",
+            "block\ncolumns 2\na:3",
+            "block\ncolumns 2\na:999999999999999999999",
+            "block\ncolumns 2\na\na",
+            "block\ncolumns 2\na --> missing\na",
+            "block\ncolumns 2\na --> a\na",
+            "block\ncolumns 2\na b",
+            "block\ncolumns 2\nblock:group\na\nend",
+            "block\ncolumns 2\na\nstyle a fill:#fff",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

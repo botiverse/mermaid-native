@@ -64,6 +64,9 @@ import build.raft.mermaid.core.KanbanColumn
 import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.core.PacketField
+import build.raft.mermaid.core.BlockDiagram
+import build.raft.mermaid.core.BlockNode
+import build.raft.mermaid.core.BlockEdge
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -392,6 +395,22 @@ class SimpleMermaidLayoutTest {
         val measuredLabel = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 12.0))
         assertTrue(first.commands.filterIsInstance<DrawRect>().first().rect.width >= measuredLabel.width + 32.0)
         assertTrue(first.width > 0.0 && first.height > 0.0)
+    }
+
+    @Test fun blockProducesMeasuredDeterministicGridSpansAndEdges() {
+        val longLabel = "B".repeat(100)
+        val diagram = BlockDiagram(
+            3,
+            listOf(BlockNode("api", longLabel, 2), BlockNode("db", "Database"), BlockNode("worker", "Worker")),
+            listOf(BlockEdge("api", "worker"), BlockEdge("db", "worker")),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
+        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 14.0, fontWeight = 500))
+        assertTrue(first.commands.filterIsInstance<DrawRect>().first().rect.width >= measured.width + 32.0)
     }
 
     @Test

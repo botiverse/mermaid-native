@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="576" height="216" viewBox="0 0 576 216" role="img">
+  <line x1="196" y1="88" x2="196" y2="128" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="196,128 191.5,119 200.5,119" fill="#475569"/>
+  <line x1="472" y1="88" x2="196" y2="128" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="196,128 204.261515,122.255666 205.552376,131.162611" fill="#475569"/>
+  <rect x="24" y="24" width="344" height="64" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="196" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#111827">Public &amp; partner API</text>
+  <rect x="392" y="24" width="160" height="64" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="472" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#111827">Database</text>
+  <rect x="24" y="128" width="344" height="64" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="196" y="166" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#111827">Worker</text>
+</svg>
