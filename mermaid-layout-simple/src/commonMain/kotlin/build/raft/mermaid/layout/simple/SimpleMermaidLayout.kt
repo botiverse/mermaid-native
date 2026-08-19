@@ -31,6 +31,8 @@ import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.core.BlockDiagram
 import build.raft.mermaid.core.SankeyDiagram
+import build.raft.mermaid.core.TreemapDiagram
+import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -90,6 +92,64 @@ public object SimpleMermaidLayout : DiagramLayout {
         is PacketDiagram -> layoutPacket(diagram, textMeasurer, config)
         is BlockDiagram -> layoutBlock(diagram, textMeasurer, config)
         is SankeyDiagram -> layoutSankey(diagram, textMeasurer, config)
+        is TreemapDiagram -> layoutTreemap(diagram, textMeasurer, config)
+    }
+
+    private fun layoutTreemap(diagram: TreemapDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val valueStyle = TextStyle(fontSize = 11.0)
+        val maxLabelWidth = diagram.roots.flattenTreemap().maxOf { textMeasurer.measure(it.label, labelStyle).width }
+        val width = max(720.0, maxLabelWidth + config.padding * 2 + 32.0).xyCoordinate()
+        val height = 420.0
+        val commands = mutableListOf<DrawCommand>()
+        val content = SceneRect(config.padding, config.padding, width - config.padding * 2, height - config.padding * 2)
+
+        fun render(node: TreemapNode, rect: SceneRect, depth: Int) {
+            val fill = TREEMAP_COLORS[depth % TREEMAP_COLORS.size]
+            commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = SceneColor("#334155"), strokeWidth = 1.0)
+            commands += DrawText(node.label, ScenePoint(rect.x + 8.0, rect.y + 18.0).canonical(), style = labelStyle)
+            node.value?.let {
+                commands += DrawText(it.canonicalNumber(), ScenePoint(rect.x + 8.0, rect.y + 34.0).canonical(), style = valueStyle)
+            }
+            if (node.children.isEmpty()) return
+            val inner = SceneRect(
+                rect.x + 4.0,
+                rect.y + 26.0,
+                (rect.width - 8.0).coerceAtLeast(0.0),
+                (rect.height - 30.0).coerceAtLeast(0.0),
+            )
+            val total = node.children.sumOf { it.treemapWeight() }
+            var offset = 0.0
+            val horizontal = depth % 2 == 0
+            val axisExtent = if (horizontal) inner.width else inner.height
+            val gap = treemapGap(axisExtent, node.children.size, 4.0)
+            val available = axisExtent - gap * (node.children.size - 1)
+            node.children.forEachIndexed { index, child ->
+                val extent = if (index == node.children.lastIndex) {
+                    axisExtent - offset
+                } else {
+                    (available * child.treemapWeight() / total).xyCoordinate()
+                }
+                val childRect = if (horizontal) {
+                    SceneRect(inner.x + offset, inner.y, extent, inner.height)
+                } else {
+                    SceneRect(inner.x, inner.y + offset, inner.width, extent)
+                }
+                render(child, childRect, depth + 1)
+                offset += extent + gap
+            }
+        }
+
+        val total = diagram.roots.sumOf { it.treemapWeight() }
+        var x = content.x
+        val gap = treemapGap(content.width, diagram.roots.size, 6.0)
+        val available = content.width - gap * (diagram.roots.size - 1)
+        diagram.roots.forEachIndexed { index, root ->
+            val rootWidth = if (index == diagram.roots.lastIndex) content.x + content.width - x else (available * root.treemapWeight() / total).xyCoordinate()
+            render(root, SceneRect(x, content.y, rootWidth, content.height), 0)
+            x += rootWidth + gap
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutSankey(diagram: SankeyDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
@@ -1189,6 +1249,18 @@ public object SimpleMermaidLayout : DiagramLayout {
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
     private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
     private val JOURNEY_SCORE_COLORS = listOf("#fee2e2", "#fecaca", "#fed7aa", "#fef3c7", "#dcfce7", "#bbf7d0")
+    private val TREEMAP_COLORS = listOf(SceneColor("#dbeafe"), SceneColor("#dcfce7"), SceneColor("#fef3c7"), SceneColor("#fce7f3"))
+
+    private fun TreemapNode.treemapWeight(): Double = value ?: children.sumOf { it.treemapWeight() }
+    private fun List<TreemapNode>.flattenTreemap(): List<TreemapNode> = flatMap { listOf(it) + it.children.flattenTreemap() }
+    private fun treemapGap(axisExtent: Double, itemCount: Int, preferred: Double): Double =
+        if (itemCount <= 1) 0.0 else preferred.coerceAtMost(axisExtent / (itemCount - 1))
+    private fun ScenePoint.canonical(): ScenePoint = ScenePoint(x.xyCoordinate(), y.xyCoordinate())
+    private fun SceneRect.canonical(): SceneRect = SceneRect(x.xyCoordinate(), y.xyCoordinate(), width.xyCoordinate(), height.xyCoordinate())
+    private fun Double.canonicalNumber(): String {
+        val value = xyCoordinate()
+        return if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+    }
 
     private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
     private fun Double.xyCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
