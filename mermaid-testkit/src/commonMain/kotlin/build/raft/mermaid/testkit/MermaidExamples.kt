@@ -32,6 +32,9 @@ import build.raft.mermaid.core.XyAxis
 import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeries
 import build.raft.mermaid.core.XySeriesKind
+import build.raft.mermaid.core.MindmapDiagram
+import build.raft.mermaid.core.MindmapNode
+import build.raft.mermaid.core.MindmapNodeShape
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -46,6 +49,28 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val mindmapProjectPlan: MermaidExample = MermaidExample(
+        path = "samples/mindmap-project-plan.mmd",
+        source = """
+            mindmap
+              root((Project plan))
+                Discovery
+                  [Requirements]
+                  Research
+                Delivery
+                  ((Native SVG))
+        """.trimIndent(),
+        expected = MindmapDiagram(
+            nodes = listOf(
+                MindmapNode("root", "Project plan", null, 0, MindmapNodeShape.DOUBLE_CIRCLE),
+                MindmapNode("__mindmap_1", "Discovery", "root", 1),
+                MindmapNode("__mindmap_2", "Requirements", "__mindmap_1", 2, MindmapNodeShape.RECTANGLE),
+                MindmapNode("__mindmap_3", "Research", "__mindmap_1", 2),
+                MindmapNode("__mindmap_4", "Delivery", "root", 1),
+                MindmapNode("__mindmap_5", "Native SVG", "__mindmap_4", 2, MindmapNodeShape.DOUBLE_CIRCLE),
+            ),
+        ),
+    )
     public val xyQuarterlySales: MermaidExample = MermaidExample(
         path = "samples/xy-quarterly-sales.mmd",
         source = """
@@ -216,6 +241,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        mindmapProjectPlan,
         xyQuarterlySales,
         entityRelationshipCustomerOrder,
         classAnimal,

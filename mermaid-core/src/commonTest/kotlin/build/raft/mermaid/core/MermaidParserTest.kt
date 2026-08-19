@@ -128,6 +128,48 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesMindmapHierarchyAndTypedShapes() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                mindmap
+                  root((Mindmap))
+                    Origins
+                      [History]
+                    Research
+                      ((Native))
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            MindmapDiagram(
+                listOf(
+                    MindmapNode("root", "Mindmap", null, 0, MindmapNodeShape.DOUBLE_CIRCLE),
+                    MindmapNode("__mindmap_1", "Origins", "root", 1),
+                    MindmapNode("__mindmap_2", "History", "__mindmap_1", 2, MindmapNodeShape.RECTANGLE),
+                    MindmapNode("__mindmap_3", "Research", "root", 1),
+                    MindmapNode("__mindmap_4", "Native", "__mindmap_3", 2, MindmapNodeShape.DOUBLE_CIRCLE),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedMindmapIndentationAndMultipleRootsFailClosed() {
+        listOf(
+            "mindmap\n    root((Root))\n      Child",
+            "mindmap\n  root((Root))\n  Other",
+            "mindmap\n  root((Root))\n\tChild",
+            "mindmap\n  root((Root))\n    Child\n        Grandchild",
+            "mindmap\n  root((Root))\n    unsupported { shape",
+            "mindmap\n  root((Root))\n    __mindmap_1[Reserved]",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
+        }
+    }
+
+    @Test
     fun parsesMinimalSequenceAndAutoRegistersActors() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

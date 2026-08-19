@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="545.2" height="230" viewBox="0 0 545.2 230" role="img">
+  <line x1="168.8" y1="132.5" x2="224.8" y2="80" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="332.4" y1="80" x2="388.4" y2="45" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="332.4" y1="80" x2="388.4" y2="115" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="168.8" y1="132.5" x2="224.8" y2="185" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="324" y1="185" x2="388.4" y2="185" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <rect x="24" y="111.5" width="144.8" height="42" rx="21" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <rect x="28" y="115.5" width="136.8" height="34" rx="17" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="96.4" y="137.4" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Project plan</text>
+  <rect x="224.8" y="59" width="107.6" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="278.6" y="84.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Discovery</text>
+  <rect x="388.4" y="24" width="132.8" height="42" rx="2" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="454.79999999999995" y="49.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Requirements</text>
+  <rect x="388.4" y="94" width="99.2" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="438" y="119.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Research</text>
+  <rect x="224.8" y="164" width="99.2" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="274.40000000000003" y="189.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Delivery</text>
+  <rect x="388.4" y="164" width="128" height="42" rx="21" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <rect x="392.4" y="168" width="120" height="34" rx="17" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="452.4" y="189.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Native SVG</text>
+</svg>

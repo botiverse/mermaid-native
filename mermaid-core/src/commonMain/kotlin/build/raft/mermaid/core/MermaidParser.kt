@@ -23,6 +23,7 @@ public object MermaidParser {
             header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
             header.text.equals("erDiagram", ignoreCase = true) -> parseEntityRelationship(statements)
             XY_HEADER.matches(header.text) -> parseXyChart(statements)
+            header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -459,6 +460,113 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseMindmap(source: String): MermaidParseResult {
+        val lines = source.toMindmapLines()
+        val header = lines.firstOrNull()
+            ?: return failure(
+                MermaidDiagnosticCode.EMPTY_SOURCE,
+                "The Mermaid source is empty",
+                SourceLocation(1, 1),
+            )
+        if (!header.text.equals("mindmap", ignoreCase = true) || header.indent != 0) {
+            return failure(
+                MermaidDiagnosticCode.INVALID_HEADER,
+                "mindmap header must be unindented",
+                header.location,
+            )
+        }
+
+        val nodes = mutableListOf<MindmapNode>()
+        val ancestors = mutableListOf<MindmapNode>()
+        val explicitIds = mutableSetOf<String>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+
+        lines.drop(1).forEach { line ->
+            if (line.hasTab || line.indent < MINDMAP_INDENT || line.indent % MINDMAP_INDENT != 0) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                    "Mindmap nodes require spaces in two-space indentation steps: ${line.text}",
+                    line.location,
+                )
+                return@forEach
+            }
+            val depth = line.indent / MINDMAP_INDENT - 1
+            if (depth > ancestors.size) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                    "Mindmap indentation skipped a parent level: ${line.text}",
+                    line.location,
+                )
+                return@forEach
+            }
+            if (depth == 0 && nodes.isNotEmpty()) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                    "Mindmap requires exactly one root node: ${line.text}",
+                    line.location,
+                )
+                return@forEach
+            }
+
+            val parsed = line.text.toMindmapNodeSyntax(nodes.size)
+            if (parsed == null) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                    "Unsupported mindmap node syntax: ${line.text}",
+                    line.location,
+                )
+                return@forEach
+            }
+            if (parsed.explicitId && !explicitIds.add(parsed.id)) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.INVALID_VALUE,
+                    "Duplicate mindmap node id: ${parsed.id}",
+                    line.location,
+                )
+                return@forEach
+            }
+            if (parsed.explicitId && parsed.id.startsWith("__mindmap_")) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.INVALID_VALUE,
+                    "Mindmap explicit ids cannot use the reserved generated prefix: ${parsed.id}",
+                    line.location,
+                )
+                return@forEach
+            }
+
+            val parent = if (depth == 0) null else ancestors.getOrNull(depth - 1)
+            if (depth > 0 && parent == null) {
+                diagnostics += MermaidDiagnostic(
+                    MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                    "Mindmap node has no parent: ${line.text}",
+                    line.location,
+                )
+                return@forEach
+            }
+            while (ancestors.size > depth) ancestors.removeAt(ancestors.lastIndex)
+            val node = MindmapNode(
+                id = parsed.id,
+                label = parsed.label,
+                parentId = parent?.id,
+                depth = depth,
+                shape = parsed.shape,
+            )
+            nodes += node
+            ancestors += node
+        }
+
+        if (nodes.isEmpty()) {
+            diagnostics += MermaidDiagnostic(
+                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                "mindmap requires one root node",
+                header.location,
+            )
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(MindmapDiagram(nodes.toList()))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -512,6 +620,7 @@ public object MermaidParser {
     private val XY_X_AXIS = Regex("^x-axis(?:\\s+\"([^\"]+)\")?\\s+\\[([^]]+)]$", RegexOption.IGNORE_CASE)
     private val XY_Y_AXIS = Regex("^y-axis(?:\\s+\"([^\"]+)\")?\\s+($NUMBER)\\s*-->\\s*($NUMBER)$", RegexOption.IGNORE_CASE)
     private val XY_SERIES = Regex("^(line|bar)\\s+\\[([^]]+)]$", RegexOption.IGNORE_CASE)
+    private const val MINDMAP_INDENT = 2
 }
 
 private fun String.csvTokens(): List<String> = split(',').map { it.trim().unquote() }
@@ -525,6 +634,84 @@ private data class SourceStatement(
     val text: String,
     val location: SourceLocation,
 )
+
+private data class MindmapSourceLine(
+    val text: String,
+    val indent: Int,
+    val hasTab: Boolean,
+    val location: SourceLocation,
+)
+
+private data class ParsedMindmapNode(
+    val id: String,
+    val label: String,
+    val shape: MindmapNodeShape,
+    val explicitId: Boolean,
+)
+
+private fun String.toMindmapNodeSyntax(index: Int): ParsedMindmapNode? {
+    MINDMAP_DOUBLE_CIRCLE.matchEntire(this@toMindmapNodeSyntax)?.let { match ->
+        return ParsedMindmapNode(
+            id = match.groupValues[1],
+            label = match.groupValues[2].trim(),
+            shape = MindmapNodeShape.DOUBLE_CIRCLE,
+            explicitId = true,
+        ).takeIf { it.label.isNotEmpty() }
+    }
+    MINDMAP_RECTANGLE.matchEntire(this@toMindmapNodeSyntax)?.let { match ->
+        return ParsedMindmapNode(
+            id = match.groupValues[1],
+            label = match.groupValues[2].trim(),
+            shape = MindmapNodeShape.RECTANGLE,
+            explicitId = true,
+        ).takeIf { it.label.isNotEmpty() }
+    }
+    MINDMAP_ANONYMOUS_DOUBLE_CIRCLE.matchEntire(this@toMindmapNodeSyntax)?.let { match ->
+        return ParsedMindmapNode(
+            id = "__mindmap_$index",
+            label = match.groupValues[1].trim(),
+            shape = MindmapNodeShape.DOUBLE_CIRCLE,
+            explicitId = false,
+        ).takeIf { it.label.isNotEmpty() }
+    }
+    MINDMAP_ANONYMOUS_RECTANGLE.matchEntire(this@toMindmapNodeSyntax)?.let { match ->
+        return ParsedMindmapNode(
+            id = "__mindmap_$index",
+            label = match.groupValues[1].trim(),
+            shape = MindmapNodeShape.RECTANGLE,
+            explicitId = false,
+        ).takeIf { it.label.isNotEmpty() }
+    }
+    val label = trim()
+    if (label.isEmpty() || label.startsWith("::") || label.any { it in "[](){}" }) return null
+    return ParsedMindmapNode(
+        id = "__mindmap_$index",
+        label = label,
+        shape = MindmapNodeShape.DEFAULT,
+        explicitId = false,
+    )
+}
+
+private val MINDMAP_DOUBLE_CIRCLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\(\\(([^()\\r\\n]+)\\)\\)$")
+private val MINDMAP_RECTANGLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\[([^]\\r\\n]+)]$")
+private val MINDMAP_ANONYMOUS_DOUBLE_CIRCLE = Regex("^\\(\\(([^()\\r\\n]+)\\)\\)$")
+private val MINDMAP_ANONYMOUS_RECTANGLE = Regex("^\\[([^]\\r\\n]+)]$")
+
+private fun String.toMindmapLines(): List<MindmapSourceLine> = buildList {
+    lineSequence().forEachIndexed { index, rawLine ->
+        val trimmed = rawLine.trim()
+        if (trimmed.isEmpty() || trimmed.startsWith("%%")) return@forEachIndexed
+        val leading = rawLine.takeWhile { it == ' ' || it == '\t' }
+        add(
+            MindmapSourceLine(
+                text = rawLine.drop(leading.length).trimEnd(),
+                indent = leading.count { it == ' ' },
+                hasTab = '\t' in leading,
+                location = SourceLocation(index + 1, leading.length + 1),
+            ),
+        )
+    }
+}
 
 private fun String.toStatements(): List<SourceStatement> = buildList {
     lineSequence().forEachIndexed { lineIndex, physicalLine ->
