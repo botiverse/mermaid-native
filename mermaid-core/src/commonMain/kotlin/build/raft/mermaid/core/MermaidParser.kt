@@ -800,7 +800,7 @@ public object MermaidParser {
     private val QUADRANT_AXIS = Regex("^(x|y)-axis\\s+(.+?)\\s*-->\\s*(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_LABEL = Regex("^quadrant-([1-4])\\s+(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_POINT = Regex("^(.+?)\\s*:\\s*\\[($NUMBER)\\s*,\\s*($NUMBER)]$")
-    private val USER_JOURNEY_TASK = Regex("^(.+?)\\s*:\\s*([0-5])\\s*:\\s*(.+)$")
+    private val USER_JOURNEY_TASK = Regex("^(.+?)\\s*:\\s*([1-5])\\s*:\\s*(.+)$")
 }
 
 private fun parseIsoDay(value: String): Int? {

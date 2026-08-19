@@ -517,6 +517,7 @@ class MermaidParserTest {
             "journey",
             "journey\nTask: 4: Actor",
             "journey\nsection Empty",
+            "journey\nsection A\nTask: 0: Actor",
             "journey\nsection A\nTask: 6: Actor",
             "journey\nsection A\nTask: 4:",
             "journey\ntitle One\ntitle Two\nsection A\nTask: 4: Actor",
