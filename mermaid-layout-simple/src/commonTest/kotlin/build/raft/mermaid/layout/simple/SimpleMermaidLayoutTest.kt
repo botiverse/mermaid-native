@@ -67,6 +67,9 @@ import build.raft.mermaid.core.PacketField
 import build.raft.mermaid.core.BlockDiagram
 import build.raft.mermaid.core.BlockNode
 import build.raft.mermaid.core.BlockEdge
+import build.raft.mermaid.core.SankeyDiagram
+import build.raft.mermaid.core.SankeyNode
+import build.raft.mermaid.core.SankeyLink
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -411,6 +414,22 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
         val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 14.0, fontWeight = 500))
         assertTrue(first.commands.filterIsInstance<DrawRect>().first().rect.width >= measured.width + 32.0)
+    }
+
+    @Test fun sankeyProducesMeasuredDeterministicLayersAndWeightedLinks() {
+        val longLabel = "C".repeat(100)
+        val diagram = SankeyDiagram(
+            listOf(SankeyNode("source", "Source"), SankeyNode("middle", "Middle"), SankeyNode("target", longLabel)),
+            listOf(SankeyLink("source", "middle", 10.0), SankeyLink("middle", "target", 2.0)),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        val links = first.commands.filterIsInstance<DrawLine>()
+        assertEquals(2, links.size)
+        assertTrue(links[0].strokeWidth > links[1].strokeWidth)
+        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 12.0, fontWeight = 500))
+        assertTrue(first.commands.filterIsInstance<DrawRect>().last().rect.width >= measured.width + 32.0)
     }
 
     @Test
