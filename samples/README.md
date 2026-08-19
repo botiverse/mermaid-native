@@ -44,3 +44,7 @@ user journey family parity.
 documented `requirementDiagram` syntax at the pinned Mermaid revision. It
 covers a requirement, an element, and a satisfies relationship without
 claiming complete requirement family parity.
+
+`packet-udp.mmd` is an original compatibility fixture based on the documented
+`packet` syntax at the pinned Mermaid revision. It covers a title plus explicit
+absolute bit ranges without claiming relative-count or full packet parity.

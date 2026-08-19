@@ -62,6 +62,8 @@ import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.KanbanCard
 import build.raft.mermaid.core.KanbanColumn
 import build.raft.mermaid.core.KanbanDiagram
+import build.raft.mermaid.core.PacketDiagram
+import build.raft.mermaid.core.PacketField
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -135,6 +137,20 @@ class SimpleMermaidLayoutTest {
             assertEquals(end.y, outerEnd.y)
             assertTrue(start.y != end.y)
         }
+    }
+
+    @Test
+    fun packetProducesDeterministicBitRowsAndSplitFields() {
+        val diagram = PacketDiagram(
+            "Header",
+            listOf(PacketField(0, 15, "Source"), PacketField(16, 40, "Cross-row payload")),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, second)
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawText>().count { it.text == "Cross-row payload" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "32-40" })
     }
 
     @Test

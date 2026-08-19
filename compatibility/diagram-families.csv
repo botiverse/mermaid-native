@@ -12,7 +12,7 @@ gitgraph,gitgraph,in_progress,partial,partial,partial,partial,Vertical slice sup
 ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation is not started.
 kanban,kanban,in_progress,partial,partial,partial,partial,Vertical slice supports explicit columns and indented cards; metadata and full family parity are not complete.
 mindmap,mindmap,in_progress,partial,partial,partial,partial,Vertical slice supports indentation hierarchy bare/rectangle/double-circle nodes; full family parity is not complete.
-packet,packet,not_started,no,no,no,no,Official syntax family; implementation is not started.
+packet,packet,in_progress,partial,partial,partial,partial,Vertical slice supports title and explicit absolute single/range bit fields; full family parity is not complete.
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData and numeric sections; full family parity is not complete.
 quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels and finite normalized points; full family parity is not complete.
 radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.

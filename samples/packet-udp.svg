@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="816" height="262" viewBox="0 0 816 262" role="img">
+  <text x="24" y="42" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">UDP Packet</text>
+  <rect x="24" y="58" width="384" height="38" rx="2" fill="#eff6ff" stroke="#334155" stroke-width="1.5"/>
+  <text x="216" y="81" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Source Port</text>
+  <text x="216" y="111" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="400" fill="#475569">0-15</text>
+  <rect x="408" y="58" width="384" height="38" rx="2" fill="#eff6ff" stroke="#334155" stroke-width="1.5"/>
+  <text x="600" y="81" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Destination Port</text>
+  <text x="600" y="111" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="400" fill="#475569">16-31</text>
+  <rect x="24" y="118" width="384" height="38" rx="2" fill="#eff6ff" stroke="#334155" stroke-width="1.5"/>
+  <text x="216" y="141" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Length</text>
+  <text x="216" y="171" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="400" fill="#475569">32-47</text>
+  <rect x="408" y="118" width="384" height="38" rx="2" fill="#eff6ff" stroke="#334155" stroke-width="1.5"/>
+  <text x="600" y="141" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Checksum</text>
+  <text x="600" y="171" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="400" fill="#475569">48-63</text>
+  <rect x="24" y="178" width="768" height="38" rx="2" fill="#eff6ff" stroke="#334155" stroke-width="1.5"/>
+  <text x="408" y="201" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Data</text>
+  <text x="408" y="231" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="400" fill="#475569">64-95</text>
+</svg>

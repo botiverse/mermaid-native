@@ -586,6 +586,28 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesPacketTitleSingleBitsAndRanges() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                packet
+                  title Header
+                  0-15: "Source"
+                  16: "Flag"
+                  17-31: "Payload"
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(
+            PacketDiagram(
+                "Header",
+                listOf(PacketField(0, 15, "Source"), PacketField(16, 16, "Flag"), PacketField(17, 31, "Payload")),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
     fun malformedGitGraphFailsClosed() {
         listOf(
             "gitGraph",
@@ -621,6 +643,22 @@ class MermaidParserTest {
     @Test fun malformedKanbanFailsClosed() {
         listOf("kanban", "kanban\ntodo[Todo]", "kanban\n  task[Orphan]", "kanban\ntodo[Todo]\n task[Bad indent]", "kanban\ntodo[Todo]\n  todo[Duplicate]", "kanban\ntodo[Todo]\n  task[Card]@{ priority: 'High' }").forEach {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it)
+        }
+    }
+
+    @Test
+    fun malformedPacketFailsClosed() {
+        listOf(
+            "packet",
+            "packet\n  8-4: \"Reverse\"",
+            "packet\n  0-7: \"A\"\n  7-15: \"Overlap\"",
+            "packet\n  0-7: Missing quotes",
+            "packet\n  +8: \"Relative is deferred\"",
+            "packet\n  4096: \"Beyond bounded layout\"",
+            "packet\n  999999999999999999999: \"Overflow\"",
+            "packet\n  title First\n  title Second\n  0: \"Flag\"",
+        ).forEach { source ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
     }
 }
