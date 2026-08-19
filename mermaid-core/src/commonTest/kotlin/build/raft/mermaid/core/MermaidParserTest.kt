@@ -442,4 +442,40 @@ class MermaidParserTest {
         val comma = assertIs<MermaidParseResult.Success>(MermaidParser.parse("timeline\n2024 : Launch, First users"))
         assertEquals(listOf("Launch, First users"), assertIs<TimelineDiagram>(comma.diagram).events.single().labels)
     }
+
+    @Test
+    fun parsesQuadrantChartAxesLabelsAndPoints() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            quadrantChart
+              title Product portfolio
+              x-axis Low reach --> High reach
+              y-axis Low engagement --> High engagement
+              quadrant-1 Expand
+              quadrant-2 Promote
+              Campaign A: [0.3, 0.6]
+              Campaign B: [1, 0]
+        """.trimIndent()))
+        assertEquals(
+            QuadrantChartDiagram(
+                "Product portfolio",
+                QuadrantAxis("Low reach", "High reach"),
+                QuadrantAxis("Low engagement", "High engagement"),
+                listOf("Expand", "Promote", null, null),
+                listOf(QuadrantPoint("Campaign A", 0.3, 0.6), QuadrantPoint("Campaign B", 1.0, 0.0)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedQuadrantChartFailsClosed() {
+        listOf(
+            "quadrantChart\nx-axis Low --> High\nCampaign: [0.2, 0.3]",
+            "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nCampaign: [1.1, 0.3]",
+            "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nCampaign: [NaN, 0.3]",
+            "quadrantChart\nx-axis Low --> High\nx-axis Again --> High\ny-axis Low --> High\nCampaign: [0.2, 0.3]",
+            "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nquadrant-1 One\nquadrant-1 Two\nCampaign: [0.2, 0.3]",
+            "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nclick Campaign\nCampaign: [0.2, 0.3]",
+        ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+    }
 }

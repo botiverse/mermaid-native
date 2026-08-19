@@ -26,6 +26,7 @@ public object MermaidParser {
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             header.text.equals("gantt", ignoreCase = true) -> parseGantt(statements)
             header.text.equals("timeline", ignoreCase = true) -> parseTimeline(statements)
+            header.text.equals("quadrantChart", ignoreCase = true) -> parseQuadrantChart(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -625,6 +626,53 @@ public object MermaidParser {
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(TimelineDiagram(title, events)) else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseQuadrantChart(statements: List<SourceStatement>): MermaidParseResult {
+        var title: String? = null
+        var xAxis: QuadrantAxis? = null
+        var yAxis: QuadrantAxis? = null
+        val quadrantLabels = MutableList<String?>(4) { null }
+        val points = mutableListOf<QuadrantPoint>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        statements.drop(1).forEach { statement ->
+            when {
+                QUADRANT_TITLE.matches(statement.text) -> {
+                    val value = QUADRANT_TITLE.matchEntire(statement.text)!!.groupValues[1].trim()
+                    if (title != null) diagnostics += unsupported(statement, "quadrantChart allows one title") else title = value
+                }
+                QUADRANT_AXIS.matches(statement.text) -> {
+                    val match = QUADRANT_AXIS.matchEntire(statement.text)!!
+                    val axis = QuadrantAxis(match.groupValues[2].trim(), match.groupValues[3].trim())
+                    if (match.groupValues[1].equals("x", true)) {
+                        if (xAxis != null) diagnostics += unsupported(statement, "Duplicate x-axis") else xAxis = axis
+                    } else if (yAxis != null) diagnostics += unsupported(statement, "Duplicate y-axis") else yAxis = axis
+                }
+                QUADRANT_LABEL.matches(statement.text) -> {
+                    val match = QUADRANT_LABEL.matchEntire(statement.text)!!
+                    val index = match.groupValues[1].toInt() - 1
+                    if (quadrantLabels[index] != null) diagnostics += unsupported(statement, "Duplicate quadrant label")
+                    else quadrantLabels[index] = match.groupValues[2].trim()
+                }
+                QUADRANT_POINT.matches(statement.text) -> {
+                    val match = QUADRANT_POINT.matchEntire(statement.text)!!
+                    val x = match.groupValues[2].toDoubleOrNull()
+                    val y = match.groupValues[3].toDoubleOrNull()
+                    if (x == null || y == null || !x.isFinite() || !y.isFinite() || x !in 0.0..1.0 || y !in 0.0..1.0) {
+                        diagnostics += MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, "Quadrant point coordinates must be finite values from 0 to 1", statement.location)
+                    } else points += QuadrantPoint(match.groupValues[1].trim(), x, y)
+                }
+                else -> diagnostics += unsupported(statement, "Unsupported quadrantChart statement")
+            }
+        }
+        val x = xAxis
+        val y = yAxis
+        if (x == null) diagnostics += unsupported(statements.first(), "quadrantChart requires one x-axis")
+        if (y == null) diagnostics += unsupported(statements.first(), "quadrantChart requires one y-axis")
+        if (points.isEmpty()) diagnostics += unsupported(statements.first(), "quadrantChart requires at least one point")
+        return if (diagnostics.isEmpty() && x != null && y != null) MermaidParseResult.Success(
+            QuadrantChartDiagram(title, x, y, quadrantLabels.toList(), points.toList()),
+        ) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -681,6 +729,10 @@ public object MermaidParser {
     private const val MINDMAP_INDENT = 2
     private val GANTT_TASK = Regex("^(.+?)\\s*:\\s*([^,]*),\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*(\\d+)d$", RegexOption.IGNORE_CASE)
     private val GANTT_STATUS = mapOf("done" to GanttTaskStatus.DONE, "active" to GanttTaskStatus.ACTIVE, "crit" to GanttTaskStatus.CRITICAL)
+    private val QUADRANT_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
+    private val QUADRANT_AXIS = Regex("^(x|y)-axis\\s+(.+?)\\s*-->\\s*(.+)$", RegexOption.IGNORE_CASE)
+    private val QUADRANT_LABEL = Regex("^quadrant-([1-4])\\s+(.+)$", RegexOption.IGNORE_CASE)
+    private val QUADRANT_POINT = Regex("^(.+?)\\s*:\\s*\\[($NUMBER)\\s*,\\s*($NUMBER)]$")
 }
 
 private fun parseIsoDay(value: String): Int? {

@@ -21,6 +21,7 @@ import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.GanttTaskStatus
+import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -70,6 +71,42 @@ public object SimpleMermaidLayout : DiagramLayout {
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
+        is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
+    }
+
+    private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, config: LayoutConfig): LayoutScene {
+        val width = 640.0
+        val height = 460.0
+        val left = 92.0
+        val top = 58.0
+        val right = width - config.padding
+        val bottom = height - 52.0
+        val midX = (left + right) / 2.0
+        val midY = (top + bottom) / 2.0
+        val body = TextStyle(fontSize = 12.0)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, 26.0), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        commands += DrawRect(SceneRect(left, top, right - left, bottom - top), cornerRadius = 0.0)
+        commands += DrawLine(ScenePoint(midX, top), ScenePoint(midX, bottom))
+        commands += DrawLine(ScenePoint(left, midY), ScenePoint(right, midY))
+        commands += DrawText(diagram.xAxis.lowLabel, ScenePoint(left, bottom + 22.0), style = body)
+        commands += DrawText(diagram.xAxis.highLabel, ScenePoint(right, bottom + 22.0), TextAnchor.END, body)
+        commands += DrawText(diagram.yAxis.lowLabel, ScenePoint(left - 10.0, bottom), TextAnchor.END, body)
+        commands += DrawText(diagram.yAxis.highLabel, ScenePoint(left - 10.0, top + 10.0), TextAnchor.END, body)
+        val quadrantPositions = listOf(
+            ScenePoint(right - 10.0, top + 20.0) to TextAnchor.END,
+            ScenePoint(left + 10.0, top + 20.0) to TextAnchor.START,
+            ScenePoint(left + 10.0, bottom - 12.0) to TextAnchor.START,
+            ScenePoint(right - 10.0, bottom - 12.0) to TextAnchor.END,
+        )
+        diagram.quadrantLabels.forEachIndexed { index, label -> label?.let { commands += DrawText(it, quadrantPositions[index].first, quadrantPositions[index].second, body) } }
+        diagram.points.forEach { point ->
+            val x = (left + point.x * (right - left)).xyCoordinate()
+            val y = (bottom - point.y * (bottom - top)).xyCoordinate()
+            commands += DrawPolygon(listOf(ScenePoint(x, y - 5.0), ScenePoint(x + 5.0, y), ScenePoint(x, y + 5.0), ScenePoint(x - 5.0, y)), fill = SceneColor("#2563eb"))
+            commands += DrawText(point.label, ScenePoint(x + 8.0, y - 7.0), style = body)
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutTimeline(diagram: TimelineDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

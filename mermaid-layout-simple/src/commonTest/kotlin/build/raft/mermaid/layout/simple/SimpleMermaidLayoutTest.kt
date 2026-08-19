@@ -42,6 +42,9 @@ import build.raft.mermaid.core.MindmapNode
 import build.raft.mermaid.core.MindmapNodeShape
 import build.raft.mermaid.core.TimelineDiagram
 import build.raft.mermaid.core.TimelineEvent
+import build.raft.mermaid.core.QuadrantAxis
+import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.QuadrantPoint
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -244,6 +247,22 @@ class SimpleMermaidLayoutTest {
         val bars = first.commands.filterIsInstance<DrawRect>()
         assertEquals(listOf(56.0, 84.0), bars.map { it.rect.width })
         assertEquals(listOf("#16a34a", "#2563eb"), bars.map { it.fill.value })
+    }
+
+    @Test
+    fun quadrantChartProducesDeterministicAxesAndPoints() {
+        val diagram = QuadrantChartDiagram(
+            "Portfolio",
+            QuadrantAxis("Low reach", "High reach"),
+            QuadrantAxis("Low engagement", "High engagement"),
+            listOf("Expand", "Promote", null, null),
+            listOf(QuadrantPoint("A", 0.25, 0.75), QuadrantPoint("B", 1.0, 0.0)),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
+        assertEquals(1, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "High engagement" })
     }
 
     private fun message(

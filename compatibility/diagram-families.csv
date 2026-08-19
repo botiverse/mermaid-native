@@ -14,7 +14,7 @@ kanban,kanban,not_started,no,no,no,no,Official syntax family; implementation is 
 mindmap,mindmap,in_progress,partial,partial,partial,partial,Vertical slice supports indentation hierarchy bare/rectangle/double-circle nodes; full family parity is not complete.
 packet,packet,not_started,no,no,no,no,Official syntax family; implementation is not started.
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData and numeric sections; full family parity is not complete.
-quadrantChart,quadrantChart,not_started,no,no,no,no,Official syntax family; implementation is not started.
+quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels and finite normalized points; full family parity is not complete.
 radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.
 railroad,railroad,not_started,no,no,no,no,Four official railroad dialects share this family entry.
 requirementDiagram,requirementDiagram,not_started,no,no,no,no,Official syntax family; implementation is not started.
