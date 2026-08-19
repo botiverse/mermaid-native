@@ -35,6 +35,10 @@ import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNode
 import build.raft.mermaid.core.MindmapNodeShape
+import build.raft.mermaid.core.GanttDiagram
+import build.raft.mermaid.core.GanttSection
+import build.raft.mermaid.core.GanttTask
+import build.raft.mermaid.core.GanttTaskStatus
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -240,6 +244,22 @@ public object MermaidExamples {
         ),
     )
 
+    public val ganttReleasePlan: MermaidExample = MermaidExample(
+        path = "samples/gantt-release-plan.mmd",
+        source = """
+            gantt
+              title Release plan
+              dateFormat YYYY-MM-DD
+              section Build
+              Parser :done, parse, 2026-08-19, 2d
+              Renderer :active, render, 2026-08-21, 3d
+        """.trimIndent(),
+        expected = GanttDiagram("Release plan", "YYYY-MM-DD", listOf(GanttSection("Build", listOf(
+            GanttTask("Parser", "parse", 740212, 2, GanttTaskStatus.DONE),
+            GanttTask("Renderer", "render", 740214, 3, GanttTaskStatus.ACTIVE),
+        )))),
+    )
+
     public val all: List<MermaidExample> = listOf(
         mindmapProjectPlan,
         xyQuarterlySales,
@@ -250,5 +270,6 @@ public object MermaidExamples {
         flowchartLeftToRight,
         sequenceRequestResponse,
         stateLifecycle,
+        ganttReleasePlan,
     )
 }

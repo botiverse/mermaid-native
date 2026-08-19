@@ -171,6 +171,11 @@ public data class MindmapNode(
 
 public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE }
 
+public data class GanttDiagram(val title: String?, val dateFormat: String, val sections: List<GanttSection>) : MermaidDiagram
+public data class GanttSection(val name: String, val tasks: List<GanttTask>)
+public data class GanttTask(val name: String, val id: String, val startDay: Int, val durationDays: Int, val status: GanttTaskStatus = GanttTaskStatus.TODO)
+public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

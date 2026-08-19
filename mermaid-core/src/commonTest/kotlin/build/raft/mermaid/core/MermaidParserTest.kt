@@ -397,4 +397,29 @@ class MermaidParserTest {
         )
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
     }
+
+    @Test
+    fun parsesBoundedGanttTasksAndStatuses() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            gantt
+              title Release plan
+              dateFormat YYYY-MM-DD
+              section Build
+              Parser :done, parse, 2026-08-19, 2d
+              Renderer :active, render, 2026-08-21, 3d
+        """.trimIndent()))
+        val diagram = assertIs<GanttDiagram>(result.diagram)
+        assertEquals("Release plan", diagram.title)
+        assertEquals(listOf(GanttTaskStatus.DONE, GanttTaskStatus.ACTIVE), diagram.sections.single().tasks.map { it.status })
+        assertEquals(2, diagram.sections.single().tasks.first().durationDays)
+    }
+
+    @Test
+    fun malformedGanttFailsClosed() {
+        listOf(
+            "gantt\nsection Build\nTask :id, 2026-02-30, 2d",
+            "gantt\ndateFormat DD-MM-YYYY\nsection Build\nTask :id, 2026-08-19, 2d",
+            "gantt\ndateFormat YYYY-MM-DD\nTask :id, 2026-08-19, 2d",
+        ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+    }
 }
