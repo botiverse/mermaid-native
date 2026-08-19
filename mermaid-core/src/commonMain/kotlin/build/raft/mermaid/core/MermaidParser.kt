@@ -24,6 +24,7 @@ public object MermaidParser {
             header.text.equals("erDiagram", ignoreCase = true) -> parseEntityRelationship(statements)
             XY_HEADER.matches(header.text) -> parseXyChart(statements)
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
+            header.text.equals("gantt", ignoreCase = true) -> parseGantt(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -567,6 +568,44 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseGantt(statements: List<SourceStatement>): MermaidParseResult {
+        var title: String? = null
+        var format: String? = null
+        var current: GanttSection? = null
+        val sections = mutableListOf<GanttSection>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        statements.drop(1).forEach { statement ->
+            when {
+                statement.text.startsWith("title ", true) -> title = statement.text.substringAfter(' ').trim()
+                statement.text.startsWith("dateFormat ", true) -> format = statement.text.substringAfter(' ').trim()
+                statement.text.startsWith("section ", true) -> { current?.let { sections += it }; current = GanttSection(statement.text.substringAfter(' ').trim(), emptyList()) }
+                else -> {
+                    val match = GANTT_TASK.matchEntire(statement.text)
+                    val section = current
+                    if (match == null || section == null) diagnostics += unsupported(statement, "Unsupported gantt task")
+                    else {
+                        val start = parseIsoDay(match.groupValues[4])
+                        val duration = match.groupValues[5].toIntOrNull()
+                        if (start == null || duration == null || duration <= 0) diagnostics += MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, "Invalid gantt date or duration", statement.location)
+                        else {
+                            val rawStatus = match.groupValues[2].split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+                            val status = rawStatus.firstNotNullOfOrNull { GANTT_STATUS[it] }
+                            if (rawStatus.size > 1 || (rawStatus.isNotEmpty() && status == null)) {
+                                diagnostics += unsupported(statement, "Unsupported gantt task status")
+                            } else {
+                                current = section.copy(tasks = section.tasks + GanttTask(match.groupValues[1].trim(), match.groupValues[3], start, duration, status ?: GanttTaskStatus.TODO))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        current?.let { sections += it }
+        if (format != "YYYY-MM-DD") diagnostics += unsupported(statements.first(), "Only dateFormat YYYY-MM-DD is supported")
+        if (sections.isEmpty()) diagnostics += unsupported(statements.first(), "gantt requires a section")
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(GanttDiagram(title, "YYYY-MM-DD", sections)) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -621,6 +660,18 @@ public object MermaidParser {
     private val XY_Y_AXIS = Regex("^y-axis(?:\\s+\"([^\"]+)\")?\\s+($NUMBER)\\s*-->\\s*($NUMBER)$", RegexOption.IGNORE_CASE)
     private val XY_SERIES = Regex("^(line|bar)\\s+\\[([^]]+)]$", RegexOption.IGNORE_CASE)
     private const val MINDMAP_INDENT = 2
+    private val GANTT_TASK = Regex("^(.+?)\\s*:\\s*([^,]*),\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*(\\d+)d$", RegexOption.IGNORE_CASE)
+    private val GANTT_STATUS = mapOf("done" to GanttTaskStatus.DONE, "active" to GanttTaskStatus.ACTIVE, "crit" to GanttTaskStatus.CRITICAL)
+}
+
+private fun parseIsoDay(value: String): Int? {
+    val m = Regex("^(\\d{4})-(\\d{2})-(\\d{2})$").matchEntire(value) ?: return null
+    val y = m.groupValues[1].toInt(); val mo = m.groupValues[2].toInt(); val d = m.groupValues[3].toInt()
+    fun leap(year: Int) = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+    if (mo !in 1..12) return null
+    val md = intArrayOf(31, if (leap(y)) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    if (d !in 1..md[mo - 1]) return null
+    return (0 until y).fold(0) { total, year -> total + if (leap(year)) 366 else 365 } + md.take(mo - 1).sum() + d - 1
 }
 
 private fun String.csvTokens(): List<String> = split(',').map { it.trim().unquote() }

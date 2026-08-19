@@ -18,6 +18,8 @@ import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeriesKind
+import build.raft.mermaid.core.GanttDiagram
+import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -65,6 +67,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
         is XyChartDiagram -> layoutXyChart(diagram, config)
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
+        is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
     }
 
     private fun layoutMindmap(
@@ -156,6 +159,30 @@ public object SimpleMermaidLayout : DiagramLayout {
             leafCursor - config.nodeGap / 2.0 + config.padding,
         )
         check(nodesById.size == diagram.nodes.size)
+        return LayoutScene(width, height, commands)
+    }
+
+    private fun layoutGantt(diagram: GanttDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val tasks = diagram.sections.flatMap { section -> section.tasks.map { section.name to it } }
+        val minDay = tasks.minOfOrNull { it.second.startDay } ?: 0
+        val maxDay = tasks.maxOfOrNull { it.second.startDay + it.second.durationDays } ?: minDay + 1
+        val scale = 28.0
+        val labelWidth = tasks.maxOfOrNull { textMeasurer.measure(it.second.name, body).width }?.plus(24.0) ?: 120.0
+        val width = config.padding * 2 + labelWidth + (maxDay - minDay) * scale
+        val height = config.padding * 2 + maxOf(1, tasks.size) * 34.0 + 28.0
+        val commands = mutableListOf<DrawCommand>()
+        commands += DrawLine(ScenePoint((config.padding + labelWidth).xyCoordinate(), (config.padding + 24.0).xyCoordinate()), ScenePoint((width - config.padding).xyCoordinate(), (config.padding + 24.0).xyCoordinate()))
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 16.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        var row = 0
+        tasks.forEach { (section, task) ->
+            val y = config.padding + 42.0 + row * 34.0
+            commands += DrawText("$section: ${task.name}", ScenePoint(config.padding, y + 13.0), style = body)
+            val x = (config.padding + labelWidth + (task.startDay - minDay) * scale).xyCoordinate()
+            val fill = when (task.status) { GanttTaskStatus.DONE -> "#16a34a"; GanttTaskStatus.ACTIVE -> "#2563eb"; GanttTaskStatus.CRITICAL -> "#dc2626"; GanttTaskStatus.TODO -> "#94a3b8" }
+            commands += DrawRect(SceneRect(x, y, task.durationDays * scale, 22.0), cornerRadius = 4.0, fill = SceneColor(fill))
+            row++
+        }
         return LayoutScene(width, height, commands)
     }
 

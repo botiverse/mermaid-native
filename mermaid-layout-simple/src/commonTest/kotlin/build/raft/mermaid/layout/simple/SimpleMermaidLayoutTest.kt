@@ -32,6 +32,10 @@ import build.raft.mermaid.core.XyAxis
 import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeries
 import build.raft.mermaid.core.XySeriesKind
+import build.raft.mermaid.core.GanttDiagram
+import build.raft.mermaid.core.GanttSection
+import build.raft.mermaid.core.GanttTask
+import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.NumericAxis
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNode
@@ -215,6 +219,19 @@ class SimpleMermaidLayoutTest {
         assertEquals(4, first.commands.filterIsInstance<DrawText>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Mindmap" })
         assertTrue(first.width > 0.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun ganttProducesDeterministicTimelineBars() {
+        val diagram = GanttDiagram("Plan", "YYYY-MM-DD", listOf(GanttSection("Build", listOf(
+            GanttTask("Parser", "parse", 100, 2, GanttTaskStatus.DONE),
+            GanttTask("Renderer", "render", 102, 3, GanttTaskStatus.ACTIVE),
+        ))))
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val bars = first.commands.filterIsInstance<DrawRect>()
+        assertEquals(listOf(56.0, 84.0), bars.map { it.rect.width })
+        assertEquals(listOf("#16a34a", "#2563eb"), bars.map { it.fill.value })
     }
 
     private fun message(
