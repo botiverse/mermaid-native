@@ -156,6 +156,21 @@ public data class XySeries(
 
 public enum class XySeriesKind { LINE, BAR }
 
+/** Minimal platform-neutral model for the Mermaid mindmap family. */
+public data class MindmapDiagram(
+    val nodes: List<MindmapNode>,
+) : MermaidDiagram
+
+public data class MindmapNode(
+    val id: String,
+    val label: String,
+    val parentId: String?,
+    val depth: Int,
+    val shape: MindmapNodeShape = MindmapNodeShape.DEFAULT,
+)
+
+public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE }
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

@@ -11,7 +11,7 @@ gantt,gantt,not_started,no,no,no,no,Official syntax family; implementation is no
 gitgraph,gitgraph,not_started,no,no,no,no,Official syntax family; implementation is not started.
 ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation is not started.
 kanban,kanban,not_started,no,no,no,no,Official syntax family; implementation is not started.
-mindmap,mindmap,not_started,no,no,no,no,Official syntax family; implementation is not started.
+mindmap,mindmap,in_progress,partial,partial,partial,partial,Vertical slice supports indentation hierarchy bare/rectangle/double-circle nodes; full family parity is not complete.
 packet,packet,not_started,no,no,no,no,Official syntax family; implementation is not started.
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData and numeric sections; full family parity is not complete.
 quadrantChart,quadrantChart,not_started,no,no,no,no,Official syntax family; implementation is not started.

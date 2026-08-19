@@ -22,7 +22,7 @@ The status contract is deliberately strict:
 - `blocked` is reserved for a concrete external or technical blocker.
 
 The current flowchart, sequence, stateDiagram, pie, class,
-entityRelationshipDiagram, and xyChart vertical slices
+entityRelationshipDiagram, xyChart, and mindmap vertical slices
 therefore remain `in_progress`: they are executable and tested, but they are not
 full family parity.
 The registry must be updated in the same PR that closes a family's parser,

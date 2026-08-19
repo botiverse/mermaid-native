@@ -33,6 +33,9 @@ import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeries
 import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.NumericAxis
+import build.raft.mermaid.core.MindmapDiagram
+import build.raft.mermaid.core.MindmapNode
+import build.raft.mermaid.core.MindmapNodeShape
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -193,6 +196,25 @@ class SimpleMermaidLayoutTest {
         assertEquals(listOf(StrokePattern.SOLID, StrokePattern.DASHED), messageLines.map { it.pattern })
         assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.valid() })
+    }
+
+    @Test
+    fun mindmapProducesDeterministicTreeGeometryAndShapeTreatment() {
+        val diagram = MindmapDiagram(
+            listOf(
+                MindmapNode("root", "Mindmap", null, 0, MindmapNodeShape.DOUBLE_CIRCLE),
+                MindmapNode("a", "Origins", "root", 1),
+                MindmapNode("b", "History", "a", 2, MindmapNodeShape.RECTANGLE),
+                MindmapNode("c", "Research", "root", 1),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(4, first.commands.filterIsInstance<DrawText>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Mindmap" })
+        assertTrue(first.width > 0.0 && first.height > 0.0)
     }
 
     private fun message(

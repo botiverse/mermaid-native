@@ -9,6 +9,8 @@ import build.raft.mermaid.core.EntityCardinality
 import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.EntityKey
 import build.raft.mermaid.core.MermaidDiagram
+import build.raft.mermaid.core.MindmapDiagram
+import build.raft.mermaid.core.MindmapNodeShape
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.SequenceLineStyle
@@ -62,6 +64,99 @@ public object SimpleMermaidLayout : DiagramLayout {
         is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
         is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
         is XyChartDiagram -> layoutXyChart(diagram, config)
+        is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
+    }
+
+    private fun layoutMindmap(
+        diagram: MindmapDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val style = TextStyle()
+        val nodesById = diagram.nodes.associateBy { it.id }
+        val children = diagram.nodes.groupBy { it.parentId }
+        val sizes = diagram.nodes.associate { node ->
+            val text = textMeasurer.measure(node.label, style)
+            val horizontalPadding = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) 44.0 else 32.0
+            node.id to SceneSize(max(92.0, text.width + horizontalPadding), max(42.0, text.height + 20.0))
+        }
+        val depths = diagram.nodes.maxOfOrNull { it.depth } ?: 0
+        val columnWidths = (0..depths).map { depth ->
+            diagram.nodes.filter { it.depth == depth }.maxOfOrNull { sizes.getValue(it.id).width } ?: 0.0
+        }
+        val columnX = mutableListOf<Double>()
+        var x = config.padding
+        columnWidths.forEach { width ->
+            columnX += x
+            x += width + config.nodeGap
+        }
+
+        val centersY = mutableMapOf<String, Double>()
+        var leafCursor = config.padding
+        fun place(id: String): Double {
+            val childNodes = children[id].orEmpty()
+            val center = if (childNodes.isEmpty()) {
+                val height = sizes.getValue(id).height
+                val value = leafCursor + height / 2.0
+                leafCursor += height + config.nodeGap / 2.0
+                value
+            } else {
+                val childCenters = childNodes.map { place(it.id) }
+                (childCenters.first() + childCenters.last()) / 2.0
+            }
+            centersY[id] = center
+            return center
+        }
+        val root = diagram.nodes.single { it.parentId == null }
+        place(root.id)
+
+        val rects = diagram.nodes.associate { node ->
+            val size = sizes.getValue(node.id)
+            node.id to SceneRect(
+                x = columnX[node.depth],
+                y = centersY.getValue(node.id) - size.height / 2.0,
+                width = size.width,
+                height = size.height,
+            )
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.nodes.filter { it.parentId != null }.forEach { node ->
+            val parent = rects.getValue(requireNotNull(node.parentId))
+            val child = rects.getValue(node.id)
+            commands += DrawLine(
+                ScenePoint(parent.x + parent.width, parent.y + parent.height / 2.0),
+                ScenePoint(child.x, child.y + child.height / 2.0),
+            )
+        }
+        diagram.nodes.forEach { node ->
+            val rect = rects.getValue(node.id)
+            val radius = when (node.shape) {
+                MindmapNodeShape.DEFAULT -> 12.0
+                MindmapNodeShape.RECTANGLE -> 2.0
+                MindmapNodeShape.DOUBLE_CIRCLE -> rect.height / 2.0
+            }
+            commands += DrawRect(rect, cornerRadius = radius)
+            if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) {
+                val inset = 4.0
+                commands += DrawRect(
+                    SceneRect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2),
+                    cornerRadius = (rect.height - inset * 2) / 2.0,
+                )
+            }
+            commands += DrawText(
+                node.label,
+                ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + style.fontSize * 0.35),
+                TextAnchor.MIDDLE,
+                style,
+            )
+        }
+        val width = rects.values.maxOf { it.x + it.width } + config.padding
+        val height = maxOf(
+            rects.values.maxOf { it.y + it.height } + config.padding,
+            leafCursor - config.nodeGap / 2.0 + config.padding,
+        )
+        check(nodesById.size == diagram.nodes.size)
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutXyChart(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
