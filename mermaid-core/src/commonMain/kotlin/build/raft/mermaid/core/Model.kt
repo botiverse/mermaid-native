@@ -287,6 +287,14 @@ public data class SankeyDiagram(
 public data class SankeyNode(val id: String, val label: String)
 public data class SankeyLink(val sourceId: String, val targetId: String, val value: Double)
 
+/** Minimal platform-neutral model for the Mermaid treemap family. */
+public data class TreemapDiagram(val roots: List<TreemapNode>) : MermaidDiagram
+public data class TreemapNode(
+    val label: String,
+    val value: Double? = null,
+    val children: List<TreemapNode> = emptyList(),
+)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

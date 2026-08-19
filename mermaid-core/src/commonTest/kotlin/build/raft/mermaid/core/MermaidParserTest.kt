@@ -714,4 +714,31 @@ class MermaidParserTest {
             "sankey\nA,\"B\" tail,1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesTreemapHierarchyAndValues() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap-beta\n\"Products\"\n  \"Phones\": 50\n  \"Computers\": 30"))
+        assertEquals(
+            TreemapDiagram(listOf(TreemapNode("Products", children = listOf(TreemapNode("Phones", 50.0), TreemapNode("Computers", 30.0))))),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedTreemapFailsClosed() {
+        listOf(
+            "treemap-beta",
+            "treemap-beta\n\"Root leaf\": 1",
+            "treemap-beta\n\"Empty\"",
+            "treemap-beta\n  \"Jump\": 1",
+            "treemap-beta\n\"Root\"\n \"Bad indent\": 1",
+            "treemap-beta\n\"Root\"\n\t\"Tab\": 1",
+            "treemap-beta\n\"Root\"\n  \"Leaf\": 0",
+            "treemap-beta\n\"Root\"\n  \"Leaf\": NaN",
+            "treemap-beta\n\"Root\"\n  \"A\": 1.7976931348623157E308\n  \"B\": 1.7976931348623157E308",
+            "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n  \"Leaf\": 2",
+            "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n    \"Child\": 1",
+            "treemap-beta\n\"Root\":::class1\n  \"Leaf\": 1",
+            "treemap-beta\n\"Root\"\n  \"Leaf\": 1\nclassDef class1 fill:red",
+            "treemap-beta;\n\"Root\"\n  \"Leaf\": 1",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

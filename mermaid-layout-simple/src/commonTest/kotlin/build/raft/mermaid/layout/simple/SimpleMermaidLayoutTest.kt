@@ -70,6 +70,8 @@ import build.raft.mermaid.core.BlockEdge
 import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.core.SankeyNode
 import build.raft.mermaid.core.SankeyLink
+import build.raft.mermaid.core.TreemapDiagram
+import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -430,6 +432,31 @@ class SimpleMermaidLayoutTest {
         assertTrue(links[0].strokeWidth > links[1].strokeWidth)
         val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 12.0, fontWeight = 500))
         assertTrue(first.commands.filterIsInstance<DrawRect>().last().rect.width >= measured.width + 32.0)
+    }
+
+    @Test fun treemapProducesMeasuredDeterministicWeightedRectangles() {
+        val longLabel = "D".repeat(100)
+        val diagram = TreemapDiagram(
+            listOf(TreemapNode("Root", children = listOf(TreemapNode(longLabel, 75.0), TreemapNode("Small", 25.0)))),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Root", longLabel, "75", "Small", "25")))
+        val leaves = first.commands.filterIsInstance<DrawRect>().drop(1)
+        assertTrue(leaves[0].rect.width > leaves[1].rect.width)
+        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600))
+        assertTrue(first.width >= measured.width + 48.0)
+    }
+
+    @Test fun treemapNeverProducesNegativeGeometryForDenseSmallWeightedNodes() {
+        val tinyLeaves = (1..200).map { TreemapNode("Leaf $it", if (it == 1) 1.0 else 1e-12) }
+        val roots = (1..150).map { index -> TreemapNode("Root $index", children = tinyLeaves.map { it.copy(label = "${it.label}-$index") }) }
+        val scene = SimpleMermaidLayout.layout(TreemapDiagram(roots), FixedWidthTextMeasurer, LayoutConfig())
+        scene.commands.filterIsInstance<DrawRect>().forEach { rectangle ->
+            assertTrue(rectangle.rect.width >= 0.0)
+            assertTrue(rectangle.rect.height >= 0.0)
+        }
     }
 
     @Test

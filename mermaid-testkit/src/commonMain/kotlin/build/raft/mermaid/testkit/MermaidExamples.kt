@@ -69,6 +69,8 @@ import build.raft.mermaid.core.BlockEdge
 import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.core.SankeyNode
 import build.raft.mermaid.core.SankeyLink
+import build.raft.mermaid.core.TreemapDiagram
+import build.raft.mermaid.core.TreemapNode
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -83,6 +85,18 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val treemapProductMix: MermaidExample = MermaidExample(
+        "samples/treemap-product-mix.mmd",
+        "treemap-beta\n\"Products & services\"\n  \"Mobile\": 45\n  \"Web\": 35\n  \"API\": 20",
+        TreemapDiagram(
+            listOf(
+                TreemapNode(
+                    "Products & services",
+                    children = listOf(TreemapNode("Mobile", 45.0), TreemapNode("Web", 35.0), TreemapNode("API", 20.0)),
+                ),
+            ),
+        ),
+    )
     public val sankeyEnergyFlow: MermaidExample = MermaidExample(
         "samples/sankey-energy-flow.mmd",
         "sankey\nGrid,Industry,12.5\nGrid,\"Heating, homes\",7.25\nIndustry,Losses & exports,2.5",
@@ -472,6 +486,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        treemapProductMix,
         sankeyEnergyFlow,
         blockServiceMap,
         kanbanReleaseBoard,
