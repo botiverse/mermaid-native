@@ -30,6 +30,7 @@ import build.raft.mermaid.core.RequirementRelationshipKind
 import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.core.BlockDiagram
+import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -88,6 +89,78 @@ public object SimpleMermaidLayout : DiagramLayout {
         is KanbanDiagram -> layoutKanban(diagram, textMeasurer, config)
         is PacketDiagram -> layoutPacket(diagram, textMeasurer, config)
         is BlockDiagram -> layoutBlock(diagram, textMeasurer, config)
+        is SankeyDiagram -> layoutSankey(diagram, textMeasurer, config)
+    }
+
+    private fun layoutSankey(diagram: SankeyDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val textStyle = TextStyle(fontSize = 12.0, fontWeight = 500)
+        val layerGap = 120.0
+        val nodeGap = 24.0
+        val nodeWidth = max(160.0, diagram.nodes.maxOf { textMeasurer.measure(it.label, textStyle).width + 32.0 }).xyCoordinate()
+        val maxValue = diagram.links.maxOf { it.value }
+        val incoming = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.targetId == node.id }.sumOf { it.value } }
+        val outgoing = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.sourceId == node.id }.sumOf { it.value } }
+        val nodeHeights = diagram.nodes.associate { node ->
+            node.id to max(40.0, max(incoming.getValue(node.id), outgoing.getValue(node.id)) / maxValue * 100.0).xyCoordinate()
+        }
+        val indegree = diagram.nodes.associate { it.id to 0 }.toMutableMap()
+        val adjacent = diagram.nodes.associate { it.id to mutableListOf<String>() }
+        diagram.links.forEach { link ->
+            indegree[link.targetId] = indegree.getValue(link.targetId) + 1
+            adjacent.getValue(link.sourceId) += link.targetId
+        }
+        val depths = diagram.nodes.associate { it.id to 0 }.toMutableMap()
+        val queue = ArrayDeque(indegree.filterValues { it == 0 }.keys)
+        while (queue.isNotEmpty()) {
+            val node = queue.removeFirst()
+            adjacent.getValue(node).forEach { target ->
+                depths[target] = max(depths.getValue(target), depths.getValue(node) + 1)
+                val next = indegree.getValue(target) - 1
+                indegree[target] = next
+                if (next == 0) queue.addLast(target)
+            }
+        }
+        val groupedLayers = diagram.nodes.groupBy { depths.getValue(it.id) }
+        val layers = groupedLayers.keys.sorted().associateWith { groupedLayers.getValue(it) }
+        val placements = linkedMapOf<String, SceneRect>()
+        layers.forEach { (depth, nodes) ->
+            var y = config.padding
+            nodes.forEach { node ->
+                placements[node.id] = SceneRect(
+                    x = (config.padding + depth * (nodeWidth + layerGap)).xyCoordinate(),
+                    y = y.xyCoordinate(),
+                    width = nodeWidth,
+                    height = nodeHeights.getValue(node.id),
+                )
+                y += nodeHeights.getValue(node.id) + nodeGap
+            }
+        }
+        val width = (config.padding * 2 + layers.size * nodeWidth + max(0, layers.size - 1) * layerGap).xyCoordinate()
+        val height = (config.padding * 2 + layers.values.maxOf { nodes ->
+            nodes.sumOf { nodeHeights.getValue(it.id) } + max(0, nodes.size - 1) * nodeGap
+        }).xyCoordinate()
+        val commands = mutableListOf<DrawCommand>()
+        diagram.links.forEach { link ->
+            val source = placements.getValue(link.sourceId)
+            val target = placements.getValue(link.targetId)
+            commands += DrawLine(
+                ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
+                ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
+                stroke = SceneColor("#60a5fa"),
+                strokeWidth = max(1.5, link.value / maxValue * 12.0).xyCoordinate(),
+            )
+        }
+        diagram.nodes.forEach { node ->
+            val rect = placements.getValue(node.id)
+            commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"))
+            commands += DrawText(
+                node.label,
+                ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + 4.0),
+                anchor = TextAnchor.MIDDLE,
+                style = textStyle,
+            )
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

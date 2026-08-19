@@ -686,4 +686,32 @@ class MermaidParserTest {
             "block\ncolumns 2\na\nstyle a fill:#fff",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesSankeyQuotedCsvAndWeights() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("sankey\nGrid,Industry,12.5\nIndustry,\"Heat, \"\"homes\"\"\",4"))
+        assertEquals(
+            SankeyDiagram(
+                listOf(SankeyNode("Grid", "Grid"), SankeyNode("Industry", "Industry"), SankeyNode("Heat, \"homes\"", "Heat, \"homes\"")),
+                listOf(SankeyLink("Grid", "Industry", 12.5), SankeyLink("Industry", "Heat, \"homes\"", 4.0)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedSankeyFailsClosed() {
+        listOf(
+            "sankey",
+            "sankey\nA,B",
+            "sankey\nA,B,1,extra",
+            "sankey\nA,,1",
+            "sankey\nA,A,1",
+            "sankey\nA,B,0",
+            "sankey\nA,B,NaN",
+            "sankey\nA,B,Infinity",
+            "sankey\nA,B,1\nA,B,2",
+            "sankey\nA,B,1\nB,A,1",
+            "sankey\nA,\"unterminated,1",
+            "sankey\nA,\"B\" tail,1",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

@@ -33,6 +33,7 @@ public object MermaidParser {
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
             header.text.equals("packet", ignoreCase = true) -> parsePacket(statements)
             header.text.equals("block", ignoreCase = true) -> parseBlock(statements)
+            header.text.equals("sankey", ignoreCase = true) -> parseSankey(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1071,6 +1072,50 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseSankey(source: String): MermaidParseResult {
+        val nodes = linkedMapOf<String, SankeyNode>()
+        val links = mutableListOf<SankeyLink>()
+        val linkIds = mutableSetOf<Pair<String, String>>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        val lines = source.lineSequence().mapIndexedNotNull { index, raw ->
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith("%%")) null else SourceStatement(raw.trimEnd(), SourceLocation(index + 1, 1))
+        }.toList()
+
+        lines.drop(1).forEach { statement ->
+            val fields = statement.text.parseSankeyCsvLine()
+            if (fields == null || fields.size != 3) {
+                diagnostics += unsupported(statement, "sankey rows require exactly three valid CSV fields")
+                return@forEach
+            }
+            val sourceLabel = fields[0].trim()
+            val targetLabel = fields[1].trim()
+            val value = fields[2].trim().toDoubleOrNull()
+            if (sourceLabel.isEmpty() || targetLabel.isEmpty()) {
+                diagnostics += unsupported(statement, "sankey source and target labels must be non-empty")
+                return@forEach
+            }
+            if (value == null || !value.isFinite() || value <= 0.0) {
+                diagnostics += unsupported(statement, "sankey values must be finite and positive")
+                return@forEach
+            }
+            if (sourceLabel == targetLabel || !linkIds.add(sourceLabel to targetLabel)) {
+                diagnostics += unsupported(statement, "sankey self-links and duplicate links are not supported")
+                return@forEach
+            }
+            nodes.getOrPut(sourceLabel) { SankeyNode(sourceLabel, sourceLabel) }
+            nodes.getOrPut(targetLabel) { SankeyNode(targetLabel, targetLabel) }
+            links += SankeyLink(sourceLabel, targetLabel, value)
+        }
+        if (links.isEmpty()) diagnostics += unsupported(lines.first(), "sankey requires at least one link")
+        if (diagnostics.isEmpty() && sankeyHasCycle(nodes.keys, links)) {
+            diagnostics += unsupported(lines.first(), "Cyclic sankey links are not supported")
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(SankeyDiagram(nodes.values.toList(), links))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1146,6 +1191,67 @@ public object MermaidParser {
     private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
     private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?(?::([1-9][0-9]*))?$")
     private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
+}
+
+private fun String.parseSankeyCsvLine(): List<String>? {
+    val fields = mutableListOf<String>()
+    val current = StringBuilder()
+    var quoted = false
+    var closedQuote = false
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        if (quoted) {
+            if (char == '"') {
+                if (index + 1 < length && this[index + 1] == '"') {
+                    current.append('"')
+                    index += 1
+                } else {
+                    quoted = false
+                    closedQuote = true
+                }
+            } else current.append(char)
+        } else if (closedQuote) {
+            if (char != ',') return null
+            fields += current.toString()
+            current.clear()
+            closedQuote = false
+        } else {
+            when (char) {
+                ',' -> {
+                    fields += current.toString()
+                    current.clear()
+                }
+                '"' -> if (current.isEmpty()) quoted = true else return null
+                else -> current.append(char)
+            }
+        }
+        index += 1
+    }
+    if (quoted) return null
+    fields += current.toString()
+    return fields
+}
+
+private fun sankeyHasCycle(nodeIds: Set<String>, links: List<SankeyLink>): Boolean {
+    val indegree = nodeIds.associateWith { 0 }.toMutableMap()
+    val outgoing = nodeIds.associateWith { mutableListOf<String>() }
+    links.forEach { link ->
+        indegree[link.targetId] = indegree.getValue(link.targetId) + 1
+        outgoing.getValue(link.sourceId) += link.targetId
+    }
+    val queue = ArrayDeque(indegree.filterValues { it == 0 }.keys)
+    var visited = 0
+    while (queue.isNotEmpty()) {
+        val node = queue.removeFirst()
+        visited += 1
+        outgoing.getValue(node).forEach { target ->
+            val next = indegree.getValue(target) - 1
+            indegree[target] = next
+            if (next == 0) queue.addLast(target)
+        }
+    }
+    return visited != nodeIds.size
 }
 
 private fun parseIsoDay(value: String): Int? {

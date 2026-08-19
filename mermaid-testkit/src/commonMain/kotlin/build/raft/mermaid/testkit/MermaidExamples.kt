@@ -66,6 +66,9 @@ import build.raft.mermaid.core.PacketField
 import build.raft.mermaid.core.BlockDiagram
 import build.raft.mermaid.core.BlockNode
 import build.raft.mermaid.core.BlockEdge
+import build.raft.mermaid.core.SankeyDiagram
+import build.raft.mermaid.core.SankeyNode
+import build.raft.mermaid.core.SankeyLink
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -80,6 +83,23 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val sankeyEnergyFlow: MermaidExample = MermaidExample(
+        "samples/sankey-energy-flow.mmd",
+        "sankey\nGrid,Industry,12.5\nGrid,\"Heating, homes\",7.25\nIndustry,Losses & exports,2.5",
+        SankeyDiagram(
+            listOf(
+                SankeyNode("Grid", "Grid"),
+                SankeyNode("Industry", "Industry"),
+                SankeyNode("Heating, homes", "Heating, homes"),
+                SankeyNode("Losses & exports", "Losses & exports"),
+            ),
+            listOf(
+                SankeyLink("Grid", "Industry", 12.5),
+                SankeyLink("Grid", "Heating, homes", 7.25),
+                SankeyLink("Industry", "Losses & exports", 2.5),
+            ),
+        ),
+    )
     public val blockServiceMap: MermaidExample = MermaidExample(
         "samples/block-service-map.mmd",
         "block\ncolumns 3\napi[Public & partner API]:2\ndb[Database]\nworker[Worker]:2\napi --> worker\ndb --> worker",
@@ -452,6 +472,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        sankeyEnergyFlow,
         blockServiceMap,
         kanbanReleaseBoard,
         gitGraphReleaseFlow,
