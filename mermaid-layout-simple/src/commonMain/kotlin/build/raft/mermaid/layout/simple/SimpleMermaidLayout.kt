@@ -102,8 +102,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val unionStyle = TextStyle(fontSize = 12.0, fontWeight = 600, color = SceneColor("#334155"))
-        val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label } + listOfNotNull(diagram.title)
-        val measuredWidth = labels.maxOf { textMeasurer.measure(it, labelStyle).width }
+        val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label }
+        val measuredWidth = max(
+            labels.maxOf { textMeasurer.measure(it, labelStyle).width },
+            diagram.title?.let { textMeasurer.measure(it, titleStyle).width } ?: 0.0,
+        )
         val width = max(720.0, measuredWidth + config.padding * 2 + 80.0).xyCoordinate()
         val height = if (diagram.sets.size == 2) 420.0 else 500.0
         val centerX = width / 2.0

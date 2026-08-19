@@ -1223,7 +1223,7 @@ public object MermaidParser {
                 return@forEach
             }
             VENN_UNION.matchEntire(statement.text)?.let { match ->
-                val rawMembers = match.groupValues[1].split(',').map(String::trim)
+                val rawMembers = match.groupValues[1].parseVennMembers()
                 val members = rawMembers.mapNotNull { token -> VENN_IDENTIFIER.matchEntire(token)?.value?.unquoteVennId() }
                 val key = members.sorted().joinToString("\u0000")
                 val size = match.groupValues[3].parseVennSize(statement, diagnostics)
@@ -1332,6 +1332,23 @@ public object MermaidParser {
 private val INVALID_VENN_SIZE: Double = Double.NEGATIVE_INFINITY
 
 private fun String.unquoteVennId(): String = if (startsWith('"') && endsWith('"')) substring(1, lastIndex) else this
+
+private fun String.parseVennMembers(): List<String> {
+    val members = mutableListOf<String>()
+    var quoted = false
+    var start = 0
+    forEachIndexed { index, character ->
+        when (character) {
+            '"' -> quoted = !quoted
+            ',' -> if (!quoted) {
+                members += substring(start, index).trim()
+                start = index + 1
+            }
+        }
+    }
+    members += substring(start).trim()
+    return members
+}
 
 private fun String.parseVennSize(
     statement: SourceStatement,

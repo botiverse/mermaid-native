@@ -761,6 +761,14 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun parsesVennUnionWithCommaInsideQuotedSetId() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("venn-beta\nset \"A,B\"\nset C\nunion \"A,B\",C[\"Shared\"]"),
+        )
+        val diagram = assertIs<VennDiagram>(result.diagram)
+        assertEquals(listOf("A,B", "C"), diagram.unions.single().setIds)
+    }
+
     @Test fun malformedVennFailsClosed() {
         listOf(
             "venn-beta",

@@ -479,6 +479,17 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.width >= measured.width + 80.0)
     }
 
+    @Test fun vennMeasuresLongTitleWithItsRenderedStyle() {
+        val title = "T".repeat(100)
+        val scene = SimpleMermaidLayout.layout(
+            VennDiagram(title, listOf(VennSet("A", "Alpha"), VennSet("B", "Beta"))),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        val measured = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
+        assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 80.0)
+    }
+
     @Test
     fun sequenceUsesDashedReturnAndSelfMessagePolyline() {
         val diagram = SequenceDiagram(
