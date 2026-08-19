@@ -429,7 +429,7 @@ class MermaidParserTest {
         val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             timeline
               title Product history
-              2024 : Launch, First users
+              2024 : Launch : First users
               2025 : Scale
         """.trimIndent()))
         assertEquals(TimelineDiagram("Product history", listOf(TimelineEvent("2024", listOf("Launch", "First users")), TimelineEvent("2025", listOf("Scale")))), result.diagram)
@@ -437,7 +437,9 @@ class MermaidParserTest {
 
     @Test
     fun malformedTimelineFailsClosed() {
-        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\n2024 : Launch,", "timeline\ntitle One\ntitle Two\n2024 : Launch")
+        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\n2024 : Launch :", "timeline\ntitle One\ntitle Two\n2024 : Launch")
             .forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+        val comma = assertIs<MermaidParseResult.Success>(MermaidParser.parse("timeline\n2024 : Launch, First users"))
+        assertEquals(listOf("Launch, First users"), assertIs<TimelineDiagram>(comma.diagram).events.single().labels)
     }
 }

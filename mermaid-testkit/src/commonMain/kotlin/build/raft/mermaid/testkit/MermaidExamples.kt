@@ -267,7 +267,7 @@ public object MermaidExamples {
         source = """
             timeline
               title Product history
-              2024 : Launch, First users
+              2024 : Launch : First users
               2025 : Scale
         """.trimIndent(),
         expected = TimelineDiagram("Product history", listOf(

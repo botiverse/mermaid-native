@@ -616,10 +616,9 @@ public object MermaidParser {
                 val value = statement.text.substringAfter(' ').trim()
                 if (value.isEmpty() || title != null) diagnostics += unsupported(statement, "Timeline requires at most one non-empty title") else title = value
             } else {
-                val parts = statement.text.split(':', limit = 2)
-                val labels = parts.getOrNull(1)?.split(',')?.map { it.trim() }.orEmpty()
-                if (parts.size != 2 || parts[0].trim().isEmpty() || labels.isEmpty() || labels.any { it.isEmpty() }) diagnostics += unsupported(statement, "Timeline event requires period : label")
-                else events += TimelineEvent(parts[0].trim(), labels)
+                val parts = statement.text.split(':').map { it.trim() }
+                if (parts.size < 2 || parts.any { it.isEmpty() }) diagnostics += unsupported(statement, "Timeline event requires period : event [: event]")
+                else events += TimelineEvent(parts.first(), parts.drop(1))
             }
         }
         if (events.isEmpty()) diagnostics += unsupported(statements.first(), "timeline requires at least one event")
