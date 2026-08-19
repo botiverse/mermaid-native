@@ -304,6 +304,17 @@ public data class VennDiagram(
 public data class VennSet(val id: String, val label: String, val size: Double? = null)
 public data class VennUnion(val setIds: List<String>, val label: String? = null, val size: Double? = null)
 
+public data class UsecaseDiagram(
+    val direction: FlowDirection = FlowDirection.TB,
+    val actors: List<UsecaseActor>,
+    val useCases: List<UsecaseNode>,
+    val relationships: List<UsecaseRelationship>,
+) : MermaidDiagram
+public data class UsecaseActor(val id: String, val label: String)
+public enum class UsecaseShape { ELLIPSE, RECTANGLE }
+public data class UsecaseNode(val id: String, val label: String, val shape: UsecaseShape)
+public data class UsecaseRelationship(val sourceId: String, val targetId: String, val label: String? = null)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

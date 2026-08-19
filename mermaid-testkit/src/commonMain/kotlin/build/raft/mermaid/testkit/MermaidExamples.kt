@@ -74,6 +74,11 @@ import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.core.VennDiagram
 import build.raft.mermaid.core.VennSet
 import build.raft.mermaid.core.VennUnion
+import build.raft.mermaid.core.UsecaseDiagram
+import build.raft.mermaid.core.UsecaseActor
+import build.raft.mermaid.core.UsecaseNode
+import build.raft.mermaid.core.UsecaseShape
+import build.raft.mermaid.core.UsecaseRelationship
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -88,6 +93,16 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val usecaseOrderFlow: MermaidExample = MermaidExample(
+        "samples/usecase-order-flow.mmd",
+        "usecase-beta\ndirection LR\nactor Customer(\"Customer\")\nCheckout(\"Place order\")\nReceipt[Create receipt]\nCustomer -- \"starts\" --> Checkout\nCheckout --> Receipt",
+        UsecaseDiagram(
+            direction = build.raft.mermaid.core.FlowDirection.LR,
+            actors = listOf(UsecaseActor("Customer", "Customer")),
+            useCases = listOf(UsecaseNode("Checkout", "Place order", UsecaseShape.ELLIPSE), UsecaseNode("Receipt", "Create receipt", UsecaseShape.RECTANGLE)),
+            relationships = listOf(UsecaseRelationship("Customer", "Checkout", "starts"), UsecaseRelationship("Checkout", "Receipt")),
+        ),
+    )
     public val vennTeamOverlap: MermaidExample = MermaidExample(
         "samples/venn-team-overlap.mmd",
         "venn-beta\ntitle \"Team overlap\"\nset Frontend[\"Frontend & design\"]:20\nset Backend:16\nset Platform:12\nunion Frontend,Backend[\"APIs\"]:5\nunion Frontend,Backend,Platform[\"Shared tooling\"]:2",
@@ -505,6 +520,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        usecaseOrderFlow,
         vennTeamOverlap,
         treemapProductMix,
         sankeyEnergyFlow,

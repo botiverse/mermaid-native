@@ -786,4 +786,32 @@ class MermaidParserTest {
             "venn-beta;\nset A\nset B",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesUsecaseActorsShapesAndRelationships() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("usecase-beta\ndirection LR\nactor Customer(\"Customer\")\n1Checkout(\"Place order\")\nReport[Generate report]\nCustomer -- \"starts\" --> 1Checkout\n1Checkout --> Report"))
+        assertEquals(
+            UsecaseDiagram(
+                FlowDirection.LR,
+                listOf(UsecaseActor("Customer", "Customer")),
+                listOf(UsecaseNode("1Checkout", "Place order", UsecaseShape.ELLIPSE), UsecaseNode("Report", "Generate report", UsecaseShape.RECTANGLE)),
+                listOf(UsecaseRelationship("Customer", "1Checkout", "starts"), UsecaseRelationship("1Checkout", "Report")),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedUsecaseFailsClosed() {
+        listOf(
+            "usecase-beta",
+            "usecase-beta\nactor User\nactor User\nLogin(\"Login\")",
+            "usecase-beta\nactor User\nLogin(\"Login\")\nUnknown --> Login",
+            "usecase-beta\nactor User\nLogin(\"Login\")\nUser ..> Login",
+            "usecase-beta\nactor User\nLogin(\"Login\")\nsystemBoundary \"App\"",
+            "usecase-beta\nactor User\nLogin(\"Login\")\nstyle Login fill:red",
+            "usecase-beta\nactor User-name\nLogin(\"Login\")",
+            "usecase-beta\ndirection LR\ndirection TD\nactor User\nLogin(\"Login\")",
+            "usecase-beta\ndirection BT\nactor User\nLogin(\"Login\")",
+            "usecase-beta;\nactor User\nLogin(\"Login\")",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }

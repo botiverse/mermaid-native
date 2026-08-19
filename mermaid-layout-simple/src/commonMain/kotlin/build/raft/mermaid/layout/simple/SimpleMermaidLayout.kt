@@ -34,6 +34,8 @@ import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.core.TreemapDiagram
 import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.core.VennDiagram
+import build.raft.mermaid.core.UsecaseDiagram
+import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -96,6 +98,95 @@ public object SimpleMermaidLayout : DiagramLayout {
         is SankeyDiagram -> layoutSankey(diagram, textMeasurer, config)
         is TreemapDiagram -> layoutTreemap(diagram, textMeasurer, config)
         is VennDiagram -> layoutVenn(diagram, textMeasurer, config)
+        is UsecaseDiagram -> layoutUsecase(diagram, textMeasurer, config)
+    }
+
+    private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val style = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val labels = diagram.actors.map { it.label } + diagram.useCases.map { it.label }
+        val nodeWidth = max(150.0, labels.maxOf { textMeasurer.measure(it, style).width } + 40.0)
+        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
+        val rows = max(diagram.actors.size, diagram.useCases.size)
+        val width = if (horizontal) max(720.0, nodeWidth * 2 + 180.0) else max(720.0, nodeWidth * rows + 32.0 * (rows - 1) + config.padding * 2)
+        val height = if (horizontal) max(360.0, rows * 110.0 + config.padding * 2) else 430.0
+        val actorFirst = diagram.direction != FlowDirection.RL && diagram.direction != FlowDirection.BT
+        val actorPoints = diagram.actors.indices.map { index ->
+            if (horizontal) ScenePoint(if (actorFirst) config.padding + nodeWidth / 2 else width - config.padding - nodeWidth / 2, config.padding + 58.0 + index * 110.0)
+            else ScenePoint(config.padding + nodeWidth / 2 + index * (nodeWidth + 32.0), if (actorFirst) 88.0 else height - 88.0)
+        }
+        val usecasePoints = diagram.useCases.indices.map { index ->
+            if (horizontal) ScenePoint(if (actorFirst) width - config.padding - nodeWidth / 2 else config.padding + nodeWidth / 2, config.padding + 58.0 + index * 110.0)
+            else ScenePoint(config.padding + nodeWidth / 2 + index * (nodeWidth + 32.0), if (actorFirst) height - 92.0 else 92.0)
+        }
+        val pointById = (diagram.actors.mapIndexed { i, item -> item.id to actorPoints[i] } + diagram.useCases.mapIndexed { i, item -> item.id to usecasePoints[i] }).toMap()
+        val usecaseById = diagram.useCases.associateBy { it.id }
+        val actorIds = diagram.actors.mapTo(mutableSetOf()) { it.id }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.relationships.forEach { relationship ->
+            val fromCenter = pointById.getValue(relationship.sourceId)
+            val toCenter = pointById.getValue(relationship.targetId)
+            val fromNode = usecaseById[relationship.sourceId]
+            val toNode = usecaseById[relationship.targetId]
+            val from = usecaseBoundaryPoint(
+                center = fromCenter,
+                toward = toCenter,
+                halfWidth = if (relationship.sourceId in actorIds) 18.0 else nodeWidth / 2.0,
+                halfHeight = if (relationship.sourceId in actorIds) 38.0 else 38.0,
+                ellipse = fromNode?.shape == UsecaseShape.ELLIPSE,
+            )
+            val to = usecaseBoundaryPoint(
+                center = toCenter,
+                toward = fromCenter,
+                halfWidth = if (relationship.targetId in actorIds) 18.0 else nodeWidth / 2.0,
+                halfHeight = if (relationship.targetId in actorIds) 38.0 else 38.0,
+                ellipse = toNode?.shape == UsecaseShape.ELLIPSE,
+            )
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += arrowHead(from, to)
+            relationship.label?.let { label ->
+                commands += DrawText(label, ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0 - 8.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
+            }
+        }
+        diagram.actors.forEachIndexed { index, actor ->
+            val point = actorPoints[index]
+            commands += DrawEllipse(ScenePoint(point.x, point.y - 20.0).canonical(), 10.0, 10.0, fill = SceneColor("#ffffff"), strokeWidth = 1.5)
+            commands += DrawLine(ScenePoint(point.x, point.y - 10.0), ScenePoint(point.x, point.y + 20.0))
+            commands += DrawLine(ScenePoint(point.x - 15.0, point.y), ScenePoint(point.x + 15.0, point.y))
+            commands += DrawLine(ScenePoint(point.x, point.y + 20.0), ScenePoint(point.x - 13.0, point.y + 38.0))
+            commands += DrawLine(ScenePoint(point.x, point.y + 20.0), ScenePoint(point.x + 13.0, point.y + 38.0))
+            commands += DrawText(actor.label, ScenePoint(point.x, point.y + 58.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
+        }
+        diagram.useCases.forEachIndexed { index, node ->
+            val point = usecasePoints[index]
+            if (node.shape == UsecaseShape.ELLIPSE) {
+                commands += DrawEllipse(point.canonical(), nodeWidth / 2.0, 38.0, fill = SceneColor("#eff6ff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+            } else {
+                commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 4.0, fill = SceneColor("#eff6ff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+            }
+            commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun usecaseBoundaryPoint(
+        center: ScenePoint,
+        toward: ScenePoint,
+        halfWidth: Double,
+        halfHeight: Double,
+        ellipse: Boolean,
+    ): ScenePoint {
+        val dx = toward.x - center.x
+        val dy = toward.y - center.y
+        if (dx == 0.0 && dy == 0.0) return center
+        val scale = if (ellipse) {
+            1.0 / sqrt(dx * dx / (halfWidth * halfWidth) + dy * dy / (halfHeight * halfHeight))
+        } else {
+            minOf(
+                if (dx == 0.0) Double.POSITIVE_INFINITY else halfWidth / kotlin.math.abs(dx),
+                if (dy == 0.0) Double.POSITIVE_INFINITY else halfHeight / kotlin.math.abs(dy),
+            )
+        }
+        return ScenePoint(center.x + dx * scale, center.y + dy * scale).canonical()
     }
 
     private fun layoutVenn(diagram: VennDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
