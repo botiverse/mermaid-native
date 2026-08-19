@@ -527,4 +527,43 @@ class MermaidParserTest {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
     }
+
+    @Test
+    fun parsesGitGraphBranchesCommitsCheckoutAndMerge() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            gitGraph
+              commit id: "base" tag: "v1"
+              branch develop
+              commit id: "feature" type: HIGHLIGHT
+              switch main
+              commit id: "release" type: REVERSE
+              merge develop id: "merge" tag: "v2"
+        """.trimIndent()))
+        assertEquals(
+            GitGraphDiagram(
+                branches = listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
+                commits = listOf(
+                    GitGraphCommit("base", "main", emptyList(), tag = "v1"),
+                    GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
+                    GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
+                    GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2", isMerge = true),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedGitGraphFailsClosed() {
+        listOf(
+            "gitGraph",
+            "gitGraph\ncheckout missing\ncommit",
+            "gitGraph\nbranch develop\nbranch develop\ncommit",
+            "gitGraph\ncommit id: \"same\"\ncommit id: \"same\"",
+            "gitGraph\ncommit\nmerge main",
+            "gitGraph\ncommit\nbranch develop\nswitch main\nmerge develop",
+            "gitGraph\ncommit type: UNKNOWN",
+            "gitGraph\ncherry-pick id: \"one\"",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }
