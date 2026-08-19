@@ -25,7 +25,7 @@ swimlanes,swimlanes,not_started,no,no,no,no,Official syntax family; implementati
 timeline,timeline,in_progress,partial,partial,partial,partial,Vertical slice supports a title ordered periods and one or more labels per period; full family parity is not complete.
 treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
 treemap,treemap,in_progress,partial,partial,partial,partial,Vertical slice supports two-space hierarchy sections and finite positive weighted leaves; styling configuration and full family parity are not complete.
-usecase,usecase,not_started,no,no,no,no,Official syntax family; implementation is not started.
+usecase,usecase,in_progress,partial,partial,partial,partial,Vertical slice supports explicit actors, ellipse/rectangle use cases and solid associations; boundaries, UML operators and full family parity are not complete.
 userJourney,userJourney,in_progress,partial,partial,partial,partial,Vertical slice supports title sections scored tasks and actor lists; full family parity is not complete.
 venn,venn,in_progress,partial,partial,partial,partial,Vertical slice supports two or three sets and pair/triple union labels with optional finite positive sizes; text nodes styling and full family parity are not complete.
 wardley,wardley,not_started,no,no,no,no,Official syntax family; implementation is not started.

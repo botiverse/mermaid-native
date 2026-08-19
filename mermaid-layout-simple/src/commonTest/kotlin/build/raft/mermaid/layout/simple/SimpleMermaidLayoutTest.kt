@@ -75,6 +75,11 @@ import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.core.VennDiagram
 import build.raft.mermaid.core.VennSet
 import build.raft.mermaid.core.VennUnion
+import build.raft.mermaid.core.UsecaseDiagram
+import build.raft.mermaid.core.UsecaseActor
+import build.raft.mermaid.core.UsecaseNode
+import build.raft.mermaid.core.UsecaseShape
+import build.raft.mermaid.core.UsecaseRelationship
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -488,6 +493,26 @@ class SimpleMermaidLayoutTest {
         )
         val measured = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
         assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 80.0)
+    }
+
+    @Test fun usecaseProducesMeasuredDeterministicActorsShapesAndEdges() {
+        val label = "U".repeat(100)
+        val diagram = UsecaseDiagram(
+            FlowDirection.LR,
+            listOf(UsecaseActor("User", "User")),
+            listOf(UsecaseNode("A", label, UsecaseShape.ELLIPSE), UsecaseNode("B", "Report", UsecaseShape.RECTANGLE)),
+            listOf(UsecaseRelationship("User", "A", "opens"), UsecaseRelationship("A", "B")),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, scene.commands.filterIsInstance<DrawEllipse>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("User", label, "Report", "opens")))
+        val measured = FixedWidthTextMeasurer.measure(label, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600))
+        assertTrue(scene.width >= measured.width * 2 + 180.0)
+        val firstEdge = scene.commands.filterIsInstance<DrawLine>().first()
+        assertTrue(firstEdge.from.x > LayoutConfig().padding + measured.width / 2.0)
+        assertTrue(firstEdge.to.x < scene.width - LayoutConfig().padding - measured.width / 2.0)
     }
 
     @Test

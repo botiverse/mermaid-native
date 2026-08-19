@@ -1,0 +1,7 @@
+usecase-beta
+direction LR
+actor Customer("Customer")
+Checkout("Place order")
+Receipt[Create receipt]
+Customer -- "starts" --> Checkout
+Checkout --> Receipt
