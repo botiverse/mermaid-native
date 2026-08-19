@@ -61,6 +61,8 @@ import build.raft.mermaid.core.RequirementVerifyMethod
 import build.raft.mermaid.core.KanbanCard
 import build.raft.mermaid.core.KanbanColumn
 import build.raft.mermaid.core.KanbanDiagram
+import build.raft.mermaid.core.PacketDiagram
+import build.raft.mermaid.core.PacketField
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -134,6 +136,29 @@ public object MermaidExamples {
             elements = listOf(RequirementElement("mobile_client", "application", "docs/auth.md")),
             relationships = listOf(
                 RequirementRelationship("mobile_client", "secure_login", RequirementRelationshipKind.SATISFIES),
+            ),
+        ),
+    )
+
+    public val packetUdp: MermaidExample = MermaidExample(
+        path = "samples/packet-udp.mmd",
+        source = """
+            packet
+              title UDP Packet
+              0-15: "Source Port"
+              16-31: "Destination Port"
+              32-47: "Length"
+              48-63: "Checksum"
+              64-95: "Data"
+        """.trimIndent(),
+        expected = PacketDiagram(
+            title = "UDP Packet",
+            fields = listOf(
+                PacketField(0, 15, "Source Port"),
+                PacketField(16, 31, "Destination Port"),
+                PacketField(32, 47, "Length"),
+                PacketField(48, 63, "Checksum"),
+                PacketField(64, 95, "Data"),
             ),
         ),
     )
@@ -418,6 +443,7 @@ public object MermaidExamples {
         kanbanReleaseBoard,
         gitGraphReleaseFlow,
         requirementLogin,
+        packetUdp,
         mindmapProjectPlan,
         xyQuarterlySales,
         entityRelationshipCustomerOrder,

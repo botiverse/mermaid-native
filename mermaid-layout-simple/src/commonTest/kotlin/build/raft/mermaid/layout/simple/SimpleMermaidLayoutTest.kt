@@ -62,6 +62,8 @@ import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.KanbanCard
 import build.raft.mermaid.core.KanbanColumn
 import build.raft.mermaid.core.KanbanDiagram
+import build.raft.mermaid.core.PacketDiagram
+import build.raft.mermaid.core.PacketField
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -135,6 +137,48 @@ class SimpleMermaidLayoutTest {
             assertEquals(end.y, outerEnd.y)
             assertTrue(start.y != end.y)
         }
+    }
+
+    @Test
+    fun packetProducesDeterministicBitRowsAndSplitFields() {
+        val diagram = PacketDiagram(
+            "Header",
+            listOf(PacketField(0, 15, "Source"), PacketField(16, 40, "Cross-row payload")),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, second)
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawText>().count { it.text == "Cross-row payload" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "32-40" })
+    }
+
+    @Test
+    fun packetCrossRowSegmentsMeasureRepeatedLabelsIndependently() {
+        val label = "A".repeat(50)
+        val scene = SimpleMermaidLayout.layout(
+            PacketDiagram(null, listOf(PacketField(31, 32, label))),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        val labelStyle = build.raft.mermaid.layout.TextStyle(fontSize = 11.0)
+        val requiredWidth = FixedWidthTextMeasurer.measure(label, labelStyle).width + 20.0
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.width >= requiredWidth })
+    }
+
+    @Test
+    fun packetSceneMeasuresLongTitleWithRenderedStyle() {
+        val title = "T".repeat(100)
+        val config = LayoutConfig()
+        val scene = SimpleMermaidLayout.layout(
+            PacketDiagram(title, listOf(PacketField(0, 0, "F"))),
+            FixedWidthTextMeasurer,
+            config,
+        )
+        val titleStyle = build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600)
+        val requiredWidth = FixedWidthTextMeasurer.measure(title, titleStyle).width + config.padding * 2
+        assertTrue(scene.width >= requiredWidth)
     }
 
     @Test

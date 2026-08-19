@@ -28,6 +28,7 @@ import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.RequirementDiagram
 import build.raft.mermaid.core.RequirementRelationshipKind
 import build.raft.mermaid.core.KanbanDiagram
+import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -60,6 +61,8 @@ public object FixedWidthTextMeasurer : TextMeasurer {
     )
 }
 
+private const val PACKET_BITS_PER_ROW: Int = 32
+
 /** Small deterministic layout with no DOM, JavaScript, ELK, or platform state. */
 public object SimpleMermaidLayout : DiagramLayout {
     override fun layout(
@@ -82,6 +85,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
         is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
         is KanbanDiagram -> layoutKanban(diagram, textMeasurer, config)
+        is PacketDiagram -> layoutPacket(diagram, textMeasurer, config)
     }
 
     private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
@@ -180,6 +184,51 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             commit.tag?.let { commands += DrawText(it, ScenePoint(center.x, center.y - 18.0), TextAnchor.MIDDLE, tagStyle) }
             commands += DrawText(commit.id, ScenePoint(center.x, center.y + 27.0), TextAnchor.MIDDLE, commitStyle)
+        }
+        return LayoutScene(width, height, commands)
+    }
+
+    private fun layoutPacket(diagram: PacketDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 11.0)
+        val rangeStyle = TextStyle(fontSize = 9.0, color = SceneColor("#475569"))
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val bitWidth = max(24.0, diagram.fields.maxOf { field ->
+            val firstRow = field.startBit / PACKET_BITS_PER_ROW
+            val lastRow = field.endBit / PACKET_BITS_PER_ROW
+            val narrowestSegmentBits = (firstRow..lastRow).minOf { row ->
+                val rowStart = row * PACKET_BITS_PER_ROW
+                val segmentStart = maxOf(field.startBit, rowStart)
+                val segmentEnd = minOf(field.endBit, rowStart + PACKET_BITS_PER_ROW - 1)
+                segmentEnd - segmentStart + 1
+            }
+            (textMeasurer.measure(field.label, labelStyle).width + 20.0) / narrowestSegmentBits
+        })
+        val titleHeight = if (diagram.title == null) 0.0 else 34.0
+        val rowHeight = 60.0
+        val rowCount = diagram.fields.maxOf { it.endBit } / PACKET_BITS_PER_ROW + 1
+        val gridWidth = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
+        val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
+        val width = max(gridWidth, titleWidth)
+        val height = config.padding * 2 + titleHeight + rowCount * rowHeight
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let {
+            commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = titleStyle)
+        }
+        diagram.fields.forEach { field ->
+            val firstRow = field.startBit / PACKET_BITS_PER_ROW
+            val lastRow = field.endBit / PACKET_BITS_PER_ROW
+            (firstRow..lastRow).forEach { row ->
+                val rowStart = row * PACKET_BITS_PER_ROW
+                val segmentStart = maxOf(field.startBit, rowStart)
+                val segmentEnd = minOf(field.endBit, rowStart + PACKET_BITS_PER_ROW - 1)
+                val x = config.padding + (segmentStart - rowStart) * bitWidth
+                val y = config.padding + titleHeight + row * rowHeight
+                val segmentWidth = (segmentEnd - segmentStart + 1) * bitWidth
+                commands += DrawRect(SceneRect(x, y, segmentWidth, 38.0), cornerRadius = 2.0, fill = SceneColor("#eff6ff"))
+                commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + 23.0), TextAnchor.MIDDLE, labelStyle)
+                val range = if (segmentStart == segmentEnd) "$segmentStart" else "$segmentStart-$segmentEnd"
+                commands += DrawText(range, ScenePoint(x + segmentWidth / 2.0, y + 53.0), TextAnchor.MIDDLE, rangeStyle)
+            }
         }
         return LayoutScene(width, height, commands)
     }
