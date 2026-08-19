@@ -844,4 +844,29 @@ class MermaidParserTest {
             "architecture-beta;\nservice db(database)[Database]",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+
+    @Test fun parsesC4ContextElementsAndRelationships() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("C4Context\ntitle Banking context\nPerson(customer, \"Customer\", \"Uses the service\")\nSystem_Ext(bank, \"Bank API\")\nRel(customer, bank, \"Checks balance\", \"HTTPS\")\nBiRel(bank, customer, \"Updates\")"))
+        assertEquals(
+            C4Diagram(
+                "Banking context",
+                listOf(C4Element("customer", "Customer", "Uses the service", C4ElementKind.PERSON), C4Element("bank", "Bank API", null, C4ElementKind.SYSTEM, true)),
+                listOf(C4Relationship("customer", "bank", "Checks balance", "HTTPS"), C4Relationship("bank", "customer", "Updates", bidirectional = true)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test fun malformedC4ContextFailsClosed() {
+        listOf(
+            "C4Context",
+            "c4context\nPerson(a, \"A\")",
+            "C4Context\nPerson(a, \"A\")\nSystem(a, \"Duplicate\")",
+            "C4Context\nPerson(a, \"A\")\nRel(a, missing, \"Uses\")",
+            "C4Context\nPerson(a, \"A\")\nRel(a, a, \"Self\")",
+            "C4Context\nPerson(a, \"A\")\nBoundary(b, \"Deferred\") {",
+            "C4Context\nPerson(a, \"A\")\nUpdateElementStyle(a, ${'$'}fontColor=\"red\")",
+            "C4Context;\nPerson(a, \"A\")",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
 }
