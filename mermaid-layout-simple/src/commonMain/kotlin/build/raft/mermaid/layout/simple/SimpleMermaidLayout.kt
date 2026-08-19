@@ -131,7 +131,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         )
         val taskGap = 14.0
         val maxTasks = diagram.sections.maxOf { it.tasks.size }
-        val width = max(640.0, config.padding * 2 + sectionWidth + maxTasks * taskWidth + max(0, maxTasks - 1) * taskGap)
+        val contentWidth = config.padding * 2 + sectionWidth + maxTasks * taskWidth + max(0, maxTasks - 1) * taskGap
+        val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
+        val width = max(640.0, max(contentWidth, titleWidth))
         val titleHeight = if (diagram.title == null) 18.0 else 42.0
         val rowHeight = 92.0
         val height = config.padding * 2 + titleHeight + diagram.sections.size * rowHeight

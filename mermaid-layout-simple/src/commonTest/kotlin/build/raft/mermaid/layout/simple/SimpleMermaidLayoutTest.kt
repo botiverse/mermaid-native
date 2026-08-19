@@ -230,6 +230,18 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun userJourneyWidthContainsLongTitle() {
+        val title = "A".repeat(100)
+        val diagram = UserJourneyDiagram(
+            title,
+            listOf(UserJourneySection("Section", listOf(UserJourneyTask("Task", 3, listOf("Actor"))))),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
+        assertTrue(scene.width >= measuredTitle.width + 48.0)
+    }
+
+    @Test
     fun sequenceUsesDashedReturnAndSelfMessagePolyline() {
         val diagram = SequenceDiagram(
             actors = listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
