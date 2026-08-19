@@ -21,6 +21,10 @@ The SVGs are deterministic goldens for the common renderer. Kuikly and other
 native host samples will be added as those adapters acquire public runnable
 APIs.
 
+`flowchart-chinese.mmd` is a native-library regression sample for CJK text.
+Its SVG golden keeps the original Unicode bytes and emits a host-overridable
+Android/iOS/OHOS CJK font fallback stack; the library does not embed a font.
+
 `state-lifecycle.mmd` is an original compatibility fixture based on the
 documented `stateDiagram-v2` syntax at pinned Mermaid revision
 `04ee3364045d6573f84034d3c9368cc50233a92f`; it is not copied renderer output.

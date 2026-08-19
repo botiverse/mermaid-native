@@ -18,6 +18,10 @@ text-measurement seam and returns stable geometry. This makes parser tests and
 geometry tests deterministic while allowing Android, iOS, and OHOS fonts to
 remain platform-specific.
 
+SVG serialization preserves Unicode text and selects a CJK fallback only for
+CJK runs that still use the default scene family. Hosts may override that stack
+through `SvgRenderConfig`; custom scene font families are never replaced.
+
 Public modules share one version and are published with Gradle Module Metadata.
 Consumers should depend on exact published artifacts rather than source or
 composite builds.

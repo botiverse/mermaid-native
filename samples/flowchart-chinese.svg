@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="88" viewBox="0 0 400 88" role="img">
+  <line x1="104" y1="44" x2="160" y2="44" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="160,44 151,48.5 151,39.5" fill="#475569"/>
+  <line x1="240" y1="44" x2="296" y2="44" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="296,44 287,48.5 287,39.5" fill="#475569"/>
+  <rect x="24" y="24" width="80" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="64" y="48.9" text-anchor="middle" font-family="Noto Sans CJK SC, PingFang SC, HarmonyOS Sans SC, Microsoft YaHei, sans-serif" font-size="14" font-weight="400" fill="#111827">输入</text>
+  <rect x="160" y="24" width="80" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="200" y="48.9" text-anchor="middle" font-family="Noto Sans CJK SC, PingFang SC, HarmonyOS Sans SC, Microsoft YaHei, sans-serif" font-size="14" font-weight="400" fill="#111827">处理</text>
+  <rect x="296" y="24" width="80" height="40" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="336" y="48.9" text-anchor="middle" font-family="Noto Sans CJK SC, PingFang SC, HarmonyOS Sans SC, Microsoft YaHei, sans-serif" font-size="14" font-weight="400" fill="#111827">输出</text>
+</svg>

@@ -56,4 +56,29 @@ class SvgRendererTest {
         assertFalse(svg.contains("<unsafe"))
         assertTrue(svg.endsWith("</svg>\n"))
     }
+
+    @Test
+    fun hostCanInjectCjkFontFallbackWithoutChangingTextBytes() {
+        val scene = LayoutScene(
+            width = 100.0,
+            height = 40.0,
+            commands = listOf(DrawText("中文", ScenePoint(50.0, 24.0), TextAnchor.MIDDLE)),
+        )
+
+        val svg = SvgRenderer.render(scene, SvgRenderConfig("Noto Sans CJK SC, PingFang SC, sans-serif"))
+
+        assertTrue(svg.contains("font-family=\"Noto Sans CJK SC, PingFang SC, sans-serif\""))
+        assertTrue(svg.contains(">中文</text>"))
+    }
+
+    @Test
+    fun defaultCjkStackDoesNotDriftLatinText() {
+        val scene = LayoutScene(
+            width = 100.0,
+            height = 40.0,
+            commands = listOf(DrawText("English", ScenePoint(50.0, 24.0), TextAnchor.MIDDLE)),
+        )
+
+        assertTrue(SvgRenderer.render(scene).contains("font-family=\"sans-serif\""))
+    }
 }

@@ -158,6 +158,20 @@ public object MermaidExamples {
         ),
     )
 
+    public val flowchartChinese: MermaidExample = MermaidExample(
+        path = "samples/flowchart-chinese.mmd",
+        source = """
+            graph LR
+              A[输入] --> B[处理]
+              B --> C[输出]
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.LR,
+            nodes = listOf(FlowNode("A", "输入"), FlowNode("B", "处理"), FlowNode("C", "输出")),
+            edges = listOf(FlowEdge("A", "B"), FlowEdge("B", "C")),
+        ),
+    )
+
     public val sequenceRequestResponse: MermaidExample = MermaidExample(
         path = "samples/sequence-request-response.mmd",
         source = """
@@ -222,6 +236,7 @@ public object MermaidExamples {
         piePets,
         flowchartLinear,
         flowchartLeftToRight,
+        flowchartChinese,
         sequenceRequestResponse,
         stateLifecycle,
     )

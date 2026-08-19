@@ -12,7 +12,7 @@ import build.raft.mermaid.layout.TextAnchor
 
 /** Deterministic, markup-safe serializer for a platform-neutral [LayoutScene]. */
 public object SvgRenderer {
-    public fun render(scene: LayoutScene): String = buildString {
+    public fun render(scene: LayoutScene, config: SvgRenderConfig = SvgRenderConfig()): String = buildString {
         append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"")
         append(scene.width.svgNumber())
         append("\" height=\"")
@@ -24,14 +24,19 @@ public object SvgRenderer {
         append("\" role=\"img\">\n")
         scene.commands.forEach { command ->
             append("  ")
-            append(command.toSvg())
+            append(command.toSvg(config))
             append('\n')
         }
         append("</svg>\n")
     }
 }
 
-private fun DrawCommand.toSvg(): String = when (this) {
+/** Host-selected font fallback for text whose glyphs are not in the scene's default family. */
+public data class SvgRenderConfig(
+    public val cjkFontFamily: String = "Noto Sans CJK SC, PingFang SC, HarmonyOS Sans SC, Microsoft YaHei, sans-serif",
+)
+
+private fun DrawCommand.toSvg(config: SvgRenderConfig): String = when (this) {
     is DrawRect -> buildString {
         append("<rect x=\"${rect.x.svgNumber()}\" y=\"${rect.y.svgNumber()}\"")
         append(" width=\"${rect.width.svgNumber()}\" height=\"${rect.height.svgNumber()}\"")
@@ -58,11 +63,18 @@ private fun DrawCommand.toSvg(): String = when (this) {
     }
     is DrawText -> buildString {
         append("<text x=\"${origin.x.svgNumber()}\" y=\"${origin.y.svgNumber()}\"")
-        append(" text-anchor=\"${anchor.svgName()}\" font-family=\"${style.fontFamily.escapeXml()}\"")
+        val family = if (style.fontFamily == "sans-serif" && text.any(Char::isCjk)) {
+            config.cjkFontFamily
+        } else {
+            style.fontFamily
+        }
+        append(" text-anchor=\"${anchor.svgName()}\" font-family=\"${family.escapeXml()}\"")
         append(" font-size=\"${style.fontSize.svgNumber()}\" font-weight=\"${style.fontWeight}\"")
         append(" fill=\"${style.color.value.escapeXml()}\">${text.escapeXml()}</text>")
     }
 }
+
+private fun Char.isCjk(): Boolean = code in 0x3400..0x4DBF || code in 0x4E00..0x9FFF || code in 0xF900..0xFAFF
 
 private fun StringBuilder.appendPattern(pattern: StrokePattern) {
     if (pattern == StrokePattern.DASHED) append(" stroke-dasharray=\"6 4\"")
