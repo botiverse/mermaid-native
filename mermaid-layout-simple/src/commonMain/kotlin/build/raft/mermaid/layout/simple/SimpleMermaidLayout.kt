@@ -11,6 +11,7 @@ import build.raft.mermaid.core.EntityKey
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNodeShape
+import build.raft.mermaid.core.TimelineDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.SequenceLineStyle
@@ -68,6 +69,25 @@ public object SimpleMermaidLayout : DiagramLayout {
         is XyChartDiagram -> layoutXyChart(diagram, config)
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
+        is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
+    }
+
+    private fun layoutTimeline(diagram: TimelineDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val labelWidth = diagram.events.maxOf { textMeasurer.measure(it.period, body).width } + 32.0
+        val width = max(420.0, config.padding * 2 + labelWidth + 300.0)
+        val height = config.padding * 2 + 44.0 + diagram.events.size * 42.0
+        val axisX = config.padding + labelWidth
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        commands += DrawLine(ScenePoint(axisX, config.padding + 32.0), ScenePoint(axisX, height - config.padding))
+        diagram.events.forEachIndexed { index, event ->
+            val y = config.padding + 52.0 + index * 42.0
+            commands += DrawText(event.period, ScenePoint(config.padding, y + 5.0), style = body)
+            commands += DrawPolygon(listOf(ScenePoint(axisX, y), ScenePoint(axisX + 7.0, y + 7.0), ScenePoint(axisX, y + 14.0), ScenePoint(axisX - 7.0, y + 7.0)), fill = SceneColor("#2563eb"))
+            commands += DrawText(event.labels.joinToString(" · "), ScenePoint(axisX + 18.0, y + 11.0), style = body)
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutMindmap(

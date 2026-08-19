@@ -423,4 +423,21 @@ class MermaidParserTest {
         ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\ndateFormat YYYY-MM-DD\nsection Build\nTask :blocked, id, 2026-08-19, 2d"))
     }
+
+    @Test
+    fun parsesTimelinePeriodsAndMultipleLabels() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            timeline
+              title Product history
+              2024 : Launch, First users
+              2025 : Scale
+        """.trimIndent()))
+        assertEquals(TimelineDiagram("Product history", listOf(TimelineEvent("2024", listOf("Launch", "First users")), TimelineEvent("2025", listOf("Scale")))), result.diagram)
+    }
+
+    @Test
+    fun malformedTimelineFailsClosed() {
+        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\ntitle One\ntitle Two\n2024 : Launch")
+            .forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
+    }
 }
