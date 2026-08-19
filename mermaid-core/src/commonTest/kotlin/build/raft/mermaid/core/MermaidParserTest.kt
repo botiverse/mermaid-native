@@ -612,4 +612,15 @@ class MermaidParserTest {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
     }
+
+    @Test fun parsesKanbanColumnsAndCards() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("kanban\ntodo[Todo]\n  spec[Write spec]\ndone[Done]\n  ship[Ship release]"))
+        assertEquals(KanbanDiagram(listOf(KanbanColumn("todo", "Todo", listOf(KanbanCard("spec", "Write spec"))), KanbanColumn("done", "Done", listOf(KanbanCard("ship", "Ship release"))))), result.diagram)
+    }
+
+    @Test fun malformedKanbanFailsClosed() {
+        listOf("kanban", "kanban\ntodo[Todo]", "kanban\n  task[Orphan]", "kanban\ntodo[Todo]\n task[Bad indent]", "kanban\ntodo[Todo]\n  todo[Duplicate]", "kanban\ntodo[Todo]\n  task[Card]@{ priority: 'High' }").forEach {
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it)
+        }
+    }
 }

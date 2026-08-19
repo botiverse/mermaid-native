@@ -260,6 +260,10 @@ public data class RequirementRelationship(
 
 public enum class RequirementRelationshipKind { SATISFIES, VERIFIES }
 
+public data class KanbanDiagram(val columns: List<KanbanColumn>) : MermaidDiagram
+public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>)
+public data class KanbanCard(val id: String, val label: String)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

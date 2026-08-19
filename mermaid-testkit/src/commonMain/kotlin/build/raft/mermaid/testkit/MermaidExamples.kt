@@ -58,6 +58,9 @@ import build.raft.mermaid.core.RequirementRelationship
 import build.raft.mermaid.core.RequirementRelationshipKind
 import build.raft.mermaid.core.RequirementRisk
 import build.raft.mermaid.core.RequirementVerifyMethod
+import build.raft.mermaid.core.KanbanCard
+import build.raft.mermaid.core.KanbanColumn
+import build.raft.mermaid.core.KanbanDiagram
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -72,6 +75,14 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val kanbanReleaseBoard: MermaidExample = MermaidExample(
+        "samples/kanban-release-board.mmd",
+        "kanban\ntodo[Todo]\n  spec[Write & review spec]\n  tests[Add tests]\ndone[Done]\n  release[Ship release]",
+        KanbanDiagram(listOf(
+            KanbanColumn("todo", "Todo", listOf(KanbanCard("spec", "Write & review spec"), KanbanCard("tests", "Add tests"))),
+            KanbanColumn("done", "Done", listOf(KanbanCard("release", "Ship release"))),
+        )),
+    )
     public val gitGraphReleaseFlow: MermaidExample = MermaidExample(
         path = "samples/gitgraph-release-flow.mmd",
         source = """
@@ -404,6 +415,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        kanbanReleaseBoard,
         gitGraphReleaseFlow,
         requirementLogin,
         mindmapProjectPlan,

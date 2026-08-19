@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="424" height="224" viewBox="0 0 424 224" role="img">
+  <rect x="24" y="24" width="180" height="176" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+  <text x="40" y="52" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">Todo</text>
+  <rect x="34" y="72" width="160" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="46" y="101" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Write &amp; review spec</text>
+  <rect x="34" y="136" width="160" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="46" y="165" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Add tests</text>
+  <rect x="220" y="24" width="180" height="176" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+  <text x="236" y="52" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">Done</text>
+  <rect x="230" y="72" width="160" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="242" y="101" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Ship release</text>
+</svg>

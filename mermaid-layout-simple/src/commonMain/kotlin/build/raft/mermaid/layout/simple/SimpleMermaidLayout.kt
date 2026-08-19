@@ -27,6 +27,7 @@ import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.RequirementDiagram
 import build.raft.mermaid.core.RequirementRelationshipKind
+import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawLine
@@ -80,6 +81,35 @@ public object SimpleMermaidLayout : DiagramLayout {
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
         is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
+        is KanbanDiagram -> layoutKanban(diagram, textMeasurer, config)
+    }
+
+    private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val titleStyle = TextStyle(fontSize = 14.0, fontWeight = 600)
+        val cardStyle = TextStyle(fontSize = 12.0)
+        val gap = 16.0
+        val widths = diagram.columns.map { column ->
+            max(180.0, max(
+                textMeasurer.measure(column.title, titleStyle).width,
+                column.cards.maxOf { textMeasurer.measure(it.label, cardStyle).width },
+            ) + 32.0).xyCoordinate()
+        }
+        val height = config.padding * 2 + 48.0 + diagram.columns.maxOf { it.cards.size } * 64.0
+        val width = (config.padding * 2 + widths.sum() + gap * (widths.size - 1)).xyCoordinate()
+        val commands = mutableListOf<DrawCommand>()
+        var x = config.padding
+        diagram.columns.forEachIndexed { index, column ->
+            val columnWidth = widths[index]
+            commands += DrawRect(SceneRect(x, config.padding, columnWidth, height - config.padding * 2), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
+            commands += DrawText(column.title, ScenePoint(x + 16.0, config.padding + 28.0), style = titleStyle)
+            column.cards.forEachIndexed { cardIndex, card ->
+                val y = config.padding + 48.0 + cardIndex * 64.0
+                commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, 48.0), cornerRadius = 6.0, fill = SceneColor("#ffffff"))
+                commands += DrawText(card.label, ScenePoint(x + 22.0, y + 29.0), style = cardStyle)
+            }
+            x += columnWidth + gap
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutGitGraph(
