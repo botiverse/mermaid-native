@@ -44,6 +44,9 @@ import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.core.QuadrantPoint
+import build.raft.mermaid.core.UserJourneyDiagram
+import build.raft.mermaid.core.UserJourneySection
+import build.raft.mermaid.core.UserJourneyTask
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -302,6 +305,39 @@ public object MermaidExamples {
         ),
     )
 
+    public val userJourneyCheckout: MermaidExample = MermaidExample(
+        path = "samples/user-journey-checkout.mmd",
+        source = """
+            journey
+              title Checkout journey
+              section Discover
+              Find product: 4: Shopper
+              Review & compare: 3: Shopper, Advisor
+              section Purchase
+              Add to cart: 5: Shopper
+              Pay securely: 4: Shopper, Payment service
+        """.trimIndent(),
+        expected = UserJourneyDiagram(
+            "Checkout journey",
+            listOf(
+                UserJourneySection(
+                    "Discover",
+                    listOf(
+                        UserJourneyTask("Find product", 4, listOf("Shopper")),
+                        UserJourneyTask("Review & compare", 3, listOf("Shopper", "Advisor")),
+                    ),
+                ),
+                UserJourneySection(
+                    "Purchase",
+                    listOf(
+                        UserJourneyTask("Add to cart", 5, listOf("Shopper")),
+                        UserJourneyTask("Pay securely", 4, listOf("Shopper", "Payment service")),
+                    ),
+                ),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         mindmapProjectPlan,
         xyQuarterlySales,
@@ -315,5 +351,6 @@ public object MermaidExamples {
         ganttReleasePlan,
         timelineProductHistory,
         quadrantProductPortfolio,
+        userJourneyCheckout,
     )
 }

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="711.5999999999999" height="274" viewBox="0 0 711.5999999999999 274" role="img">
+  <text x="355.79999999999995" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Checkout journey</text>
+  <rect x="24" y="66" width="108" height="68" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="104" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Discover</text>
+  <rect x="144" y="66" width="264.79999999999995" height="68" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
+  <text x="154" y="90" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Find product</text>
+  <text x="154" y="114" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper</text>
+  <rect x="422.79999999999995" y="66" width="264.79999999999995" height="68" rx="8" fill="#fef3c7" stroke="#334155" stroke-width="1.5"/>
+  <text x="432.79999999999995" y="90" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Review &amp; compare</text>
+  <text x="432.79999999999995" y="114" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 3 · Shopper, Advisor</text>
+  <rect x="24" y="158" width="108" height="68" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="196" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Purchase</text>
+  <rect x="144" y="158" width="264.79999999999995" height="68" rx="8" fill="#bbf7d0" stroke="#334155" stroke-width="1.5"/>
+  <text x="154" y="182" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Add to cart</text>
+  <text x="154" y="206" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 5 · Shopper</text>
+  <rect x="422.79999999999995" y="158" width="264.79999999999995" height="68" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
+  <text x="432.79999999999995" y="182" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Pay securely</text>
+  <text x="432.79999999999995" y="206" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper, Payment service</text>
+</svg>

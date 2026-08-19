@@ -12,6 +12,7 @@ import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNodeShape
 import build.raft.mermaid.core.TimelineDiagram
+import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.SequenceLineStyle
@@ -72,6 +73,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
         is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
+        is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
     }
 
     private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, config: LayoutConfig): LayoutScene {
@@ -105,6 +107,66 @@ public object SimpleMermaidLayout : DiagramLayout {
             val y = (bottom - point.y * (bottom - top)).xyCoordinate()
             commands += DrawPolygon(listOf(ScenePoint(x, y - 5.0), ScenePoint(x + 5.0, y), ScenePoint(x, y + 5.0), ScenePoint(x - 5.0, y)), fill = SceneColor("#2563eb"))
             commands += DrawText(point.label, ScenePoint(x + 8.0, y - 7.0), style = body)
+        }
+        return LayoutScene(width, height, commands)
+    }
+
+    private fun layoutUserJourney(
+        diagram: UserJourneyDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val sectionWidth = max(120.0, diagram.sections.maxOf { textMeasurer.measure(it.name, sectionStyle).width } + 24.0)
+        val taskWidth = max(
+            132.0,
+            diagram.sections.flatMap { it.tasks }.maxOf { task ->
+                max(
+                    textMeasurer.measure(task.label, body).width,
+                    textMeasurer.measure("Score ${task.score} · ${task.actors.joinToString(", ")}", body).width,
+                ) + 20.0
+            },
+        )
+        val taskGap = 14.0
+        val maxTasks = diagram.sections.maxOf { it.tasks.size }
+        val width = max(640.0, config.padding * 2 + sectionWidth + maxTasks * taskWidth + max(0, maxTasks - 1) * taskGap)
+        val titleHeight = if (diagram.title == null) 18.0 else 42.0
+        val rowHeight = 92.0
+        val height = config.padding * 2 + titleHeight + diagram.sections.size * rowHeight
+        val commands = mutableListOf<DrawCommand>()
+
+        diagram.title?.let {
+            commands += DrawText(it, ScenePoint(width / 2.0, config.padding + 18.0), TextAnchor.MIDDLE, titleStyle)
+        }
+        diagram.sections.forEachIndexed { sectionIndex, section ->
+            val y = config.padding + titleHeight + sectionIndex * rowHeight
+            commands += DrawRect(
+                SceneRect(config.padding, y, sectionWidth - 12.0, 68.0),
+                cornerRadius = 8.0,
+                fill = SceneColor("#e2e8f0"),
+            )
+            commands += DrawText(
+                section.name,
+                ScenePoint(config.padding + 12.0, y + 38.0),
+                style = sectionStyle,
+            )
+            section.tasks.forEachIndexed { taskIndex, task ->
+                val x = config.padding + sectionWidth + taskIndex * (taskWidth + taskGap)
+                val fill = JOURNEY_SCORE_COLORS[task.score]
+                commands += DrawRect(
+                    SceneRect(x, y, taskWidth, 68.0),
+                    cornerRadius = 8.0,
+                    fill = SceneColor(fill),
+                )
+                commands += DrawText(task.label, ScenePoint(x + 10.0, y + 24.0), style = body)
+                commands += DrawText(
+                    "Score ${task.score} · ${task.actors.joinToString(", ")}",
+                    ScenePoint(x + 10.0, y + 48.0),
+                    style = body,
+                )
+            }
         }
         return LayoutScene(width, height, commands)
     }
@@ -720,6 +782,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
     private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
+    private val JOURNEY_SCORE_COLORS = listOf("#fee2e2", "#fecaca", "#fed7aa", "#fef3c7", "#dcfce7", "#bbf7d0")
 
     private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
     private fun Double.xyCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
