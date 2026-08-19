@@ -32,6 +32,8 @@ import build.raft.mermaid.core.XyAxis
 import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeries
 import build.raft.mermaid.core.XySeriesKind
+import build.raft.mermaid.core.TimelineDiagram
+import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNode
 import build.raft.mermaid.core.MindmapNodeShape
@@ -260,6 +262,20 @@ public object MermaidExamples {
         )))),
     )
 
+    public val timelineProductHistory: MermaidExample = MermaidExample(
+        path = "samples/timeline-product-history.mmd",
+        source = """
+            timeline
+              title Product history
+              2024 : Launch : First users
+              2025 : Scale
+        """.trimIndent(),
+        expected = TimelineDiagram("Product history", listOf(
+            TimelineEvent("2024", listOf("Launch", "First users")),
+            TimelineEvent("2025", listOf("Scale")),
+        )),
+    )
+
     public val all: List<MermaidExample> = listOf(
         mindmapProjectPlan,
         xyQuarterlySales,
@@ -271,5 +287,6 @@ public object MermaidExamples {
         sequenceRequestResponse,
         stateLifecycle,
         ganttReleasePlan,
+        timelineProductHistory,
     )
 }

@@ -25,6 +25,7 @@ public object MermaidParser {
             XY_HEADER.matches(header.text) -> parseXyChart(statements)
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             header.text.equals("gantt", ignoreCase = true) -> parseGantt(statements)
+            header.text.equals("timeline", ignoreCase = true) -> parseTimeline(statements)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -604,6 +605,24 @@ public object MermaidParser {
         if (format != "YYYY-MM-DD") diagnostics += unsupported(statements.first(), "Only dateFormat YYYY-MM-DD is supported")
         if (sections.isEmpty()) diagnostics += unsupported(statements.first(), "gantt requires a section")
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(GanttDiagram(title, "YYYY-MM-DD", sections)) else MermaidParseResult.Failure(diagnostics)
+    }
+
+    private fun parseTimeline(statements: List<SourceStatement>): MermaidParseResult {
+        var title: String? = null
+        val events = mutableListOf<TimelineEvent>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        statements.drop(1).forEach { statement ->
+            if (statement.text.startsWith("title ", ignoreCase = true)) {
+                val value = statement.text.substringAfter(' ').trim()
+                if (value.isEmpty() || title != null) diagnostics += unsupported(statement, "Timeline requires at most one non-empty title") else title = value
+            } else {
+                val parts = statement.text.split(':').map { it.trim() }
+                if (parts.size < 2 || parts.any { it.isEmpty() }) diagnostics += unsupported(statement, "Timeline event requires period : event [: event]")
+                else events += TimelineEvent(parts.first(), parts.drop(1))
+            }
+        }
+        if (events.isEmpty()) diagnostics += unsupported(statements.first(), "timeline requires at least one event")
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(TimelineDiagram(title, events)) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =

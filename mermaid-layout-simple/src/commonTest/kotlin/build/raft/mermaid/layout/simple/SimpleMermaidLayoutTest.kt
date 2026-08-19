@@ -40,6 +40,8 @@ import build.raft.mermaid.core.NumericAxis
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNode
 import build.raft.mermaid.core.MindmapNodeShape
+import build.raft.mermaid.core.TimelineDiagram
+import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -183,6 +185,16 @@ class SimpleMermaidLayoutTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun timelineProducesDeterministicPeriodGeometry() {
+        val diagram = TimelineDiagram("History", listOf(TimelineEvent("2024", listOf("Launch", "Users")), TimelineEvent("2025", listOf("Scale"))))
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
+        assertEquals(5, first.commands.filterIsInstance<DrawText>().size)
+        assertTrue(first.width >= 420.0 && first.height > 0.0)
     }
 
     @Test

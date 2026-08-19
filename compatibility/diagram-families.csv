@@ -22,7 +22,7 @@ sankey,sankey,not_started,no,no,no,no,Official syntax family; implementation is 
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset only; full family parity is not complete.
 stateDiagram,stateDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports stateDiagram/stateDiagram-v2 aliases directions aliases transitions and terminal states; full family parity is not complete.
 swimlanes,swimlanes,not_started,no,no,no,no,Official syntax family; implementation is not started.
-timeline,timeline,not_started,no,no,no,no,Official syntax family; implementation is not started.
+timeline,timeline,in_progress,partial,partial,partial,partial,Vertical slice supports a title ordered periods and one or more labels per period; full family parity is not complete.
 treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
 treemap,treemap,not_started,no,no,no,no,Official syntax family; implementation is not started.
 usecase,usecase,not_started,no,no,no,no,Official syntax family; implementation is not started.

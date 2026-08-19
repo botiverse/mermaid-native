@@ -176,6 +176,9 @@ public data class GanttSection(val name: String, val tasks: List<GanttTask>)
 public data class GanttTask(val name: String, val id: String, val startDay: Int, val durationDays: Int, val status: GanttTaskStatus = GanttTaskStatus.TODO)
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 
+public data class TimelineDiagram(val title: String?, val events: List<TimelineEvent>) : MermaidDiagram
+public data class TimelineEvent(val period: String, val labels: List<String>)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
