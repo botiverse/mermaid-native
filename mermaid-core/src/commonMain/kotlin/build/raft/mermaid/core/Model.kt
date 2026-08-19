@@ -331,6 +331,15 @@ public data class ArchitectureEdge(
     val directed: Boolean,
 )
 
+public data class C4Diagram(
+    val title: String? = null,
+    val elements: List<C4Element>,
+    val relationships: List<C4Relationship>,
+) : MermaidDiagram
+public enum class C4ElementKind { PERSON, SYSTEM }
+public data class C4Element(val id: String, val label: String, val description: String? = null, val kind: C4ElementKind, val external: Boolean = false)
+public data class C4Relationship(val sourceId: String, val targetId: String, val label: String, val technology: String? = null, val bidirectional: Boolean = false)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

@@ -38,6 +38,7 @@ public object MermaidParser {
             header.text.equals("venn-beta", ignoreCase = true) -> parseVenn(source)
             header.text.equals("usecase-beta", ignoreCase = true) -> parseUsecase(source)
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
+            header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1357,6 +1358,49 @@ public object MermaidParser {
         else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseC4Context(source: String): MermaidParseResult {
+        val physicalLines = source.toMindmapLines()
+        if (physicalLines.firstOrNull()?.text != "C4Context") {
+            return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "C4 requires the exact C4Context header", physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1))
+        }
+        val statements = source.toStatements()
+        val elements = linkedMapOf<String, C4Element>()
+        val relationships = mutableListOf<C4Relationship>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var title: String? = null
+        statements.drop(1).forEach { statement ->
+            C4_TITLE.matchEntire(statement.text)?.let { match ->
+                if (title != null) diagnostics += unsupported(statement, "Duplicate C4 title") else title = match.groupValues[1]
+                return@forEach
+            }
+            C4_ELEMENT.matchEntire(statement.text)?.let { match ->
+                val id = match.groupValues[2]
+                if (id in elements) diagnostics += unsupported(statement, "Duplicate C4 element identifier")
+                else elements[id] = C4Element(
+                    id = id,
+                    label = match.groupValues[3],
+                    description = match.groupValues[4].ifEmpty { null },
+                    kind = if (match.groupValues[1].startsWith("Person")) C4ElementKind.PERSON else C4ElementKind.SYSTEM,
+                    external = match.groupValues[1].endsWith("_Ext"),
+                )
+                return@forEach
+            }
+            C4_RELATIONSHIP.matchEntire(statement.text)?.let { match ->
+                val relationship = C4Relationship(match.groupValues[2], match.groupValues[3], match.groupValues[4], match.groupValues[5].ifEmpty { null }, match.groupValues[1] == "BiRel")
+                when {
+                    relationship.sourceId !in elements || relationship.targetId !in elements -> diagnostics += unsupported(statement, "C4 relationship endpoints must be declared first")
+                    relationship.sourceId == relationship.targetId -> diagnostics += unsupported(statement, "C4 self relationships are not supported")
+                    relationship in relationships -> diagnostics += unsupported(statement, "Duplicate C4 relationship")
+                    else -> relationships += relationship
+                }
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported C4 syntax")
+        }
+        if (elements.isEmpty()) diagnostics += unsupported(statements.first(), "C4Context requires at least one element")
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(C4Diagram(title, elements.values.toList(), relationships)) else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1450,6 +1494,10 @@ public object MermaidParser {
     private val ARCHITECTURE_GROUP = Regex("^group\\s+($ARCHITECTURE_IDENTIFIER)\\(($ARCHITECTURE_ICON)\\)\\[([^]\\r\\n]+)]$")
     private val ARCHITECTURE_SERVICE = Regex("^service\\s+($ARCHITECTURE_IDENTIFIER)\\(($ARCHITECTURE_ICON)\\)\\[([^]\\r\\n]+)](?:\\s+in\\s+($ARCHITECTURE_IDENTIFIER))?$")
     private val ARCHITECTURE_EDGE = Regex("^($ARCHITECTURE_IDENTIFIER):(T|B|L|R)\\s+(-->|--)\\s+(T|B|L|R):($ARCHITECTURE_IDENTIFIER)$")
+    private const val C4_IDENTIFIER = "[A-Za-z0-9_]+"
+    private val C4_TITLE = Regex("^title\\s+(.+)$")
+    private val C4_ELEMENT = Regex("^(Person|Person_Ext|System|System_Ext)\\(($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
+    private val C4_RELATIONSHIP = Regex("^(Rel|BiRel)\\(($C4_IDENTIFIER),\\s*($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
 }
 
 private fun String.toArchitecturePort(): ArchitecturePort = when (this) {

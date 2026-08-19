@@ -1,7 +1,7 @@
 family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes
 architecture,architecture,in_progress,partial,partial,partial,partial,Vertical slice supports flat groups services and explicit-port markerless or right-directed edges; junctions alignment nesting metadata styling configuration and full family parity are not complete.
 block,block,in_progress,partial,partial,partial,partial,Vertical slice supports explicit columns rectangular blocks spans and directed edges; shapes nesting styling and full family parity are not complete.
-c4,c4,not_started,no,no,no,no,Official syntax family; implementation is not started.
+c4,c4,in_progress,partial,partial,partial,partial,Vertical slice supports C4Context person/system elements and Rel/BiRel relationships; boundaries other C4 levels styling configuration and full parity are not complete.
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
 cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.
 entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports entity declarations attributes keys and basic cardinality relationships; full family parity is not complete.

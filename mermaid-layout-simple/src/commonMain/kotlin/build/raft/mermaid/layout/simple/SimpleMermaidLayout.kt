@@ -38,6 +38,8 @@ import build.raft.mermaid.core.UsecaseDiagram
 import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.core.ArchitectureDiagram
 import build.raft.mermaid.core.ArchitecturePort
+import build.raft.mermaid.core.C4Diagram
+import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -102,6 +104,43 @@ public object SimpleMermaidLayout : DiagramLayout {
         is VennDiagram -> layoutVenn(diagram, textMeasurer, config)
         is UsecaseDiagram -> layoutUsecase(diagram, textMeasurer, config)
         is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
+        is C4Diagram -> layoutC4(diagram, textMeasurer, config)
+    }
+
+    private fun layoutC4(diagram: C4Diagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val style = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val bodyStyle = TextStyle(fontSize = 10.0)
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val contentWidth = diagram.elements.maxOf { max(textMeasurer.measure(it.label, style).width, it.description?.let { description -> textMeasurer.measure(description, bodyStyle).width } ?: 0.0) }
+        val cardWidth = max(180.0, contentWidth + 36.0)
+        val columns = 3
+        val cardHeight = 92.0
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
+        val points = diagram.elements.mapIndexed { index, element -> element.id to ScenePoint(config.padding + (index % columns) * (cardWidth + 32.0) + cardWidth / 2.0, config.padding + titleOffset + (index / columns) * (cardHeight + 36.0) + cardHeight / 2.0) }.toMap()
+        val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
+        val width = max(max(720.0, titleWidth), config.padding * 2 + minOf(columns, diagram.elements.size) * cardWidth + (minOf(columns, diagram.elements.size) - 1) * 32.0)
+        val rows = (diagram.elements.size + columns - 1) / columns
+        val height = max(360.0, config.padding * 2 + rows * cardHeight + max(0, rows - 1) * 36.0 + titleOffset)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 20.0), style = titleStyle) }
+        diagram.relationships.forEach { relationship ->
+            val fromCenter = points.getValue(relationship.sourceId)
+            val toCenter = points.getValue(relationship.targetId)
+            val from = usecaseBoundaryPoint(fromCenter, toCenter, cardWidth / 2.0, cardHeight / 2.0, false)
+            val to = usecaseBoundaryPoint(toCenter, fromCenter, cardWidth / 2.0, cardHeight / 2.0, false)
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += DrawText(relationship.label, ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0 - 8.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
+            if (relationship.bidirectional) commands += arrowHead(to, from)
+            commands += arrowHead(from, to)
+        }
+        diagram.elements.forEach { element ->
+            val point = points.getValue(element.id)
+            val fill = if (element.external) SceneColor("#fef3c7") else if (element.kind == C4ElementKind.PERSON) SceneColor("#dcfce7") else SceneColor("#dbeafe")
+            commands += DrawRect(SceneRect(point.x - cardWidth / 2.0, point.y - cardHeight / 2.0, cardWidth, cardHeight).canonical(), 8.0, fill = fill, stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+            commands += DrawText(element.label, point.copy(y = point.y - 10.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
+            element.description?.let { commands += DrawText(it, point.copy(y = point.y + 16.0).canonical(), anchor = TextAnchor.MIDDLE, style = bodyStyle) }
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
     }
 
     private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

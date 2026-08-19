@@ -84,6 +84,10 @@ import build.raft.mermaid.core.ArchitectureGroup
 import build.raft.mermaid.core.ArchitectureService
 import build.raft.mermaid.core.ArchitectureEdge
 import build.raft.mermaid.core.ArchitecturePort
+import build.raft.mermaid.core.C4Diagram
+import build.raft.mermaid.core.C4Element
+import build.raft.mermaid.core.C4ElementKind
+import build.raft.mermaid.core.C4Relationship
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -98,6 +102,15 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val c4BankingContext: MermaidExample = MermaidExample(
+        "samples/c4-banking-context.mmd",
+        "C4Context\ntitle Banking context\nPerson(customer, \"Customer & partner\", \"Uses the app\")\nSystem(bank, \"Banking system\", \"Shows balances\")\nRel(customer, bank, \"Uses\", \"HTTPS\")",
+        C4Diagram(
+            title = "Banking context",
+            elements = listOf(C4Element("customer", "Customer & partner", "Uses the app", C4ElementKind.PERSON), C4Element("bank", "Banking system", "Shows balances", C4ElementKind.SYSTEM)),
+            relationships = listOf(C4Relationship("customer", "bank", "Uses", "HTTPS")),
+        ),
+    )
     public val architectureApiStack: MermaidExample = MermaidExample(
         "samples/architecture-api-stack.mmd",
         "architecture-beta\ngroup api(cloud)[API & gateway]\nservice db(database)[Database] in api\nservice server(server)[Application server] in api\ndb:B --> T:server",
@@ -534,6 +547,7 @@ public object MermaidExamples {
     )
 
     public val all: List<MermaidExample> = listOf(
+        c4BankingContext,
         architectureApiStack,
         usecaseOrderFlow,
         vennTeamOverlap,

@@ -85,6 +85,10 @@ import build.raft.mermaid.core.ArchitectureGroup
 import build.raft.mermaid.core.ArchitectureService
 import build.raft.mermaid.core.ArchitectureEdge
 import build.raft.mermaid.core.ArchitecturePort
+import build.raft.mermaid.core.C4Diagram
+import build.raft.mermaid.core.C4Element
+import build.raft.mermaid.core.C4ElementKind
+import build.raft.mermaid.core.C4Relationship
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -551,6 +555,21 @@ class SimpleMermaidLayoutTest {
         assertTrue(serviceTwo.x >= groupTwo.x && serviceTwo.x + serviceTwo.width <= groupTwo.x + groupTwo.width)
         val measured = FixedWidthTextMeasurer.measure(longGroup, build.raft.mermaid.layout.TextStyle(fontSize = 15.0, fontWeight = 600))
         assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 32.0)
+    }
+
+    @Test fun c4ProducesMeasuredDeterministicCardsAndBoundaryArrows() {
+        val title = "T".repeat(100)
+        val description = "D".repeat(100)
+        val diagram = C4Diagram(title, listOf(C4Element("p", "Person", description, C4ElementKind.PERSON), C4Element("s", "System", null, C4ElementKind.SYSTEM, true)), listOf(C4Relationship("p", "s", "Uses")))
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        val edge = scene.commands.filterIsInstance<DrawLine>().single()
+        assertTrue(edge.from.x < edge.to.x)
+        val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
+        val measuredDescription = FixedWidthTextMeasurer.measure(description, build.raft.mermaid.layout.TextStyle(fontSize = 10.0))
+        assertTrue(scene.width >= measuredTitle.width + LayoutConfig().padding * 2)
+        assertTrue(scene.width >= measuredDescription.width * 2 + 150.0)
     }
 
     @Test
