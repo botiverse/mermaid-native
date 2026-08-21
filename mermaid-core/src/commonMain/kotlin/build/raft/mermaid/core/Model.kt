@@ -340,6 +340,17 @@ public enum class C4ElementKind { PERSON, SYSTEM }
 public data class C4Element(val id: String, val label: String, val description: String? = null, val kind: C4ElementKind, val external: Boolean = false)
 public data class C4Relationship(val sourceId: String, val targetId: String, val label: String, val technology: String? = null, val bidirectional: Boolean = false)
 
+/** Bounded platform-neutral model for the Cynefin framework family. */
+public data class CynefinDiagram(
+    val title: String? = null,
+    val domains: List<CynefinDomainBlock>,
+    val transitions: List<CynefinTransition>,
+) : MermaidDiagram
+
+public enum class CynefinDomain { COMPLEX, COMPLICATED, CLEAR, CHAOTIC, CONFUSION }
+public data class CynefinDomainBlock(val domain: CynefinDomain, val items: List<String>)
+public data class CynefinTransition(val from: CynefinDomain, val to: CynefinDomain, val label: String? = null)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="576" viewBox="0 0 720 576" role="img">
+  <text x="24" y="46" text-anchor="start" font-family="sans-serif" font-size="20" font-weight="600" fill="#111827">Incident response</text>
+  <rect x="24" y="72" width="280" height="220" rx="0" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="344" y="72" width="280" height="220" rx="0" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="24" y="332" width="280" height="220" rx="0" fill="#fee2e2" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="344" y="332" width="280" height="220" rx="0" fill="#fef3c7" stroke="#64748b" stroke-width="1.5"/>
+  <ellipse cx="324" cy="312" rx="92" ry="66" fill="#ede9fe" fill-opacity="1" stroke="#6d28d9" stroke-width="1.5"/>
+  <line x1="304" y1="182" x2="344" y2="182" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="344,182 335,186.5 335,177.5" fill="#475569"/>
+  <text x="324" y="174" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Pattern found</text>
+  <line x1="164" y1="332" x2="164" y2="292" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="164,292 168.5,301 159.5,301" fill="#475569"/>
+  <text x="164" y="304" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Stabilized</text>
+  <text x="164" y="102" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Complex</text>
+  <text x="164" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Investigate &amp; learn</text>
+  <text x="164" y="166" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Run chaos experiment</text>
+  <text x="484" y="102" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Complicated</text>
+  <text x="484" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Expert analysis</text>
+  <text x="484" y="362" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Clear</text>
+  <text x="484" y="396" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Apply known fix</text>
+  <text x="164" y="362" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Chaotic</text>
+  <text x="164" y="396" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Page on-call</text>
+  <text x="324" y="284" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Confusion</text>
+  <text x="324" y="309" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Unknown failure</text>
+</svg>

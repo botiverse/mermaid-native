@@ -5,6 +5,10 @@ import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.StateTransition
+import build.raft.mermaid.core.CynefinDiagram
+import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.CynefinDomainBlock
+import build.raft.mermaid.core.CynefinTransition
 import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
@@ -21,6 +25,27 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SvgRendererTest {
+    @Test
+    fun cynefinSvgMeasuresItemsEscapesTextAndKeepsTransitionVisible() {
+        val longItem = "A very long & measured item label that expands the quadrant"
+        val diagram = CynefinDiagram(
+            title = "Risk <map>",
+            domains = listOf(
+                CynefinDomainBlock(CynefinDomain.COMPLEX, listOf(longItem)),
+                CynefinDomainBlock(CynefinDomain.COMPLICATED, listOf("Expert review")),
+                CynefinDomainBlock(CynefinDomain.CONFUSION, listOf("One", "Two", "Three", "Four")),
+            ),
+            transitions = listOf(CynefinTransition(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, "Pattern & proof")),
+        )
+        val svg = SvgRenderer.render(SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertTrue(svg.contains("width=\""))
+        assertTrue(svg.contains("Risk &lt;map&gt;"))
+        assertTrue(svg.contains("A very long &amp; measured"))
+        assertTrue(svg.contains("Pattern &amp; proof"))
+        assertTrue(svg.contains("+1 more"))
+        assertTrue(svg.contains("<line"))
+        assertTrue(svg.contains("<polygon"))
+    }
     @Test
     fun stateDiagramSvgIsDeterministicAndContainsVisibleTransition() {
         val diagram = StateDiagram(

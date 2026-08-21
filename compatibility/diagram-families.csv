@@ -3,7 +3,7 @@ architecture,architecture,in_progress,partial,partial,partial,partial,Vertical s
 block,block,in_progress,partial,partial,partial,partial,Vertical slice supports explicit columns rectangular blocks spans and directed edges; shapes nesting styling and full family parity are not complete.
 c4,c4,in_progress,partial,partial,partial,partial,Vertical slice supports C4Context person/system elements and Rel/BiRel relationships; boundaries other C4 levels styling configuration and full parity are not complete.
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
-cynefin,cynefin,not_started,no,no,no,no,Official syntax family; implementation is not started.
+cynefin,cynefin,in_progress,partial,partial,partial,partial,Bounded cynefin-beta domains/items/transitions with deterministic measured quadrant/ellipse layout; accessibility/configuration/wavy boundaries and full family parity are not complete.
 entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports entity declarations attributes keys and basic cardinality relationships; full family parity is not complete.
 eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.

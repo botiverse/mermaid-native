@@ -40,6 +40,8 @@ import build.raft.mermaid.core.ArchitectureDiagram
 import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4ElementKind
+import build.raft.mermaid.core.CynefinDiagram
+import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -105,7 +107,72 @@ public object SimpleMermaidLayout : DiagramLayout {
         is UsecaseDiagram -> layoutUsecase(diagram, textMeasurer, config)
         is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
         is C4Diagram -> layoutC4(diagram, textMeasurer, config)
+        is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
     }
+
+    private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val domainStyle = TextStyle(fontSize = 16.0, fontWeight = 600)
+        val itemStyle = TextStyle(fontSize = 12.0)
+        val titleStyle = TextStyle(fontSize = 20.0, fontWeight = 600)
+        val labels = diagram.domains.flatMap { it.items }
+        val measuredItemWidth = labels.maxOfOrNull { textMeasurer.measure(it, itemStyle).width } ?: 0.0
+        val quadrantWidth = max(280.0, measuredItemWidth + 56.0)
+        val quadrantHeight = max(220.0, (diagram.domains.maxOfOrNull { it.items.size } ?: 0) * 32.0 + 86.0)
+        val quadrantGap = 40.0
+        val titleOffset = if (diagram.title == null) 0.0 else 48.0
+        val width = max(720.0, config.padding * 2.0 + quadrantWidth * 2.0 + quadrantGap)
+        val height = max(560.0, config.padding * 2.0 + titleOffset + quadrantHeight * 2.0 + quadrantGap)
+        val left = config.padding
+        val top = config.padding + titleOffset
+        val centers = mapOf(
+            CynefinDomain.COMPLEX to ScenePoint(left + quadrantWidth / 2.0, top + quadrantHeight / 2.0),
+            CynefinDomain.COMPLICATED to ScenePoint(left + quadrantWidth + quadrantGap + quadrantWidth / 2.0, top + quadrantHeight / 2.0),
+            CynefinDomain.CHAOTIC to ScenePoint(left + quadrantWidth / 2.0, top + quadrantHeight + quadrantGap + quadrantHeight / 2.0),
+            CynefinDomain.CLEAR to ScenePoint(left + quadrantWidth + quadrantGap + quadrantWidth / 2.0, top + quadrantHeight + quadrantGap + quadrantHeight / 2.0),
+            CynefinDomain.CONFUSION to ScenePoint(left + quadrantWidth + quadrantGap / 2.0, top + quadrantHeight + quadrantGap / 2.0),
+        )
+        val fills = mapOf(
+            CynefinDomain.COMPLEX to SceneColor("#dbeafe"),
+            CynefinDomain.COMPLICATED to SceneColor("#dcfce7"),
+            CynefinDomain.CLEAR to SceneColor("#fef3c7"),
+            CynefinDomain.CHAOTIC to SceneColor("#fee2e2"),
+            CynefinDomain.CONFUSION to SceneColor("#ede9fe"),
+        )
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
+        listOf(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, CynefinDomain.CHAOTIC, CynefinDomain.CLEAR).forEach { domain ->
+            val center = centers.getValue(domain)
+            commands += DrawRect(SceneRect(center.x - quadrantWidth / 2.0, center.y - quadrantHeight / 2.0, quadrantWidth, quadrantHeight), 0.0, fill = fills.getValue(domain), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
+        }
+        val confusionCenter = centers.getValue(CynefinDomain.CONFUSION)
+        commands += DrawEllipse(confusionCenter, 92.0, 66.0, fill = fills.getValue(CynefinDomain.CONFUSION), stroke = SceneColor("#6d28d9"), strokeWidth = 1.5)
+        diagram.transitions.forEach { transition ->
+            val from = centers.getValue(transition.from)
+            val to = centers.getValue(transition.to)
+            val start = cynefinBoundaryPoint(from, to, transition.from == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
+            val end = cynefinBoundaryPoint(to, from, transition.to == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
+            commands += DrawLine(start.canonical(), end.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += arrowHead(start, end)
+            transition.label?.let { label -> commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, TextStyle(fontSize = 11.0)) }
+        }
+        diagram.domains.forEach { block ->
+            val center = centers.getValue(block.domain)
+            val visibleItems = if (block.domain == CynefinDomain.CONFUSION) block.items.take(3) else block.items
+            val titleY = if (block.domain == CynefinDomain.CONFUSION) center.y - 28.0 else center.y - quadrantHeight / 2.0 + 30.0
+            commands += DrawText(block.domain.name.lowercase().replaceFirstChar { it.uppercase() }, ScenePoint(center.x, titleY), TextAnchor.MIDDLE, domainStyle)
+            visibleItems.forEachIndexed { index, item ->
+                val y = if (block.domain == CynefinDomain.CONFUSION) center.y - 3.0 + index * 19.0 else titleY + 34.0 + index * 30.0
+                commands += DrawText(item, ScenePoint(center.x, y), TextAnchor.MIDDLE, itemStyle)
+            }
+            if (block.domain == CynefinDomain.CONFUSION && block.items.size > 3) {
+                commands += DrawText("+${block.items.size - 3} more", ScenePoint(center.x, center.y + 54.0), TextAnchor.MIDDLE, itemStyle)
+            }
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun cynefinBoundaryPoint(center: ScenePoint, toward: ScenePoint, ellipse: Boolean, quadrantWidth: Double, quadrantHeight: Double): ScenePoint =
+        usecaseBoundaryPoint(center, toward, if (ellipse) 92.0 else quadrantWidth / 2.0, if (ellipse) 66.0 else quadrantHeight / 2.0, ellipse)
 
     private fun layoutC4(diagram: C4Diagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
