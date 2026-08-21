@@ -351,6 +351,22 @@ public enum class CynefinDomain { COMPLEX, COMPLICATED, CLEAR, CHAOTIC, CONFUSIO
 public data class CynefinDomainBlock(val domain: CynefinDomain, val items: List<String>)
 public data class CynefinTransition(val from: CynefinDomain, val to: CynefinDomain, val label: String? = null)
 
+/** Bounded platform-neutral model for the Event Modeling timeline family. */
+public data class EventModelingDiagram(
+    val title: String? = null,
+    val frames: List<EventModelingFrame>,
+    val relations: List<EventModelingRelation>,
+) : MermaidDiagram
+
+public enum class EventModelingEntityKind { UI, COMMAND, EVENT, PROCESSOR, READ_MODEL }
+public data class EventModelingFrame(
+    val id: String,
+    val entityId: String,
+    val kind: EventModelingEntityKind,
+    val reset: Boolean = false,
+)
+public data class EventModelingRelation(val sourceFrameId: String, val targetFrameId: String)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

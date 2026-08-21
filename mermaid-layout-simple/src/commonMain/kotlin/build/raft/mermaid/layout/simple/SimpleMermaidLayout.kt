@@ -42,6 +42,8 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.EventModelingDiagram
+import build.raft.mermaid.core.EventModelingEntityKind
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -108,6 +110,65 @@ public object SimpleMermaidLayout : DiagramLayout {
         is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
         is C4Diagram -> layoutC4(diagram, textMeasurer, config)
         is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
+        is EventModelingDiagram -> layoutEventModeling(diagram, textMeasurer, config)
+    }
+
+    private fun layoutEventModeling(diagram: EventModelingDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 12.0, fontWeight = 600)
+        val laneStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val titleStyle = TextStyle(fontSize = 20.0, fontWeight = 600)
+        val laneOrder = listOf(
+            EventModelingEntityKind.UI,
+            EventModelingEntityKind.COMMAND,
+            EventModelingEntityKind.EVENT,
+            EventModelingEntityKind.PROCESSOR,
+            EventModelingEntityKind.READ_MODEL,
+        ).filter { kind -> diagram.frames.any { it.kind == kind } }
+        val labelWidth = diagram.frames.maxOf { textMeasurer.measure(it.entityId, labelStyle).width }
+        val cardWidth = max(132.0, labelWidth + 36.0)
+        val cardHeight = 58.0
+        val xGap = 44.0
+        val laneHeight = 106.0
+        val laneLabelWidth = 112.0
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
+        val points = diagram.frames.mapIndexed { index, frame ->
+            val lane = laneOrder.indexOf(frame.kind)
+            frame.id to ScenePoint(
+                config.padding + laneLabelWidth + index * (cardWidth + xGap) + cardWidth / 2.0,
+                config.padding + titleOffset + lane * laneHeight + laneHeight / 2.0,
+            )
+        }.toMap()
+        val width = max(640.0, config.padding * 2.0 + laneLabelWidth + diagram.frames.size * cardWidth + max(0, diagram.frames.size - 1) * xGap)
+        val height = max(300.0, config.padding * 2.0 + titleOffset + laneOrder.size * laneHeight)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
+        laneOrder.forEachIndexed { index, kind ->
+            val y = config.padding + titleOffset + index * laneHeight
+            commands += DrawRect(SceneRect(config.padding, y, width - config.padding * 2.0, laneHeight), 0.0, fill = SceneColor(if (index % 2 == 0) "#f8fafc" else "#ffffff"), stroke = SceneColor("#cbd5e1"), strokeWidth = 1.0)
+            commands += DrawText(kind.name.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }, ScenePoint(config.padding + 12.0, y + laneHeight / 2.0 + 5.0), style = laneStyle)
+        }
+        diagram.relations.forEach { relation ->
+            val fromCenter = points.getValue(relation.sourceFrameId)
+            val toCenter = points.getValue(relation.targetFrameId)
+            val from = usecaseBoundaryPoint(fromCenter, toCenter, cardWidth / 2.0, cardHeight / 2.0, false).canonical()
+            val to = usecaseBoundaryPoint(toCenter, fromCenter, cardWidth / 2.0, cardHeight / 2.0, false).canonical()
+            commands += DrawLine(from, to, stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += arrowHead(from, to)
+        }
+        val fills = mapOf(
+            EventModelingEntityKind.UI to SceneColor("#dcfce7"),
+            EventModelingEntityKind.COMMAND to SceneColor("#dbeafe"),
+            EventModelingEntityKind.EVENT to SceneColor("#fef3c7"),
+            EventModelingEntityKind.PROCESSOR to SceneColor("#ede9fe"),
+            EventModelingEntityKind.READ_MODEL to SceneColor("#fee2e2"),
+        )
+        diagram.frames.forEach { frame ->
+            val point = points.getValue(frame.id)
+            commands += DrawRect(SceneRect(point.x - cardWidth / 2.0, point.y - cardHeight / 2.0, cardWidth, cardHeight).canonical(), 7.0, fills.getValue(frame.kind), SceneColor(if (frame.reset) "#dc2626" else "#334155"), if (frame.reset) 2.5 else 1.5)
+            commands += DrawText(frame.entityId, point.copy(y = point.y - 2.0).canonical(), TextAnchor.MIDDLE, labelStyle)
+            commands += DrawText(frame.id, point.copy(y = point.y + 18.0).canonical(), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor("#64748b")))
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
     }
 
     private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

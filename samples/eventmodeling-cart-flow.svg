@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1676" height="622" viewBox="0 0 1676 622" role="img">
+  <text x="24" y="46" text-anchor="start" font-family="sans-serif" font-size="20" font-weight="600" fill="#111827">Cart &amp; inventory</text>
+  <rect x="24" y="68" width="1628" height="106" rx="0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="36" y="126" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Ui</text>
+  <rect x="24" y="174" width="1628" height="106" rx="0" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="36" y="232" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Command</text>
+  <rect x="24" y="280" width="1628" height="106" rx="0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="36" y="338" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Event</text>
+  <rect x="24" y="386" width="1628" height="106" rx="0" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="36" y="444" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Processor</text>
+  <rect x="24" y="492" width="1628" height="106" rx="0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="36" y="550" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Read model</text>
+  <line x1="315.132075" y1="150" x2="432.867925" y2="198" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="432.867925,198 422.8350695186864,198.769292461341 426.2327777421391,190.43529109175373" fill="#475569"/>
+  <line x1="575.132075" y1="256" x2="692.867925" y2="304" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="692.867925,304 682.8350695186865,304.76929246134097 686.2327777421391,296.43529109175375" fill="#475569"/>
+  <line x1="1095.132075" y1="362" x2="1212.867925" y2="410" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="1212.867925,410 1202.8350695186864,410.76929246134097 1206.2327777421392,402.43529109175375" fill="#475569"/>
+  <line x1="870.698113" y1="362" x2="1437.301887" y2="516" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="1437.301887,516 1427.4367010039164,517.981944818272 1429.7972195477323,509.2970180940963" fill="#475569"/>
+  <line x1="1095.132075" y1="362" x2="1472.867925" y2="516" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="1472.867925,516 1462.8350695172032,516.7692924419968 1466.2327777567245,508.4352910789606" fill="#475569"/>
+  <rect x="136" y="92" width="216" height="58" rx="7" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
+  <text x="244" y="119" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">CartUI</text>
+  <text x="244" y="139" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">01</text>
+  <rect x="396" y="198" width="216" height="58" rx="7" fill="#dbeafe" stroke="#334155" stroke-width="1.5"/>
+  <text x="504" y="225" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">AddItem</text>
+  <text x="504" y="245" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">02</text>
+  <rect x="656" y="304" width="216" height="58" rx="7" fill="#fef3c7" stroke="#334155" stroke-width="1.5"/>
+  <text x="764" y="331" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">ItemAdded</text>
+  <text x="764" y="351" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">03</text>
+  <rect x="916" y="304" width="216" height="58" rx="7" fill="#fef3c7" stroke="#dc2626" stroke-width="2.5"/>
+  <text x="1024" y="331" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">External.InventoryChanged</text>
+  <text x="1024" y="351" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">04</text>
+  <rect x="1176" y="410" width="216" height="58" rx="7" fill="#ede9fe" stroke="#334155" stroke-width="1.5"/>
+  <text x="1284" y="437" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">InventoryProcessor</text>
+  <text x="1284" y="457" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">05</text>
+  <rect x="1436" y="516" width="216" height="58" rx="7" fill="#fee2e2" stroke="#334155" stroke-width="1.5"/>
+  <text x="1544" y="543" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#111827">InventoryView</text>
+  <text x="1544" y="563" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="400" fill="#64748b">06</text>
+</svg>

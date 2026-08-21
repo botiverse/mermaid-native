@@ -40,6 +40,7 @@ public object MermaidParser {
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
             header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
+            header.text.equals("eventmodeling", ignoreCase = true) -> parseEventModeling(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1441,6 +1442,72 @@ public object MermaidParser {
         ) else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseEventModeling(source: String): MermaidParseResult {
+        val physicalLines = source.toMindmapLines()
+        if (physicalLines.firstOrNull()?.text != "eventmodeling") {
+            return failure(
+                MermaidDiagnosticCode.INVALID_HEADER,
+                "Event Modeling requires the exact eventmodeling header",
+                physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1),
+            )
+        }
+        val statements = source.toStatements()
+        var title: String? = null
+        val frames = linkedMapOf<String, EventModelingFrame>()
+        val relations = mutableListOf<EventModelingRelation>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var inferenceSource: String? = null
+
+        statements.drop(1).forEach { statement ->
+            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let { match ->
+                val value = match.groupValues[1].trim()
+                if (title != null || value.isEmpty()) diagnostics += unsupported(statement, "Duplicate or empty Event Modeling title")
+                else title = value
+                return@forEach
+            }
+            EVENT_MODELING_FRAME.matchEntire(statement.text)?.let { match ->
+                val reset = match.groupValues[1].equals("rf", true) || match.groupValues[1].equals("resetframe", true)
+                val id = match.groupValues[2]
+                val kind = when (match.groupValues[3].lowercase()) {
+                    "ui" -> EventModelingEntityKind.UI
+                    "cmd", "command" -> EventModelingEntityKind.COMMAND
+                    "evt", "event" -> EventModelingEntityKind.EVENT
+                    "pcr", "processor" -> EventModelingEntityKind.PROCESSOR
+                    "rmo", "readmodel" -> EventModelingEntityKind.READ_MODEL
+                    else -> error("Entity kind is constrained by EVENT_MODELING_FRAME")
+                }
+                val entityId = match.groupValues[4]
+                val explicitSources = match.groupValues[5]
+                    .takeIf { it.isNotEmpty() }
+                    ?.split(Regex("\\s*->>\\s*"))
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty()
+                when {
+                    id in frames -> diagnostics += unsupported(statement, "Duplicate Event Modeling frame identifier")
+                    explicitSources.any { it !in frames } -> diagnostics += unsupported(statement, "Event Modeling relation source must be declared first")
+                    explicitSources.any { it == id } -> diagnostics += unsupported(statement, "Event Modeling frame cannot reference itself")
+                    else -> {
+                        frames[id] = EventModelingFrame(id, entityId, kind, reset)
+                        val sources = when {
+                            explicitSources.isNotEmpty() -> explicitSources
+                            reset -> emptyList()
+                            inferenceSource != null -> listOf(inferenceSource!!)
+                            else -> emptyList()
+                        }
+                        sources.forEach { sourceId -> relations += EventModelingRelation(sourceId, id) }
+                        inferenceSource = id
+                    }
+                }
+                return@forEach
+            }
+            diagnostics += unsupported(statement, "Unsupported Event Modeling syntax")
+        }
+        if (frames.isEmpty()) diagnostics += unsupported(statements.first(), "Event Modeling requires at least one frame")
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(EventModelingDiagram(title, frames.values.toList(), relations.toList()))
+        } else MermaidParseResult.Failure(diagnostics)
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1457,6 +1524,12 @@ public object MermaidParser {
     )
 
     private val IDENTIFIER = "[A-Za-z_][A-Za-z0-9_-]*"
+    private val EVENT_MODELING_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
+    private val EVENT_MODELING_FRAME = Regex(
+        "^(tf|timeframe|rf|resetframe)\\s+(\\d{1,3})\\s+(ui|cmd|command|evt|event|pcr|processor|rmo|readmodel)\\s+" +
+            "([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s+->>\\s+(\\d{1,3}(?:\\s+->>\\s+\\d{1,3})*))?$",
+        RegexOption.IGNORE_CASE,
+    )
     private val FLOW_HEADER = Regex(
         pattern = "^(?:graph|flowchart)\\s+(TD|TB|LR|BT|RL)$",
         option = RegexOption.IGNORE_CASE,
