@@ -92,6 +92,11 @@ import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.CynefinDomainBlock
 import build.raft.mermaid.core.CynefinTransition
+import build.raft.mermaid.core.SwimlaneDiagram
+import build.raft.mermaid.core.Swimlane
+import build.raft.mermaid.core.SwimlaneNode
+import build.raft.mermaid.core.SwimlaneNodeShape
+import build.raft.mermaid.core.SwimlaneEdge
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -585,6 +590,31 @@ public object MermaidExamples {
         ),
     )
 
+    public val swimlaneSupportEscalation: MermaidExample = MermaidExample(
+        path = "samples/swimlane-support-escalation.mmd",
+        source = """
+            swimlane-beta LR
+              subgraph customer [Customer & partner]
+                request[Request service]
+                receive((Receive update))
+              end
+              subgraph support [Support team]
+                triage{Known issue?}
+                answer[Send answer]
+              end
+              request -->|handoff & review| triage
+              triage --> answer --> receive
+        """.trimIndent(),
+        expected = SwimlaneDiagram(
+            FlowDirection.LR,
+            listOf(
+                Swimlane("customer", "Customer & partner", listOf(SwimlaneNode("request", "Request service", SwimlaneNodeShape.RECTANGLE), SwimlaneNode("receive", "Receive update", SwimlaneNodeShape.CIRCLE))),
+                Swimlane("support", "Support team", listOf(SwimlaneNode("triage", "Known issue?", SwimlaneNodeShape.DECISION), SwimlaneNode("answer", "Send answer", SwimlaneNodeShape.RECTANGLE))),
+            ),
+            listOf(SwimlaneEdge("request", "triage", "handoff & review"), SwimlaneEdge("triage", "answer"), SwimlaneEdge("answer", "receive")),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -611,5 +641,6 @@ public object MermaidExamples {
         quadrantProductPortfolio,
         userJourneyCheckout,
         cynefinIncidentResponse,
+        swimlaneSupportEscalation,
     )
 }

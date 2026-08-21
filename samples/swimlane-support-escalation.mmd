@@ -1,0 +1,11 @@
+swimlane-beta LR
+  subgraph customer [Customer & partner]
+    request[Request service]
+    receive((Receive update))
+  end
+  subgraph support [Support team]
+    triage{Known issue?}
+    answer[Send answer]
+  end
+  request -->|handoff & review| triage
+  triage --> answer --> receive

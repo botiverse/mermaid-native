@@ -40,6 +40,12 @@ public object MermaidParser {
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
             header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
+            SWIMLANE_HEADER.matches(header.text) -> parseSwimlane(source)
+            header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
+                MermaidDiagnosticCode.INVALID_HEADER,
+                "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
+                header.location,
+            )
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1441,6 +1447,127 @@ public object MermaidParser {
         ) else MermaidParseResult.Failure(diagnostics)
     }
 
+    private fun parseSwimlane(source: String): MermaidParseResult {
+        val lines = source.lineSequence().toList()
+        val headerIndex = lines.indexOfFirst { SWIMLANE_HEADER.matches(it.trim()) }
+        if (headerIndex < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Invalid swimlane-beta header", SourceLocation(1, 1))
+        val header = SWIMLANE_HEADER.matchEntire(lines[headerIndex].trim())!!
+        val direction = header.groupValues[1].takeIf { it.isNotEmpty() }
+            ?.uppercase()
+            ?.let(FlowDirection::valueOf)
+            ?: FlowDirection.TB
+        val lanes = mutableListOf<Swimlane>()
+        val laneIds = mutableSetOf<String>()
+        val nodeIds = mutableSetOf<String>()
+        val edges = mutableListOf<SwimlaneEdge>()
+        val edgeKeys = mutableSetOf<Triple<String, String, String?>>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var currentLaneId: String? = null
+        var currentLaneLabel: String? = null
+        var currentNodes = mutableListOf<SwimlaneNode>()
+
+        fun statement(text: String, line: Int, raw: String): SourceStatement = SourceStatement(
+            text,
+            SourceLocation(line, raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0) + 1),
+        )
+
+        fun closeLane(line: Int, raw: String) {
+            val id = currentLaneId
+            if (id == null) {
+                diagnostics += unsupported(statement("end", line, raw), "Orphan swimlane end")
+            } else {
+                if (currentNodes.isEmpty()) diagnostics += unsupported(statement("end", line, raw), "Swimlane must contain at least one node")
+                lanes += Swimlane(id, currentLaneLabel ?: id, currentNodes.toList())
+                currentLaneId = null
+                currentLaneLabel = null
+                currentNodes = mutableListOf()
+            }
+        }
+
+        lines.drop(headerIndex + 1).forEachIndexed { offset, raw ->
+            val lineNumber = headerIndex + offset + 2
+            val line = raw.trim()
+            if (line.isEmpty() || line.startsWith("%%")) return@forEachIndexed
+            val sourceStatement = statement(line, lineNumber, raw)
+            if (line.equals("end", ignoreCase = true)) {
+                closeLane(lineNumber, raw)
+                return@forEachIndexed
+            }
+            SWIMLANE_LANE.matchEntire(line)?.let { match ->
+                if (currentLaneId != null) {
+                    diagnostics += unsupported(sourceStatement, "Nested swimlanes are not supported")
+                    return@forEachIndexed
+                }
+                val id = match.groupValues[1]
+                val label = match.groupValues[2].ifEmpty { id }
+                if (!laneIds.add(id)) diagnostics += unsupported(sourceStatement, "Duplicate swimlane id")
+                currentLaneId = id
+                currentLaneLabel = label
+                currentNodes = mutableListOf()
+                return@forEachIndexed
+            }
+            if (currentLaneId != null) {
+                parseSwimlaneNode(line)?.let { node ->
+                    if (!nodeIds.add(node.id)) diagnostics += unsupported(sourceStatement, "Duplicate swimlane node id")
+                    else currentNodes += node
+                    return@forEachIndexed
+                }
+                diagnostics += unsupported(sourceStatement, "Unsupported swimlane node syntax")
+                return@forEachIndexed
+            }
+            val segments = splitSwimlaneEdgeChain(line)
+            if (segments == null) {
+                diagnostics += unsupported(sourceStatement, "Unsupported swimlane syntax")
+                return@forEachIndexed
+            }
+            segments.forEach { edge ->
+                val key = Triple(edge.sourceId, edge.targetId, edge.label)
+                when {
+                    edge.sourceId !in nodeIds || edge.targetId !in nodeIds -> diagnostics += unsupported(sourceStatement, "Swimlane edge endpoints must be declared first")
+                    edge.sourceId == edge.targetId -> diagnostics += unsupported(sourceStatement, "Swimlane self edges are not supported")
+                    !edgeKeys.add(key) -> diagnostics += unsupported(sourceStatement, "Duplicate swimlane edge")
+                    else -> edges += edge
+                }
+            }
+        }
+        if (currentLaneId != null) diagnostics += unsupported(
+            SourceStatement(currentLaneId!!, SourceLocation(lines.size, 1)),
+            "Unclosed swimlane",
+        )
+        if (lanes.isEmpty()) diagnostics += unsupported(SourceStatement(lines[headerIndex].trim(), SourceLocation(headerIndex + 1, 1)), "Swimlane diagram requires at least one lane")
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(SwimlaneDiagram(direction, lanes, edges)) else MermaidParseResult.Failure(diagnostics)
+    }
+
+    private fun parseSwimlaneNode(line: String): SwimlaneNode? {
+        val patterns = listOf(
+            SWIMLANE_STADIUM_NODE to SwimlaneNodeShape.STADIUM,
+            SWIMLANE_CIRCLE_NODE to SwimlaneNodeShape.CIRCLE,
+            SWIMLANE_DECISION_NODE to SwimlaneNodeShape.DECISION,
+            SWIMLANE_RECT_NODE to SwimlaneNodeShape.RECTANGLE,
+            SWIMLANE_ROUNDED_NODE to SwimlaneNodeShape.ROUNDED,
+        )
+        patterns.forEach { (pattern, shape) ->
+            pattern.matchEntire(line)?.let { return SwimlaneNode(it.groupValues[1], it.groupValues[2], shape) }
+        }
+        return null
+    }
+
+    private fun splitSwimlaneEdgeChain(line: String): List<SwimlaneEdge>? {
+        val first = Regex("^($IDENTIFIER)").find(line) ?: return null
+        var sourceId = first.groupValues[1]
+        var cursor = first.range.last + 1
+        val edges = mutableListOf<SwimlaneEdge>()
+        while (cursor < line.length) {
+            val match = SWIMLANE_EDGE_TAIL.find(line, cursor) ?: return null
+            if (match.range.first != cursor) return null
+            val targetId = match.groupValues[2]
+            edges += SwimlaneEdge(sourceId, targetId, match.groupValues[1].ifEmpty { null })
+            sourceId = targetId
+            cursor = match.range.last + 1
+        }
+        return edges.takeIf { it.isNotEmpty() }
+    }
+
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
         MermaidDiagnostic(
             code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -1462,6 +1589,14 @@ public object MermaidParser {
         option = RegexOption.IGNORE_CASE,
     )
     private val STATE_HEADER = Regex("^stateDiagram(?:-v2)?$", RegexOption.IGNORE_CASE)
+    private val SWIMLANE_HEADER = Regex("^swimlane-beta(?:\\s+(TD|TB|LR|BT|RL))?$", RegexOption.IGNORE_CASE)
+    private val SWIMLANE_LANE = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s+\\[([^]\\r\\n]+)])?$", RegexOption.IGNORE_CASE)
+    private val SWIMLANE_RECT_NODE = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
+    private val SWIMLANE_ROUNDED_NODE = Regex("^($IDENTIFIER)\\(([^()\\r\\n]+)\\)$")
+    private val SWIMLANE_STADIUM_NODE = Regex("^($IDENTIFIER)\\(\\[([^]\\r\\n]+)]\\)$")
+    private val SWIMLANE_DECISION_NODE = Regex("^($IDENTIFIER)\\{([^}\\r\\n]+)}$")
+    private val SWIMLANE_CIRCLE_NODE = Regex("^($IDENTIFIER)\\(\\(([^()\\r\\n]+)\\)\\)$")
+    private val SWIMLANE_EDGE_TAIL = Regex("\\s+-->\\s*(?:\\|([^|\\r\\n]+)\\|\\s*)?($IDENTIFIER)")
     private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
     private val STATE_ALIAS = Regex("^state\\s+\"([^\"]+)\"\\s+as\\s+($IDENTIFIER)$")
     private val STATE_TRANSITION = Regex(

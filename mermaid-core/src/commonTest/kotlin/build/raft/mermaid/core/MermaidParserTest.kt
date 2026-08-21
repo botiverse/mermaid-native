@@ -7,6 +7,44 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun parsesSwimlanesLanesShapesAndLabeledEdgeChains() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                "swimlane-beta LR\nsubgraph customer [Customer team]\nstart([Start])\nrequest[Request & review]\nend\nsubgraph Support\ntriage{Known?}\nanswer((Done))\nend\nstart --> request -->|handoff| triage\ntriage --> answer",
+            ),
+        )
+        assertEquals(
+            SwimlaneDiagram(
+                FlowDirection.LR,
+                listOf(
+                    Swimlane("customer", "Customer team", listOf(SwimlaneNode("start", "Start", SwimlaneNodeShape.STADIUM), SwimlaneNode("request", "Request & review", SwimlaneNodeShape.RECTANGLE))),
+                    Swimlane("Support", "Support", listOf(SwimlaneNode("triage", "Known?", SwimlaneNodeShape.DECISION), SwimlaneNode("answer", "Done", SwimlaneNodeShape.CIRCLE))),
+                ),
+                listOf(SwimlaneEdge("start", "request"), SwimlaneEdge("request", "triage", "handoff"), SwimlaneEdge("triage", "answer")),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedSwimlanesFailClosed() {
+        listOf(
+            "swimlane-beta ZZ\nsubgraph A\na[One]\nend",
+            "swimlane-beta",
+            "swimlane-beta\nend",
+            "swimlane-beta\nsubgraph A\nend",
+            "swimlane-beta\nsubgraph A\na[One]",
+            "swimlane-beta\nsubgraph A\nsubgraph B\nb[Two]\nend",
+            "swimlane-beta\nsubgraph A\na[One]\nend\nsubgraph A\nb[Two]\nend",
+            "swimlane-beta\nsubgraph A\na[One]\nend\nsubgraph B\na[Duplicate]\nend",
+            "swimlane-beta\nsubgraph A\na[One]\nend\na --> missing",
+            "swimlane-beta\nsubgraph A\na[One]\nend\na --> a",
+            "swimlane-beta\nsubgraph A\na[One]\nend\nstyle a fill:red",
+            "swimlane-beta\naccTitle: unsupported\nsubgraph A\na[One]\nend",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
     fun parsesCynefinDomainsItemsAndTransitions() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("cynefin-beta\ntitle Incident response\ncomplex\n\"Investigate & learn\"\ncomplicated\n\"Expert analysis\"\nclear\n\"Known fix\"\nchaotic\n\"Page on-call\"\nconfusion\n\"Unknown mode\"\ncomplex --> complicated : \"Pattern found\"\nclear --> clear : \"ignored\"")
