@@ -378,6 +378,15 @@ public data class SwimlaneEdge(
     val label: String? = null,
 )
 
+/** Bounded platform-neutral model for Mermaid treeView-beta indentation trees. */
+public data class TreeViewDiagram(val nodes: List<TreeViewNode>) : MermaidDiagram
+public data class TreeViewNode(
+    val label: String,
+    val depth: Int,
+    val parentIndex: Int?,
+    val directory: Boolean,
+)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

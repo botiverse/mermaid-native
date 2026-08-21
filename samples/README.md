@@ -61,3 +61,8 @@ on the documented `swimlane-beta` syntax at the pinned Mermaid revision. It
 covers explicit lanes, common flowchart node shapes, directed labeled edge
 chains, measured layout, and XML-safe text without claiming accessibility,
 styling, alternate edge forms, or full family parity.
+
+`treeview-project.mmd` is an original compatibility fixture based on the
+documented `treeView-beta` indentation syntax. It covers bare/quoted labels,
+directory markers, parent connectors, and measured hierarchy layout without
+claiming box-drawing input, annotations, icons, configuration, or full parity.

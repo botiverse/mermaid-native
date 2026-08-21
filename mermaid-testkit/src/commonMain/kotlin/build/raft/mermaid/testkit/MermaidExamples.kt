@@ -97,6 +97,8 @@ import build.raft.mermaid.core.Swimlane
 import build.raft.mermaid.core.SwimlaneNode
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.SwimlaneEdge
+import build.raft.mermaid.core.TreeViewDiagram
+import build.raft.mermaid.core.TreeViewNode
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -615,6 +617,27 @@ public object MermaidExamples {
         ),
     )
 
+    public val treeViewProject: MermaidExample = MermaidExample(
+        path = "samples/treeview-project.mmd",
+        source = """
+            treeView-beta
+                project/
+                    src/
+                        index.ts
+                    "README file.md"
+                package.json
+        """.trimIndent(),
+        expected = TreeViewDiagram(
+            listOf(
+                TreeViewNode("project", 0, null, true),
+                TreeViewNode("src", 1, 0, true),
+                TreeViewNode("index.ts", 2, 1, false),
+                TreeViewNode("README file.md", 1, 0, false),
+                TreeViewNode("package.json", 0, null, false),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -642,5 +665,6 @@ public object MermaidExamples {
         userJourneyCheckout,
         cynefinIncidentResponse,
         swimlaneSupportEscalation,
+        treeViewProject,
     )
 }

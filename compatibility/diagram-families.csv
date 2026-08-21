@@ -23,7 +23,7 @@ sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vert
 stateDiagram,stateDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports stateDiagram/stateDiagram-v2 aliases directions aliases transitions and terminal states; full family parity is not complete.
 swimlanes,swimlanes,in_progress,partial,partial,partial,partial,Bounded swimlane-beta lanes common node shapes and directed labeled edge chains with deterministic measured layout; accessibility styling alternative edge forms and full family parity are not complete.
 timeline,timeline,in_progress,partial,partial,partial,partial,Vertical slice supports a title ordered periods and one or more labels per period; full family parity is not complete.
-treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
+treeView,treeView,in_progress,partial,partial,partial,partial,Bounded treeView-beta indentation parser with bare/quoted labels and directory markers, deterministic measured hierarchy layout and SVG golden; box-drawing/annotations/icons/configuration and full family parity are not complete.
 treemap,treemap,in_progress,partial,partial,partial,partial,Vertical slice supports two-space hierarchy sections and finite positive weighted leaves; styling configuration and full family parity are not complete.
 usecase,usecase,in_progress,partial,partial,partial,partial,Vertical slice supports explicit actors, ellipse/rectangle use cases and solid associations; boundaries, UML operators and full family parity are not complete.
 userJourney,userJourney,in_progress,partial,partial,partial,partial,Vertical slice supports title sections scored tasks and actor lists; full family parity is not complete.
