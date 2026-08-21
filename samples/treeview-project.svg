@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="228" viewBox="0 0 360 228" role="img">
+  <ellipse cx="24" cy="42" rx="5" ry="5" fill="#f59e0b" fill-opacity="1" stroke="#475569" stroke-width="1"/>
+  <text x="38" y="47" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">project</text>
+  <polyline points="29,49 29,78 58,78" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+  <ellipse cx="66" cy="78" rx="5" ry="5" fill="#f59e0b" fill-opacity="1" stroke="#475569" stroke-width="1"/>
+  <text x="80" y="83" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">src</text>
+  <polyline points="71,85 71,114 100,114" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+  <ellipse cx="108" cy="114" rx="5" ry="5" fill="#3b82f6" fill-opacity="1" stroke="#475569" stroke-width="1"/>
+  <text x="122" y="119" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">index.ts</text>
+  <polyline points="29,49 29,150 58,150" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+  <ellipse cx="66" cy="150" rx="5" ry="5" fill="#3b82f6" fill-opacity="1" stroke="#475569" stroke-width="1"/>
+  <text x="80" y="155" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">README file.md</text>
+  <ellipse cx="24" cy="186" rx="5" ry="5" fill="#3b82f6" fill-opacity="1" stroke="#475569" stroke-width="1"/>
+  <text x="38" y="191" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">package.json</text>
+</svg>

@@ -94,6 +94,8 @@ import build.raft.mermaid.core.Swimlane
 import build.raft.mermaid.core.SwimlaneNode
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.SwimlaneEdge
+import build.raft.mermaid.core.TreeViewDiagram
+import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -106,6 +108,24 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun treeViewProducesDeterministicMeasuredHierarchy() {
+        val long = "directory-".repeat(20)
+        val diagram = TreeViewDiagram(
+            listOf(
+                TreeViewNode(long, 0, null, true),
+                TreeViewNode("src", 1, 0, true),
+                TreeViewNode("index.ts", 2, 1, false),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawPolyline>().size)
+        val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600)).width + 48.0
+        assertTrue(first.width >= required)
+    }
+
     @Test
     fun swimlanesProduceDeterministicMeasuredLanesNodesAndEdges() {
         val long = "handoff-".repeat(20)

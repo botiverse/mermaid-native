@@ -44,6 +44,7 @@ import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
+import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -111,6 +112,41 @@ public object SimpleMermaidLayout : DiagramLayout {
         is C4Diagram -> layoutC4(diagram, textMeasurer, config)
         is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
         is SwimlaneDiagram -> layoutSwimlane(diagram, textMeasurer, config)
+        is TreeViewDiagram -> layoutTreeView(diagram, textMeasurer, config)
+    }
+
+    private fun layoutTreeView(diagram: TreeViewDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 13.0)
+        val directoryStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val rowHeight = 36.0
+        val indent = 42.0
+        val maxLabelRight = diagram.nodes.maxOf { node ->
+            config.padding + node.depth * indent + 18.0 + textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width
+        }
+        val width = max(360.0, maxLabelRight + config.padding)
+        val height = max(180.0, config.padding * 2.0 + diagram.nodes.size * rowHeight)
+        val points = diagram.nodes.mapIndexed { index, node ->
+            ScenePoint(config.padding + node.depth * indent, config.padding + index * rowHeight + rowHeight / 2.0)
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.nodes.forEachIndexed { index, node ->
+            val point = points[index]
+            node.parentIndex?.let { parentIndex ->
+                val parent = points[parentIndex]
+                commands += DrawPolyline(
+                    listOf(
+                        ScenePoint(parent.x + 5.0, parent.y + 7.0),
+                        ScenePoint(parent.x + 5.0, point.y),
+                        ScenePoint(point.x - 8.0, point.y),
+                    ).map { it.canonical() },
+                    stroke = SceneColor("#94a3b8"),
+                    strokeWidth = 1.5,
+                )
+            }
+            commands += DrawEllipse(point, 5.0, 5.0, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
+            commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
     }
 
     private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

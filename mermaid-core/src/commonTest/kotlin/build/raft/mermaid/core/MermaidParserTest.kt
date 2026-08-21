@@ -7,6 +7,39 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun parsesTreeViewIndentationQuotedLabelsAndDirectories() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("treeView-beta\n    project/\n        src/\n            index.ts\n        \"README file.md\"")
+        )
+        assertEquals(
+            TreeViewDiagram(
+                listOf(
+                    TreeViewNode("project", 0, null, true),
+                    TreeViewNode("src", 1, 0, true),
+                    TreeViewNode("index.ts", 2, 1, false),
+                    TreeViewNode("README file.md", 1, 0, false),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedTreeViewFailsClosed() {
+        listOf(
+            "treeView-beta",
+            "treeView-beta\nroot/",
+            "treeView-beta\n  root/",
+            "treeView-beta\n    root/\n            skipped.txt",
+            "treeView-beta\n    unquoted label",
+            "treeView-beta\n    \"unterminated",
+            "treeView-beta\n    root/ :::highlight",
+            "treeView-beta\n    root/ ## description",
+            "treeView-beta\n\troot/",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
     fun parsesSwimlanesLanesShapesAndLabeledEdgeChains() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

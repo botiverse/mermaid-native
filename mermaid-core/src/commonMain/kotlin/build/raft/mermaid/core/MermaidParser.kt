@@ -41,6 +41,7 @@ public object MermaidParser {
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
             header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlane(source)
+            header.text.equals("treeView-beta", ignoreCase = true) -> parseTreeView(source)
             header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
                 MermaidDiagnosticCode.INVALID_HEADER,
                 "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
@@ -1536,6 +1537,46 @@ public object MermaidParser {
         )
         if (lanes.isEmpty()) diagnostics += unsupported(SourceStatement(lines[headerIndex].trim(), SourceLocation(headerIndex + 1, 1)), "Swimlane diagram requires at least one lane")
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(SwimlaneDiagram(direction, lanes, edges)) else MermaidParseResult.Failure(diagnostics)
+    }
+
+    private fun parseTreeView(source: String): MermaidParseResult {
+        val lines = source.lineSequence().toList()
+        val header = lines.indexOfFirst { it.trim().equals("treeView-beta", ignoreCase = true) }
+        if (header < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Invalid treeView-beta header", SourceLocation(1, 1))
+        val nodes = mutableListOf<TreeViewNode>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        lines.drop(header + 1).forEachIndexed { offset, raw ->
+            if (raw.trim().isEmpty() || raw.trim().startsWith("%%")) return@forEachIndexed
+            if (raw.contains('\t')) {
+                diagnostics += unsupported(SourceStatement(raw.trim(), SourceLocation(header + offset + 2, 1)), "Tabs are not supported in treeView indentation")
+                return@forEachIndexed
+            }
+            val leading = raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0)
+            if (leading == 0 || leading % 4 != 0) {
+                diagnostics += unsupported(SourceStatement(raw.trim(), SourceLocation(header + offset + 2, leading + 1)), "treeView nodes require positive four-space indentation")
+                return@forEachIndexed
+            }
+            val text = raw.trim()
+            val label = when {
+                text.length >= 2 && text.first() == '"' && text.last() == '"' -> text.substring(1, text.length - 1).takeIf { it.isNotEmpty() }
+                text.matches(Regex("[A-Za-z0-9_./@+\\-]+/?")) -> text
+                else -> null
+            }
+            if (label == null) {
+                diagnostics += unsupported(SourceStatement(text, SourceLocation(header + offset + 2, leading + 1)), "Unsupported treeView node syntax")
+                return@forEachIndexed
+            }
+            val depth = leading / 4 - 1
+            if (depth > (nodes.maxOfOrNull { it.depth }?.plus(1) ?: 0)) {
+                diagnostics += unsupported(SourceStatement(text, SourceLocation(header + offset + 2, leading + 1)), "treeView indentation skips a parent")
+                return@forEachIndexed
+            }
+            val parent = nodes.indexOfLast { it.depth == depth - 1 }
+            nodes += TreeViewNode(label.removeSuffix("/"), depth, parent.takeIf { it >= 0 }, label.endsWith('/'))
+        }
+        if (nodes.isEmpty()) diagnostics += unsupported(SourceStatement("treeView-beta", SourceLocation(header + 1, 1)), "treeView requires at least one node")
+        if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics)
+        return MermaidParseResult.Success(TreeViewDiagram(nodes))
     }
 
     private fun parseSwimlaneNode(line: String): SwimlaneNode? {
