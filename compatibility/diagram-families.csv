@@ -21,7 +21,7 @@ requirementDiagram,requirementDiagram,in_progress,partial,partial,partial,partia
 sankey,sankey,in_progress,partial,partial,partial,partial,Vertical slice supports acyclic positive weighted CSV links including quoted commas and escaped quotes; configuration and full family parity are not complete.
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset only; full family parity is not complete.
 stateDiagram,stateDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports stateDiagram/stateDiagram-v2 aliases directions aliases transitions and terminal states; full family parity is not complete.
-swimlanes,swimlanes,not_started,no,no,no,no,Official syntax family; implementation is not started.
+swimlanes,swimlanes,in_progress,partial,partial,partial,partial,Bounded swimlane-beta lanes common node shapes and directed labeled edge chains with deterministic measured layout; accessibility styling alternative edge forms and full family parity are not complete.
 timeline,timeline,in_progress,partial,partial,partial,partial,Vertical slice supports a title ordered periods and one or more labels per period; full family parity is not complete.
 treeView,treeView,not_started,no,no,no,no,Official syntax family; implementation is not started.
 treemap,treemap,in_progress,partial,partial,partial,partial,Vertical slice supports two-space hierarchy sections and finite positive weighted leaves; styling configuration and full family parity are not complete.

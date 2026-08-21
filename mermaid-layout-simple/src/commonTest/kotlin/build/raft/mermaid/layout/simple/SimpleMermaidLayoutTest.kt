@@ -89,6 +89,11 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4Element
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.C4Relationship
+import build.raft.mermaid.core.SwimlaneDiagram
+import build.raft.mermaid.core.Swimlane
+import build.raft.mermaid.core.SwimlaneNode
+import build.raft.mermaid.core.SwimlaneNodeShape
+import build.raft.mermaid.core.SwimlaneEdge
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -101,6 +106,28 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun swimlanesProduceDeterministicMeasuredLanesNodesAndEdges() {
+        val long = "handoff-".repeat(20)
+        val diagram = SwimlaneDiagram(
+            FlowDirection.LR,
+            listOf(
+                Swimlane("customer", "Customer", listOf(SwimlaneNode("request", long, SwimlaneNodeShape.RECTANGLE))),
+                Swimlane("support", "Support", listOf(SwimlaneNode("triage", "Triage", SwimlaneNodeShape.DECISION))),
+            ),
+            listOf(SwimlaneEdge("request", "triage", "handoff & review")),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val second = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, second)
+        assertTrue(first.commands.filterIsInstance<DrawRect>().size >= 3)
+        assertEquals(1, first.commands.filterIsInstance<DrawPolygon>().count { it.points.size == 4 })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == long })
+        val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600)).width + 40.0
+        val nodeRect = first.commands.filterIsInstance<DrawRect>().first { it.rect.width >= required }
+        assertTrue(nodeRect.rect.width >= required)
+    }
+
     @Test
     fun requirementProducesDeterministicCardsAndRelationship() {
         val diagram = RequirementDiagram(

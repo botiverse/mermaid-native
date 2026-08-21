@@ -351,6 +351,33 @@ public enum class CynefinDomain { COMPLEX, COMPLICATED, CLEAR, CHAOTIC, CONFUSIO
 public data class CynefinDomainBlock(val domain: CynefinDomain, val items: List<String>)
 public data class CynefinTransition(val from: CynefinDomain, val to: CynefinDomain, val label: String? = null)
 
+/** Bounded platform-neutral model for the Mermaid swimlanes family. */
+public data class SwimlaneDiagram(
+    val direction: FlowDirection = FlowDirection.TB,
+    val lanes: List<Swimlane>,
+    val edges: List<SwimlaneEdge>,
+) : MermaidDiagram
+
+public data class Swimlane(
+    val id: String,
+    val label: String,
+    val nodes: List<SwimlaneNode>,
+)
+
+public data class SwimlaneNode(
+    val id: String,
+    val label: String,
+    val shape: SwimlaneNodeShape,
+)
+
+public enum class SwimlaneNodeShape { RECTANGLE, ROUNDED, STADIUM, DECISION, CIRCLE }
+
+public data class SwimlaneEdge(
+    val sourceId: String,
+    val targetId: String,
+    val label: String? = null,
+)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

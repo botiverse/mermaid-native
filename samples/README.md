@@ -55,3 +55,9 @@ the fixed domain keywords, quoted items, and labeled cross-domain transitions
 without claiming that every domain must be declared or non-empty; official
 empty/sparse frameworks remain valid. Accessibility, configuration,
 wavy-boundary, and full parity are not claimed.
+
+`swimlane-support-escalation.mmd` is an original compatibility fixture based
+on the documented `swimlane-beta` syntax at the pinned Mermaid revision. It
+covers explicit lanes, common flowchart node shapes, directed labeled edge
+chains, measured layout, and XML-safe text without claiming accessibility,
+styling, alternate edge forms, or full family parity.

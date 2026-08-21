@@ -42,6 +42,8 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.SwimlaneDiagram
+import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -108,7 +110,97 @@ public object SimpleMermaidLayout : DiagramLayout {
         is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
         is C4Diagram -> layoutC4(diagram, textMeasurer, config)
         is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
+        is SwimlaneDiagram -> layoutSwimlane(diagram, textMeasurer, config)
     }
+
+    private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val laneStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
+        val nodeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val edgeStyle = TextStyle(fontSize = 11.0)
+        val nodeWidth = max(140.0, diagram.lanes.flatMap { it.nodes }.maxOf { textMeasurer.measure(it.label, nodeStyle).width } + 40.0)
+        val nodeHeight = 64.0
+        val nodeGap = 40.0
+        val laneGap = 24.0
+        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
+        val maxNodes = diagram.lanes.maxOf { it.nodes.size }
+        val laneLabelWidth = diagram.lanes.maxOf { textMeasurer.measure(it.label, laneStyle).width }
+        val edgeLabelWidth = diagram.edges.mapNotNull { it.label }.maxOfOrNull { textMeasurer.measure(it, edgeStyle).width } ?: 0.0
+        val laneWidth = if (horizontal) {
+            max(max(laneLabelWidth + 32.0, maxNodes * nodeWidth + max(0, maxNodes - 1) * nodeGap + 40.0), edgeLabelWidth + 2.0 * config.padding)
+        } else {
+            max(nodeWidth + 40.0, laneLabelWidth + 32.0)
+        }
+        val laneHeight = if (horizontal) 148.0 else maxNodes * nodeHeight + max(0, maxNodes - 1) * nodeGap + 84.0
+        val width = if (horizontal) {
+            config.padding * 2.0 + laneWidth
+        } else {
+            max(edgeLabelWidth + 2.0 * config.padding, config.padding * 2.0 + diagram.lanes.size * laneWidth + max(0, diagram.lanes.size - 1) * laneGap)
+        }
+        val height = if (horizontal) {
+            config.padding * 2.0 + diagram.lanes.size * laneHeight + max(0, diagram.lanes.size - 1) * laneGap
+        } else {
+            config.padding * 2.0 + laneHeight
+        }
+        val laneRects = linkedMapOf<String, SceneRect>()
+        val nodePoints = linkedMapOf<String, ScenePoint>()
+        val nodeById = diagram.lanes.flatMap { it.nodes }.associateBy { it.id }
+        diagram.lanes.forEachIndexed { laneIndex, lane ->
+            val rect = if (horizontal) {
+                SceneRect(config.padding, config.padding + laneIndex * (laneHeight + laneGap), laneWidth, laneHeight)
+            } else {
+                SceneRect(config.padding + laneIndex * (laneWidth + laneGap), config.padding, laneWidth, laneHeight)
+            }
+            laneRects[lane.id] = rect
+            lane.nodes.forEachIndexed { nodeIndex, node ->
+                val point = if (horizontal) {
+                    val forwardX = rect.x + 20.0 + nodeWidth / 2.0 + nodeIndex * (nodeWidth + nodeGap)
+                    ScenePoint(if (diagram.direction == FlowDirection.RL) rect.x + rect.width - (forwardX - rect.x) else forwardX, rect.y + 92.0)
+                } else {
+                    val forwardY = rect.y + 54.0 + nodeHeight / 2.0 + nodeIndex * (nodeHeight + nodeGap)
+                    ScenePoint(rect.x + rect.width / 2.0, if (diagram.direction == FlowDirection.BT) rect.y + rect.height - (forwardY - rect.y) else forwardY)
+                }
+                nodePoints[node.id] = point.canonical()
+            }
+        }
+        val commands = mutableListOf<DrawCommand>()
+        diagram.lanes.forEachIndexed { index, lane ->
+            val rect = laneRects.getValue(lane.id)
+            commands += DrawRect(rect.canonical(), 10.0, fill = if (index % 2 == 0) SceneColor("#f8fafc") else SceneColor("#f1f5f9"), stroke = SceneColor("#94a3b8"), strokeWidth = 1.5)
+            commands += DrawText(lane.label, ScenePoint(rect.x + 16.0, rect.y + 25.0).canonical(), style = laneStyle)
+        }
+        diagram.edges.forEach { edge ->
+            val fromCenter = nodePoints.getValue(edge.sourceId)
+            val toCenter = nodePoints.getValue(edge.targetId)
+            val from = swimlaneBoundaryPoint(fromCenter, toCenter, nodeById.getValue(edge.sourceId).shape, nodeWidth, nodeHeight)
+            val to = swimlaneBoundaryPoint(toCenter, fromCenter, nodeById.getValue(edge.targetId).shape, nodeWidth, nodeHeight)
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += arrowHead(from, to)
+            edge.label?.let { label ->
+                commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, edgeStyle)
+            }
+        }
+        diagram.lanes.flatMap { it.nodes }.forEach { node ->
+            val point = nodePoints.getValue(node.id)
+            when (node.shape) {
+                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 12.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.DECISION -> commands += DrawPolygon(listOf(ScenePoint(point.x, point.y - nodeHeight / 2.0), ScenePoint(point.x + nodeWidth / 2.0, point.y), ScenePoint(point.x, point.y + nodeHeight / 2.0), ScenePoint(point.x - nodeWidth / 2.0, point.y)).map { it.canonical() }, fill = SceneColor("#fef3c7"))
+                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor("#dcfce7"), stroke = SceneColor("#15803d"), strokeWidth = 1.5)
+            }
+            commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), TextAnchor.MIDDLE, nodeStyle)
+        }
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun swimlaneBoundaryPoint(center: ScenePoint, toward: ScenePoint, shape: SwimlaneNodeShape, nodeWidth: Double, nodeHeight: Double): ScenePoint =
+        usecaseBoundaryPoint(
+            center,
+            toward,
+            if (shape == SwimlaneNodeShape.CIRCLE) nodeHeight / 2.0 else nodeWidth / 2.0,
+            nodeHeight / 2.0,
+            shape == SwimlaneNodeShape.CIRCLE || shape == SwimlaneNodeShape.STADIUM,
+        )
 
     private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val domainStyle = TextStyle(fontSize = 16.0, fontWeight = 600)
