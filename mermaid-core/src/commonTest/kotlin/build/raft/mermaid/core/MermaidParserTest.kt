@@ -7,6 +7,36 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun parsesEventModelingCompactRelaxedResetAndExplicitRelations() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
+        val diagram = assertIs<EventModelingDiagram>(result.diagram)
+        assertEquals("Cart & inventory", diagram.title)
+        assertEquals(listOf("01", "02", "03", "04", "05"), diagram.frames.map { it.id })
+        assertEquals(EventModelingEntityKind.READ_MODEL, diagram.frames.last().kind)
+        assertTrue(diagram.frames[3].reset)
+        assertEquals(
+            listOf(EventModelingRelation("01", "02"), EventModelingRelation("02", "03"), EventModelingRelation("03", "05"), EventModelingRelation("04", "05")),
+            diagram.relations,
+        )
+    }
+
+    @Test
+    fun malformedEventModelingFailsClosed() {
+        listOf(
+            "eventmodeling",
+            "EventModeling\ntf 01 ui Cart",
+            "eventmodeling; tf 01 ui Cart",
+            "eventmodeling\ntf 01 ui Cart\ntf 01 evt Duplicate",
+            "eventmodeling\ntf 01 rmo View ->> 99",
+            "eventmodeling\ntf 1000 ui Cart",
+            "eventmodeling\ntf 01 unknown Cart",
+            "eventmodeling\ntf 01 ui Cart { value: string }",
+            "eventmodeling\ndata Cart {",
+            "eventmodeling\naccTitle: deferred",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
     fun parsesCynefinDomainsItemsAndTransitions() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("cynefin-beta\ntitle Incident response\ncomplex\n\"Investigate & learn\"\ncomplicated\n\"Expert analysis\"\nclear\n\"Known fix\"\nchaotic\n\"Page on-call\"\nconfusion\n\"Unknown mode\"\ncomplex --> complicated : \"Pattern found\"\nclear --> clear : \"ignored\"")
