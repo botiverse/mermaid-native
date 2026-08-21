@@ -45,6 +45,19 @@ import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
+import build.raft.mermaid.core.RailroadChoice
+import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.RailroadEnd
+import build.raft.mermaid.core.RailroadNode
+import build.raft.mermaid.core.RailroadNonTerminal
+import build.raft.mermaid.core.RailroadOneOrMore
+import build.raft.mermaid.core.RailroadOptional
+import build.raft.mermaid.core.RailroadSequence
+import build.raft.mermaid.core.RailroadSkip
+import build.raft.mermaid.core.RailroadStack
+import build.raft.mermaid.core.RailroadStart
+import build.raft.mermaid.core.RailroadTerminal
+import build.raft.mermaid.core.RailroadZeroOrMore
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
@@ -113,6 +126,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
         is SwimlaneDiagram -> layoutSwimlane(diagram, textMeasurer, config)
         is TreeViewDiagram -> layoutTreeView(diagram, textMeasurer, config)
+        is RailroadDiagram -> layoutRailroad(diagram, textMeasurer, config)
     }
 
     private fun layoutTreeView(diagram: TreeViewDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
@@ -147,6 +161,205 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    /**
+     * Bounded deterministic railroad layout: terminals as rectangles, non-terminals
+     * as pills, sequence/stack/choice measured composition, and optional/repeat
+     * bypass polylines. Arrow markers, labels, comments, and styling are not claimed.
+     */
+    private fun layoutRailroad(diagram: RailroadDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val root = buildRailroadBox(diagram.root, textMeasurer, mutableListOf())
+        val commands = root.commands.map { command -> command.offsetBy(config.padding, config.padding).canonical() }
+        val width = max(360.0, root.width + config.padding * 2.0)
+        val height = max(180.0, root.height + config.padding * 2.0)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun buildRailroadBox(node: RailroadNode, textMeasurer: TextMeasurer, commands: MutableList<DrawCommand>): RailroadBox =
+        when (node) {
+            is RailroadTerminal -> railroadLabelBox(node.label, cornerRadius = 0.0, fill = SceneColor("#ffffff"), textMeasurer, commands)
+            is RailroadNonTerminal -> railroadLabelBox(node.label, cornerRadius = null, fill = SceneColor("#e2e8f0"), textMeasurer, commands)
+            RailroadSkip -> {
+                val local = mutableListOf<DrawCommand>()
+                local += DrawLine(ScenePoint(0.0, 4.0), ScenePoint(28.0, 4.0))
+                RailroadBox(width = 28.0, height = 8.0, center = 4.0, commands = local)
+            }
+            RailroadStart -> {
+                val local = mutableListOf<DrawCommand>()
+                local += DrawEllipse(ScenePoint(7.0, 7.0), radiusX = 5.0, radiusY = 5.0, fill = SceneColor("#111827"))
+                RailroadBox(width = 14.0, height = 14.0, center = 7.0, commands = local)
+            }
+            RailroadEnd -> {
+                val local = mutableListOf<DrawCommand>()
+                local += DrawEllipse(ScenePoint(8.0, 8.0), radiusX = 6.0, radiusY = 6.0)
+                local += DrawEllipse(ScenePoint(8.0, 8.0), radiusX = 3.0, radiusY = 3.0, fill = SceneColor("#111827"), strokeWidth = 1.0)
+                RailroadBox(width = 16.0, height = 16.0, center = 8.0, commands = local)
+            }
+            is RailroadSequence -> {
+                val children = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
+                val gap = 18.0
+                val width = children.sumOf { it.width } + gap * (children.size - 1)
+                val center = children.maxOf { it.center }
+                var x = 0.0
+                var previousRight: Double? = null
+                children.forEach { child ->
+                    val dy = center - child.center
+                    commands += child.commands.map { command -> command.offsetBy(x, dy) }
+                    previousRight?.let { right -> commands += DrawLine(ScenePoint(right, center), ScenePoint(x, center)) }
+                    previousRight = x + child.width
+                    x += child.width + gap
+                }
+                val height = max(center * 2.0, children.maxOf { it.height + (center - it.center) })
+                RailroadBox(width, height, center, commands.toList().also { commands.clear() }.toMutableList())
+            }
+            is RailroadStack -> {
+                val rows = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
+                val rowGap = 14.0
+                val inset = 10.0
+                val width = inset * 2.0 + rows.maxOf { it.width }
+                var yOffset = 0.0
+                val rowCenters = rows.mapIndexed { rowIndex, row ->
+                    val centerY = yOffset + row.center
+                    commands += row.commands.map { command -> command.offsetBy(inset, yOffset) }
+                    if (rowIndex < rows.lastIndex) yOffset += row.height + rowGap
+                    centerY
+                }
+                val leftSpine = 3.0
+                val rightSpine = width - 3.0
+                commands += DrawLine(ScenePoint(leftSpine, rowCenters.first()), ScenePoint(leftSpine, rowCenters.last()))
+                commands += DrawLine(ScenePoint(rightSpine, rowCenters.first()), ScenePoint(rightSpine, rowCenters.last()))
+                commands += DrawLine(ScenePoint(leftSpine, rowCenters.first()), ScenePoint(inset, rowCenters.first()))
+                rows.forEachIndexed { rowIndex, row ->
+                    commands += DrawLine(ScenePoint(inset + row.width, rowCenters[rowIndex]), ScenePoint(rightSpine, rowCenters[rowIndex]))
+                }
+                val height = yOffset + rows.last().height
+                RailroadBox(width, height, rowCenters.first(), commands.toList().also { commands.clear() }.toMutableList())
+            }
+            is RailroadChoice -> {
+                val branches = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
+                val branchGap = 14.0
+                val indent = 16.0
+                val contentWidth = branches.maxOf { it.width }
+                val width = indent + contentWidth + 12.0
+                val spineLeft = 4.0
+                val spineRight = width - 4.0
+                var yOffset = 0.0
+                val branchCenters = branches.mapIndexed { branchIndex, branch ->
+                    val centerY = yOffset + branch.center
+                    commands += branch.commands.map { command -> command.offsetBy(indent, yOffset) }
+                    commands += DrawLine(ScenePoint(spineLeft, centerY), ScenePoint(indent, centerY))
+                    commands += DrawLine(ScenePoint(indent + branch.width, centerY), ScenePoint(spineRight, centerY))
+                    if (branchIndex < branches.lastIndex) yOffset += branch.height + branchGap
+                    centerY
+                }
+                commands += DrawLine(ScenePoint(spineLeft, branchCenters.first()), ScenePoint(spineLeft, branchCenters.last()))
+                commands += DrawLine(ScenePoint(spineRight, branchCenters.first()), ScenePoint(spineRight, branchCenters.last()))
+                val height = yOffset + branches.last().height
+                val priorityCenter = branchCenters.getOrElse(node.priority) { branchCenters.first() }
+                RailroadBox(width, height, priorityCenter, commands.toList().also { commands.clear() }.toMutableList())
+            }
+            is RailroadOptional -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 20.0, arrowHead = false, bottomBypass = false)
+            is RailroadOneOrMore -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 22.0, arrowHead = true, bottomBypass = false)
+            is RailroadZeroOrMore -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 22.0, arrowHead = true, bottomBypass = true)
+        }
+
+    private fun railroadWrapped(
+        child: RailroadNode,
+        textMeasurer: TextMeasurer,
+        commands: MutableList<DrawCommand>,
+        loopTop: Double,
+        arrowHead: Boolean,
+        bottomBypass: Boolean,
+    ): RailroadBox {
+        val inner = buildRailroadBox(child, textMeasurer, mutableListOf())
+        val bottomGap = if (bottomBypass) 18.0 else 0.0
+        val width = inner.width
+        val height = loopTop + inner.height + bottomGap
+        val center = loopTop + inner.center
+        commands += inner.commands.map { command -> command.offsetBy(0.0, loopTop) }
+        commands += DrawPolyline(
+            listOf(
+                ScenePoint(0.0, center),
+                ScenePoint(0.0, loopTop / 2.0),
+                ScenePoint(width, loopTop / 2.0),
+                ScenePoint(width, center),
+            ),
+        )
+        if (arrowHead) {
+            commands += DrawPolygon(
+                listOf(
+                    ScenePoint(0.0, loopTop / 2.0),
+                    ScenePoint(8.0, loopTop / 2.0 - 4.5),
+                    ScenePoint(8.0, loopTop / 2.0 + 4.5),
+                ),
+            )
+        }
+        if (bottomBypass) {
+            val bypassY = height - 9.0
+            commands += DrawPolyline(
+                listOf(
+                    ScenePoint(0.0, center),
+                    ScenePoint(0.0, bypassY),
+                    ScenePoint(width, bypassY),
+                    ScenePoint(width, center),
+                ),
+            )
+        }
+        return RailroadBox(width, height, center, commands.toList().also { commands.clear() }.toMutableList())
+    }
+
+    private fun railroadLabelBox(
+        label: String,
+        cornerRadius: Double?,
+        fill: SceneColor,
+        textMeasurer: TextMeasurer,
+        commands: MutableList<DrawCommand>,
+    ): RailroadBox {
+        val style = TextStyle(fontSize = 13.0)
+        val measured = textMeasurer.measure(label, style)
+        val width = measured.width + 24.0
+        val height = max(30.0, measured.height + 16.0)
+        val center = height / 2.0
+        val radius = cornerRadius ?: height / 2.0
+        commands += DrawRect(
+            rect = SceneRect(0.0, 0.0, width, height),
+            cornerRadius = radius,
+            fill = fill,
+        )
+        commands += DrawText(
+            text = label,
+            origin = ScenePoint(width / 2.0, center + measured.height * 0.35),
+            anchor = TextAnchor.MIDDLE,
+            style = style,
+        )
+        return RailroadBox(width, height, center, commands.toList().also { commands.clear() }.toMutableList())
+    }
+
+    private class RailroadBox(
+        val width: Double,
+        val height: Double,
+        /** Vertical offset of this box's main track from its top edge. */
+        val center: Double,
+        val commands: List<DrawCommand> = emptyList(),
+    )
+
+    private fun DrawCommand.offsetBy(dx: Double, dy: Double): DrawCommand = when (this) {
+        is DrawRect -> copy(rect = SceneRect(rect.x + dx, rect.y + dy, rect.width, rect.height))
+        is DrawEllipse -> copy(center = ScenePoint(center.x + dx, center.y + dy))
+        is DrawLine -> copy(from = ScenePoint(from.x + dx, from.y + dy), to = ScenePoint(to.x + dx, to.y + dy))
+        is DrawPolyline -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) })
+        is DrawPolygon -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) })
+        is DrawText -> copy(origin = ScenePoint(origin.x + dx, origin.y + dy))
+    }
+
+    private fun DrawCommand.canonical(): DrawCommand = when (this) {
+        is DrawRect -> copy(rect = rect.canonical())
+        is DrawEllipse -> copy(center = center.canonical())
+        is DrawLine -> copy(from = from.canonical(), to = to.canonical())
+        is DrawPolyline -> copy(points = points.map { point -> point.canonical() })
+        is DrawPolygon -> copy(points = points.map { point -> point.canonical() })
+        is DrawText -> copy(origin = origin.canonical())
     }
 
     private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

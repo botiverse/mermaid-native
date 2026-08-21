@@ -96,6 +96,18 @@ import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.SwimlaneEdge
 import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.TreeViewNode
+import build.raft.mermaid.core.RailroadChoice
+import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.RailroadEnd
+import build.raft.mermaid.core.RailroadNonTerminal
+import build.raft.mermaid.core.RailroadOneOrMore
+import build.raft.mermaid.core.RailroadOptional
+import build.raft.mermaid.core.RailroadSequence
+import build.raft.mermaid.core.RailroadSkip
+import build.raft.mermaid.core.RailroadStack
+import build.raft.mermaid.core.RailroadStart
+import build.raft.mermaid.core.RailroadTerminal
+import build.raft.mermaid.core.RailroadZeroOrMore
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
@@ -108,6 +120,34 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun railroadProducesDeterministicMeasuredTracks() {
+        val long = "step-".repeat(20)
+        val diagram = RailroadDiagram(
+            RailroadSequence(
+                listOf(
+                    RailroadStart,
+                    RailroadChoice(
+                        0,
+                        listOf(RailroadTerminal(long), RailroadOptional(RailroadNonTerminal("alternative path"))),
+                    ),
+                    RailroadStack(listOf(RailroadNonTerminal("first"), RailroadNonTerminal("second"))),
+                    RailroadOneOrMore(RailroadSkip),
+                    RailroadZeroOrMore(RailroadTerminal("tail")),
+                    RailroadEnd,
+                ),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(first.commands.filterIsInstance<DrawRect>().isNotEmpty())
+        assertTrue(first.commands.filterIsInstance<DrawPolyline>().size >= 4)
+        assertTrue(first.commands.filterIsInstance<DrawLine>().isNotEmpty())
+        val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 24.0 + 24.0
+        assertTrue(first.width >= required, "width ${first.width} below required $required")
+    }
+
     @Test
     fun treeViewProducesDeterministicMeasuredHierarchy() {
         val long = "directory-".repeat(20)

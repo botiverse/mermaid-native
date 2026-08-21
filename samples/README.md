@@ -66,3 +66,9 @@ styling, alternate edge forms, or full family parity.
 documented `treeView-beta` indentation syntax. It covers bare/quoted labels,
 directory markers, parent connectors, and measured hierarchy layout without
 claiming box-drawing input, annotations, icons, configuration, or full parity.
+
+`railroad-auth-flow.mmd` is an original compatibility fixture based on the
+documented `railroad-beta` expression syntax. It covers Terminal/NonTerminal
+boxes, Choice branches, Optional bypass, and Stack rows with measured tracks
+without claiming comments, escapes, arrow markers, styling, configuration, or
+full family parity.
