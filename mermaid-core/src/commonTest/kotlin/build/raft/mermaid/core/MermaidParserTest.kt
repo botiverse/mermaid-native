@@ -6,6 +6,31 @@ import kotlin.test.assertIs
 
 class MermaidParserTest {
     @Test
+    fun parsesCynefinDomainsItemsAndTransitions() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("cynefin-beta\ntitle Incident response\ncomplex\n\"Investigate & learn\"\ncomplicated\n\"Expert analysis\"\nclear\n\"Known fix\"\nchaotic\n\"Page on-call\"\nconfusion\n\"Unknown mode\"\ncomplex --> complicated : \"Pattern found\"\nclear --> clear : \"ignored\"")
+        )
+        val diagram = assertIs<CynefinDiagram>(result.diagram)
+        assertEquals("Incident response", diagram.title)
+        assertEquals(listOf(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, CynefinDomain.CLEAR, CynefinDomain.CHAOTIC, CynefinDomain.CONFUSION), diagram.domains.map { it.domain })
+        assertEquals(listOf("Investigate & learn"), diagram.domains.first().items)
+        assertEquals(listOf(CynefinTransition(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, "Pattern found")), diagram.transitions)
+    }
+
+    @Test
+    fun malformedCynefinFailsClosed() {
+        listOf(
+            "cynefin-beta; complex",
+            "cynefin-beta\ntitle One\ntitle Two\ncomplex",
+            "cynefin-beta\ncomplex\ncomplex",
+            "cynefin-beta\n\"orphan item\"",
+            "cynefin-beta\ncomplex\nitem without quotes",
+            "cynefin-beta\ncomplex -> clear",
+            "cynefin-beta\naccTitle: unsupported",
+            "cynefin-beta\ncomplex\nstyle complex fill:red",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+    @Test
     fun parsesXyChartAxesAndSeries() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

@@ -88,6 +88,10 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4Element
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.C4Relationship
+import build.raft.mermaid.core.CynefinDiagram
+import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.CynefinDomainBlock
+import build.raft.mermaid.core.CynefinTransition
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -546,6 +550,41 @@ public object MermaidExamples {
         ),
     )
 
+    public val cynefinIncidentResponse: MermaidExample = MermaidExample(
+        path = "samples/cynefin-incident-response.mmd",
+        source = """
+            cynefin-beta
+              title Incident response
+              complex
+                "Investigate & learn"
+                "Run chaos experiment"
+              complicated
+                "Expert analysis"
+              clear
+                "Apply known fix"
+              chaotic
+                "Page on-call"
+              confusion
+                "Unknown failure"
+              complex --> complicated : "Pattern found"
+              chaotic --> complex : "Stabilized"
+        """.trimIndent(),
+        expected = CynefinDiagram(
+            title = "Incident response",
+            domains = listOf(
+                CynefinDomainBlock(CynefinDomain.COMPLEX, listOf("Investigate & learn", "Run chaos experiment")),
+                CynefinDomainBlock(CynefinDomain.COMPLICATED, listOf("Expert analysis")),
+                CynefinDomainBlock(CynefinDomain.CLEAR, listOf("Apply known fix")),
+                CynefinDomainBlock(CynefinDomain.CHAOTIC, listOf("Page on-call")),
+                CynefinDomainBlock(CynefinDomain.CONFUSION, listOf("Unknown failure")),
+            ),
+            transitions = listOf(
+                CynefinTransition(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, "Pattern found"),
+                CynefinTransition(CynefinDomain.CHAOTIC, CynefinDomain.COMPLEX, "Stabilized"),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -571,5 +610,6 @@ public object MermaidExamples {
         timelineProductHistory,
         quadrantProductPortfolio,
         userJourneyCheckout,
+        cynefinIncidentResponse,
     )
 }

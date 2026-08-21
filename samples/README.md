@@ -48,3 +48,8 @@ claiming complete requirement family parity.
 `packet-udp.mmd` is an original compatibility fixture based on the documented
 `packet` syntax at the pinned Mermaid revision. It covers a title plus explicit
 absolute bit ranges without claiming relative-count or full packet parity.
+
+`cynefin-incident-response.mmd` is an original compatibility fixture based on
+the official `cynefin-beta` syntax at the pinned Mermaid revision. It covers
+the five fixed domains, quoted items, and labeled cross-domain transitions
+without claiming accessibility, configuration, wavy-boundary, or full parity.

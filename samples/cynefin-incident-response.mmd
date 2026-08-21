@@ -1,0 +1,15 @@
+cynefin-beta
+  title Incident response
+  complex
+    "Investigate & learn"
+    "Run chaos experiment"
+  complicated
+    "Expert analysis"
+  clear
+    "Apply known fix"
+  chaotic
+    "Page on-call"
+  confusion
+    "Unknown failure"
+  complex --> complicated : "Pattern found"
+  chaotic --> complex : "Stabilized"

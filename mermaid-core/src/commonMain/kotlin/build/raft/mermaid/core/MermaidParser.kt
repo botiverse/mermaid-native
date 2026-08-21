@@ -39,6 +39,7 @@ public object MermaidParser {
             header.text.equals("usecase-beta", ignoreCase = true) -> parseUsecase(source)
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
+            header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
             FLOW_HEADER.matches(header.text) -> parseFlowchart(statements)
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -1399,6 +1400,45 @@ public object MermaidParser {
         }
         if (elements.isEmpty()) diagnostics += unsupported(statements.first(), "C4Context requires at least one element")
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(C4Diagram(title, elements.values.toList(), relationships)) else MermaidParseResult.Failure(diagnostics)
+    }
+
+    private fun parseCynefin(source: String): MermaidParseResult {
+        val lines = source.lineSequence().toList()
+        val headerIndex = lines.indexOfFirst { it.trim().equals("cynefin-beta", ignoreCase = true) }
+        if (headerIndex < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Invalid cynefin-beta header", SourceLocation(1, 1))
+        var title: String? = null
+        val blocks = linkedMapOf<CynefinDomain, MutableList<String>>()
+        val transitions = mutableListOf<CynefinTransition>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var current: CynefinDomain? = null
+        val domainRegex = Regex("^(complex|complicated|clear|chaotic|confusion)$", RegexOption.IGNORE_CASE)
+        val itemRegex = Regex("^\\\"([^\\\"\\r\\n]+)\\\"$")
+        val transitionRegex = Regex("^(complex|complicated|clear|chaotic|confusion)\\s+-->\\s+(complex|complicated|clear|chaotic|confusion)(?:\\s*:\\s*\\\"([^\\\"\\r\\n]+)\\\")?$", RegexOption.IGNORE_CASE)
+        lines.drop(headerIndex + 1).forEachIndexed { offset, raw ->
+            val line = raw.trim()
+            if (line.isEmpty() || line.startsWith("%%")) return@forEachIndexed
+            val location = SourceLocation(headerIndex + offset + 2, raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0) + 1)
+            when {
+                line.startsWith("title ", ignoreCase = true) && title == null -> title = line.substringAfter(' ').trim().takeIf { it.isNotEmpty() }
+                line.startsWith("title ", ignoreCase = true) -> diagnostics += unsupported(SourceStatement(line, location), "Duplicate cynefin title")
+                transitionRegex.matches(line) -> {
+                    val m = transitionRegex.matchEntire(line)!!
+                    val from = CynefinDomain.valueOf(m.groupValues[1].uppercase())
+                    val to = CynefinDomain.valueOf(m.groupValues[2].uppercase())
+                    if (from != to) transitions += CynefinTransition(from, to, m.groupValues[3].ifEmpty { null })
+                }
+                domainRegex.matches(line) -> {
+                    val domain = CynefinDomain.valueOf(line.uppercase())
+                    if (domain in blocks) diagnostics += unsupported(SourceStatement(line, location), "Duplicate cynefin domain")
+                    else { blocks[domain] = mutableListOf(); current = domain }
+                }
+                itemRegex.matches(line) && current != null -> blocks.getValue(current!!).add(itemRegex.matchEntire(line)!!.groupValues[1])
+                else -> diagnostics += unsupported(SourceStatement(line, location), "Unsupported cynefin syntax")
+            }
+        }
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(
+            CynefinDiagram(title, blocks.map { CynefinDomainBlock(it.key, it.value.toList()) }, transitions.toList())
+        ) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =
