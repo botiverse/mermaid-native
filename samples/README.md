@@ -51,5 +51,7 @@ absolute bit ranges without claiming relative-count or full packet parity.
 
 `cynefin-incident-response.mmd` is an original compatibility fixture based on
 the official `cynefin-beta` syntax at the pinned Mermaid revision. It covers
-the five fixed domains, quoted items, and labeled cross-domain transitions
-without claiming accessibility, configuration, wavy-boundary, or full parity.
+the fixed domain keywords, quoted items, and labeled cross-domain transitions
+without claiming that every domain must be declared or non-empty; official
+empty/sparse frameworks remain valid. Accessibility, configuration,
+wavy-boundary, and full parity are not claimed.

@@ -3,6 +3,7 @@ package build.raft.mermaid.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
@@ -29,6 +30,19 @@ class MermaidParserTest {
             "cynefin-beta\naccTitle: unsupported",
             "cynefin-beta\ncomplex\nstyle complex fill:red",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
+    fun acceptsOfficialEmptyFrameworkAndSparseEmptyDomains() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("cynefin-beta\ncomplex\ncomplicated\nclear\nchaotic")
+        )
+        val diagram = assertIs<CynefinDiagram>(result.diagram)
+        assertEquals(
+            listOf(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, CynefinDomain.CLEAR, CynefinDomain.CHAOTIC),
+            diagram.domains.map { it.domain },
+        )
+        assertTrue(diagram.domains.all { it.items.isEmpty() })
     }
     @Test
     fun parsesXyChartAxesAndSeries() {
