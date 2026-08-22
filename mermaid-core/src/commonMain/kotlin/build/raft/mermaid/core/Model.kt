@@ -453,6 +453,11 @@ public data class WardleyEvolution(val component: String, val evolution: Double)
 
 public data class WardleyNote(val text: String, val visibility: Double, val evolution: Double)
 
+public data class EventModelingDiagram(val title: String?, val frames: List<EventModelingFrame>, val relations: List<EventModelingRelation>) : MermaidDiagram
+public enum class EventModelingEntityKind { UI, COMMAND, EVENT, PROCESSOR, READ_MODEL }
+public data class EventModelingFrame(val id: String, val entityId: String, val kind: EventModelingEntityKind, val reset: Boolean = false)
+public data class EventModelingRelation(val sourceFrameId: String, val targetFrameId: String)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

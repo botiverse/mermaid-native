@@ -53,6 +53,8 @@ import build.raft.mermaid.core.WardleyLink
 import build.raft.mermaid.core.WardleyMapDiagram
 import build.raft.mermaid.core.WardleyNode
 import build.raft.mermaid.core.WardleyNote
+import build.raft.mermaid.core.EventModelingDiagram
+import build.raft.mermaid.core.EventModelingEntityKind
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlMessage
 import build.raft.mermaid.core.ZenumlSyncMessage
@@ -138,6 +140,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is RailroadDiagram -> layoutRailroad(diagram, textMeasurer, config)
         is ZenumlDiagram -> layoutZenuml(diagram, textMeasurer, config)
         is WardleyMapDiagram -> layoutWardleyMap(diagram, textMeasurer, config)
+        is EventModelingDiagram -> layoutEventModeling(diagram, textMeasurer, config)
     }
 
     /** Deterministic sequence-style layout for the bounded zenuml slice. */
@@ -1998,6 +2001,23 @@ public object SimpleMermaidLayout : DiagramLayout {
             height = maxOf(config.padding * 2 + 2.0 * radius + 30.0, legendStartY + diagram.sections.size * 28.0 + config.padding),
             commands = commands,
         )
+    }
+
+    private fun layoutEventModeling(diagram: EventModelingDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val style = TextStyle(fontSize = 12.0, fontWeight = 600)
+        val lanes = EventModelingEntityKind.entries.filter { kind -> diagram.frames.any { it.kind == kind } }
+        val cardWidth = max(132.0, diagram.frames.maxOf { textMeasurer.measure(it.entityId, style).width } + 36.0)
+        val cardHeight = 58.0; val laneHeight = 106.0; val laneLabel = 112.0; val gap = 44.0
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
+        val width = max(640.0, config.padding * 2 + laneLabel + diagram.frames.size * (cardWidth + gap))
+        val height = max(300.0, config.padding * 2 + titleOffset + lanes.size * laneHeight)
+        val points = diagram.frames.mapIndexed { i, frame -> frame.id to ScenePoint(config.padding + laneLabel + i * (cardWidth + gap) + cardWidth / 2, config.padding + titleOffset + lanes.indexOf(frame.kind) * laneHeight + laneHeight / 2) }.toMap()
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = TextStyle(fontSize = 20.0, fontWeight = 600)) }
+        lanes.forEachIndexed { i, kind -> val y=config.padding+titleOffset+i*laneHeight; commands += DrawRect(SceneRect(config.padding,y,width-config.padding*2,laneHeight),0.0,SceneColor(if(i%2==0) "#f8fafc" else "#ffffff"),SceneColor("#cbd5e1")); commands += DrawText(kind.name,ScenePoint(config.padding+12,y+58),style=style) }
+        diagram.relations.forEach { relation -> val from=points.getValue(relation.sourceFrameId); val to=points.getValue(relation.targetFrameId); commands += DrawLine(from,to,stroke=SceneColor("#475569")); commands += arrowHead(from,to) }
+        diagram.frames.forEach { frame -> val p=points.getValue(frame.id); commands += DrawRect(SceneRect(p.x-cardWidth/2,p.y-cardHeight/2,cardWidth,cardHeight),7.0,SceneColor("#dbeafe"),SceneColor(if(frame.reset) "#dc2626" else "#334155")); commands += DrawText(frame.entityId,p.copy(y=p.y-2),TextAnchor.MIDDLE,style); commands += DrawText(frame.id,p.copy(y=p.y+18),TextAnchor.MIDDLE,TextStyle(fontSize=10.0)) }
+        return LayoutScene(width,height,commands)
     }
 
     /** Deterministic 2D map layout for the bounded wardley-beta slice. */
