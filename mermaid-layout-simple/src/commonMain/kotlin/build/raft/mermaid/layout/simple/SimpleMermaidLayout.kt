@@ -47,6 +47,10 @@ import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.ZenumlDiagram
+import build.raft.mermaid.core.ZenumlAsyncMessage
+import build.raft.mermaid.core.ZenumlMessage
+import build.raft.mermaid.core.ZenumlSyncMessage
 import build.raft.mermaid.core.RailroadEnd
 import build.raft.mermaid.core.RailroadNode
 import build.raft.mermaid.core.RailroadNonTerminal
@@ -127,6 +131,81 @@ public object SimpleMermaidLayout : DiagramLayout {
         is SwimlaneDiagram -> layoutSwimlane(diagram, textMeasurer, config)
         is TreeViewDiagram -> layoutTreeView(diagram, textMeasurer, config)
         is RailroadDiagram -> layoutRailroad(diagram, textMeasurer, config)
+        is ZenumlDiagram -> layoutZenuml(diagram, textMeasurer, config)
+    }
+
+    /** Deterministic sequence-style layout for the bounded zenuml slice. */
+    private fun layoutZenuml(
+        diagram: ZenumlDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val style = TextStyle()
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val actorHeight = 40.0
+        var cursorY = config.padding
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { title ->
+            commands += DrawText(title, ScenePoint(config.padding, cursorY + titleStyle.fontSize), style = titleStyle)
+            cursorY += 30.0
+        }
+        val actorWidths = diagram.participants.associate { participant ->
+            participant.id to max(88.0, textMeasurer.measure(participant.label, style).width + 32.0)
+        }
+        val centers = linkedMapOf<String, Double>()
+        var cursorX = config.padding
+        diagram.participants.forEach { participant ->
+            val actorWidth = actorWidths.getValue(participant.id)
+            centers[participant.id] = cursorX + actorWidth / 2
+            cursorX += actorWidth + config.nodeGap
+        }
+        val width = max(config.padding * 2, cursorX - config.nodeGap + config.padding)
+        val actorTop = cursorY
+        val messageTop = actorTop + actorHeight + 40.0
+        val messageRows = diagram.messages.sumOf { if (it.from == it.to) 2L else 1L }.toInt()
+        val height = messageTop + max(1, messageRows) * config.messageGap + config.padding
+        diagram.participants.forEach { participant ->
+            val center = centers.getValue(participant.id)
+            commands += DrawLine(
+                ScenePoint(center, actorTop + actorHeight),
+                ScenePoint(center, height - config.padding),
+                pattern = StrokePattern.DASHED,
+            )
+        }
+        var messageY = messageTop
+        diagram.messages.forEach { message ->
+            val fromX = centers.getValue(message.from)
+            val toX = centers.getValue(message.to)
+            val label = when (message) {
+                is ZenumlSyncMessage -> "${message.method}()"
+                is ZenumlAsyncMessage -> message.label
+            }
+            if (fromX == toX) {
+                val loopRight = minOf(width - config.padding, fromX + 48.0)
+                val endY = messageY + 24.0
+                val points = listOf(ScenePoint(fromX, messageY), ScenePoint(loopRight, messageY), ScenePoint(loopRight, endY), ScenePoint(fromX, endY))
+                commands += DrawPolyline(points)
+                commands += arrowHead(points[points.lastIndex - 1], points.last())
+                commands += DrawText(label, ScenePoint(fromX + 8.0, messageY - 8.0), style = style)
+                messageY += config.messageGap * 2
+            } else {
+                val from = ScenePoint(fromX, messageY)
+                val to = ScenePoint(toX, messageY)
+                val pattern = if (message is ZenumlSyncMessage) StrokePattern.SOLID else StrokePattern.DASHED
+                commands += DrawLine(from, to, pattern = pattern)
+                commands += arrowHead(from, to)
+                commands += DrawText(label, ScenePoint((fromX + toX) / 2, messageY - 8.0), TextAnchor.MIDDLE, style)
+                messageY += config.messageGap
+            }
+        }
+        diagram.participants.forEach { participant ->
+            val actorWidth = actorWidths.getValue(participant.id)
+            val center = centers.getValue(participant.id)
+            val rect = SceneRect(center - actorWidth / 2, actorTop, actorWidth, actorHeight)
+            commands += DrawRect(rect, cornerRadius = 4.0)
+            commands += DrawText(participant.label, ScenePoint(center, actorTop + actorHeight / 2 + style.fontSize * 0.35), TextAnchor.MIDDLE, style)
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutTreeView(diagram: TreeViewDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

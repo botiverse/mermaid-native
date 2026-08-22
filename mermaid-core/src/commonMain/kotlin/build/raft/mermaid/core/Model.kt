@@ -402,6 +402,35 @@ public data class RailroadOptional(val child: RailroadNode) : RailroadNode
 public data class RailroadOneOrMore(val child: RailroadNode) : RailroadNode
 public data class RailroadZeroOrMore(val child: RailroadNode) : RailroadNode
 
+/** Bounded platform-neutral model for the Mermaid zenuml family. */
+public data class ZenumlDiagram(
+    val title: String? = null,
+    val participants: List<ZenumlParticipant>,
+    val messages: List<ZenumlMessage>,
+) : MermaidDiagram
+
+public data class ZenumlParticipant(
+    val id: String,
+    val label: String,
+)
+
+public sealed interface ZenumlMessage {
+    public val from: String
+    public val to: String
+}
+
+public data class ZenumlSyncMessage(
+    override val from: String,
+    override val to: String,
+    val method: String,
+) : ZenumlMessage
+
+public data class ZenumlAsyncMessage(
+    override val from: String,
+    override val to: String,
+    val label: String,
+) : ZenumlMessage
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
