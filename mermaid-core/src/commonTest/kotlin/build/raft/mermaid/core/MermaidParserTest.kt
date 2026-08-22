@@ -70,6 +70,82 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesZenumlInteractions() {
+        val parsed = MermaidParser.parse(
+            "zenuml\n" +
+                "    title Token handshake\n" +
+                "    Client\n" +
+                "    Store as Token store\n" +
+                "    Client->Gateway.submit()\n" +
+                "    Gateway->Store.lookup\n" +
+                "    Client->Gateway: cancel",
+        )
+        val result = assertIs<MermaidParseResult.Success>(
+            parsed,
+            (parsed as? MermaidParseResult.Failure)?.diagnostics.toString(),
+        )
+        assertEquals(
+            ZenumlDiagram(
+                title = "Token handshake",
+                participants = listOf(
+                    ZenumlParticipant("Client", "Client"),
+                    ZenumlParticipant("Store", "Token store"),
+                    ZenumlParticipant("Gateway", "Gateway"),
+                ),
+                messages = listOf(
+                    ZenumlSyncMessage("Client", "Gateway", "submit"),
+                    ZenumlSyncMessage("Gateway", "Store", "lookup"),
+                    ZenumlAsyncMessage("Client", "Gateway", "cancel"),
+                ),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedZenumlFailsClosed() {
+        listOf(
+            // No statements at all beyond the header.
+            "zenuml",
+            // Declarations alone are not an interaction.
+            "zenuml\nA\nB",
+            // Sync messages need a method name.
+            "zenuml\nA->B",
+            // Sync message parentheses must be empty or absent.
+            "zenuml\nA->B.submit(token)",
+            "zenuml\nA->B.submit(",
+            // Bare receiver-only sync calls are outside the slice.
+            "zenuml\nA.submit()",
+            // Nested bodies are not supported.
+            "zenuml\nA.submit() {\n  B.handle()\n}",
+            // Async labels must be non-empty.
+            "zenuml\nA->B:",
+            "zenuml\nA->B:   ",
+            // Dashed arrows are sequence-diagram syntax, not this slice.
+            "zenuml\nA-->B: hi",
+            // Creation, assignment, and return forms are rejected.
+            "zenuml\nnew Client\nA->B.go()",
+            "zenuml\nx = A.submit()",
+            "zenuml\nToken x = A.submit()",
+            "zenuml\nreturn ok",
+            // Annotators are rejected.
+            "zenuml\n@Actor Alice\nA->B.go()",
+            // Comments are rejected.
+            "zenuml\n// hello\nA->B.go()",
+            // Control flow is rejected.
+            "zenuml\nif (ok) { }\nA->B.go()",
+            // Duplicate conflicting alias declarations are rejected.
+            "zenuml\nStore as One\nStore as Two\nA->B.go()",
+            // At most one title.
+            "zenuml\ntitle One\ntitle Two\nA->B.go()",
+            // Unknown statement forms fail closed.
+            "zenuml\nA -> B -> C",
+            "zenuml\nA->B.go() extra",
+            "zenuml\n\"quoted participant\"\nA->B.go()",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
     fun parsesTreeViewIndentationQuotedLabelsAndDirectories() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("treeView-beta\n    project/\n        src/\n            index.ts\n        \"README file.md\"")

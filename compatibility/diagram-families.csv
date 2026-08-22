@@ -30,4 +30,4 @@ userJourney,userJourney,in_progress,partial,partial,partial,partial,Vertical sli
 venn,venn,in_progress,partial,partial,partial,partial,Vertical slice supports two or three sets and pair/triple union labels with optional finite positive sizes; text nodes styling and full family parity are not complete.
 wardley,wardley,not_started,no,no,no,no,Official syntax family; implementation is not started.
 xyChart,xyChart,in_progress,partial,partial,partial,partial,Vertical slice supports categorical x-axis numeric y-axis and line/bar series; full family parity is not complete.
-zenuml,zenuml,not_started,no,no,no,no,Official Mermaid documentation for an external diagram package; compatibility remains not started.
+zenuml,zenuml,in_progress,partial,partial,partial,partial,Bounded zenuml slice supporting a single title bare and aliased participant declarations explicit-sender sync messages with empty parentheses and async labeled messages; nesting bodies parameters creation reply assignment annotators comments control flow styling configuration and full family parity are not complete.

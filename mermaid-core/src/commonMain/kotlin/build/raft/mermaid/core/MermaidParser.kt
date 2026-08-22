@@ -43,6 +43,7 @@ public object MermaidParser {
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlane(source)
             header.text.equals("treeView-beta", ignoreCase = true) -> parseTreeView(source)
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
+            header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
             header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
                 MermaidDiagnosticCode.INVALID_HEADER,
                 "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
@@ -157,6 +158,109 @@ public object MermaidParser {
             MermaidParseResult.Success(
                 SequenceDiagram(
                     actors = actors.values.toList(),
+                    messages = messages.toList(),
+                ),
+            )
+        } else {
+            MermaidParseResult.Failure(diagnostics)
+        }
+    }
+
+    /**
+     * Bounded zenuml slice. Supported statements: an optional single `title`,
+     * participant declarations (bare identifier or `id as Label`), sync
+     * messages `A->B.method` / `A->B.method()` with empty parentheses, and
+     * async messages `A->B: label`. Everything else fails closed with a
+     * typed diagnostic.
+     */
+    private fun parseZenuml(statements: List<SourceStatement>): MermaidParseResult {
+        val participants = linkedMapOf<String, ZenumlParticipant>()
+        val messages = mutableListOf<ZenumlMessage>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var title: String? = null
+
+        fun register(id: String, declaredLabel: String?, location: SourceLocation) {
+            val existing = participants[id]
+            when {
+                existing == null -> participants[id] = ZenumlParticipant(id = id, label = declaredLabel ?: id)
+                declaredLabel != null && declaredLabel != existing.label -> diagnostics += MermaidDiagnostic(
+                    code = MermaidDiagnosticCode.INVALID_VALUE,
+                    message = "zenuml participant '$id' is redeclared with a different alias",
+                    location = location,
+                )
+            }
+        }
+
+        loop@ for (statement in statements.drop(1)) {
+            val text = statement.text
+
+            fun hasZenumlBoundaryDash(vararg ids: String): Boolean =
+                ids.any { it.startsWith('-') || it.endsWith('-') }
+
+            val titleMatch = ZENUML_TITLE.matchEntire(text)
+            if (titleMatch != null) {
+                if (title != null) {
+                    diagnostics += MermaidDiagnostic(
+                        code = MermaidDiagnosticCode.INVALID_VALUE,
+                        message = "zenuml accepts at most one title",
+                        location = statement.location,
+                    )
+                } else {
+                    title = titleMatch.groupValues[1]
+                }
+                continue@loop
+            }
+            val alias = ZENUML_ALIAS_DECLARATION.matchEntire(text)
+            if (alias != null) {
+                register(alias.groupValues[1], alias.groupValues[2].trim(), statement.location)
+                continue@loop
+            }
+            val bareDeclaration = ZENUML_BARE_DECLARATION.matchEntire(text)
+            if (bareDeclaration != null) {
+                register(bareDeclaration.groupValues[1], null, statement.location)
+                continue@loop
+            }
+            val sync = ZENUML_SYNC_MESSAGE.matchEntire(text)
+            if (sync != null) {
+                val from = sync.groupValues[1]
+                val to = sync.groupValues[2]
+                if (hasZenumlBoundaryDash(from, to)) {
+                    diagnostics += unsupported(statement, "Unsupported zenuml syntax")
+                    continue@loop
+                }
+                register(from, null, statement.location)
+                register(to, null, statement.location)
+                messages += ZenumlSyncMessage(from = from, to = to, method = sync.groupValues[3])
+                continue@loop
+            }
+            val async = ZENUML_ASYNC_MESSAGE.matchEntire(text)
+            if (async != null) {
+                val from = async.groupValues[1]
+                val to = async.groupValues[2]
+                if (hasZenumlBoundaryDash(from, to)) {
+                    diagnostics += unsupported(statement, "Unsupported zenuml syntax")
+                    continue@loop
+                }
+                register(from, null, statement.location)
+                register(to, null, statement.location)
+                messages += ZenumlAsyncMessage(from = from, to = to, label = async.groupValues[3].trim())
+                continue@loop
+            }
+            diagnostics += unsupported(statement, "Unsupported zenuml syntax")
+        }
+
+        if (diagnostics.isEmpty() && messages.isEmpty()) {
+            diagnostics += MermaidDiagnostic(
+                code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                message = "zenuml diagram requires at least one message",
+                location = statements.first().location,
+            )
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(
+                ZenumlDiagram(
+                    title = title,
+                    participants = participants.values.toList(),
                     messages = messages.toList(),
                 ),
             )
@@ -1912,6 +2016,11 @@ public object MermaidParser {
         "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*-->\\s*" +
             "($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$",
     )
+    private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
+    private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")
+    private val ZENUML_BARE_DECLARATION = Regex("^($IDENTIFIER)$")
+    private val ZENUML_SYNC_MESSAGE = Regex("^($IDENTIFIER)\\s*->\\s*($IDENTIFIER)\\.([A-Za-z_][A-Za-z0-9_]*)(?:\\(\\))?$")
+    private val ZENUML_ASYNC_MESSAGE = Regex("^($IDENTIFIER)\\s*->\\s*($IDENTIFIER)\\s*:\\s*(\\S.*)$")
     private val SEQUENCE_MESSAGE = Regex(
         // The lazy IDs are intentional: an ID may contain '-' while '-->>'
         // starts with the same character. The arrow must win at the boundary.

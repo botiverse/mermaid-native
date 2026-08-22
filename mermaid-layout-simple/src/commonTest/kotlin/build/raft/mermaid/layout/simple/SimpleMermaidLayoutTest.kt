@@ -98,6 +98,10 @@ import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.ZenumlAsyncMessage
+import build.raft.mermaid.core.ZenumlDiagram
+import build.raft.mermaid.core.ZenumlParticipant
+import build.raft.mermaid.core.ZenumlSyncMessage
 import build.raft.mermaid.core.RailroadEnd
 import build.raft.mermaid.core.RailroadNonTerminal
 import build.raft.mermaid.core.RailroadOneOrMore
@@ -145,6 +149,34 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.commands.filterIsInstance<DrawPolyline>().size >= 4)
         assertTrue(first.commands.filterIsInstance<DrawLine>().isNotEmpty())
         val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 24.0 + 24.0
+        assertTrue(first.width >= required, "width ${first.width} below required $required")
+    }
+
+    @Test
+    fun zenumlProducesDeterministicMeasuredLifelines() {
+        val longParticipant = "participant-".repeat(20)
+        val diagram = ZenumlDiagram(
+            title = "Token handshake",
+            participants = listOf(
+                ZenumlParticipant("Client", longParticipant),
+                ZenumlParticipant("Store", "Token store"),
+            ),
+            messages = listOf(
+                ZenumlSyncMessage("Client", "Store", "submit"),
+                ZenumlSyncMessage("Store", "Store", "persist"),
+                ZenumlAsyncMessage("Client", "Store", "cancel"),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, first.commands.filterIsInstance<DrawRect>().size)
+        assertTrue(first.commands.count { it is DrawLine && it.pattern == StrokePattern.DASHED } >= 2)
+        assertTrue(first.commands.filterIsInstance<DrawPolyline>().size == 1)
+        val labels = first.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.contains("submit()"))
+        assertTrue(labels.contains("cancel"))
+        assertTrue(labels.contains(longParticipant))
+        val required = FixedWidthTextMeasurer.measure(longParticipant, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 32.0
         assertTrue(first.width >= required, "width ${first.width} below required $required")
     }
 

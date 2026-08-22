@@ -106,6 +106,10 @@ import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
 import build.raft.mermaid.core.RailroadStack
 import build.raft.mermaid.core.RailroadTerminal
+import build.raft.mermaid.core.ZenumlAsyncMessage
+import build.raft.mermaid.core.ZenumlDiagram
+import build.raft.mermaid.core.ZenumlParticipant
+import build.raft.mermaid.core.ZenumlSyncMessage
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -674,6 +678,32 @@ public object MermaidExamples {
         ),
     )
 
+    public val zenumlTokenHandshake: MermaidExample = MermaidExample(
+        path = "samples/zenuml-token-handshake.mmd",
+        source = """
+            zenuml
+            title Token handshake
+            Client
+            Store as Token store
+            Client->Gateway.submit()
+            Gateway->Store.lookup
+            Client->Gateway: cancel
+        """.trimIndent(),
+        expected = ZenumlDiagram(
+            title = "Token handshake",
+            participants = listOf(
+                ZenumlParticipant("Client", "Client"),
+                ZenumlParticipant("Store", "Token store"),
+                ZenumlParticipant("Gateway", "Gateway"),
+            ),
+            messages = listOf(
+                ZenumlSyncMessage("Client", "Gateway", "submit"),
+                ZenumlSyncMessage("Gateway", "Store", "lookup"),
+                ZenumlAsyncMessage("Client", "Gateway", "cancel"),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -703,5 +733,6 @@ public object MermaidExamples {
         swimlaneSupportEscalation,
         treeViewProject,
         railroadAuthFlow,
+        zenumlTokenHandshake,
     )
 }
