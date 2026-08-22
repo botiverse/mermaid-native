@@ -110,28 +110,6 @@ import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
 import build.raft.mermaid.core.RailroadStack
 import build.raft.mermaid.core.RailroadTerminal
-    public val eventModelingCartFlow: MermaidExample = MermaidExample(
-        path = "samples/eventmodeling-cart-flow.mmd",
-        source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
-        expected = EventModelingDiagram(
-            title = "Cart & inventory",
-            frames = listOf(
-                EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
-                EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
-                EventModelingFrame("03", "ItemAdded", EventModelingEntityKind.EVENT),
-                EventModelingFrame("04", "External.InventoryChanged", EventModelingEntityKind.EVENT, reset = true),
-                EventModelingFrame("05", "InventoryProcessor", EventModelingEntityKind.PROCESSOR),
-                EventModelingFrame("06", "InventoryView", EventModelingEntityKind.READ_MODEL),
-            ),
-            relations = listOf(
-                EventModelingRelation("01", "02"),
-                EventModelingRelation("02", "03"),
-                EventModelingRelation("04", "05"),
-                EventModelingRelation("03", "06"),
-                EventModelingRelation("04", "06"),
-            ),
-        ),
-    )
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.ZenumlParticipant
@@ -155,6 +133,28 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val eventModelingCartFlow: MermaidExample = MermaidExample(
+        path = "samples/eventmodeling-cart-flow.mmd",
+        source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
+        expected = EventModelingDiagram(
+            title = "Cart & inventory",
+            frames = listOf(
+                EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
+                EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
+                EventModelingFrame("03", "ItemAdded", EventModelingEntityKind.EVENT),
+                EventModelingFrame("04", "External.InventoryChanged", EventModelingEntityKind.EVENT, reset = true),
+                EventModelingFrame("05", "InventoryProcessor", EventModelingEntityKind.PROCESSOR),
+                EventModelingFrame("06", "InventoryView", EventModelingEntityKind.READ_MODEL),
+            ),
+            relations = listOf(
+                EventModelingRelation("01", "02"),
+                EventModelingRelation("02", "03"),
+                EventModelingRelation("04", "05"),
+                EventModelingRelation("03", "06"),
+                EventModelingRelation("04", "06"),
+            ),
+        ),
+    )
     public val c4BankingContext: MermaidExample = MermaidExample(
         "samples/c4-banking-context.mmd",
         "C4Context\ntitle Banking context\nPerson(customer, \"Customer & partner\", \"Uses the app\")\nSystem(bank, \"Banking system\", \"Shows balances\")\nRel(customer, bank, \"Uses\", \"HTTPS\")",
@@ -612,7 +612,6 @@ public object MermaidExamples {
               clear
                 "Apply known fix"
               chaotic
-        eventModelingCartFlow,
                 "Page on-call"
               confusion
                 "Unknown failure"
@@ -807,6 +806,7 @@ public object MermaidExamples {
         quadrantProductPortfolio,
         userJourneyCheckout,
         cynefinIncidentResponse,
+        eventModelingCartFlow,
         swimlaneSupportEscalation,
         treeViewProject,
         railroadAuthFlow,

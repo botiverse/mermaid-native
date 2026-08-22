@@ -45,7 +45,7 @@ public object MermaidParser {
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
             header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
             header.text.equals("wardley-beta", ignoreCase = true) -> parseWardley(statements)
-            header.text.equals("eventmodeling", ignoreCase = true) -> parseEventModeling(source)
+            header.text == "eventmodeling" -> parseEventModeling(source)
             header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
                 MermaidDiagnosticCode.INVALID_HEADER,
                 "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
@@ -1731,6 +1731,10 @@ public object MermaidParser {
 
     private fun parseEventModeling(source: String): MermaidParseResult {
         val statements = source.toStatements()
+        val headerLine = source.lineSequence().firstOrNull()?.trim()
+        if (headerLine != "eventmodeling") {
+            return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected exact eventmodeling header", SourceLocation(1, 1))
+        }
         var title: String? = null
         val frames = linkedMapOf<String, EventModelingFrame>()
         val relations = mutableListOf<EventModelingRelation>()
