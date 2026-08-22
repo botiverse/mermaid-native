@@ -16,7 +16,7 @@ packet,packet,in_progress,partial,partial,partial,partial,Vertical slice support
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData and numeric sections; full family parity is not complete.
 quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels and finite normalized points; full family parity is not complete.
 radar,radar,not_started,no,no,no,no,Official syntax family; implementation is not started.
-railroad,railroad,not_started,no,no,no,no,Four official railroad dialects share this family entry.
+railroad,railroad,in_progress,partial,partial,partial,partial,Bounded railroad-beta slice supporting Diagram and ComplexDiagram roots over Terminal NonTerminal Skip Start End Sequence Stack Choice Optional OneOrMore ZeroOrMore with single-quoted labels; comments escapes arrow markers styling configuration and full family parity are not complete.
 requirementDiagram,requirementDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports requirement and element blocks plus satisfies/verifies relationships; full family parity is not complete.
 sankey,sankey,in_progress,partial,partial,partial,partial,Vertical slice supports acyclic positive weighted CSV links including quoted commas and escaped quotes; configuration and full family parity are not complete.
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset only; full family parity is not complete.

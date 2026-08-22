@@ -99,6 +99,13 @@ import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.SwimlaneEdge
 import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.TreeViewNode
+import build.raft.mermaid.core.RailroadChoice
+import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.RailroadNonTerminal
+import build.raft.mermaid.core.RailroadOptional
+import build.raft.mermaid.core.RailroadSequence
+import build.raft.mermaid.core.RailroadStack
+import build.raft.mermaid.core.RailroadTerminal
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -638,6 +645,35 @@ public object MermaidExamples {
         ),
     )
 
+    public val railroadAuthFlow: MermaidExample = MermaidExample(
+        path = "samples/railroad-auth-flow.mmd",
+        source = """
+            railroad-beta
+            Diagram(
+              Sequence(
+                'token',
+                Choice(0,
+                  NonTerminal('session'),
+                  Optional('refresh')
+                ),
+                Stack('validate', 'store')
+              )
+            )
+        """.trimIndent(),
+        expected = RailroadDiagram(
+            RailroadSequence(
+                listOf(
+                    RailroadTerminal("token"),
+                    RailroadChoice(
+                        0,
+                        listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+                    ),
+                    RailroadStack(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
+                ),
+            ),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -666,5 +702,6 @@ public object MermaidExamples {
         cynefinIncidentResponse,
         swimlaneSupportEscalation,
         treeViewProject,
+        railroadAuthFlow,
     )
 }

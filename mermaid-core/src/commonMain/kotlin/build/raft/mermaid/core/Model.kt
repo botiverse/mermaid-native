@@ -387,6 +387,21 @@ public data class TreeViewNode(
     val directory: Boolean,
 )
 
+/** Bounded platform-neutral model for Mermaid railroad-beta expression trees. */
+public data class RailroadDiagram(val root: RailroadNode) : MermaidDiagram
+public sealed interface RailroadNode
+public data class RailroadTerminal(val label: String) : RailroadNode
+public data class RailroadNonTerminal(val label: String) : RailroadNode
+public data object RailroadSkip : RailroadNode
+public data object RailroadStart : RailroadNode
+public data object RailroadEnd : RailroadNode
+public data class RailroadSequence(val children: List<RailroadNode>) : RailroadNode
+public data class RailroadStack(val children: List<RailroadNode>) : RailroadNode
+public data class RailroadChoice(val priority: Int, val children: List<RailroadNode>) : RailroadNode
+public data class RailroadOptional(val child: RailroadNode) : RailroadNode
+public data class RailroadOneOrMore(val child: RailroadNode) : RailroadNode
+public data class RailroadZeroOrMore(val child: RailroadNode) : RailroadNode
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,
