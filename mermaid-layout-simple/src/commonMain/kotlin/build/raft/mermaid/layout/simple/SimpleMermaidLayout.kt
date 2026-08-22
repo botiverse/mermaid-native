@@ -48,6 +48,11 @@ import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadDiagram
 import build.raft.mermaid.core.ZenumlDiagram
+import build.raft.mermaid.core.WardleyEvolution
+import build.raft.mermaid.core.WardleyLink
+import build.raft.mermaid.core.WardleyMapDiagram
+import build.raft.mermaid.core.WardleyNode
+import build.raft.mermaid.core.WardleyNote
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlMessage
 import build.raft.mermaid.core.ZenumlSyncMessage
@@ -132,6 +137,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is TreeViewDiagram -> layoutTreeView(diagram, textMeasurer, config)
         is RailroadDiagram -> layoutRailroad(diagram, textMeasurer, config)
         is ZenumlDiagram -> layoutZenuml(diagram, textMeasurer, config)
+        is WardleyMapDiagram -> layoutWardleyMap(diagram, textMeasurer, config)
     }
 
     /** Deterministic sequence-style layout for the bounded zenuml slice. */
@@ -1992,6 +1998,69 @@ public object SimpleMermaidLayout : DiagramLayout {
             height = maxOf(config.padding * 2 + 2.0 * radius + 30.0, legendStartY + diagram.sections.size * 28.0 + config.padding),
             commands = commands,
         )
+    }
+
+    /** Deterministic 2D map layout for the bounded wardley-beta slice. */
+    private fun layoutWardleyMap(
+        diagram: WardleyMapDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 13.0)
+        val anchorStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val noteStyle = TextStyle(fontSize = 12.0, fontWeight = 400, color = SceneColor("#475569"))
+        val evolveColor = SceneColor("#dc2626")
+        val commands = mutableListOf<DrawCommand>()
+        var cursorY = config.padding
+        diagram.title?.let { title ->
+            val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+            commands += DrawText(title, ScenePoint(config.padding, cursorY + titleStyle.fontSize), style = titleStyle)
+            cursorY += 30.0
+        }
+        val width = 720.0
+        val height = cursorY + 480.0
+        val plotLeft = config.padding + 40.0
+        val plotRight = width - config.padding
+        val plotTop = cursorY + 16.0
+        val plotBottom = height - config.padding - 24.0
+        // OWM axes: visibility grows bottom-to-top, evolution grows left-to-right.
+        fun x(evolution: Double): Double = plotLeft + evolution * (plotRight - plotLeft)
+        fun y(visibility: Double): Double = plotBottom - visibility * (plotBottom - plotTop)
+        commands += DrawLine(
+            ScenePoint(plotLeft, plotTop),
+            ScenePoint(plotLeft, plotBottom),
+            stroke = SceneColor("#334155"),
+        )
+        commands += DrawLine(
+            ScenePoint(plotLeft, plotBottom),
+            ScenePoint(plotRight, plotBottom),
+            stroke = SceneColor("#334155"),
+        )
+        val centers = diagram.nodes.associateWith { node -> ScenePoint(x(node.evolution), y(node.visibility)) }
+        diagram.links.forEach { link: WardleyLink ->
+            val from = centers.getValue(diagram.nodes.first { it.name == link.from })
+            val to = centers.getValue(diagram.nodes.first { it.name == link.to })
+            commands += DrawLine(from, to)
+            commands += arrowHead(from, to)
+        }
+        diagram.evolutions.forEach { evolution: WardleyEvolution ->
+            val node = diagram.nodes.first { it.name == evolution.component }
+            val from = centers.getValue(node)
+            val to = ScenePoint(x(evolution.evolution), y(node.visibility))
+            commands += DrawLine(from, to, stroke = evolveColor, pattern = StrokePattern.DASHED)
+            commands += DrawPolygon(listOf(to, ScenePoint(to.x - 9.0, to.y - 4.5), ScenePoint(to.x - 9.0, to.y + 4.5)), fill = evolveColor)
+        }
+        diagram.nodes.forEach { node ->
+            val center = centers.getValue(node)
+            if (!node.anchor) {
+                commands += DrawEllipse(center, radiusX = 7.0, radiusY = 7.0)
+            }
+            commands += DrawText(node.name, ScenePoint(center.x, center.y - 12.0), TextAnchor.MIDDLE, if (node.anchor) anchorStyle else labelStyle)
+        }
+        diagram.notes.forEach { note ->
+            commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.MIDDLE, noteStyle)
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun arrowHead(from: ScenePoint, to: ScenePoint): DrawPolygon {

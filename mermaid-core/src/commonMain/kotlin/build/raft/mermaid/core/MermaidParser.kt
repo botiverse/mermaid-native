@@ -44,6 +44,7 @@ public object MermaidParser {
             header.text.equals("treeView-beta", ignoreCase = true) -> parseTreeView(source)
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
             header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
+            header.text.equals("wardley-beta", ignoreCase = true) -> parseWardley(statements)
             header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
                 MermaidDiagnosticCode.INVALID_HEADER,
                 "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
@@ -262,6 +263,180 @@ public object MermaidParser {
                     title = title,
                     participants = participants.values.toList(),
                     messages = messages.toList(),
+                ),
+            )
+        } else {
+            MermaidParseResult.Failure(diagnostics)
+        }
+    }
+
+    /**
+     * Bounded wardley-beta slice. Supported statements: an optional single
+     * `title`, `anchor Name [v, e]`, `component Name [v, e]` (unquoted
+     * names), basic `A -> B` links between declared nodes, `evolve Name e`
+     * (one per component), and `note "text" [v, e]`. Coordinates are OWM
+     * ordered: first visibility, then evolution, both within [0, 1].
+     * Everything else fails closed with a typed diagnostic.
+     */
+    private fun parseWardley(statements: List<SourceStatement>): MermaidParseResult {
+        val nodes = linkedMapOf<String, WardleyNode>()
+        val links = mutableListOf<WardleyLink>()
+        val evolutions = mutableListOf<WardleyEvolution>()
+        val notes = mutableListOf<WardleyNote>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var title: String? = null
+
+        fun fail(code: MermaidDiagnosticCode, message: String, location: SourceLocation) {
+            diagnostics += MermaidDiagnostic(code = code, message = message, location = location)
+        }
+
+        fun parseCoordinate(raw: String): Double? {
+            // Strict decimal literals only: rejects NaN, Infinity, exponents,
+            // signs, and values outside [0, 1] so coordinates stay unambiguous.
+            val trimmed = raw.trim()
+            if (WARDLEY_COORDINATE.matchEntire(trimmed) == null) return null
+            return trimmed.toDoubleOrNull()?.takeIf { it <= 1.0 }
+        }
+
+        fun parseCoordinatePair(raw: String, location: SourceLocation): Pair<Double, Double>? {
+            val inner = raw.trim()
+            val parts = inner.split(',')
+            if (parts.size != 2) {
+                fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "wardley coordinates must be [visibility, evolution]", location)
+                return null
+            }
+            val visibility = parseCoordinate(parts[0])
+            val evolution = parseCoordinate(parts[1])
+            if (visibility == null || evolution == null) {
+                fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley coordinates must be decimal numbers in [0, 1]", location)
+                return null
+            }
+            return visibility to evolution
+        }
+
+        fun validWardleyName(name: String): Boolean {
+            val trimmed = name.trim()
+            if (trimmed.isEmpty() || trimmed != name) return false
+            if (trimmed.startsWith('-') || trimmed.endsWith('-')) return false
+            if (!trimmed.any { it.isLetterOrDigit() || it == '_' }) return false
+            return trimmed.all { it.isLetterOrDigit() || it == '_' || it == '-' || it == ' ' }
+        }
+
+        loop@ for (statement in statements.drop(1)) {
+            val text = statement.text
+            val location = statement.location
+            val titleMatch = WARDLEY_TITLE.matchEntire(text)
+            if (titleMatch != null) {
+                if (title != null) {
+                    fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley accepts at most one title", location)
+                } else {
+                    title = titleMatch.groupValues[1]
+                }
+                continue@loop
+            }
+            val isAnchor = text.startsWith(WARDLEY_ANCHOR_KEYWORD)
+            val isComponent = !isAnchor && text.startsWith(WARDLEY_COMPONENT_KEYWORD)
+            if (isAnchor || isComponent) {
+                val keyword = if (isAnchor) WARDLEY_ANCHOR_KEYWORD else WARDLEY_COMPONENT_KEYWORD
+                val remainder = text.removePrefix(keyword)
+                val openIndex = remainder.indexOf('[')
+                val closeIndex = remainder.lastIndexOf(']')
+                if (openIndex <= 0 || closeIndex != remainder.length - 1 || closeIndex <= openIndex + 1) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported wardley $keyword declaration", location)
+                    continue@loop
+                }
+                val name = remainder.substring(0, openIndex).trim()
+                if (!validWardleyName(name)) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Invalid wardley node name: $name", location)
+                    continue@loop
+                }
+                if (name in nodes) {
+                    fail(MermaidDiagnosticCode.INVALID_VALUE, "Duplicate wardley node name: $name", location)
+                    continue@loop
+                }
+                val coordinates = parseCoordinatePair(remainder.substring(openIndex + 1, closeIndex), location) ?: continue@loop
+                nodes[name] = WardleyNode(
+                    name = name,
+                    visibility = coordinates.first,
+                    evolution = coordinates.second,
+                    anchor = isAnchor,
+                )
+                continue@loop
+            }
+            val evolveRemainder = text.removePrefix(WARDLEY_EVOLVE_KEYWORD)
+            if (evolveRemainder != text) {
+                val lastSpace = evolveRemainder.lastIndexOf(' ')
+                if (lastSpace <= 0) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported wardley evolve statement", location)
+                    continue@loop
+                }
+                val name = evolveRemainder.substring(0, lastSpace).trim()
+                val target = parseCoordinate(evolveRemainder.substring(lastSpace + 1))
+                when {
+                    name !in nodes -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley evolve references unknown component: $name", location)
+                    target == null -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley evolve target must be a decimal number in [0, 1]", location)
+                    evolutions.any { it.component == name } -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley evolve declared more than once for: $name", location)
+                    else -> evolutions += WardleyEvolution(component = name, evolution = target)
+                }
+                continue@loop
+            }
+            if (text.startsWith(WARDLEY_NOTE_KEYWORD)) {
+                val quoteStart = text.indexOf('"')
+                val quoteEnd = text.indexOf('"', quoteStart + 1)
+                if (quoteStart != WARDLEY_NOTE_KEYWORD.length - 1 || quoteEnd < 0) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "wardley note text must be double quoted", location)
+                    continue@loop
+                }
+                if (text.substring(quoteStart + 1, quoteEnd).any { it == '\\' }) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "wardley note escapes are not supported", location)
+                    continue@loop
+                }
+                val noteText = text.substring(quoteStart + 1, quoteEnd)
+                val tail = text.substring(quoteEnd + 1)
+                val openIndex = tail.indexOf('[')
+                val closeIndex = tail.lastIndexOf(']')
+                if (openIndex < 0 || closeIndex != tail.length - 1 || closeIndex <= openIndex + 1 || tail.substring(0, openIndex).isNotBlank()) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported wardley note placement", location)
+                    continue@loop
+                }
+                val coordinates = parseCoordinatePair(tail.substring(openIndex + 1, closeIndex), location) ?: continue@loop
+                notes += WardleyNote(text = noteText, visibility = coordinates.first, evolution = coordinates.second)
+                continue@loop
+            }
+            if (WARDLEY_LINK_SEPARATOR in text) {
+                val parts = text.split(WARDLEY_LINK_SEPARATOR)
+                if (parts.size != 2) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported wardley link chain", location)
+                    continue@loop
+                }
+                val from = parts[0].trim()
+                val to = parts[1].trim()
+                when {
+                    from !in nodes -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley link references unknown source: $from", location)
+                    to !in nodes -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley link references unknown target: $to", location)
+                    from == to -> fail(MermaidDiagnosticCode.INVALID_VALUE, "wardley self links are not supported: $from", location)
+                    else -> links += WardleyLink(from = from, to = to)
+                }
+                continue@loop
+            }
+            diagnostics += unsupported(statement, "Unsupported wardley syntax")
+        }
+
+        if (diagnostics.isEmpty() && nodes.isEmpty()) {
+            diagnostics += MermaidDiagnostic(
+                code = MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                message = "wardley diagram requires at least one anchor or component",
+                location = statements.first().location,
+            )
+        }
+        return if (diagnostics.isEmpty()) {
+            MermaidParseResult.Success(
+                WardleyMapDiagram(
+                    title = title,
+                    nodes = nodes.values.toList(),
+                    links = links.toList(),
+                    evolutions = evolutions.toList(),
+                    notes = notes.toList(),
                 ),
             )
         } else {
@@ -2021,6 +2196,13 @@ public object MermaidParser {
     private val ZENUML_BARE_DECLARATION = Regex("^($IDENTIFIER)$")
     private val ZENUML_SYNC_MESSAGE = Regex("^($IDENTIFIER)\\s*->\\s*($IDENTIFIER)\\.([A-Za-z_][A-Za-z0-9_]*)(?:\\(\\))?$")
     private val ZENUML_ASYNC_MESSAGE = Regex("^($IDENTIFIER)\\s*->\\s*($IDENTIFIER)\\s*:\\s*(\\S.*)$")
+    private val WARDLEY_TITLE = Regex("^title\\s+(\\S.*)$")
+    private val WARDLEY_COORDINATE = Regex("^[01](?:\\.\\d+)?$")
+    private const val WARDLEY_ANCHOR_KEYWORD = "anchor "
+    private const val WARDLEY_COMPONENT_KEYWORD = "component "
+    private const val WARDLEY_EVOLVE_KEYWORD = "evolve "
+    private const val WARDLEY_NOTE_KEYWORD = "note \""
+    private const val WARDLEY_LINK_SEPARATOR = " -> "
     private val SEQUENCE_MESSAGE = Regex(
         // The lazy IDs are intentional: an ID may contain '-' while '-->>'
         // starts with the same character. The arrow must win at the boundary.

@@ -110,6 +110,11 @@ import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.ZenumlParticipant
 import build.raft.mermaid.core.ZenumlSyncMessage
+import build.raft.mermaid.core.WardleyEvolution
+import build.raft.mermaid.core.WardleyLink
+import build.raft.mermaid.core.WardleyMapDiagram
+import build.raft.mermaid.core.WardleyNode
+import build.raft.mermaid.core.WardleyNote
 
 /**
  * Public examples mirrored by the files under [samples].
@@ -704,6 +709,51 @@ public object MermaidExamples {
         ),
     )
 
+    public val wardleyTeaShop: MermaidExample = MermaidExample(
+        path = "samples/wardley-tea-shop.mmd",
+        source = """
+            wardley-beta
+            title Tea Shop Value Chain
+            anchor Business [0.95, 0.63]
+            component Cup of Tea [0.79, 0.61]
+            component Tea [0.63, 0.81]
+            component Hot Water [0.52, 0.80]
+            component Kettle [0.43, 0.35]
+            component Power [0.10, 0.70]
+            Business -> Cup of Tea
+            Cup of Tea -> Tea
+            Cup of Tea -> Hot Water
+            Hot Water -> Kettle
+            Kettle -> Power
+            evolve Kettle 0.62
+            evolve Power 0.89
+            note "Standardising power allows Kettles to evolve faster" [0.30, 0.49]
+        """.trimIndent(),
+        expected = WardleyMapDiagram(
+            title = "Tea Shop Value Chain",
+            nodes = listOf(
+                WardleyNode("Business", 0.95, 0.63, anchor = true),
+                WardleyNode("Cup of Tea", 0.79, 0.61, anchor = false),
+                WardleyNode("Tea", 0.63, 0.81, anchor = false),
+                WardleyNode("Hot Water", 0.52, 0.80, anchor = false),
+                WardleyNode("Kettle", 0.43, 0.35, anchor = false),
+                WardleyNode("Power", 0.10, 0.70, anchor = false),
+            ),
+            links = listOf(
+                WardleyLink("Business", "Cup of Tea"),
+                WardleyLink("Cup of Tea", "Tea"),
+                WardleyLink("Cup of Tea", "Hot Water"),
+                WardleyLink("Hot Water", "Kettle"),
+                WardleyLink("Kettle", "Power"),
+            ),
+            evolutions = listOf(
+                WardleyEvolution("Kettle", 0.62),
+                WardleyEvolution("Power", 0.89),
+            ),
+            notes = listOf(WardleyNote("Standardising power allows Kettles to evolve faster", 0.30, 0.49)),
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -734,5 +784,6 @@ public object MermaidExamples {
         treeViewProject,
         railroadAuthFlow,
         zenumlTokenHandshake,
+        wardleyTeaShop,
     )
 }
