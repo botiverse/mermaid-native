@@ -92,6 +92,10 @@ import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.CynefinDomainBlock
 import build.raft.mermaid.core.CynefinTransition
+import build.raft.mermaid.core.EventModelingDiagram
+import build.raft.mermaid.core.EventModelingEntityKind
+import build.raft.mermaid.core.EventModelingFrame
+import build.raft.mermaid.core.EventModelingRelation
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.Swimlane
 import build.raft.mermaid.core.SwimlaneNode
@@ -106,6 +110,28 @@ import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
 import build.raft.mermaid.core.RailroadStack
 import build.raft.mermaid.core.RailroadTerminal
+    public val eventModelingCartFlow: MermaidExample = MermaidExample(
+        path = "samples/eventmodeling-cart-flow.mmd",
+        source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
+        expected = EventModelingDiagram(
+            title = "Cart & inventory",
+            frames = listOf(
+                EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
+                EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
+                EventModelingFrame("03", "ItemAdded", EventModelingEntityKind.EVENT),
+                EventModelingFrame("04", "External.InventoryChanged", EventModelingEntityKind.EVENT, reset = true),
+                EventModelingFrame("05", "InventoryProcessor", EventModelingEntityKind.PROCESSOR),
+                EventModelingFrame("06", "InventoryView", EventModelingEntityKind.READ_MODEL),
+            ),
+            relations = listOf(
+                EventModelingRelation("01", "02"),
+                EventModelingRelation("02", "03"),
+                EventModelingRelation("04", "05"),
+                EventModelingRelation("03", "06"),
+                EventModelingRelation("04", "06"),
+            ),
+        ),
+    )
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.ZenumlParticipant
@@ -586,6 +612,7 @@ public object MermaidExamples {
               clear
                 "Apply known fix"
               chaotic
+        eventModelingCartFlow,
                 "Page on-call"
               confusion
                 "Unknown failure"

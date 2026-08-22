@@ -5,7 +5,7 @@ c4,c4,in_progress,partial,partial,partial,partial,Vertical slice supports C4Cont
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members and basic relationships; full family parity is not complete.
 cynefin,cynefin,in_progress,partial,partial,partial,partial,Bounded cynefin-beta domains/items/transitions with deterministic measured quadrant/ellipse layout; accessibility/configuration/wavy boundaries and full family parity are not complete.
 entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports entity declarations attributes keys and basic cardinality relationships; full family parity is not complete.
-eventmodeling,eventmodeling,not_started,no,no,no,no,Official syntax family; implementation is not started.
+eventmodeling,eventmodeling,in_progress,partial,partial,partial,partial,Bounded timeline/reset frames with five entity kinds, inferred flow, explicit multi-source relations, deterministic measured SVG; data/note/GWT/accessibility/configuration and full parity are deferred.
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.
 gantt,gantt,in_progress,partial,partial,partial,partial,Vertical slice supports title ISO dateFormat sections fixed-date tasks durations and basic statuses; full family parity is not complete.
 gitgraph,gitgraph,in_progress,partial,partial,partial,partial,Vertical slice supports main branch commits custom id type and tag branch checkout or switch and merge; full family parity is not complete.
