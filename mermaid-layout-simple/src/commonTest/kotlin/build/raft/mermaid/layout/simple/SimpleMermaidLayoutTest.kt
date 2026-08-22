@@ -98,6 +98,10 @@ import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.WardleyEvolution
+import build.raft.mermaid.core.WardleyLink
+import build.raft.mermaid.core.WardleyMapDiagram
+import build.raft.mermaid.core.WardleyNode
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.ZenumlParticipant
@@ -178,6 +182,36 @@ class SimpleMermaidLayoutTest {
         assertTrue(labels.contains(longParticipant))
         val required = FixedWidthTextMeasurer.measure(longParticipant, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 32.0
         assertTrue(first.width >= required, "width ${first.width} below required $required")
+    }
+
+    @Test
+    fun wardleyProducesDeterministicInvertedAxisMap() {
+        val diagram = WardleyMapDiagram(
+            title = "Tea Shop",
+            nodes = listOf(
+                WardleyNode("Business", 1.0, 0.9, anchor = true),
+                WardleyNode("Cup of Tea", 0.0, 0.1, anchor = false),
+            ),
+            links = listOf(WardleyLink("Business", "Cup of Tea")),
+            evolutions = listOf(WardleyEvolution("Cup of Tea", 0.9)),
+            notes = listOf(build.raft.mermaid.core.WardleyNote("note text", 0.5, 0.5)),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        // Only the non-anchor node renders as an ellipse.
+        assertEquals(1, first.commands.filterIsInstance<DrawEllipse>().size)
+        // Axes plus one dependency link plus one dashed evolution arrow.
+        val lines = first.commands.filterIsInstance<DrawLine>()
+        assertEquals(4, lines.size)
+        assertEquals(1, lines.count { it.pattern == StrokePattern.DASHED })
+        // Visibility inversion: the visibility-1.0 anchor sits above the visibility-0.0 component.
+        val anchorLabel = first.commands.filterIsInstance<DrawText>().first { it.text == "Business" }
+        val componentLabel = first.commands.filterIsInstance<DrawText>().first { it.text == "Cup of Tea" }
+        assertTrue(anchorLabel.origin.y < componentLabel.origin.y)
+        // Evolution arrow keeps visibility constant (horizontal) and points right.
+        val evolutionLine = lines.first { it.pattern == StrokePattern.DASHED }
+        assertEquals(evolutionLine.from.y, evolutionLine.to.y)
+        assertTrue(evolutionLine.to.x > evolutionLine.from.x)
     }
 
     @Test

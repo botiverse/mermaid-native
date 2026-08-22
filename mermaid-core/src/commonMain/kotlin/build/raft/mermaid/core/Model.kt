@@ -431,6 +431,28 @@ public data class ZenumlAsyncMessage(
     val label: String,
 ) : ZenumlMessage
 
+/** Bounded platform-neutral model for Mermaid wardley-beta maps. */
+public data class WardleyMapDiagram(
+    val title: String? = null,
+    val nodes: List<WardleyNode>,
+    val links: List<WardleyLink>,
+    val evolutions: List<WardleyEvolution>,
+    val notes: List<WardleyNote>,
+) : MermaidDiagram
+
+public data class WardleyNode(
+    val name: String,
+    val visibility: Double,
+    val evolution: Double,
+    val anchor: Boolean,
+)
+
+public data class WardleyLink(val from: String, val to: String)
+
+public data class WardleyEvolution(val component: String, val evolution: Double)
+
+public data class WardleyNote(val text: String, val visibility: Double, val evolution: Double)
+
 public enum class SequenceLineStyle {
     SOLID,
     DASHED,

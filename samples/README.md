@@ -82,3 +82,12 @@ declarations, explicit-sender sync messages (`A->B.method()` / `A->B.method`),
 and async messages (`A->B: label`). Nesting bodies, parameters, creation,
 reply assignment, annotators, comments, control flow, and configuration are
 outside the slice and fail closed.
+
+`wardley-tea-shop.mmd` is an original compatibility fixture based on the
+documented `wardley-beta` syntax at the pinned Mermaid revision. It covers the
+bounded slice accepted here: a single `title`, `anchor`/`component`
+declarations with unquoted names, basic `A -> B` dependency links,
+`evolve Name e` arrows, and quoted notes with OWM-ordered `[visibility,
+evolution]` coordinates. `size`, label offsets, decorators, non-basic link
+styles, trends, pipelines, custom evolution stages, annotations, forces, and
+quoted node names are outside the slice and fail closed.

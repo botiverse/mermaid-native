@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="534" viewBox="0 0 720 534" role="img">
+  <text x="24" y="42" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Tea Shop Value Chain</text>
+  <line x1="64" y1="70" x2="64" y2="486" stroke="#334155" stroke-width="1.5" fill="none"/>
+  <line x1="64" y1="486" x2="696" y2="486" stroke="#334155" stroke-width="1.5" fill="none"/>
+  <line x1="462.16" y1="90.80000000000001" x2="449.52" y2="157.36" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="449.52,157.36 446.7781372701368,147.67846144610337 455.6201132051994,149.3575866837715" fill="#475569"/>
+  <line x1="449.52" y1="157.36" x2="575.9200000000001" y2="223.92000000000002" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="575.9200000000001,223.92000000000002 565.8599210018764,223.70831497098138 570.0533006243407,215.74492578408987" fill="#475569"/>
+  <line x1="449.52" y1="157.36" x2="569.6" y2="269.68" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="569.6,269.68 559.9531861865306,266.81836004216876 566.1012236781834,260.24556497452573" fill="#475569"/>
+  <line x1="569.6" y1="269.68" x2="285.2" y2="307.12" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="285.2,307.12 293.5356742696256,301.4838191591556 294.71034923445086,310.4068309111939" fill="#475569"/>
+  <line x1="285.2" y1="307.12" x2="506.4" y2="444.4" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <polygon points="506.4,444.4 496.38005578794434,443.47765625318226 501.1259084702208,435.8306383822649" fill="#475569"/>
+  <line x1="285.2" y1="307.12" x2="455.84" y2="307.12" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="455.84,307.12 446.84,302.62 446.84,311.62" fill="#dc2626"/>
+  <line x1="506.4" y1="444.4" x2="626.48" y2="444.4" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="626.48,444.4 617.48,439.9 617.48,448.9" fill="#dc2626"/>
+  <text x="462.16" y="78.80000000000001" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Business</text>
+  <ellipse cx="449.52" cy="157.36" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <text x="449.52" y="145.36" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">Cup of Tea</text>
+  <ellipse cx="575.9200000000001" cy="223.92000000000002" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <text x="575.9200000000001" y="211.92000000000002" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">Tea</text>
+  <ellipse cx="569.6" cy="269.68" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <text x="569.6" y="257.68" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">Hot Water</text>
+  <ellipse cx="285.2" cy="307.12" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <text x="285.2" y="295.12" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">Kettle</text>
+  <ellipse cx="506.4" cy="444.4" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <text x="506.4" y="432.4" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#111827">Power</text>
+  <text x="373.68" y="361.2" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#475569">Standardising power allows Kettles to evolve faster</text>
+</svg>

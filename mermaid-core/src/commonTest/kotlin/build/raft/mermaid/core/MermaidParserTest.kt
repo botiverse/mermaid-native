@@ -146,6 +146,86 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesWardleyMap() {
+        val parsed = MermaidParser.parse(
+            "wardley-beta\n" +
+                "title Tea Shop\n" +
+                "anchor Business [0.95, 0.63]\n" +
+                "component Cup of Tea [0.79, 0.61]\n" +
+                "component real-time processing [0.40, 0.30]\n" +
+                "Business -> Cup of Tea\n" +
+                "Cup of Tea -> real-time processing\n" +
+                "evolve real-time processing 0.75\n" +
+                "note \"keep it simple\" [0.5, 0.5]",
+        )
+        val result = assertIs<MermaidParseResult.Success>(
+            parsed,
+            (parsed as? MermaidParseResult.Failure)?.diagnostics.toString(),
+        )
+        assertEquals(
+            WardleyMapDiagram(
+                title = "Tea Shop",
+                nodes = listOf(
+                    WardleyNode("Business", 0.95, 0.63, anchor = true),
+                    WardleyNode("Cup of Tea", 0.79, 0.61, anchor = false),
+                    WardleyNode("real-time processing", 0.40, 0.30, anchor = false),
+                ),
+                links = listOf(
+                    WardleyLink("Business", "Cup of Tea"),
+                    WardleyLink("Cup of Tea", "real-time processing"),
+                ),
+                evolutions = listOf(WardleyEvolution("real-time processing", 0.75)),
+                notes = listOf(WardleyNote("keep it simple", 0.5, 0.5)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun malformedWardleyFailsClosed() {
+        listOf(
+            // No nodes at all.
+            "wardley-beta",
+            "wardley-beta\ntitle Only",
+            // Quoted names are outside the slice.
+            "wardley-beta\ncomponent \"Custom Service\" [0.5, 0.5]",
+            // Decorators, label offsets, and size are rejected.
+            "wardley-beta\ncomponent API [0.5, 0.5] (build)",
+            "wardley-beta\ncomponent API [0.5, 0.5] label [-50, 10]",
+            "wardley-beta\nsize [800, 1000]",
+            // Non-basic link styles are rejected.
+            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA --> B",
+            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA +> B",
+            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA -.-> B",
+            // Unknown endpoints and self links are rejected.
+            "wardley-beta\ncomponent A [0.1, 0.1]\nA -> Ghost",
+            "wardley-beta\ncomponent A [0.1, 0.1]\nA -> A",
+            // Coordinates must be decimal literals in [0, 1].
+            "wardley-beta\ncomponent A [1.5, 0.5]",
+            "wardley-beta\ncomponent A [0.5, NaN]",
+            "wardley-beta\ncomponent A [1e-1, 0.5]",
+            "wardley-beta\ncomponent A [.5, 0.5]",
+            "wardley-beta\ncomponent A [0.5]",
+            "wardley-beta\ncomponent A [0.5, 0.5, 0.5]",
+            // evolve rules.
+            "wardley-beta\ncomponent A [0.5, 0.5]\nevolve Ghost 0.7",
+            "wardley-beta\ncomponent A [0.5, 0.5]\nevolve A 1.5",
+            "wardley-beta\ncomponent A [0.5, 0.5]\nevolve A 0.7\nevolve A 0.8",
+            // Pipelines, custom stages, annotations, forces are rejected.
+            "wardley-beta\npipeline Database {\n  component SQL [0.5]\n}",
+            "wardley-beta\nevolution A -> B",
+            "wardley-beta\nannotations [0.1, 0.9]",
+            "wardley-beta\naccelerator \"AI\" [0.5, 0.5]",
+            // Duplicate names, including anchor/component collisions.
+            "wardley-beta\ncomponent A [0.5, 0.5]\ncomponent A [0.4, 0.4]",
+            "wardley-beta\nanchor A [0.5, 0.5]\ncomponent A [0.4, 0.4]",
+            // Unknown statements fail closed.
+            "wardley-beta\ntrend A -.- (0.5, 0.5)",
+            "wardley-beta\nA -> B -> C",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
     fun parsesTreeViewIndentationQuotedLabelsAndDirectories() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("treeView-beta\n    project/\n        src/\n            index.ts\n        \"README file.md\"")
