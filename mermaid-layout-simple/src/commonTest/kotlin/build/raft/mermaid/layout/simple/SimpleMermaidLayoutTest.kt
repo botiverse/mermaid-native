@@ -124,8 +124,10 @@ import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.ScenePoint
 import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
+import build.raft.mermaid.layout.TextAnchor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -818,16 +820,85 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
-    fun radarClampsValuesAboveMaxIntoTheGrid() {
+    fun radarGeometryLocksValueMappingCenterOuterAndClockwiseAxisOrder() {
         val diagram = RadarChartDiagram(
             null,
-            listOf(RadarAxis("a", "a"), RadarAxis("b", "b"), RadarAxis("c", "c"), RadarAxis("d", "d")),
-            listOf(RadarCurve("x", "x", listOf(100.0, 100.0, 100.0, 100.0))),
+            listOf(
+                RadarAxis("a", "top"),
+                RadarAxis("b", "right"),
+                RadarAxis("c", "bottom"),
+                RadarAxis("d", "left"),
+            ),
+            listOf(RadarCurve("x", "x", listOf(100.0, 0.0, 100.0, 50.0))),
             100.0,
         )
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
-        val outermost = scene.commands.filterIsInstance<DrawPolygon>().maxOf { polygon -> polygon.points.maxOf { it.x.coerceAtLeast(it.y) } }
-        assertTrue(outermost <= 512.0, "Vertex escaped the polar grid: $outermost")
+        // Closed curve outlines are the polylines with stroke-width 2.
+        val outlines = scene.commands.filterIsInstance<DrawPolyline>().filter { it.strokeWidth == 2.0 }
+        assertEquals(1, outlines.size)
+        assertEquals(
+            listOf(
+                ScenePoint(320.0, 102.0), // axis 0 starts at -90° (top); value=max → outer ring
+                ScenePoint(320.0, 272.0), // axis 1 is at 0° (right); value=0 → center
+                ScenePoint(320.0, 442.0), // axis 2 is at 90° (bottom); value=max → outer ring
+                ScenePoint(235.0, 272.0), // axis 3 is at 180° (left); value=max/2 → half radius
+                ScenePoint(320.0, 102.0), // outline closes back to the first vertex
+            ),
+            outlines.single().points,
+        )
+    }
+
+    @Test
+    fun radarGrowsCanvasForLongAxisLabelsAndWrapsLegendWithoutClipping() {
+        val longLabel = "An extraordinarily long radar axis label for measurement"
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(RadarAxis("a", longLabel), RadarAxis("b", longLabel), RadarAxis("c", longLabel)),
+            listOf(
+                RadarCurve("c1", "First curve with a fairly long legend label", listOf(80.0, 70.0, 60.0)),
+                RadarCurve("c2", "Second curve with a fairly long legend label", listOf(70.0, 60.0, 50.0)),
+                RadarCurve("c3", "Third curve with a fairly long legend label", listOf(60.0, 50.0, 40.0)),
+                RadarCurve("c4", "Fourth curve with a fairly long legend label", listOf(50.0, 40.0, 30.0)),
+                RadarCurve("c5", "Fifth curve with a fairly long legend label", listOf(40.0, 30.0, 20.0)),
+            ),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.width > 640.0, "Canvas must grow for long axis labels")
+        scene.commands.forEach { command ->
+            val points: List<ScenePoint> = when (command) {
+                is DrawRect -> listOf(
+                    ScenePoint(command.rect.x, command.rect.y),
+                    ScenePoint(command.rect.x + command.rect.width, command.rect.y + command.rect.height),
+                )
+                is DrawLine -> listOf(command.from, command.to)
+                is DrawPolyline -> command.points
+                is DrawPolygon -> command.points
+                is DrawEllipse -> listOf(
+                    ScenePoint(command.center.x - command.radiusX, command.center.y - command.radiusY),
+                    ScenePoint(command.center.x + command.radiusX, command.center.y + command.radiusY),
+                )
+                is DrawText -> when (command.anchor) {
+                    TextAnchor.MIDDLE -> listOf(
+                        ScenePoint(
+                            command.origin.x - FixedWidthTextMeasurer.measure(command.text, command.style).width / 2.0,
+                            command.origin.y - command.style.fontSize,
+                        ),
+                        ScenePoint(
+                            command.origin.x + FixedWidthTextMeasurer.measure(command.text, command.style).width / 2.0,
+                            command.origin.y + command.style.fontSize * 0.2,
+                        ),
+                    )
+                    else -> listOf(command.origin)
+                }
+            }
+            points.forEach { point ->
+                assertTrue(point.x >= 0.0 && point.x <= scene.width, "x ${point.x} escaped width ${scene.width}")
+                assertTrue(point.y >= 0.0 && point.y <= scene.height, "y ${point.y} escaped height ${scene.height}")
+            }
+        }
+        val swatchRows = scene.commands.filterIsInstance<DrawRect>().map { it.rect.y }.distinct()
+        assertTrue(swatchRows.size >= 2, "Legend must wrap into multiple rows for many curves")
     }
 
     private fun message(

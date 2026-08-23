@@ -1243,25 +1243,35 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene {
-        val width = 640.0
-        val height = 520.0
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 12.0)
-        val centerX = width / 2.0
-        val centerY = 272.0
+        val baseWidth = 640.0
         val radius = 170.0
+        val labelRadius = radius + 26.0
         val ringFractions = listOf(0.25, 0.5, 0.75, 1.0)
         val axisCount = diagram.axes.size
+        val axisAngles = List(axisCount) { index -> -PI / 2.0 + 2.0 * PI * index / axisCount }
+
+        // Measure axis labels up front so the canvas grows instead of clipping.
+        val axisLabelSizes = diagram.axes.map { textMeasurer.measure(it.label, bodyStyle) }
+        var extraLeft = 0.0
+        var extraRight = 0.0
+        axisAngles.forEachIndexed { index, angle ->
+            val labelCenterX = baseWidth / 2.0 + labelRadius * cos(angle)
+            extraLeft = max(extraLeft, config.padding - (labelCenterX - axisLabelSizes[index].width / 2.0))
+            extraRight = max(extraRight, labelCenterX + axisLabelSizes[index].width / 2.0 + config.padding - baseWidth)
+        }
+        val width = baseWidth + max(0.0, extraLeft) + max(0.0, extraRight)
+        val centerX = baseWidth / 2.0 + max(0.0, extraLeft)
+        val centerY = 272.0
 
         fun vertex(axisIndex: Int, fraction: Double): ScenePoint {
-            val angle = -PI / 2.0 + 2.0 * PI * axisIndex / axisCount
+            val angle = axisAngles[axisIndex]
             return ScenePoint(
                 (centerX + radius * fraction * cos(angle)).radarCoordinate(),
                 (centerY + radius * fraction * sin(angle)).radarCoordinate(),
             )
         }
-
-        fun spokeAngle(axisIndex: Int): Double = -PI / 2.0 + 2.0 * PI * axisIndex / axisCount
 
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let {
@@ -1280,12 +1290,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         // Spokes and outer axis labels.
         diagram.axes.forEachIndexed { index, axis ->
             commands += DrawLine(ScenePoint(centerX, centerY), vertex(index, 1.0))
-            val angle = spokeAngle(index)
+            val angle = axisAngles[index]
             commands += DrawText(
                 axis.label,
                 ScenePoint(
-                    (centerX + (radius + 26.0) * cos(angle)).radarCoordinate(),
-                    (centerY + (radius + 26.0) * sin(angle)).radarCoordinate() + 4.0,
+                    (centerX + labelRadius * cos(angle)).radarCoordinate(),
+                    (centerY + labelRadius * sin(angle)).radarCoordinate() + 4.0,
                 ),
                 TextAnchor.MIDDLE,
                 bodyStyle,
@@ -1312,11 +1322,16 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
-        // Legend row below the chart.
+        // Legend row(s) below the chart, wrapped inside the padded content box.
         var legendX = config.padding
-        val legendY = centerY + radius + 46.0
+        var legendY = centerY + radius + 46.0
         diagram.curves.forEachIndexed { curveIndex, curve ->
             val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
+            val itemWidth = 18.0 + textMeasurer.measure(curve.label, bodyStyle).width + 28.0
+            if (legendX > config.padding && legendX + itemWidth > width - config.padding) {
+                legendX = config.padding
+                legendY += 22.0
+            }
             commands += DrawRect(
                 SceneRect(legendX, legendY - 10.0, 12.0, 12.0),
                 fill = SceneColor(stroke),
@@ -1324,8 +1339,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                 strokeWidth = 1.0,
             )
             commands += DrawText(curve.label, ScenePoint(legendX + 18.0, legendY), style = bodyStyle)
-            legendX += 18.0 + textMeasurer.measure(curve.label, bodyStyle).width + 28.0
+            legendX += itemWidth
         }
+        val height = max(520.0, legendY + 12.0 + config.padding)
         return LayoutScene(width, height, commands)
     }
 

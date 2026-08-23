@@ -390,12 +390,25 @@ class MermaidParserTest {
     @Test
     fun radarDefaultsToMax100AndAcceptsSplitAxisStatements() {
         val result = assertIs<MermaidParseResult.Success>(
-            MermaidParser.parse("radar-beta\naxis a, b, c\naxis d[\"Depth\"], e, f\ncurve one{1, 2, 3, 4, 5, 6}")
+            MermaidParser.parse("radar-beta\naxis a, b, c\naxis d[\"Depth\"], a2[\"Depth\"], f\ncurve one{1, 2, 3, 4, 5, 6}")
         )
         val diagram = assertIs<RadarChartDiagram>(result.diagram)
-        assertEquals(listOf("a", "b", "c", "d", "e", "f"), diagram.axes.map { it.id })
+        assertEquals(listOf("a", "b", "c", "d", "a2", "f"), diagram.axes.map { it.id })
         assertEquals("Depth", diagram.axes[3].label)
+        // The same label under different ids is allowed.
+        assertEquals("Depth", diagram.axes[4].label)
+        assertEquals("a2", diagram.axes[4].id)
         assertEquals(100.0, diagram.maximum)
+    }
+
+    @Test
+    fun malformedRadarDiagnosticCarriesLineAndColumn() {
+        val result = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("radar-beta\naxis a, b, c\ncurve x{1, two, 3}")
+        )
+        val diagnostic = result.diagnostics.single()
+        assertEquals(3, diagnostic.location.line)
+        assertEquals(1, diagnostic.location.column)
     }
 
     @Test
@@ -422,6 +435,30 @@ class MermaidParserTest {
             "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax -5",
             "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 0",
             "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax abc",
+            // Strict numeric lexicon: no scientific notation, signs, or bare fractions.
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 1e2",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax +50",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax .5",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 5.",
+            "radar-beta\naxis a, b, c\ncurve x{-0, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve x{NaN, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve x{Infinity, 2, 3}",
+            // Malformed comma structure inside the value list.
+            "radar-beta\naxis a, b, c\ncurve x{1,,3}",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3,}",
+            // Malformed quotes, brackets, and braces.
+            "radar-beta\naxis m\"Math\", s, e\ncurve x{1, 2, 3}",
+            "radar-beta\naxis m[\"Math, s, e\ncurve x{1, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve alice[\"Alice\"] 1, 2, 3",
+            "radar-beta\naxis a, b, c\ncurve alice{1, 2, 3",
+            // Empty axis entries and whitespace-only title.
+            "radar-beta\naxis a,,b,c\ncurve x{1, 2, 3, 4}",
+            "radar-beta\ntitle   \naxis a, b, c\ncurve x{1, 2, 3}",
+            // Explicitly unsupported official options fail closed by name.
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\ngraticule circle",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nticks 5",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nshowLegend false",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmin 10",
             // Duplicate title.
             "radar-beta\ntitle One\ntitle Two\naxis a, b, c\ncurve x{1, 2, 3}",
             // Malformed declarations.
