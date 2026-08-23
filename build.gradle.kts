@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
     kotlin("multiplatform") version "2.1.21" apply false
     id("com.android.library") version "8.13.2" apply false
@@ -121,6 +123,86 @@ tasks.register("verifyDiagramFamilyRegistry") {
     }
 }
 
+val conformanceManifest = layout.projectDirectory.file("compatibility/conformance/manifest.tsv")
+
+tasks.register("verifyConformanceCorpus") {
+    val upstreams = layout.projectDirectory.file("compatibility/upstreams.lock")
+    val notices = layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")
+    inputs.files(conformanceManifest, upstreams, notices)
+    inputs.dir(layout.projectDirectory.dir("compatibility/conformance"))
+    doLast {
+        val pinnedMermaid = upstreams.asFile.readLines()
+            .single { it.startsWith("mermaid=") }
+            .substringAfter('=')
+        val lines = conformanceManifest.asFile.readLines().filter { it.isNotBlank() }
+        val header = "family\tcase\tclassification\tfixture\tupstream_commit\tupstream_path\tupstream_case\tsha256\texpected_semantics\tdiagnostic_line\tdiagnostic_column"
+        check(lines.firstOrNull() == header) { "Conformance manifest header changed unexpectedly" }
+        val rows = lines.drop(1).map { it.split('\t') }
+        check(rows.isNotEmpty()) { "Conformance manifest must not be empty" }
+        check(rows.all { it.size == 11 }) { "Every conformance row must have 11 tab-separated columns" }
+        check(rows.map { it[0] to it[1] } == rows.map { it[0] to it[1] }.sortedWith(compareBy({ it.first }, { it.second }))) {
+            "Conformance manifest must be sorted by family and case"
+        }
+        check(rows.map { it[0] to it[1] }.distinct().size == rows.size) { "Conformance family/case keys must be unique" }
+        check(rows.map { it[0] }.toSet() == setOf("flowchart", "sequence", "eventmodeling")) {
+            "Pilot must cover flowchart, sequence, and eventmodeling"
+        }
+        check(rows.all { it[2] in setOf("supported", "unsupported", "deferred") }) {
+            "Unknown conformance classification"
+        }
+        check(rows.all { it[4] == pinnedMermaid }) { "Every fixture must bind the pinned Mermaid revision" }
+        check(rows.all { it[5].isNotBlank() && it[6].isNotBlank() }) { "Every fixture needs upstream path and case attribution" }
+        check(notices.asFile.readText().contains("Mermaid conformance fixtures")) {
+            "Third-party notices must describe copied Mermaid conformance fixtures"
+        }
+        rows.forEach { row ->
+            val fixture = layout.projectDirectory.file(row[3]).asFile
+            check(fixture.isFile) { "Missing conformance fixture: ${row[3]}" }
+            val digest = MessageDigest.getInstance("SHA-256")
+                .digest(fixture.readBytes())
+                .joinToString("") { "%02x".format(it) }
+            check(digest == row[7]) { "Fixture hash drift for ${row[0]}/${row[1]}" }
+            if (row[2] == "supported") {
+                check(row[8] != "-" && row[9] == "-" && row[10] == "-") { "Supported cases need semantics only" }
+            } else {
+                check(row[8] == "-" && row[9].toIntOrNull() != null && row[10].toIntOrNull() != null) {
+                    "Fail-closed cases need typed diagnostic line and column"
+                }
+            }
+        }
+    }
+}
+
+tasks.register("reportConformanceCorpusDrift") {
+    inputs.file(conformanceManifest)
+    val previousPath = providers.gradleProperty("previousConformanceManifest")
+    val report = layout.buildDirectory.file("reports/conformance-corpus-drift.txt")
+    outputs.file(report)
+    doLast {
+        fun rows(file: File): Map<String, String> = file.readLines().drop(1).filter { it.isNotBlank() }
+            .associateBy { line -> line.split('\t', limit = 3).take(2).joinToString("/") }
+        val current = rows(conformanceManifest.asFile)
+        val previousFile = previousPath.orNull?.let(::file)?.takeIf(File::isFile)
+        val previous = previousFile?.let(::rows).orEmpty()
+        val added = current.keys - previous.keys
+        val removed = previous.keys - current.keys
+        val changed = current.keys.intersect(previous.keys).filter { current[it] != previous[it] }.toSet()
+        val unchanged = current.keys.intersect(previous.keys) - changed
+        report.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(buildString {
+                appendLine("baseline=${previousFile?.path ?: "none"}")
+                appendLine("added=${added.sorted().joinToString(",")}")
+                appendLine("removed=${removed.sorted().joinToString(",")}")
+                appendLine("changed=${changed.sorted().joinToString(",")}")
+                appendLine("unchanged=${unchanged.sorted().joinToString(",")}")
+            })
+        }
+    }
+}
+
 tasks.matching { it.name == "check" }.configureEach {
     dependsOn("verifyDiagramFamilyRegistry")
+    dependsOn("verifyConformanceCorpus")
+    dependsOn("reportConformanceCorpusDrift")
 }
