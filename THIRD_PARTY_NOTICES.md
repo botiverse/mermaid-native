@@ -12,3 +12,9 @@ separately licensed and published with the required notices and source offer.
 
 Exact upstream revisions used by the compatibility corpus are recorded
 in `compatibility/upstreams.lock`.
+
+Small Mermaid conformance fixtures and expected semantic descriptions under
+`compatibility/conformance` are copied or adapted from the source test paths
+recorded in their manifest at the pinned Mermaid commit. They remain available
+under Mermaid's MIT License. No Mermaid JavaScript harness or runtime is
+included in published artifacts.
