@@ -97,3 +97,9 @@ declarations with unquoted names, basic `A -> B` dependency links,
 evolution]` coordinates. `size`, label offsets, decorators, non-basic link
 styles, trends, pipelines, custom evolution stages, annotations, forces, and
 quoted node names are outside the slice and fail closed.
+
+`radar-team-skills.mmd` is an original compatibility fixture based on the
+documented `radar-beta` syntax at the pinned Mermaid revision. It covers a
+title, multi-entry axis declarations with quoted labels, curves with per-axis
+values, and an explicit `max`, without claiming configuration, graticule
+customization, interactivity, accessibility, or full radar family parity.

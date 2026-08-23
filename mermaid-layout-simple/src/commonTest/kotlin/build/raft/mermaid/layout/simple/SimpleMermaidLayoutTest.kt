@@ -53,6 +53,9 @@ import build.raft.mermaid.core.TimelineDiagram
 import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.RadarAxis
+import build.raft.mermaid.core.RadarChartDiagram
+import build.raft.mermaid.core.RadarCurve
 import build.raft.mermaid.core.QuadrantPoint
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.UserJourneySection
@@ -123,8 +126,10 @@ import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.ScenePoint
 import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
+import build.raft.mermaid.layout.TextAnchor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -822,6 +827,138 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
         assertEquals(1, first.commands.filterIsInstance<DrawRect>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "High engagement" })
+    }
+
+    @Test
+    fun radarProducesDeterministicWebCurvesTicksAndLegend() {
+        val diagram = RadarChartDiagram(
+            "Skills",
+            listOf(RadarAxis("m", "Math"), RadarAxis("s", "Science"), RadarAxis("e", "English")),
+            listOf(
+                RadarCurve("alice", "Alice", listOf(85.0, 60.0, 90.0)),
+                RadarCurve("bob", "Bob", listOf(40.0, 75.0, 50.0)),
+            ),
+            100.0,
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        // Per curve: one filled area polygon plus one diamond vertex marker per value.
+        assertEquals(8, first.commands.filterIsInstance<DrawPolygon>().size)
+        // Four concentric rings plus two closed curve outlines.
+        assertEquals(6, first.commands.filterIsInstance<DrawPolyline>().size)
+        // One spoke per axis.
+        assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Science" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "25" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Alice" })
+    }
+
+    @Test
+    fun radarGeometryLocksValueMappingCenterOuterAndClockwiseAxisOrder() {
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(
+                RadarAxis("a", "top"),
+                RadarAxis("b", "right"),
+                RadarAxis("c", "bottom"),
+                RadarAxis("d", "left"),
+            ),
+            listOf(RadarCurve("x", "x", listOf(100.0, 0.0, 100.0, 50.0))),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        // Closed curve outlines are the polylines with stroke-width 2.
+        val outlines = scene.commands.filterIsInstance<DrawPolyline>().filter { it.strokeWidth == 2.0 }
+        assertEquals(1, outlines.size)
+        assertEquals(
+            listOf(
+                ScenePoint(320.0, 102.0), // axis 0 starts at -90° (top); value=max → outer ring
+                ScenePoint(320.0, 272.0), // axis 1 is at 0° (right); value=0 → center
+                ScenePoint(320.0, 442.0), // axis 2 is at 90° (bottom); value=max → outer ring
+                ScenePoint(235.0, 272.0), // axis 3 is at 180° (left); value=max/2 → half radius
+                ScenePoint(320.0, 102.0), // outline closes back to the first vertex
+            ),
+            outlines.single().points,
+        )
+    }
+
+    @Test
+    fun radarGrowsCanvasForLongAxisLabelsAndWrapsLegendWithoutClipping() {
+        val longLabel = "An extraordinarily long radar axis label for measurement"
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(RadarAxis("a", longLabel), RadarAxis("b", longLabel), RadarAxis("c", longLabel)),
+            listOf(
+                RadarCurve("c1", "First curve with a fairly long legend label", listOf(80.0, 70.0, 60.0)),
+                RadarCurve("c2", "Second curve with a fairly long legend label", listOf(70.0, 60.0, 50.0)),
+                RadarCurve("c3", "Third curve with a fairly long legend label", listOf(60.0, 50.0, 40.0)),
+                RadarCurve("c4", "Fourth curve with a fairly long legend label", listOf(50.0, 40.0, 30.0)),
+                RadarCurve("c5", "Fifth curve with a fairly long legend label", listOf(40.0, 30.0, 20.0)),
+            ),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.width > 640.0, "Canvas must grow for long axis labels")
+        scene.commands.forEach { command ->
+            val points: List<ScenePoint> = when (command) {
+                is DrawRect -> listOf(
+                    ScenePoint(command.rect.x, command.rect.y),
+                    ScenePoint(command.rect.x + command.rect.width, command.rect.y + command.rect.height),
+                )
+                is DrawLine -> listOf(command.from, command.to)
+                is DrawPolyline -> command.points
+                is DrawPolygon -> command.points
+                is DrawEllipse -> listOf(
+                    ScenePoint(command.center.x - command.radiusX, command.center.y - command.radiusY),
+                    ScenePoint(command.center.x + command.radiusX, command.center.y + command.radiusY),
+                )
+                is DrawText -> {
+                    val textWidth = FixedWidthTextMeasurer.measure(command.text, command.style).width
+                    val left = when (command.anchor) {
+                        TextAnchor.MIDDLE -> command.origin.x - textWidth / 2.0
+                        TextAnchor.END -> command.origin.x - textWidth
+                        TextAnchor.START -> command.origin.x
+                    }
+                    listOf(
+                        ScenePoint(left, command.origin.y - command.style.fontSize),
+                        ScenePoint(left + textWidth, command.origin.y + command.style.fontSize * 0.25),
+                    )
+                }
+            }
+            points.forEach { point ->
+                assertTrue(point.x >= 0.0 && point.x <= scene.width, "x ${point.x} escaped width ${scene.width}")
+                assertTrue(point.y >= 0.0 && point.y <= scene.height, "y ${point.y} escaped height ${scene.height}")
+            }
+        }
+        val swatchRows = scene.commands.filterIsInstance<DrawRect>().map { it.rect.y }.distinct()
+        assertTrue(swatchRows.size >= 2, "Legend must wrap into multiple rows for many curves")
+    }
+
+    @Test
+    fun radarWidensCanvasWhenSingleCurveLabelExceedsContentBox() {
+        val veryLongLabel = "One single extraordinarily long radar curve legend label that cannot fit the default box"
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(RadarAxis("a", "a"), RadarAxis("b", "b"), RadarAxis("c", "c")),
+            listOf(RadarCurve("x", veryLongLabel, listOf(80.0, 70.0, 60.0))),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.width > 640.0, "Canvas must widen for an over-wide single legend item")
+        // The full measured line box of every text, including start-anchored ones, stays inside.
+        scene.commands.filterIsInstance<DrawText>().forEach { command ->
+            val textWidth = FixedWidthTextMeasurer.measure(command.text, command.style).width
+            val left = when (command.anchor) {
+                TextAnchor.MIDDLE -> command.origin.x - textWidth / 2.0
+                TextAnchor.END -> command.origin.x - textWidth
+                TextAnchor.START -> command.origin.x
+            }
+            assertTrue(left >= 0.0 && left + textWidth <= scene.width, "Text '${command.text}' escaped [0, ${scene.width}]")
+            assertTrue(
+                command.origin.y - command.style.fontSize >= 0.0 && command.origin.y + command.style.fontSize * 0.25 <= scene.height,
+                "Text '${command.text}' escaped vertical bounds",
+            )
+        }
     }
 
     private fun message(

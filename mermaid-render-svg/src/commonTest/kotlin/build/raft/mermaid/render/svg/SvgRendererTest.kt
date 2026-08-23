@@ -9,6 +9,9 @@ import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.CynefinDomainBlock
 import build.raft.mermaid.core.CynefinTransition
+import build.raft.mermaid.core.RadarAxis
+import build.raft.mermaid.core.RadarChartDiagram
+import build.raft.mermaid.core.RadarCurve
 import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
@@ -56,9 +59,27 @@ class SvgRendererTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val svg = SvgRenderer.render(scene)
 
+        assertTrue(svg.endsWith("</svg>\n"))
+    }
+
+    @Test
+    fun radarSvgEscapesLabelsAndDrawsClosedCurveGeometry() {
+        val diagram = RadarChartDiagram(
+            title = "Skills <& matrix>",
+            axes = listOf(RadarAxis("m", "Math & logic"), RadarAxis("s", "Science"), RadarAxis("e", "English")),
+            curves = listOf(RadarCurve("alice", "Alice <v1>", listOf(85.0, 60.0, 90.0))),
+            maximum = 100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val svg = SvgRenderer.render(scene)
+
         assertEquals(svg, SvgRenderer.render(scene))
-        assertTrue(svg.contains("begin &amp; run"))
+        assertTrue(svg.contains("Skills &lt;&amp; matrix&gt;"))
+        assertTrue(svg.contains("Math &amp; logic"))
+        assertTrue(svg.contains("Alice &lt;v1&gt;"))
+        assertTrue(svg.contains("<polyline"))
         assertTrue(svg.contains("<polygon"))
+        assertTrue(svg.contains("stroke-width=\"2\""))
         assertTrue(svg.endsWith("</svg>\n"))
     }
 
