@@ -1740,7 +1740,11 @@ public object MermaidParser {
             // Relative level like the official parser: measured from the first
             // cause's indentation and clamped so no node sits above the causes.
             val level = maxOf(1, indent - baseIndent + 1)
-            while (stack.size > 1 && stack.last().first >= level) stack.removeLast()
+            while (stack.size > 1 && stack.last().first >= level) {
+                // MutableList.removeLast() compiles to the Java 21 List method on
+                // this toolchain and breaks JDK 17 runtimes; removeAt stays portable.
+                stack.removeAt(stack.lastIndex)
+            }
             val node = CauseBuilder(text)
             stack.last().second.children += node
             stack += level to node

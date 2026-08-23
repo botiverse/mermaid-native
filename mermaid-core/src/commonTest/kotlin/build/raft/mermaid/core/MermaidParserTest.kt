@@ -48,6 +48,28 @@ class MermaidParserTest {
     }
 
     @Test
+    fun ishikawaStackPopPathRunsOnRepeatedSiblingClosure() {
+        // Regression tooth for the JDK17 portability blocker: closing sibling
+        // subtrees must repeatedly unwind the cause stack (the former Java-21
+        // List.removeLast() call site). Each "Cause N" closes the previous
+        // nested chain and reattaches at cause level.
+        val source = buildString {
+            appendLine("ishikawa-beta")
+            appendLine("Problem")
+            repeat(4) { cause ->
+                appendLine("Cause $cause")
+                appendLine("    Sub $cause-1")
+                appendLine("        Leaf $cause")
+            }
+        }
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source))
+        val diagram = assertIs<IshikawaDiagram>(result.diagram)
+        assertEquals(listOf("Cause 0", "Cause 1", "Cause 2", "Cause 3"), diagram.effect.children.map { it.text })
+        assertEquals("Leaf 0", diagram.effect.children[0].children[0].children.single().text)
+        assertEquals(1, diagram.effect.children[1].children.size)
+    }
+
+    @Test
     fun malformedIshikawaFailsClosed() {
         listOf(
             "ishikawa\n",
