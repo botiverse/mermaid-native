@@ -7,6 +7,83 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun parsesIshikawaIndentationHierarchyLikeTheOfficialGrammar() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                "ishikawa-beta\n" +
+                    "    Blurry Photo\n" +
+                    "    Process\n" +
+                    "        Out of focus\n" +
+                    "        Shutter speed too slow\n" +
+                    "    Equipment\n" +
+                    "        LENS\n" +
+                    "            Dirty lens\n",
+            ),
+        )
+        val diagram = assertIs<IshikawaDiagram>(result.diagram)
+        assertEquals("Blurry Photo", diagram.effect.text)
+        assertEquals(listOf("Process", "Equipment"), diagram.effect.children.map { it.text })
+        assertEquals(listOf("Out of focus", "Shutter speed too slow"), diagram.effect.children[0].children.map { it.text })
+        assertEquals("Dirty lens", diagram.effect.children[1].children[0].children.single().text)
+    }
+
+    @Test
+    fun ishikawaAcceptsBareHeaderEffectDeeperThanCausesAndComments() {
+        // Official sparse grammar: `ishikawa` without -beta, an effect indented
+        // more than its causes, and %% comment/blank lines are ignored.
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                "ishikawa\n" +
+                    "    Problem\n" +
+                    "%% a comment line\n" +
+                    "Cause A\n" +
+                    "\n" +
+                    "  Subcause A1\n",
+            ),
+        )
+        val diagram = assertIs<IshikawaDiagram>(result.diagram)
+        assertEquals("Problem", diagram.effect.text)
+        assertEquals("Cause A", diagram.effect.children.single().text)
+        assertEquals("Subcause A1", diagram.effect.children.single().children.single().text)
+    }
+
+    @Test
+    fun ishikawaStackPopPathRunsOnRepeatedSiblingClosure() {
+        // Regression tooth for the JDK17 portability blocker: closing sibling
+        // subtrees must repeatedly unwind the cause stack (the former Java-21
+        // List.removeLast() call site). Each "Cause N" closes the previous
+        // nested chain and reattaches at cause level.
+        val source = buildString {
+            appendLine("ishikawa-beta")
+            appendLine("Problem")
+            repeat(4) { cause ->
+                appendLine("Cause $cause")
+                appendLine("    Sub $cause-1")
+                appendLine("        Leaf $cause")
+            }
+        }
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source))
+        val diagram = assertIs<IshikawaDiagram>(result.diagram)
+        assertEquals(listOf("Cause 0", "Cause 1", "Cause 2", "Cause 3"), diagram.effect.children.map { it.text })
+        assertEquals("Leaf 0", diagram.effect.children[0].children[0].children.single().text)
+        assertEquals(1, diagram.effect.children[1].children.size)
+    }
+
+    @Test
+    fun malformedIshikawaFailsClosed() {
+        listOf(
+            "ishikawa\n",
+            "ishikawa-beta\n%% only comments and blanks\n\n",
+            "IshikawaBeta\nProblem\nCause A",
+            "ishikawa-v2\nProblem\nCause A",
+            "ishikawa-beta extra\nProblem\nCause A",
+            "ishikawa-beta\nProblem\n\tTabbed cause",
+            "ishikawa-beta\nProblem\nCause A\n\tSub with tab",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+
+    @Test
     fun parsesEventModelingCompactRelaxedResetAndExplicitRelations() {
         val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
         val diagram = assertIs<EventModelingDiagram>(result.diagram)

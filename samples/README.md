@@ -69,6 +69,12 @@ documented `treeView-beta` indentation syntax. It covers bare/quoted labels,
 directory markers, parent connectors, and measured hierarchy layout without
 claiming box-drawing input, annotations, icons, configuration, or full parity.
 
+`ishikawa-photo-quality.mmd` is an original compatibility fixture based on the
+documented `ishikawa-beta` indentation syntax at the pinned Mermaid revision.
+It covers the effect line, cause categories, and nested sub-causes rendered as
+a deterministic fishbone without claiming tabs in indentation, directives,
+configuration, styling, or full family parity.
+
 `railroad-auth-flow.mmd` is an original compatibility fixture based on the
 documented `railroad-beta` expression syntax. It covers Terminal/NonTerminal
 boxes, Choice branches, Optional bypass, and Stack rows with measured tracks

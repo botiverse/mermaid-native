@@ -92,6 +92,8 @@ import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.CynefinDomainBlock
 import build.raft.mermaid.core.CynefinTransition
+import build.raft.mermaid.core.IshikawaDiagram
+import build.raft.mermaid.core.IshikawaNode
 import build.raft.mermaid.core.EventModelingDiagram
 import build.raft.mermaid.core.EventModelingEntityKind
 import build.raft.mermaid.core.EventModelingFrame
@@ -133,6 +135,21 @@ public data class MermaidExample(
 )
 
 public object MermaidExamples {
+    public val ishikawaPhotoQuality: MermaidExample = MermaidExample(
+        path = "samples/ishikawa-photo-quality.mmd",
+        source = "ishikawa-beta\n    Blurry Photo\n    Process\n        Out of focus\n        Shutter speed too slow\n    Equipment\n        LENS\n            Dirty lens\n        SENSOR\n            Damaged sensor\n    Environment\n        Subject moved too quickly",
+        expected = IshikawaDiagram(
+            effect = IshikawaNode(
+                text = "Blurry Photo",
+                children = listOf(
+                    IshikawaNode("Process", listOf(IshikawaNode("Out of focus"), IshikawaNode("Shutter speed too slow"))),
+                    IshikawaNode("Equipment", listOf(IshikawaNode("LENS", listOf(IshikawaNode("Dirty lens"))), IshikawaNode("SENSOR", listOf(IshikawaNode("Damaged sensor"))))),
+                    IshikawaNode("Environment", listOf(IshikawaNode("Subject moved too quickly"))),
+                ),
+            ),
+        ),
+    )
+
     public val eventModelingCartFlow: MermaidExample = MermaidExample(
         path = "samples/eventmodeling-cart-flow.mmd",
         source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
@@ -806,6 +823,7 @@ public object MermaidExamples {
         quadrantProductPortfolio,
         userJourneyCheckout,
         cynefinIncidentResponse,
+        ishikawaPhotoQuality,
         eventModelingCartFlow,
         swimlaneSupportEscalation,
         treeViewProject,
