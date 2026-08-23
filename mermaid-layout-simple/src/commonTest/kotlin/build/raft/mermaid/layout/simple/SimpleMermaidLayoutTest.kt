@@ -15,6 +15,8 @@ import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
+import build.raft.mermaid.core.IshikawaDiagram
+import build.raft.mermaid.core.IshikawaNode
 import build.raft.mermaid.core.SequenceActor
 import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
@@ -181,6 +183,38 @@ class SimpleMermaidLayoutTest {
         assertTrue(labels.contains("cancel"))
         assertTrue(labels.contains(longParticipant))
         val required = FixedWidthTextMeasurer.measure(longParticipant, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 32.0
+        assertTrue(first.width >= required, "width ${first.width} below required $required")
+    }
+
+    @Test
+    fun ishikawaProducesDeterministicMeasuredFishbone() {
+        val long = "cause-".repeat(20)
+        val diagram = IshikawaDiagram(
+            IshikawaNode(
+                "Blurry Photo",
+                listOf(
+                    IshikawaNode("Process", listOf(IshikawaNode("Out of focus"), IshikawaNode(long))),
+                    IshikawaNode("Equipment", listOf(IshikawaNode("Dirty lens"))),
+                    IshikawaNode("Environment", listOf(IshikawaNode("Too dark"))),
+                    IshikawaNode("User", listOf(IshikawaNode("Shaky hands"))),
+                ),
+            ),
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        // The effect renders as the fish head polygon plus a horizontal spine.
+        assertEquals(1, first.commands.filterIsInstance<DrawPolygon>().size)
+        assertTrue(first.commands.filterIsInstance<DrawPolyline>().isNotEmpty())
+        // Causes alternate sides of the spine: upper labels above, lower below.
+        val labelY = { text: String ->
+            first.commands.filterIsInstance<DrawText>().first { it.text == text }.origin.y
+        }
+        val spineY = labelY("Blurry Photo")
+        assertTrue(labelY("Process") < spineY, "first cause should sit above the spine")
+        assertTrue(labelY("Equipment") > spineY, "second cause should sit below the spine")
+        assertTrue(labelY("Environment") < spineY, "third cause should sit above the spine")
+        // Measured layout: the widest sub-cause label must fit inside the scene.
+        val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 160.0
         assertTrue(first.width >= required, "width ${first.width} below required $required")
     }
 

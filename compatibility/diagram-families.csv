@@ -9,7 +9,7 @@ eventmodeling,eventmodeling,in_progress,partial,partial,partial,partial,Bounded 
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset only; full family parity is not complete.
 gantt,gantt,in_progress,partial,partial,partial,partial,Vertical slice supports title ISO dateFormat sections fixed-date tasks durations and basic statuses; full family parity is not complete.
 gitgraph,gitgraph,in_progress,partial,partial,partial,partial,Vertical slice supports main branch commits custom id type and tag branch checkout or switch and merge; full family parity is not complete.
-ishikawa,ishikawa,not_started,no,no,no,no,Official syntax family; implementation is not started.
+ishikawa,ishikawa,in_progress,partial,partial,partial,partial,Bounded ishikawa/ishikawa-beta indentation slice with effect plus nested causes and deterministic fishbone SVG; tabs in indentation directives configuration styling and full family parity are not complete.
 kanban,kanban,in_progress,partial,partial,partial,partial,Vertical slice supports explicit columns and indented cards; metadata and full family parity are not complete.
 mindmap,mindmap,in_progress,partial,partial,partial,partial,Vertical slice supports indentation hierarchy bare/rectangle/double-circle nodes; full family parity is not complete.
 packet,packet,in_progress,partial,partial,partial,partial,Vertical slice supports title and explicit absolute single/range bit fields; full family parity is not complete.

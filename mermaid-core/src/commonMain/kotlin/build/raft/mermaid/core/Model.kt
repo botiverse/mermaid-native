@@ -340,6 +340,11 @@ public enum class C4ElementKind { PERSON, SYSTEM }
 public data class C4Element(val id: String, val label: String, val description: String? = null, val kind: C4ElementKind, val external: Boolean = false)
 public data class C4Relationship(val sourceId: String, val targetId: String, val label: String, val technology: String? = null, val bidirectional: Boolean = false)
 
+/** Bounded platform-neutral model for the Ishikawa (fishbone) family. */
+public data class IshikawaDiagram(val effect: IshikawaNode) : MermaidDiagram
+
+public data class IshikawaNode(val text: String, val children: List<IshikawaNode> = emptyList())
+
 /** Bounded platform-neutral model for the Cynefin framework family. */
 public data class CynefinDiagram(
     val title: String? = null,

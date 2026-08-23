@@ -40,6 +40,7 @@ public object MermaidParser {
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
             header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
+            header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) -> parseIshikawa(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlane(source)
             header.text.equals("treeView-beta", ignoreCase = true) -> parseTreeView(source)
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
@@ -1688,6 +1689,67 @@ public object MermaidParser {
         }
         if (elements.isEmpty()) diagnostics += unsupported(statements.first(), "C4Context requires at least one element")
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(C4Diagram(title, elements.values.toList(), relationships)) else MermaidParseResult.Failure(diagnostics)
+    }
+
+    /**
+     * Bounded ishikawa/ishikawa-beta slice following the official indentation
+     * grammar: the first content line is the effect and every later content
+     * line is a cause label whose depth is its relative indentation (clamped
+     * to at least one level below the first cause). Blank and %% comment lines
+     * are ignored. Tabs in indentation fail closed because their width is
+     * ambiguous; directives, configuration, styling, and every other
+     * decoration syntax are outside the slice and fail closed.
+     */
+    private fun parseIshikawa(source: String): MermaidParseResult {
+        val lines = source.lineSequence().toList()
+        val headerIndex = lines.indexOfFirst {
+            val trimmed = it.trim()
+            trimmed.equals("ishikawa", ignoreCase = true) || trimmed.equals("ishikawa-beta", ignoreCase = true)
+        }
+        if (headerIndex < 0) {
+            return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected ishikawa or ishikawa-beta header", SourceLocation(1, 1))
+        }
+
+        class CauseBuilder(val text: String) {
+            val children = mutableListOf<CauseBuilder>()
+
+            fun toNode(): IshikawaNode = IshikawaNode(text, children.map { it.toNode() })
+        }
+
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var effectBuilder: CauseBuilder? = null
+        val stack = mutableListOf<Pair<Int, CauseBuilder>>()
+        var baseIndent = -1
+        lines.drop(headerIndex + 1).forEachIndexed { offset, raw ->
+            val text = raw.trim()
+            if (text.isEmpty() || text.startsWith("%%")) return@forEachIndexed
+            val location = SourceLocation(headerIndex + offset + 2, raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0) + 1)
+            if (raw.contains('\t')) {
+                diagnostics += unsupported(SourceStatement(text, location), "Tabs are not supported in ishikawa indentation")
+                return@forEachIndexed
+            }
+            val effect = effectBuilder
+            if (effect == null) {
+                val created = CauseBuilder(text)
+                effectBuilder = created
+                stack += 0 to created
+                return@forEachIndexed
+            }
+            val indent = raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0)
+            if (baseIndent < 0) baseIndent = indent
+            // Relative level like the official parser: measured from the first
+            // cause's indentation and clamped so no node sits above the causes.
+            val level = maxOf(1, indent - baseIndent + 1)
+            while (stack.size > 1 && stack.last().first >= level) stack.removeLast()
+            val node = CauseBuilder(text)
+            stack.last().second.children += node
+            stack += level to node
+        }
+        if (effectBuilder == null) {
+            diagnostics += unsupported(SourceStatement("ishikawa", SourceLocation(headerIndex + 1, 1)), "ishikawa requires an effect line")
+        }
+        if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics)
+        return MermaidParseResult.Success(IshikawaDiagram(effectBuilder!!.toNode()))
     }
 
     private fun parseCynefin(source: String): MermaidParseResult {

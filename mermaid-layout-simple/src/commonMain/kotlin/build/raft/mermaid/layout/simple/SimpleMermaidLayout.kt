@@ -42,6 +42,8 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.IshikawaDiagram
+import build.raft.mermaid.core.IshikawaNode
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
@@ -87,7 +89,9 @@ import build.raft.mermaid.layout.StrokePattern
 import build.raft.mermaid.layout.TextAnchor
 import build.raft.mermaid.layout.TextMeasurer
 import build.raft.mermaid.layout.TextStyle
+import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 import kotlin.math.cos
 import kotlin.math.sin
@@ -135,6 +139,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is ArchitectureDiagram -> layoutArchitecture(diagram, textMeasurer, config)
         is C4Diagram -> layoutC4(diagram, textMeasurer, config)
         is CynefinDiagram -> layoutCynefin(diagram, textMeasurer, config)
+        is IshikawaDiagram -> layoutIshikawa(diagram, textMeasurer, config)
         is SwimlaneDiagram -> layoutSwimlane(diagram, textMeasurer, config)
         is TreeViewDiagram -> layoutTreeView(diagram, textMeasurer, config)
         is RailroadDiagram -> layoutRailroad(diagram, textMeasurer, config)
@@ -2018,6 +2023,117 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.relations.forEach { relation -> val from=points.getValue(relation.sourceFrameId); val to=points.getValue(relation.targetFrameId); commands += DrawLine(from,to,stroke=SceneColor("#475569")); commands += arrowHead(from,to) }
         diagram.frames.forEach { frame -> val p=points.getValue(frame.id); commands += DrawRect(SceneRect(p.x-cardWidth/2,p.y-cardHeight/2,cardWidth,cardHeight),7.0,SceneColor("#dbeafe"),SceneColor(if(frame.reset) "#dc2626" else "#334155")); commands += DrawText(frame.entityId,p.copy(y=p.y-2),TextAnchor.MIDDLE,style); commands += DrawText(frame.id,p.copy(y=p.y+18),TextAnchor.MIDDLE,TextStyle(fontSize=10.0)) }
         return LayoutScene(width,height,commands)
+    }
+
+    /** Deterministic fishbone layout for the bounded ishikawa slice. */
+    private fun layoutIshikawa(
+        diagram: IshikawaDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val style = TextStyle(fontSize = 13.0)
+        val headStyle = TextStyle(fontSize = 15.0, fontWeight = 600, color = SceneColor("#ffffff"))
+        val spineColor = SceneColor("#334155")
+        val boneColor = SceneColor("#475569")
+        val subBoneColor = SceneColor("#94a3b8")
+        val spineBase = 240.0
+        val rowHeight = 26.0
+        val boneSlope = 0.42
+        val causes = diagram.effect.children
+
+        fun descendants(node: IshikawaNode): Int = node.children.sumOf { 1 + descendants(it) }
+
+        fun flatten(node: IshikawaNode, depth: Int = 0): List<Pair<IshikawaNode, Int>> =
+            listOf(node to depth) + node.children.flatMap { flatten(it, depth + 1) }
+
+        fun subtreeWidth(node: IshikawaNode): Double =
+            flatten(node).maxOf { (entry, _) -> textMeasurer.measure(entry.text, style).width }
+
+        val upperCauses = causes.filterIndexed { index, _ -> index % 2 == 0 }
+        val lowerCauses = causes.filterIndexed { index, _ -> index % 2 == 1 }
+        val upperTotal = upperCauses.sumOf(::descendants)
+        val lowerTotal = lowerCauses.sumOf(::descendants)
+        val descendantTotal = upperTotal + lowerTotal
+        val pool = spineBase * 2.0
+        val minSideLen = spineBase * 0.3
+        val sideLength: (List<IshikawaNode>, Int, Int) -> Double = { side, total, all ->
+            when {
+                side.isEmpty() -> spineBase * 0.4
+                total == 0 || all == 0 -> spineBase
+                else -> max(minSideLen, max(pool * total / all, side.maxOf { flatten(it).size } * rowHeight))
+            }
+        }
+        val upperLen = sideLength(upperCauses, upperTotal, descendantTotal)
+        val lowerLen = sideLength(lowerCauses, lowerTotal, descendantTotal)
+
+        val headLabelWidth = textMeasurer.measure(diagram.effect.text, headStyle).width
+        val headWidth = headLabelWidth + 48.0
+        val headHeight = max(48.0, headStyle.fontSize * 3.2)
+        val slotGap = 44.0
+        val slotPadding = 96.0
+        val tail = 40.0
+        // Cause labels are END-anchored and extend leftward from their sub-bone,
+        // so each slot reserves the full measured subtree width before the bone.
+        val contentWidths = causes.map { subtreeWidth(it) }
+        val slots = contentWidths.map { it + slotPadding + slotGap }
+        val width = config.padding * 2.0 + slots.sum() - (if (causes.isEmpty()) slotGap else 0.0) + tail + headWidth
+        val spineY = config.padding + upperLen
+        val height = config.padding * 2.0 + upperLen + lowerLen
+        val headX = width - config.padding - headWidth
+
+        val commands = mutableListOf<DrawCommand>()
+        commands += DrawPolyline(
+            listOf(ScenePoint(config.padding, spineY), ScenePoint(headX, spineY)),
+            stroke = spineColor,
+            strokeWidth = 2.0,
+        )
+        commands += DrawPolygon(
+            listOf(
+                ScenePoint(headX, spineY - headHeight / 2.0),
+                ScenePoint(headX + headWidth, spineY),
+                ScenePoint(headX, spineY + headHeight / 2.0),
+            ),
+            fill = SceneColor("#334155"),
+        )
+        commands += DrawText(
+            diagram.effect.text,
+            ScenePoint(headX + 18.0, spineY + headStyle.fontSize * 0.5),
+            style = headStyle,
+        )
+
+        var cursorX = config.padding
+        causes.forEachIndexed { index, cause ->
+            val slotCenter = cursorX + contentWidths[index] + slotPadding / 2.0
+            cursorX += slots[index]
+            val upper = index % 2 == 0
+            val side = if (upper) -1.0 else 1.0
+            val sideLen = if (upper) upperLen else lowerLen
+            val anchor = ScenePoint(slotCenter, spineY)
+            val boneEnd = ScenePoint(slotCenter - sideLen * boneSlope, spineY + side * sideLen)
+            commands += DrawLine(anchor, boneEnd, stroke = boneColor)
+            commands += DrawText(
+                cause.text,
+                ScenePoint(slotCenter + 6.0, spineY + side * 6.0 + (if (upper) 0.0 else style.fontSize * 0.4)),
+                style = TextStyle(fontSize = 13.0, fontWeight = 600),
+            )
+            val entries = flatten(cause).drop(1)
+                .mapIndexed { entryIndex, pair -> Triple(pair.first, pair.second, entryIndex) }
+                .sortedWith(compareBy({ it.second }, { it.third }))
+            entries.forEachIndexed { _, (entry, depth, orderIndex) ->
+                val y = spineY + side * min((orderIndex + 1) * rowHeight, sideLen)
+                val t = abs(y - spineY) / sideLen
+                val boneX = slotCenter - t * sideLen * boneSlope
+                val stub = 20.0 + depth * 14.0
+                commands += DrawLine(ScenePoint(boneX, y), ScenePoint(boneX - stub, y), stroke = subBoneColor)
+                commands += DrawText(
+                    entry.text,
+                    ScenePoint(boneX - stub - 6.0, y + style.fontSize * 0.4),
+                    anchor = TextAnchor.END,
+                    style = style,
+                )
+            }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     /** Deterministic 2D map layout for the bounded wardley-beta slice. */
