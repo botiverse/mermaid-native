@@ -878,18 +878,17 @@ class SimpleMermaidLayoutTest {
                     ScenePoint(command.center.x - command.radiusX, command.center.y - command.radiusY),
                     ScenePoint(command.center.x + command.radiusX, command.center.y + command.radiusY),
                 )
-                is DrawText -> when (command.anchor) {
-                    TextAnchor.MIDDLE -> listOf(
-                        ScenePoint(
-                            command.origin.x - FixedWidthTextMeasurer.measure(command.text, command.style).width / 2.0,
-                            command.origin.y - command.style.fontSize,
-                        ),
-                        ScenePoint(
-                            command.origin.x + FixedWidthTextMeasurer.measure(command.text, command.style).width / 2.0,
-                            command.origin.y + command.style.fontSize * 0.2,
-                        ),
+                is DrawText -> {
+                    val textWidth = FixedWidthTextMeasurer.measure(command.text, command.style).width
+                    val left = when (command.anchor) {
+                        TextAnchor.MIDDLE -> command.origin.x - textWidth / 2.0
+                        TextAnchor.END -> command.origin.x - textWidth
+                        TextAnchor.START -> command.origin.x
+                    }
+                    listOf(
+                        ScenePoint(left, command.origin.y - command.style.fontSize),
+                        ScenePoint(left + textWidth, command.origin.y + command.style.fontSize * 0.25),
                     )
-                    else -> listOf(command.origin)
                 }
             }
             points.forEach { point ->
@@ -899,6 +898,33 @@ class SimpleMermaidLayoutTest {
         }
         val swatchRows = scene.commands.filterIsInstance<DrawRect>().map { it.rect.y }.distinct()
         assertTrue(swatchRows.size >= 2, "Legend must wrap into multiple rows for many curves")
+    }
+
+    @Test
+    fun radarWidensCanvasWhenSingleCurveLabelExceedsContentBox() {
+        val veryLongLabel = "One single extraordinarily long radar curve legend label that cannot fit the default box"
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(RadarAxis("a", "a"), RadarAxis("b", "b"), RadarAxis("c", "c")),
+            listOf(RadarCurve("x", veryLongLabel, listOf(80.0, 70.0, 60.0))),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.width > 640.0, "Canvas must widen for an over-wide single legend item")
+        // The full measured line box of every text, including start-anchored ones, stays inside.
+        scene.commands.filterIsInstance<DrawText>().forEach { command ->
+            val textWidth = FixedWidthTextMeasurer.measure(command.text, command.style).width
+            val left = when (command.anchor) {
+                TextAnchor.MIDDLE -> command.origin.x - textWidth / 2.0
+                TextAnchor.END -> command.origin.x - textWidth
+                TextAnchor.START -> command.origin.x
+            }
+            assertTrue(left >= 0.0 && left + textWidth <= scene.width, "Text '${command.text}' escaped [0, ${scene.width}]")
+            assertTrue(
+                command.origin.y - command.style.fontSize >= 0.0 && command.origin.y + command.style.fontSize * 0.25 <= scene.height,
+                "Text '${command.text}' escaped vertical bounds",
+            )
+        }
     }
 
     private fun message(

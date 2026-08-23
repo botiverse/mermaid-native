@@ -1245,7 +1245,6 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene {
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 12.0)
-        val baseWidth = 640.0
         val radius = 170.0
         val labelRadius = radius + 26.0
         val ringFractions = listOf(0.25, 0.5, 0.75, 1.0)
@@ -1254,6 +1253,10 @@ public object SimpleMermaidLayout : DiagramLayout {
 
         // Measure axis labels up front so the canvas grows instead of clipping.
         val axisLabelSizes = diagram.axes.map { textMeasurer.measure(it.label, bodyStyle) }
+        // A single legend item wider than the default box also widens the canvas.
+        val curveLabelSizes = diagram.curves.map { textMeasurer.measure(it.label, bodyStyle) }
+        val widestLegendItem = curveLabelSizes.maxOfOrNull { 18.0 + it.width + 28.0 } ?: 0.0
+        val baseWidth = max(640.0, widestLegendItem + 2.0 * config.padding)
         var extraLeft = 0.0
         var extraRight = 0.0
         axisAngles.forEachIndexed { index, angle ->
