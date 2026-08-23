@@ -23,6 +23,7 @@ import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.RadarChartDiagram
 import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.RequirementDiagram
@@ -122,6 +123,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
         is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
+        is RadarChartDiagram -> layoutRadar(diagram, textMeasurer, config)
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
         is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
@@ -1235,6 +1237,98 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    /** Deterministic polar-grid layout for the bounded radar-beta slice. */
+    private fun layoutRadar(
+        diagram: RadarChartDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        val width = 640.0
+        val height = 520.0
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val bodyStyle = TextStyle(fontSize = 12.0)
+        val centerX = width / 2.0
+        val centerY = 272.0
+        val radius = 170.0
+        val ringFractions = listOf(0.25, 0.5, 0.75, 1.0)
+        val axisCount = diagram.axes.size
+
+        fun vertex(axisIndex: Int, fraction: Double): ScenePoint {
+            val angle = -PI / 2.0 + 2.0 * PI * axisIndex / axisCount
+            return ScenePoint(
+                (centerX + radius * fraction * cos(angle)).radarCoordinate(),
+                (centerY + radius * fraction * sin(angle)).radarCoordinate(),
+            )
+        }
+
+        fun spokeAngle(axisIndex: Int): Double = -PI / 2.0 + 2.0 * PI * axisIndex / axisCount
+
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let {
+            commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
+        }
+        // Concentric polygon rings with tick values along the vertical top spoke.
+        ringFractions.forEach { fraction ->
+            val points = List(axisCount) { vertex(it, fraction) }
+            commands += DrawPolyline(points + points.first())
+            commands += DrawText(
+                (diagram.maximum * fraction).radarTickLabel(),
+                ScenePoint(centerX + 8.0, (centerY - radius * fraction + 4.0).radarCoordinate()),
+                style = bodyStyle,
+            )
+        }
+        // Spokes and outer axis labels.
+        diagram.axes.forEachIndexed { index, axis ->
+            commands += DrawLine(ScenePoint(centerX, centerY), vertex(index, 1.0))
+            val angle = spokeAngle(index)
+            commands += DrawText(
+                axis.label,
+                ScenePoint(
+                    (centerX + (radius + 26.0) * cos(angle)).radarCoordinate(),
+                    (centerY + (radius + 26.0) * sin(angle)).radarCoordinate() + 4.0,
+                ),
+                TextAnchor.MIDDLE,
+                bodyStyle,
+            )
+        }
+        // Curves as filled polygons plus closed strokes with diamond vertices.
+        diagram.curves.forEachIndexed { curveIndex, curve ->
+            val fill = RADAR_CURVE_FILLS[curveIndex % RADAR_CURVE_FILLS.size]
+            val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
+            val points = curve.values.mapIndexed { axisIndex, value ->
+                vertex(axisIndex, (value / diagram.maximum).coerceIn(0.0, 1.0))
+            }
+            commands += DrawPolygon(points, fill = SceneColor(fill))
+            commands += DrawPolyline(points + points.first(), stroke = SceneColor(stroke), strokeWidth = 2.0)
+            points.forEach { point ->
+                commands += DrawPolygon(
+                    listOf(
+                        ScenePoint(point.x, point.y - 4.0),
+                        ScenePoint(point.x + 4.0, point.y),
+                        ScenePoint(point.x, point.y + 4.0),
+                        ScenePoint(point.x - 4.0, point.y),
+                    ),
+                    fill = SceneColor(stroke),
+                )
+            }
+        }
+        // Legend row below the chart.
+        var legendX = config.padding
+        val legendY = centerY + radius + 46.0
+        diagram.curves.forEachIndexed { curveIndex, curve ->
+            val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
+            commands += DrawRect(
+                SceneRect(legendX, legendY - 10.0, 12.0, 12.0),
+                fill = SceneColor(stroke),
+                stroke = SceneColor(stroke),
+                strokeWidth = 1.0,
+            )
+            commands += DrawText(curve.label, ScenePoint(legendX + 18.0, legendY), style = bodyStyle)
+            legendX += 18.0 + textMeasurer.measure(curve.label, bodyStyle).width + 28.0
+        }
+        return LayoutScene(width, height, commands)
+    }
+
     private fun layoutUserJourney(
         diagram: UserJourneyDiagram,
         textMeasurer: TextMeasurer,
@@ -2097,6 +2191,8 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
+    private val RADAR_CURVE_FILLS = listOf("#dbeafe", "#dcfce7", "#fee2e2", "#fef3c7")
+    private val RADAR_CURVE_STROKES = listOf("#2563eb", "#16a34a", "#dc2626", "#d97706")
     private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
     private val JOURNEY_SCORE_COLORS = listOf("#fee2e2", "#fecaca", "#fed7aa", "#fef3c7", "#dcfce7", "#bbf7d0")
     private val TREEMAP_COLORS = listOf(SceneColor("#dbeafe"), SceneColor("#dcfce7"), SceneColor("#fef3c7"), SceneColor("#fce7f3"))
@@ -2116,4 +2212,10 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
     private fun Double.xyCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
+    private fun Double.radarCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
+
+    private fun Double.radarTickLabel(): String {
+        val value = radarCoordinate()
+        return if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+    }
 }

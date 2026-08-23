@@ -431,6 +431,18 @@ public data class ZenumlAsyncMessage(
     val label: String,
 ) : ZenumlMessage
 
+/** Bounded platform-neutral model for the Mermaid radar-beta family. */
+public data class RadarChartDiagram(
+    val title: String? = null,
+    val axes: List<RadarAxis>,
+    val curves: List<RadarCurve>,
+    val maximum: Double,
+) : MermaidDiagram
+
+public data class RadarAxis(val id: String, val label: String)
+
+public data class RadarCurve(val id: String, val label: String, val values: List<Double>)
+
 /** Bounded platform-neutral model for Mermaid wardley-beta maps. */
 public data class WardleyMapDiagram(
     val title: String? = null,

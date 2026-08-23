@@ -45,6 +45,7 @@ public object MermaidParser {
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
             header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
             header.text.equals("wardley-beta", ignoreCase = true) -> parseWardley(statements)
+            header.text.equals("radar-beta", ignoreCase = true) -> parseRadar(statements)
             header.text == "eventmodeling" -> parseEventModeling(source)
             header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
                 MermaidDiagnosticCode.INVALID_HEADER,
@@ -443,6 +444,157 @@ public object MermaidParser {
         } else {
             MermaidParseResult.Failure(diagnostics)
         }
+    }
+
+    /**
+     * Bounded radar-beta slice. Supported statements: an optional single `title`,
+     * one or more `axis` declarations whose comma-separated entries are `id` or
+     * `id["Label"]` (at least three entries in total), one or more `curve
+     * id["Label"]{v1, v2, ...}` declarations with exactly one value per axis,
+     * and an optional single `max <number>` (default 100). Values must be finite
+     * decimals within [0, max]. Everything else fails closed with a typed
+     * diagnostic.
+     */
+    private fun parseRadar(statements: List<SourceStatement>): MermaidParseResult {
+        val axes = linkedMapOf<String, String>()
+        val curveIds = linkedMapOf<String, Pair<String, List<Double>?>>()
+        val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var title: String? = null
+        var maximum: Double? = null
+
+        fun fail(code: MermaidDiagnosticCode, message: String, location: SourceLocation) {
+            diagnostics += MermaidDiagnostic(code = code, message = message, location = location)
+        }
+
+        fun parseLabel(raw: String?): String? {
+            if (raw == null) return null
+            // The capturing regexes already exclude quotes, backslashes, CR and LF;
+            // an empty label is still rejected here.
+            return raw.takeIf { it.isNotEmpty() }
+        }
+
+        loop@ for (statement in statements.drop(1)) {
+            val text = statement.text
+            val location = statement.location
+            val titleMatch = RADAR_TITLE.matchEntire(text)
+            if (titleMatch != null) {
+                if (title != null) {
+                    fail(MermaidDiagnosticCode.INVALID_VALUE, "radar accepts at most one title", location)
+                } else {
+                    title = titleMatch.groupValues[1]
+                }
+                continue@loop
+            }
+            val maxMatch = RADAR_MAX.matchEntire(text)
+            if (maxMatch != null) {
+                when {
+                    maximum != null -> fail(MermaidDiagnosticCode.INVALID_VALUE, "radar accepts at most one max", location)
+                    else -> {
+                        val parsed = maxMatch.groupValues[1].toDoubleOrNull()
+                        if (parsed == null || !parsed.isFinite() || parsed <= 0.0) {
+                            fail(MermaidDiagnosticCode.INVALID_VALUE, "radar max must be a positive finite number", location)
+                        } else {
+                            maximum = parsed
+                        }
+                    }
+                }
+                continue@loop
+            }
+            val isAxis = text.startsWith(RADAR_AXIS_KEYWORD, ignoreCase = true)
+            val isCurve = !isAxis && text.startsWith(RADAR_CURVE_KEYWORD, ignoreCase = true)
+            if (isAxis || isCurve) {
+                val keyword = if (isAxis) RADAR_AXIS_KEYWORD else RADAR_CURVE_KEYWORD
+                val remainder = text.substring(keyword.length).trim()
+                if (isAxis) {
+                    var valid = true
+                    remainder.split(',').forEach { rawEntry ->
+                        val entry = rawEntry.trim()
+                        val match = RADAR_AXIS_ENTRY.matchEntire(entry)
+                        when {
+                            match == null -> {
+                                fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported radar axis entry", location)
+                                valid = false
+                            }
+                            match.groupValues[1] in axes -> {
+                                fail(MermaidDiagnosticCode.INVALID_VALUE, "Duplicate radar axis id: ${match.groupValues[1]}", location)
+                                valid = false
+                            }
+                            else -> axes[match.groupValues[1]] = parseLabel(match.groupValues[2].ifEmpty { null }) ?: match.groupValues[1]
+                        }
+                    }
+                    continue@loop
+                }
+                // Curve branch: id, optional quoted label, brace-enclosed value list.
+                val match = RADAR_CURVE.matchEntire(remainder)
+                if (match == null) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unsupported radar curve declaration", location)
+                    continue@loop
+                }
+                val id = match.groupValues[1]
+                if (id in curveIds) {
+                    fail(MermaidDiagnosticCode.INVALID_VALUE, "Duplicate radar curve id: $id", location)
+                    continue@loop
+                }
+                val declaredLabel = parseLabel(match.groupValues[2].ifEmpty { null })
+                if (match.groupValues[2].isNotEmpty() && declaredLabel == null) {
+                    fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "radar curve labels must not be empty", location)
+                    continue@loop
+                }
+                val rawValues = match.groupValues[3].split(',')
+                val values = mutableListOf<Double>()
+                var valuesValid = true
+                rawValues.forEach { raw ->
+                    val token = raw.trim()
+                    val parsed = token.toDoubleOrNull()
+                    when {
+                        RADAR_VALUE.matches(token) && parsed != null && parsed.isFinite() -> values += parsed
+                        else -> {
+                            fail(MermaidDiagnosticCode.INVALID_VALUE, "radar curve values must be finite non-negative decimal numbers", location)
+                            valuesValid = false
+                        }
+                    }
+                }
+                curveIds[id] = (declaredLabel ?: id) to (if (valuesValid) values.toList() else null)
+                continue@loop
+            }
+            diagnostics += unsupported(statement, "Unsupported radar syntax")
+        }
+
+        if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics.toList())
+
+        val resolvedMaximum = maximum ?: 100.0
+        if (axes.size < 3) {
+            fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "radar requires at least three axes", statements.first().location)
+        }
+        if (curveIds.isEmpty()) {
+            fail(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "radar requires at least one curve", statements.first().location)
+        }
+        curveIds.forEach { (id, pair) ->
+            val (_, values) = pair
+            if (values != null && axes.isNotEmpty()) {
+                when {
+                    values.size != axes.size -> fail(
+                        MermaidDiagnosticCode.INVALID_VALUE,
+                        "radar curve '$id' has ${values.size} values for ${axes.size} axes",
+                        statements.first().location,
+                    )
+                    values.any { it > resolvedMaximum } -> fail(
+                        MermaidDiagnosticCode.INVALID_VALUE,
+                        "radar curve '$id' contains a value above max $resolvedMaximum",
+                        statements.first().location,
+                    )
+                }
+            }
+        }
+        if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics.toList())
+        return MermaidParseResult.Success(
+            RadarChartDiagram(
+                title = title,
+                axes = axes.map { RadarAxis(it.key, it.value) },
+                curves = curveIds.map { RadarCurve(it.key, it.value.first, it.value.second.orEmpty()) },
+                maximum = resolvedMaximum,
+            ),
+        )
     }
 
     private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
@@ -2230,6 +2382,13 @@ public object MermaidParser {
     private val ZENUML_ASYNC_MESSAGE = Regex("^($IDENTIFIER)\\s*->\\s*($IDENTIFIER)\\s*:\\s*(\\S.*)$")
     private val WARDLEY_TITLE = Regex("^title\\s+(\\S.*)$")
     private val WARDLEY_COORDINATE = Regex("^[01](?:\\.\\d+)?$")
+    private val RADAR_TITLE = Regex("^title\\s+(\\S.*)$", RegexOption.IGNORE_CASE)
+    private val RADAR_MAX = Regex("^max\\s+(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$", RegexOption.IGNORE_CASE)
+    private const val RADAR_AXIS_KEYWORD = "axis"
+    private const val RADAR_CURVE_KEYWORD = "curve"
+    private val RADAR_AXIS_ENTRY = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?$")
+    private val RADAR_CURVE = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?\\s*\\{([^{}]*)}$")
+    private val RADAR_VALUE = Regex("^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$")
     private const val WARDLEY_ANCHOR_KEYWORD = "anchor "
     private const val WARDLEY_COMPONENT_KEYWORD = "component "
     private const val WARDLEY_EVOLVE_KEYWORD = "evolve "

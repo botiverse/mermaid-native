@@ -364,6 +364,75 @@ class MermaidParserTest {
         )
         assertTrue(diagram.domains.all { it.items.isEmpty() })
     }
+
+    @Test
+    fun parsesRadarAxesCurvesTitleAndOptionalMax() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                "radar-beta\ntitle Team skill matrix\naxis m[\"Math\"], s[\"Science\"], e[\"English\"]\n" +
+                    "curve alice[\"Alice\"]{85, 78, 92}\ncurve bob{62, 84, 55}\nmax 100",
+            ),
+        )
+        assertEquals(
+            RadarChartDiagram(
+                title = "Team skill matrix",
+                axes = listOf(RadarAxis("m", "Math"), RadarAxis("s", "Science"), RadarAxis("e", "English")),
+                curves = listOf(
+                    RadarCurve("alice", "Alice", listOf(85.0, 78.0, 92.0)),
+                    RadarCurve("bob", "bob", listOf(62.0, 84.0, 55.0)),
+                ),
+                maximum = 100.0,
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
+    fun radarDefaultsToMax100AndAcceptsSplitAxisStatements() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("radar-beta\naxis a, b, c\naxis d[\"Depth\"], e, f\ncurve one{1, 2, 3, 4, 5, 6}")
+        )
+        val diagram = assertIs<RadarChartDiagram>(result.diagram)
+        assertEquals(listOf("a", "b", "c", "d", "e", "f"), diagram.axes.map { it.id })
+        assertEquals("Depth", diagram.axes[3].label)
+        assertEquals(100.0, diagram.maximum)
+    }
+
+    @Test
+    fun malformedRadarFailsClosed() {
+        listOf(
+            // Empty or wrong header.
+            "radar-beta",
+            "RadarBeta\naxis a, b, c",
+            // Too few axes for polar geometry.
+            "radar-beta\naxis a, b\ncurve x{1, 2}",
+            // Missing curves.
+            "radar-beta\naxis a, b, c",
+            // Duplicate ids.
+            "radar-beta\naxis a, b, a\ncurve x{1, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\ncurve x{4, 5, 6}",
+            // Curve/axis count mismatch.
+            "radar-beta\naxis a, b, c\ncurve x{1, 2}",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3, 4}",
+            // Invalid values.
+            "radar-beta\naxis a, b, c\ncurve x{-1, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve x{1, two, 3}",
+            "radar-beta\naxis a, b, c\nmax 50\ncurve x{10, 60, 20}",
+            // Invalid max.
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax -5",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 0",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax abc",
+            // Duplicate title.
+            "radar-beta\ntitle One\ntitle Two\naxis a, b, c\ncurve x{1, 2, 3}",
+            // Malformed declarations.
+            "radar-beta\naxis a[\"\"], b, c\ncurve x{1, 2, 3}",
+            "radar-beta\naxis m[\"A,B\"], s, e\ncurve x{1, 2, 3}",
+            "radar-beta\naxis a, b, c\ncurve x 1, 2, 3",
+            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nstyle x fill:red",
+            "radar-beta\naccTitle: unsupported\naxis a, b, c\ncurve x{1, 2, 3}",
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
     @Test
     fun parsesXyChartAxesAndSeries() {
         val result = assertIs<MermaidParseResult.Success>(

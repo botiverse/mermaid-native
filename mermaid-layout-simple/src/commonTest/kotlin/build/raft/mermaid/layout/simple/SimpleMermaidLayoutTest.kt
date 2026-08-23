@@ -51,6 +51,9 @@ import build.raft.mermaid.core.TimelineDiagram
 import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
+import build.raft.mermaid.core.RadarAxis
+import build.raft.mermaid.core.RadarChartDiagram
+import build.raft.mermaid.core.RadarCurve
 import build.raft.mermaid.core.QuadrantPoint
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.UserJourneySection
@@ -788,6 +791,43 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
         assertEquals(1, first.commands.filterIsInstance<DrawRect>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "High engagement" })
+    }
+
+    @Test
+    fun radarProducesDeterministicWebCurvesTicksAndLegend() {
+        val diagram = RadarChartDiagram(
+            "Skills",
+            listOf(RadarAxis("m", "Math"), RadarAxis("s", "Science"), RadarAxis("e", "English")),
+            listOf(
+                RadarCurve("alice", "Alice", listOf(85.0, 60.0, 90.0)),
+                RadarCurve("bob", "Bob", listOf(40.0, 75.0, 50.0)),
+            ),
+            100.0,
+        )
+        val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        // Per curve: one filled area polygon plus one diamond vertex marker per value.
+        assertEquals(8, first.commands.filterIsInstance<DrawPolygon>().size)
+        // Four concentric rings plus two closed curve outlines.
+        assertEquals(6, first.commands.filterIsInstance<DrawPolyline>().size)
+        // One spoke per axis.
+        assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Science" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "25" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Alice" })
+    }
+
+    @Test
+    fun radarClampsValuesAboveMaxIntoTheGrid() {
+        val diagram = RadarChartDiagram(
+            null,
+            listOf(RadarAxis("a", "a"), RadarAxis("b", "b"), RadarAxis("c", "c"), RadarAxis("d", "d")),
+            listOf(RadarCurve("x", "x", listOf(100.0, 100.0, 100.0, 100.0))),
+            100.0,
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val outermost = scene.commands.filterIsInstance<DrawPolygon>().maxOf { polygon -> polygon.points.maxOf { it.x.coerceAtLeast(it.y) } }
+        assertTrue(outermost <= 512.0, "Vertex escaped the polar grid: $outermost")
     }
 
     private fun message(

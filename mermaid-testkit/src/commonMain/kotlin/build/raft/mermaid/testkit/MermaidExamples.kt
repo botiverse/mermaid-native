@@ -44,6 +44,9 @@ import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.core.QuadrantPoint
+import build.raft.mermaid.core.RadarAxis
+import build.raft.mermaid.core.RadarChartDiagram
+import build.raft.mermaid.core.RadarCurve
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.UserJourneySection
 import build.raft.mermaid.core.UserJourneyTask
@@ -780,6 +783,31 @@ public object MermaidExamples {
         ),
     )
 
+    public val radarTeamSkills: MermaidExample = MermaidExample(
+        path = "samples/radar-team-skills.mmd",
+        source = """
+            radar-beta
+            title Team skill matrix
+            axis m["Math"], s["Science"], e["English"]
+            curve alice["Alice"]{85, 78, 92}
+            curve bob["Bob"]{62, 84, 55}
+            max 100
+        """.trimIndent(),
+        expected = RadarChartDiagram(
+            title = "Team skill matrix",
+            axes = listOf(
+                RadarAxis("m", "Math"),
+                RadarAxis("s", "Science"),
+                RadarAxis("e", "English"),
+            ),
+            curves = listOf(
+                RadarCurve("alice", "Alice", listOf(85.0, 78.0, 92.0)),
+                RadarCurve("bob", "Bob", listOf(62.0, 84.0, 55.0)),
+            ),
+            maximum = 100.0,
+        ),
+    )
+
     public val all: List<MermaidExample> = listOf(
         c4BankingContext,
         architectureApiStack,
@@ -812,5 +840,6 @@ public object MermaidExamples {
         railroadAuthFlow,
         zenumlTokenHandshake,
         wardleyTeaShop,
+        radarTeamSkills,
     )
 }
