@@ -11,14 +11,21 @@ diagnostics rather than silently rendering a different diagram.
 
 - `mermaid-core`: parser, typed AST, and diagnostics.
 - `mermaid-layout-api`: toolkit-neutral scene graph, draw commands, and layout SPI.
-- `mermaid-layout-simple`: deterministic MIT-licensed starter layout.
+- `mermaid-layout-simple`: deterministic Apache-2.0 starter layout.
 - `mermaid-render-svg`: common SVG serializer.
 - `mermaid-kuikly`: Kuikly Canvas/Text adapter for Raft Mobile.
 - `mermaid-testkit`: compatibility fixtures and geometry goldens.
 
 All artifacts share one version and are published under `build.raft.mermaid`.
-ELK support is deliberately outside the MIT core; any future `layout-elk`
+ELK support is deliberately outside the Apache-2.0 core; any future `layout-elk`
 artifact must carry its own EPL-2.0 obligations.
+
+## License
+
+Mermaid Native is licensed under the Apache License, Version 2.0. See
+[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Compatibility fixtures and other
+third-party material retain their upstream licenses and attribution as listed
+in `NOTICE`; the project license does not relicense those materials.
 
 ## Current parser support
 

@@ -63,8 +63,9 @@ subprojects {
                     url.set("https://github.com/botiverse/mermaid-native")
                     licenses {
                         license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
+                            name.set("Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            distribution.set("repo")
                         }
                     }
                     scm {
@@ -89,7 +90,7 @@ subprojects {
 }
 
 tasks.register("verifyThirdPartyNotices") {
-    val notices = layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")
+    val notices = layout.projectDirectory.file("NOTICE")
     val upstreams = layout.projectDirectory.file("compatibility/upstreams.lock")
     inputs.files(notices, upstreams)
     doLast {
@@ -98,6 +99,39 @@ tasks.register("verifyThirdPartyNotices") {
         }
         check(upstreams.asFile.readLines().none { it.substringAfter('=').contains("TODO") }) {
             "Compatibility upstream revisions must be pinned"
+        }
+    }
+}
+
+tasks.register("verifyProjectLicensing") {
+    val license = layout.projectDirectory.file("LICENSE")
+    val notice = layout.projectDirectory.file("NOTICE")
+    val buildFile = layout.projectDirectory.file("build.gradle.kts")
+    val readme = layout.projectDirectory.file("README.md")
+    inputs.files(license, notice, buildFile, readme)
+    doLast {
+        val licenseText = license.asFile.readText()
+        val noticeText = notice.asFile.readText()
+        val buildText = buildFile.asFile.readText()
+        val readmeText = readme.asFile.readText()
+        check(licenseText.contains("Apache License") && licenseText.contains("Version 2.0, January 2004")) {
+            "Root LICENSE must contain the complete Apache License 2.0 text"
+        }
+        check(noticeText.contains("Copyright 2026 Botiverse")) {
+            "NOTICE must retain project attribution"
+        }
+        check(noticeText.contains("Mermaid") && noticeText.contains("beautiful-mermaid")) {
+            "NOTICE must retain compatibility-source attribution"
+        }
+        check(buildText.contains("Apache License, Version 2.0") &&
+            buildText.contains("https://www.apache.org/licenses/LICENSE-2.0.txt")) {
+            "Published POM metadata must declare Apache-2.0"
+        }
+        check(readmeText.contains("Apache License, Version 2.0") && readmeText.contains("NOTICE")) {
+            "README must describe the project and third-party license boundary"
+        }
+        check(!buildText.contains("name.set(\"MIT License\")")) {
+            "Published POM metadata must not retain the former project license"
         }
     }
 }
@@ -127,7 +161,7 @@ val conformanceManifest = layout.projectDirectory.file("compatibility/conformanc
 
 tasks.register("verifyConformanceCorpus") {
     val upstreams = layout.projectDirectory.file("compatibility/upstreams.lock")
-    val notices = layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")
+    val notices = layout.projectDirectory.file("NOTICE")
     inputs.files(conformanceManifest, upstreams, notices)
     inputs.dir(layout.projectDirectory.dir("compatibility/conformance"))
     doLast {
@@ -202,6 +236,8 @@ tasks.register("reportConformanceCorpusDrift") {
 }
 
 tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("verifyProjectLicensing")
+    dependsOn("verifyThirdPartyNotices")
     dependsOn("verifyDiagramFamilyRegistry")
     dependsOn("verifyConformanceCorpus")
     dependsOn("reportConformanceCorpusDrift")

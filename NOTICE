@@ -1,4 +1,9 @@
-# Third-party notices
+Mermaid Native
+Copyright 2026 Botiverse
+
+This product is licensed under the Apache License, Version 2.0.
+
+Third-party notices
 
 This project is informed by, and compatibility-tested against:
 
@@ -6,7 +11,7 @@ This project is informed by, and compatibility-tested against:
 - beautiful-mermaid, copyright its contributors, MIT License.
 - beautiful-mermaid-swift, copyright its contributors, MIT License.
 
-No ELK or elk-swift source is included in the MIT modules. Eclipse Layout
+No ELK or elk-swift source is included in the Apache-2.0 modules. Eclipse Layout
 Kernel and elk-swift are EPL-2.0 software; a future optional adapter must remain
 separately licensed and published with the required notices and source offer.
 
