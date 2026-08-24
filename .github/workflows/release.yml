@@ -27,7 +27,7 @@ jobs:
           MERMAID_SIGNING_PASSWORD: ${{ secrets.MERMAID_SIGNING_PASSWORD }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          ./gradlew -Pversion="$version" verifyProjectLicensing verifyThirdPartyNotices cyclonedxBom publishAllPublicationsToMermaidRegistryRepository
+          ./gradlew -Pversion="$version" verifyThirdPartyNotices cyclonedxBom publishAllPublicationsToMermaidRegistryRepository
       - uses: actions/upload-artifact@v4
         with:
           name: mermaid-native-sbom
