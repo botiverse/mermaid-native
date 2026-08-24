@@ -63,8 +63,9 @@ subprojects {
                     url.set("https://github.com/botiverse/mermaid-native")
                     licenses {
                         license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
+                            name.set("Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            distribution.set("repo")
                         }
                     }
                     scm {
@@ -89,7 +90,7 @@ subprojects {
 }
 
 tasks.register("verifyThirdPartyNotices") {
-    val notices = layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")
+    val notices = layout.projectDirectory.file("NOTICE")
     val upstreams = layout.projectDirectory.file("compatibility/upstreams.lock")
     inputs.files(notices, upstreams)
     doLast {
@@ -127,7 +128,7 @@ val conformanceManifest = layout.projectDirectory.file("compatibility/conformanc
 
 tasks.register("verifyConformanceCorpus") {
     val upstreams = layout.projectDirectory.file("compatibility/upstreams.lock")
-    val notices = layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")
+    val notices = layout.projectDirectory.file("NOTICE")
     inputs.files(conformanceManifest, upstreams, notices)
     inputs.dir(layout.projectDirectory.dir("compatibility/conformance"))
     doLast {
@@ -202,6 +203,7 @@ tasks.register("reportConformanceCorpusDrift") {
 }
 
 tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("verifyThirdPartyNotices")
     dependsOn("verifyDiagramFamilyRegistry")
     dependsOn("verifyConformanceCorpus")
     dependsOn("reportConformanceCorpusDrift")

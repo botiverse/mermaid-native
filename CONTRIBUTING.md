@@ -9,7 +9,7 @@ Before opening a PR:
    added.
 2. Add positive and negative tests; unsupported input must fail closed.
 3. Run the relevant Gradle common, Android, and iOS targets locally.
-4. Run `git diff --check` and preserve third-party notices.
+4. Run `git diff --check` and preserve `LICENSE`/`NOTICE` and third-party notices.
 5. Use a conventional PR title (`feat(core): ...`, `fix(parser): ...`,
    `docs: ...`) and a body containing scope, compatibility impact, tests, and
    license/NOTICE impact.

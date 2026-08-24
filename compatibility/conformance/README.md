@@ -1,7 +1,7 @@
 # Official Mermaid conformance pilot
 
 This offline corpus copies small source snippets from Mermaid at the exact
-revision in `compatibility/upstreams.lock`. Mermaid is MIT licensed; each row
+revision in `compatibility/upstreams.lock`. Mermaid remains MIT licensed; each row
 in `manifest.tsv` records the original path and test case. The JavaScript test
 harness and Mermaid runtime are not copied or shipped.
 
