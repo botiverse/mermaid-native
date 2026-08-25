@@ -7,7 +7,10 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // Kotlin's Wasm/Node toolchain contributes the Node distribution repo at
+    // project configuration time; prefer that repo so wasm runtime tests can
+    // resolve the pinned Node distribution locally and in Hosted CI.
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
