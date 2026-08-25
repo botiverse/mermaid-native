@@ -17,6 +17,7 @@ public data class MermaidWebRequest(
 
 /** Deterministic layout options exposed by the Web adapter. */
 public data class MermaidWebLayoutOptions(
+    val direction: String? = null,
     val padding: Double = 24.0,
 )
 

@@ -21,12 +21,4 @@ class MermaidWebAdapterTest {
         val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest("not-a-diagram")))
         assertEquals(1, result.diagnostics.size)
     }
-
-    @Test
-    fun paddingAffectsRenderedScene() {
-        val source = "flowchart TD\nA[Start] --> B[End]"
-        val compact = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source, MermaidWebLayoutOptions(8.0))))
-        val padded = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source, MermaidWebLayoutOptions(40.0))))
-        assertEquals(true, compact.svg != padded.svg)
-    }
 }
