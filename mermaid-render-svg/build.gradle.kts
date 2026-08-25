@@ -4,6 +4,8 @@ plugins {
 }
 
 kotlin {
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs { browser() }
     sourceSets {
         commonMain.dependencies {
             api(project(":mermaid-layout-api"))

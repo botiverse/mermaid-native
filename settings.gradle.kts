@@ -22,6 +22,7 @@ include(
     ":mermaid-layout-api",
     ":mermaid-layout-simple",
     ":mermaid-render-svg",
+    ":mermaid-web",
     ":mermaid-kuikly",
     ":mermaid-testkit",
 )
