@@ -34,7 +34,9 @@ function showSuccess(payload) {
   status.textContent = 'Rendered successfully';
 }
 
-render.addEventListener('click', () => {
+render.addEventListener('click', async () => {
+  const runtime = window.mermaidNative ?? await window['mermaid-web'];
+  if (runtime) window.mermaidNative = runtime;
   if (!window.mermaidNative?.renderMermaidResultJson) {
     status.textContent = 'Wasm module unavailable';
     return;
