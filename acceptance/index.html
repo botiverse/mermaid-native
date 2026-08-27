@@ -4,18 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>Mermaid Native Web acceptance</title>
+  <title>Mermaid Native · examples</title>
   <link rel="stylesheet" href="./consumer.css">
 </head>
 <body>
   <main>
-    <h1>Mermaid Native Web acceptance</h1>
-    <label for="source">Mermaid source</label>
-    <textarea id="source" rows="8" spellcheck="false">flowchart TD
-A[Start] --> B[End]</textarea>
-    <button id="render" type="button">Render</button>
-    <p id="status" role="status" aria-live="polite">Ready</p>
-    <section id="result" aria-label="Rendered diagram"></section>
+    <header class="hero">
+      <p class="eyebrow">Mermaid Native · Kotlin Multiplatform</p>
+      <h1>Diagram examples</h1>
+      <p>Small, copyable examples for the bounded Mermaid Native support matrix. Unsupported syntax is shown as a typed diagnostic, never silently substituted.</p>
+    </header>
+    <div class="toolbar" role="search">
+      <label for="filter">Filter examples</label>
+      <input id="filter" type="search" placeholder="family, keyword…" autocomplete="off">
+      <button id="copy-link" type="button">Copy permalink</button>
+    </div>
+    <p id="status" role="status" aria-live="polite">Loading examples…</p>
+    <section id="gallery" aria-label="Mermaid examples"></section>
+    <section class="usage" aria-labelledby="usage-title">
+      <p class="eyebrow">How to use</p>
+      <h2 id="usage-title">From source to SVG</h2>
+      <ol>
+        <li>Write Mermaid text in a <code>.mmd</code> file or the editor above.</li>
+        <li>Call <code>renderMermaidResultJson(source)</code> from the Wasm adapter.</li>
+        <li>On <code>ok: true</code>, insert the returned SVG after the safety checks; on <code>ok: false</code>, show typed diagnostics with line and column.</li>
+        <li>Use Copy source or Copy permalink to share a reproducible example.</li>
+      </ol>
+      <p>Examples are intentionally bounded. A family or syntax not listed as supported returns a typed failure instead of falling back to another renderer.</p>
+    </section>
   </main>
   <script src="./mermaid-web.js"></script>
   <script type="module" src="./consumer.js"></script>
