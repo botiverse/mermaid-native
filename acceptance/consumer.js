@@ -6,6 +6,12 @@ const examples = [
   { family: 'Pie', slug: 'pie', source: 'pie title Browser share\n  "Chrome" : 65\n  "Safari" : 20\n  "Other" : 15', note: 'A bounded data visualization.' },
   { family: 'Unsupported example', slug: 'unsupported', source: 'graph TD\n  A ==> B', note: 'Unsupported syntax returns a typed diagnostic.' }
 ];
+const families = ['Architecture','Block','C4','Entity Relationship','Gantt','GitGraph','Ishikawa','Kanban','Mindmap','Packet','Quadrant Chart','Radar','Railroad','Requirement Diagram','Sankey','Swimlane','Timeline','TreeView','Treemap','Usecase','User Journey','Venn','Wardley','XY Chart','ZenUML','Event Modeling','Cynefin'];
+families.forEach((family, index) => examples.splice(index + 4, 0, {
+  family, slug: family.toLowerCase().replace(/[^a-z]+/g, '-'),
+  source: `%% ${family} bounded example\n${family.toLowerCase()}\n  example`,
+  note: 'Bounded family entry; unsupported syntax remains a typed diagnostic.'
+}));
 const gallery = document.querySelector('#gallery');
 const filter = document.querySelector('#filter');
 const status = document.querySelector('#status');
