@@ -1,0 +1,8 @@
+:root { color-scheme: light dark; font: 16px system-ui, sans-serif; }
+body { margin: 0; padding: 2rem; }
+main { max-width: 72rem; margin: auto; }
+textarea { box-sizing: border-box; display: block; width: 100%; margin: .5rem 0 1rem; font: 1rem ui-monospace, monospace; }
+button { min-height: 2.75rem; padding: .5rem 1rem; }
+#result { min-height: 8rem; margin-top: 1rem; overflow: auto; }
+#result svg { max-width: 100%; height: auto; }
+.error { color: #b42318; white-space: pre-wrap; }

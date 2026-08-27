@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Mermaid Native Web acceptance</title>
+  <link rel="stylesheet" href="./consumer.css">
+</head>
+<body>
+  <main>
+    <h1>Mermaid Native Web acceptance</h1>
+    <label for="source">Mermaid source</label>
+    <textarea id="source" rows="8" spellcheck="false">flowchart TD
+A[Start] --> B[End]</textarea>
+    <button id="render" type="button">Render</button>
+    <p id="status" role="status" aria-live="polite">Ready</p>
+    <section id="result" aria-label="Rendered diagram"></section>
+  </main>
+  <script src="./mermaid-web.js"></script>
+  <script type="module" src="./consumer.js"></script>
+</body>
+</html>

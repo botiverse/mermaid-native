@@ -103,6 +103,28 @@ tasks.register("verifyThirdPartyNotices") {
     }
 }
 
+tasks.register("verifyWebAcceptance") {
+    val shell = layout.projectDirectory.dir("acceptance")
+    val matrix = layout.projectDirectory.file("compatibility/diagram-families.csv")
+    inputs.dir(shell)
+    inputs.file(matrix)
+    doLast {
+        val html = shell.file("index.html").asFile.readText()
+        val js = shell.file("consumer.js").asFile.readText()
+        val css = shell.file("consumer.css").asFile.readText()
+        check(html.contains("aria-live=\"polite\"")) { "Web acceptance requires a live status region" }
+        check(html.contains("type=\"module\"")) { "Web acceptance must use a module script" }
+        check(js.contains("renderMermaidResultJson")) { "Consumer must use the typed Wasm result API" }
+        check(!js.contains("eval(") && !js.contains("fetch(") && !js.contains("innerHTML = source")) {
+            "Consumer must not evaluate or transmit Mermaid source"
+        }
+        check(css.contains("min-height: 2.75rem")) { "Keyboard target sizing regressed" }
+        val rows = matrix.asFile.readLines().drop(1).filter { it.isNotBlank() }
+        check(rows.size == 32) { "Expected the full 32-family acceptance matrix" }
+        check(rows.map { it.substringBefore(',') }.toSet().size == 32) { "Family matrix IDs must be unique" }
+    }
+}
+
 tasks.register("verifyDiagramFamilyRegistry") {
     val registry = layout.projectDirectory.file("compatibility/diagram-families.csv")
     inputs.file(registry)
@@ -203,6 +225,7 @@ tasks.register("reportConformanceCorpusDrift") {
 }
 
 tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("verifyWebAcceptance")
     dependsOn("verifyThirdPartyNotices")
     dependsOn("verifyDiagramFamilyRegistry")
     dependsOn("verifyConformanceCorpus")
