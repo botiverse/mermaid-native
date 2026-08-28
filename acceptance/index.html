@@ -9,11 +9,14 @@
 </head>
 <body>
   <main>
+    <nav class="site-nav" aria-label="Primary"><a href="#top">Mermaid Native</a><a href="#quickstart">Quickstart</a><a href="#gallery">Examples</a><a href="#reference">Reference</a></nav>
+    <div id="top"></div>
     <header class="hero">
       <p class="eyebrow">Mermaid Native · Kotlin Multiplatform</p>
       <h1>Diagram examples</h1>
       <p>Small, copyable examples for the bounded Mermaid Native support matrix. Unsupported syntax is shown as a typed diagnostic, never silently substituted.</p>
     </header>
+    <section id="quickstart" class="usage" aria-labelledby="quickstart-title"><p class="eyebrow">Quickstart</p><h2 id="quickstart-title">Render your first diagram</h2><p>Paste Mermaid text, render with the typed Wasm adapter, then copy source or permalink.</p><textarea id="editor" rows="6" aria-label="Mermaid source">flowchart TD&#10;  A[Write Mermaid] --> B[Render SVG]&#10;  B --> C[Share permalink]</textarea><div class="editor-actions"><button id="render" type="button">Render</button><button id="copy-editor" type="button">Copy source</button><span id="editor-status" role="status" aria-live="polite"></span></div><div id="editor-preview" class="preview" aria-live="polite"></div></section>
     <div class="toolbar" role="search">
       <label for="filter">Filter examples</label>
       <input id="filter" type="search" placeholder="family, keyword…" autocomplete="off">
@@ -32,6 +35,7 @@
       </ol>
       <p>Examples are intentionally bounded. A family or syntax not listed as supported returns a typed failure instead of falling back to another renderer.</p>
     </section>
+    <section id="reference" class="usage" aria-labelledby="reference-title"><p class="eyebrow">Reference</p><h2 id="reference-title">Support and safety</h2><p>Unsupported or malformed input returns typed diagnostics with line and column; no fallback renderer is used. SVG is parsed detached and executable nodes/handlers are removed before insertion.</p><p>Call <code>renderMermaidResultJson(source)</code>, check <code>ok</code>, then consume <code>svg</code> or <code>diagnostics[]</code>.</p></section>
   </main>
   <script src="./mermaid-web.js"></script>
   <script type="module" src="./consumer.js"></script>

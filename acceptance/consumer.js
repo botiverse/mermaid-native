@@ -16,6 +16,11 @@ const gallery = document.querySelector('#gallery');
 const filter = document.querySelector('#filter');
 const status = document.querySelector('#status');
 const copyLink = document.querySelector('#copy-link');
+const editor = document.querySelector('#editor');
+const renderButton = document.querySelector('#render');
+const editorPreview = document.querySelector('#editor-preview');
+const editorStatus = document.querySelector('#editor-status');
+const copyEditor = document.querySelector('#copy-editor');
 
 function runtime() { return window.mermaidNative; }
 function safeSvg(payload) {
@@ -37,4 +42,15 @@ function renderCard(card) {
 }
 function update() { const q = filter.value.trim().toLowerCase(); document.querySelectorAll('.example').forEach(el => { el.hidden = q && !el.textContent.toLowerCase().includes(q); }); status.textContent = `${[...document.querySelectorAll('.example')].filter(e => !e.hidden).length} examples`; }
 examples.forEach(renderCard); filter.addEventListener('input', update); copyLink.addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); status.textContent = 'Permalink copied'; });
+function renderEditor() {
+  const rt = runtime();
+  if (!rt?.renderMermaidResultJson) { editorStatus.textContent = 'Wasm module unavailable'; return; }
+  const payload = JSON.parse(rt.renderMermaidResultJson(editor.value));
+  const svg = safeSvg(payload); editorPreview.replaceChildren();
+  if (svg) { editorPreview.append(svg); editorStatus.textContent = 'Rendered successfully'; }
+  else { const error = document.createElement('p'); error.className = 'error'; error.textContent = payload.diagnostics?.map(d => `${d.code}: ${d.message} (line ${d.line ?? '?'}, column ${d.column ?? '?'})`).join('\n') || 'Render rejected'; editorPreview.append(error); editorStatus.textContent = 'Render failed'; }
+}
+renderButton?.addEventListener('click', renderEditor);
+copyEditor?.addEventListener('click', async () => { await navigator.clipboard?.writeText(editor.value); editorStatus.textContent = 'Source copied'; });
+window.addEventListener('mermaid-native-ready', () => { if (editor) renderEditor(); }, { once: true });
 update();
