@@ -1,16 +1,43 @@
 const examples = [
-  { family: 'Flowchart', slug: 'flowchart', source: 'flowchart TD\n  A[Start] --> B{Ready?}\n  B -->|Yes| C[Ship]\n  B -->|No| A', note: 'Nodes, labels and branching.' },
-  { family: 'Sequence', slug: 'sequence', source: 'sequenceDiagram\n  Alice->>Bob: Hello Bob\n  Bob-->>Alice: Hi Alice', note: 'A minimal request/response.' },
-  { family: 'Class', slug: 'class', source: 'classDiagram\n  Animal <|-- Duck\n  Animal : +String name\n  Duck : +swim()', note: 'Typed relationships and members.' },
-  { family: 'State', slug: 'state', source: 'stateDiagram-v2\n  [*] --> Draft\n  Draft --> Published\n  Published --> [*]', note: 'A compact lifecycle.' },
-  { family: 'Pie', slug: 'pie', source: 'pie title Browser share\n  "Chrome" : 65\n  "Safari" : 20\n  "Other" : 15', note: 'A bounded data visualization.' },
   { family: 'Unsupported example', slug: 'unsupported', source: 'graph TD\n  A ==> B', note: 'Unsupported syntax returns a typed diagnostic.' }
 ];
-const families = ['Architecture','Block','C4','Entity Relationship','Gantt','GitGraph','Ishikawa','Kanban','Mindmap','Packet','Quadrant Chart','Radar','Railroad','Requirement Diagram','Sankey','Swimlane','Timeline','TreeView','Treemap','Usecase','User Journey','Venn','Wardley','XY Chart','ZenUML','Event Modeling','Cynefin'];
-families.forEach((family, index) => examples.splice(index + 4, 0, {
-  family, slug: family.toLowerCase().replace(/[^a-z]+/g, '-'),
-  source: `%% ${family} bounded example\n${family.toLowerCase()}\n  example`,
-  note: 'Bounded family entry; unsupported syntax remains a typed diagnostic.'
+const familyExamples = [
+  ['Architecture','architecture-beta\n  service api(server)[API]\n  service db(database)[DB]\n  api:R --> db:L','Service nodes and directed edges (bounded).'],
+  ['Block','block-beta\n  columns 2\n  A[Client] B[Server]\n  A --> B','Blocks and connections (bounded).'],
+  ['C4','C4Context\n  Person(user, "User")\n  System(app, "App")\n  Rel(user, app, "uses")','Context nodes and relationships (bounded).'],
+  ['Entity Relationship','erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  CUSTOMER { string id }','Entities, cardinality and attributes.'],
+  ['Gantt','gantt\n  title Release\n  section Build\n  API :done, api, 2025-01-01, 2d','Sections and dated tasks.'],
+  ['GitGraph','gitGraph\n  commit\n  branch feature\n  checkout feature\n  commit\n  checkout main\n  merge feature','Commits, branches and merge.'],
+  ['Ishikawa','fishbone\n  Cause --> Effect\n  People --> Effect\n  Process --> Effect','Cause/effect analysis (bounded).'],
+  ['Kanban','kanban\n  Todo\n    task1[Write docs]\n  Done\n    task2[Ship]','Columns and cards.'],
+  ['Mindmap','mindmap\n  root((Product))\n    Docs\n      Quickstart\n    Demo','Hierarchical topics.'],
+  ['Packet','packet-beta\n  0-7: "Header"\n  8-15: "Payload"','Bit ranges and labels.'],
+  ['Pie','pie title Browser share\n  "Chrome" : 65\n  "Safari" : 20\n  "Other" : 15','A small data visualization.'],
+  ['Quadrant Chart','quadrantChart\n  title Product portfolio\n  x-axis Effort --> Value\n  y-axis Low --> High\n  "Docs": [0.3, 0.8]','Axes and plotted points.'],
+  ['Radar','radar-beta\n  title Team skills\n  axis Docs,Code,UX\n  "Team": [8,7,6]','Axes and a bounded series.'],
+  ['Railroad','railroad-beta\n  start=>start: Request\n  end=>end: Done\n  start->end','A compact grammar flow.'],
+  ['Requirement Diagram','requirementDiagram\n  requirement req {\n    id: 1\n    text: Safe render\n    risk: low\n  }','Requirement metadata.'],
+  ['Sankey','sankey-beta\n  Solar,Grid,40\n  Grid,App,35\n  Solar,App,20','Flow quantities (bounded).'],
+  ['Swimlane','flowchart LR\n  subgraph Support\n    A[Ticket] --> B[Resolve]\n  end','Swimlane via subgraph.'],
+  ['Timeline','timeline\n  title Product history\n  2024 : Launch\n  2025 : Teams','Dates and events.'],
+  ['TreeView','flowchart TD\n  Root --> ChildA\n  Root --> ChildB','Tree-shaped hierarchy.'],
+  ['Treemap','treemap-beta\n  "Product"\n    "Docs": 40\n    "Runtime": 60','Nested weighted leaves.'],
+  ['Usecase','usecaseDiagram\n  actor User\n  User --> (Render diagram)','Actors and use cases.'],
+  ['User Journey','journey\n  title Checkout\n  User: Open cart: 5\n  User: Pay: 3','Actor steps and scores.'],
+  ['Venn','venn-beta\n  title Team overlap\n  A: 10\n  B: 8\n  A&B: 3','Set overlap (bounded).'],
+  ['Wardley','wardley-beta\n  title Tea shop\n  anchor: Customer\n  component: Tea [0.6, 0.8]','Anchor and component evolution.'],
+  ['XY Chart','xychart-beta\n  title Quarterly sales\n  x-axis [Q1, Q2, Q3]\n  y-axis Sales --> 100\n  bar [30, 55, 80]','Categorical bars.'],
+  ['ZenUML','zenuml\n  @Actor User\n  User->API: Render\n  API-->User: SVG','Sequence messages (bounded).'],
+  ['Event Modeling','eventmodeling\n  command Submit\n  event Submitted\n  view Receipt','Command, event and view.'],
+  ['Cynefin','cynefin\n  title Incident response\n  domain Clear\n  domain Complicated','Domains and labels.'],
+  ['Class','classDiagram\n  Animal <|-- Duck\n  Animal : +String name\n  Duck : +swim()','Typed relationships and members.'],
+  ['State','stateDiagram-v2\n  [*] --> Draft\n  Draft --> Published\n  Published --> [*]','A compact lifecycle.'],
+  ['Sequence','sequenceDiagram\n  Alice->>Bob: Hello Bob\n  Bob-->>Alice: Hi Alice','A minimal request/response.'],
+  ['Flowchart','flowchart TD\n  A[Start] --> B{Ready?}\n  B -->|Yes| C[Ship]','Nodes, labels and branching.']
+];
+familyExamples.forEach(([family, source, note]) => examples.push({
+  family, slug: family.toLowerCase().replace(/[^a-z]+/g, '-'), source,
+  note: `${note} Support is intentionally bounded; unsupported constructs return typed diagnostics.`
 }));
 const gallery = document.querySelector('#gallery');
 const filter = document.querySelector('#filter');
@@ -21,6 +48,14 @@ const renderButton = document.querySelector('#render');
 const editorPreview = document.querySelector('#editor-preview');
 const editorStatus = document.querySelector('#editor-status');
 const copyEditor = document.querySelector('#copy-editor');
+
+function decodeSource() {
+  const match = location.hash.match(/^#source=([^&]+)/);
+  if (!match) return null;
+  try { return decodeURIComponent(escape(atob(match[1].replace(/-/g, '+').replace(/_/g, '/')))); } catch { return null; }
+}
+const sharedSource = decodeSource();
+if (sharedSource && editor) editor.value = sharedSource;
 
 function runtime() { return window.mermaidNative; }
 function safeSvg(payload) {
@@ -41,7 +76,12 @@ function renderCard(card) {
   if (runtime()) draw(); else window.addEventListener('mermaid-native-ready', draw, { once: true });
 }
 function update() { const q = filter.value.trim().toLowerCase(); document.querySelectorAll('.example').forEach(el => { el.hidden = q && !el.textContent.toLowerCase().includes(q); }); status.textContent = `${[...document.querySelectorAll('.example')].filter(e => !e.hidden).length} examples`; }
-examples.forEach(renderCard); filter.addEventListener('input', update); copyLink.addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); status.textContent = 'Permalink copied'; });
+examples.forEach(renderCard); filter.addEventListener('input', update); copyLink.addEventListener('click', async () => {
+  const bytes = unescape(encodeURIComponent(editor?.value || ''));
+  const encoded = btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const permalink = `${location.origin}${location.pathname}#source=${encoded}`;
+  await navigator.clipboard?.writeText(permalink); history.replaceState(null, '', `#source=${encoded}`); status.textContent = 'Permalink copied';
+});
 function renderEditor() {
   const rt = runtime();
   if (!rt?.renderMermaidResultJson) { editorStatus.textContent = 'Wasm module unavailable'; return; }
