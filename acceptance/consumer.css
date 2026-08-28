@@ -1,15 +1,20 @@
-:root { color-scheme: light dark; font: 16px system-ui, sans-serif; --ink:#171717; --paper:#fff7df; --line:#171717; }
-body { margin: 0; padding: 2rem; background: var(--paper); color: var(--ink); }
-main { max-width: 72rem; margin: auto; }
+:root { color-scheme: light; font: 16px/1.6 Inter, ui-sans-serif, system-ui, sans-serif; --ink:#172033; --muted:#63708a; --paper:#f7f9fc; --panel:#fff; --line:#dfe5ef; --brand:#5b4bdb; }
+body { margin: 0; background: var(--paper); color: var(--ink); }
+.docs-shell { max-width: 78rem; margin: auto; padding: 0 2rem 4rem 16rem; position:relative; }
+.side-nav { position: absolute; left: 0; top: 5.5rem; width: 12rem; display:flex; flex-direction:column; gap:.45rem; color:var(--muted); }
+.side-nav strong { color:var(--ink); margin-bottom:.4rem; }
+.side-nav a { color:inherit; text-decoration:none; padding:.35rem .6rem; border-radius:.4rem; }
+.side-nav a:hover { color:var(--brand); background:#eeecff; }
 .hero { max-width: 52rem; margin-bottom: 2rem; }
-.hero h1 { font-size: clamp(2rem, 5vw, 4rem); line-height: .95; margin: .2rem 0 1rem; }
+.hero { padding: 4rem 0 2rem; }
+.hero h1 { font-size: clamp(2.4rem, 5vw, 4.5rem); line-height: 1.05; letter-spacing:-.04em; margin: .2rem 0 1rem; }
 .eyebrow { margin: 0 0 .35rem; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; font-weight: 800; }
 .toolbar { display:flex; align-items:end; gap: .75rem; flex-wrap:wrap; border-block: 2px solid var(--line); padding: 1rem 0; }
 .toolbar label { display:flex; flex-direction:column; gap:.25rem; font-weight:700; }
 input { min-height: 2.75rem; padding: .5rem .75rem; box-sizing:border-box; }
 textarea { box-sizing: border-box; display: block; width: 100%; margin: .5rem 0 1rem; font: 1rem ui-monospace, monospace; }
 button { min-height: 2.75rem; padding: .5rem 1rem; }
-.example { border: 2px solid var(--line); background: rgba(255,255,255,.45); padding: 1rem; margin: 1rem 0; }
+.example { border: 1px solid var(--line); border-radius: .8rem; background: var(--panel); box-shadow:0 8px 24px rgba(30,50,90,.06); padding: 1.25rem; margin: 1rem 0; }
 .example-head { display:flex; justify-content:space-between; gap:1rem; align-items:start; }
 .example h2 { margin:0; }
 .example pre { overflow:auto; background:#171717; color:#fff; padding: .75rem; }
@@ -19,3 +24,4 @@ button { min-height: 2.75rem; padding: .5rem 1rem; }
 .usage li { margin: .5rem 0; }
 .error { color: #b42318; white-space: pre-wrap; }
 .muted { opacity: .7; }
+@media (max-width: 800px) { .docs-shell { padding:0 1rem 3rem; } .side-nav { position:static; width:auto; flex-direction:row; overflow:auto; padding-top:.75rem; } .hero { padding-top:2rem; } }
