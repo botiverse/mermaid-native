@@ -4,18 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>Mermaid Native Web acceptance</title>
+  <title>Mermaid Native · examples</title>
   <link rel="stylesheet" href="./consumer.css">
 </head>
 <body>
   <main>
-    <h1>Mermaid Native Web acceptance</h1>
-    <label for="source">Mermaid source</label>
-    <textarea id="source" rows="8" spellcheck="false">flowchart TD
-A[Start] --> B[End]</textarea>
-    <button id="render" type="button">Render</button>
-    <p id="status" role="status" aria-live="polite">Ready</p>
-    <section id="result" aria-label="Rendered diagram"></section>
+    <nav class="site-nav" aria-label="Primary"><a href="#top">Mermaid Native</a><a href="#quickstart">Quickstart</a><a href="#gallery">Examples</a><a href="#reference">Reference</a></nav>
+    <div id="top"></div>
+    <header class="hero">
+      <p class="eyebrow">Mermaid Native · Kotlin Multiplatform</p>
+      <h1>Diagram examples</h1>
+      <p>Small, copyable examples for the bounded Mermaid Native support matrix. Unsupported syntax is shown as a typed diagnostic, never silently substituted.</p>
+    </header>
+    <section id="quickstart" class="usage" aria-labelledby="quickstart-title"><p class="eyebrow">Quickstart</p><h2 id="quickstart-title">Render your first diagram</h2><p>Paste Mermaid text, render with the typed Wasm adapter, then copy source or permalink.</p><textarea id="editor" rows="6" aria-label="Mermaid source">flowchart TD&#10;  A[Write Mermaid] --> B[Render SVG]&#10;  B --> C[Share permalink]</textarea><div class="editor-actions"><button id="render" type="button">Render</button><button id="copy-editor" type="button">Copy source</button><span id="editor-status" role="status" aria-live="polite"></span></div><div id="editor-preview" class="preview" aria-live="polite"></div></section>
+    <div class="toolbar" role="search">
+      <label for="filter">Filter examples</label>
+      <input id="filter" type="search" placeholder="family, keyword…" autocomplete="off">
+      <button id="copy-link" type="button">Copy permalink</button>
+    </div>
+    <p id="status" role="status" aria-live="polite">Loading examples…</p>
+    <section id="gallery" aria-label="Mermaid examples"></section>
+    <section class="usage" aria-labelledby="usage-title">
+      <p class="eyebrow">How to use</p>
+      <h2 id="usage-title">From source to SVG</h2>
+      <ol>
+        <li>Write Mermaid text in a <code>.mmd</code> file or the editor above.</li>
+        <li>Call <code>renderMermaidResultJson(source)</code> from the Wasm adapter.</li>
+        <li>On <code>ok: true</code>, insert the returned SVG after the safety checks; on <code>ok: false</code>, show typed diagnostics with line and column.</li>
+        <li>Use Copy source or Copy permalink to share a reproducible example.</li>
+      </ol>
+      <p>Examples are intentionally bounded. A family or syntax not listed as supported returns a typed failure instead of falling back to another renderer.</p>
+    </section>
+    <section id="reference" class="usage" aria-labelledby="reference-title"><p class="eyebrow">Reference</p><h2 id="reference-title">Support, accessibility and safety</h2><p>Unsupported or malformed input returns typed diagnostics with line and column; no fallback renderer is used. SVG is parsed detached and executable nodes/handlers are removed before insertion.</p><p>Call <code>renderMermaidResultJson(source)</code>, check <code>ok</code>, then consume <code>svg</code> or <code>diagnostics[]</code>. The 32-family gallery is a bounded subset of Mermaid syntax; verify support before relying on advanced directives.</p><div class="reference-grid"><div><h3>Accessibility</h3><p>Controls have labels, keyboard focus, and live status announcements. Provide meaningful source titles and text alternatives when embedding diagrams.</p></div><div><h3>Browser support</h3><p>Modern evergreen browsers with ES modules, WebAssembly, DOMParser and Clipboard API. Clipboard is optional; copy actions fail safely.</p></div><div><h3>Security boundary</h3><p>Rendering is local and offline. Keep a strict CSP, do not enable inline scripts, and treat SVG as untrusted output even after sanitization.</p></div><div><h3>Examples beyond the minimum</h3><p>Try theme directives, long labels, Chinese text (例如：订单已提交) and malformed input in the editor to exercise success and typed-error paths.</p></div></div></section>
   </main>
   <script src="./mermaid-web.js"></script>
   <script type="module" src="./consumer.js"></script>
