@@ -7,6 +7,21 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun acceptsOfficialGalleryHeaderAliases() {
+        val aliases = listOf(
+            "block-beta\ncolumns 2\nA[Client]\nB[Server]\nA --> B",
+            "fishbone\nEffect\n  Cause",
+            "packet-beta\n0-7: \"Header\"",
+            "sankey-beta\nSolar,Grid,40",
+            "usecaseDiagram\nactor User\nRender(\"Render\")\nUser --> Render",
+            "cynefin\nclear\n\"Known fix\"",
+        )
+        aliases.forEach { source ->
+            assertIs<MermaidParseResult.Success>(MermaidParser.parse(source), source)
+        }
+    }
+
+    @Test
     fun parsesIshikawaIndentationHierarchyLikeTheOfficialGrammar() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(
