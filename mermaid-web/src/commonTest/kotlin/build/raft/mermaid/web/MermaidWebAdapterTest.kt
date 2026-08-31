@@ -1,5 +1,6 @@
 package build.raft.mermaid.web
 
+import build.raft.mermaid.core.MermaidDiagnosticCode
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -20,6 +21,25 @@ class MermaidWebAdapterTest {
     fun unsupportedSourceReturnsTypedDiagnostics() {
         val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest("not-a-diagram")))
         assertEquals(1, result.diagnostics.size)
+    }
+
+    @Test
+    fun radarGallerySourceRendersThroughPublicConsumer() {
+        val source = "radar-beta\n  title Team skills\n  axis Docs,Code,UX\n  curve Team{8,7,6}"
+        val result = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assertContains(result.svg, "Team skills")
+        assertContains(result.svg, "Docs")
+        assertContains(result.svg, "Team")
+    }
+
+    @Test
+    fun unsupportedRadarGallerySeriesFailsClosedWithTypedDiagnostic() {
+        val source = "radar-beta\n  title Team skills\n  axis Docs,Code,UX\n  \"Team\": [8,7,6]"
+        val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, result.diagnostics.single().code)
+        assertEquals(4, result.diagnostics.single().location.line)
     }
 
     @Test

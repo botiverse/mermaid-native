@@ -115,6 +115,11 @@ tasks.register("verifyWebAcceptance") {
         check(html.contains("aria-live=\"polite\"")) { "Web acceptance requires a live status region" }
         check(html.contains("type=\"module\"")) { "Web acceptance must use a module script" }
         check(js.contains("renderMermaidResultJson")) { "Consumer must use the typed Wasm result API" }
+        check(
+            js.contains(
+                "['Radar','radar-beta\\n  title Team skills\\n  axis Docs,Code,UX\\n  curve Team{8,7,6}'",
+            ),
+        ) { "Radar gallery source must stay aligned with the bounded curve grammar" }
         check(!js.contains("eval(") && !js.contains("fetch(") && !js.contains("innerHTML = source")) {
             "Consumer must not evaluate or transmit Mermaid source"
         }
