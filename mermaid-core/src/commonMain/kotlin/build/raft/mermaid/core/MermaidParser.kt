@@ -31,16 +31,16 @@ public object MermaidParser {
             header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
             header.text.equals("requirementDiagram", ignoreCase = true) -> parseRequirement(statements)
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
-            header.text.equals("packet", ignoreCase = true) -> parsePacket(statements)
-            header.text.equals("block", ignoreCase = true) -> parseBlock(statements)
-            header.text.equals("sankey", ignoreCase = true) -> parseSankey(source)
+            header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> parsePacket(statements)
+            header.text.equals("block", ignoreCase = true) || header.text.equals("block-beta", ignoreCase = true) -> parseBlock(statements)
+            header.text.equals("sankey", ignoreCase = true) || header.text.equals("sankey-beta", ignoreCase = true) -> parseSankey(source)
             header.text.equals("treemap-beta", ignoreCase = true) -> parseTreemap(source)
             header.text.equals("venn-beta", ignoreCase = true) -> parseVenn(source)
-            header.text.equals("usecase-beta", ignoreCase = true) -> parseUsecase(source)
+            header.text.equals("usecase-beta", ignoreCase = true) || header.text.equals("usecaseDiagram", ignoreCase = true) -> parseUsecase(source)
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
             header.text.equals("C4Context", ignoreCase = true) -> parseC4Context(source)
-            header.text.equals("cynefin-beta", ignoreCase = true) -> parseCynefin(source)
-            header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) -> parseIshikawa(source)
+            header.text.equals("cynefin-beta", ignoreCase = true) || header.text.equals("cynefin", ignoreCase = true) -> parseCynefin(source)
+            header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlane(source)
             header.text.equals("treeView-beta", ignoreCase = true) -> parseTreeView(source)
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
@@ -1692,8 +1692,8 @@ public object MermaidParser {
 
     private fun parseUsecase(source: String): MermaidParseResult {
         val physicalLines = source.toMindmapLines()
-        if (physicalLines.firstOrNull()?.text != "usecase-beta") {
-            return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Usecase requires the exact usecase-beta header", physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1))
+        if (physicalLines.firstOrNull()?.text !in setOf("usecase-beta", "usecaseDiagram")) {
+            return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Usecase requires the usecase-beta or usecaseDiagram header", physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1))
         }
         val statements = source.toStatements()
         val actors = linkedMapOf<String, UsecaseActor>()
@@ -1856,10 +1856,10 @@ public object MermaidParser {
         val lines = source.lineSequence().toList()
         val headerIndex = lines.indexOfFirst {
             val trimmed = it.trim()
-            trimmed.equals("ishikawa", ignoreCase = true) || trimmed.equals("ishikawa-beta", ignoreCase = true)
+            trimmed.equals("ishikawa", ignoreCase = true) || trimmed.equals("ishikawa-beta", ignoreCase = true) || trimmed.equals("fishbone", ignoreCase = true)
         }
         if (headerIndex < 0) {
-            return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected ishikawa or ishikawa-beta header", SourceLocation(1, 1))
+            return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected ishikawa, ishikawa-beta, or fishbone header", SourceLocation(1, 1))
         }
 
         class CauseBuilder(val text: String) {
@@ -1910,8 +1910,8 @@ public object MermaidParser {
 
     private fun parseCynefin(source: String): MermaidParseResult {
         val lines = source.lineSequence().toList()
-        val headerIndex = lines.indexOfFirst { it.trim().equals("cynefin-beta", ignoreCase = true) }
-        if (headerIndex < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Invalid cynefin-beta header", SourceLocation(1, 1))
+        val headerIndex = lines.indexOfFirst { it.trim().equals("cynefin-beta", ignoreCase = true) || it.trim().equals("cynefin", ignoreCase = true) }
+        if (headerIndex < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected cynefin-beta or cynefin header", SourceLocation(1, 1))
         var title: String? = null
         val blocks = linkedMapOf<CynefinDomain, MutableList<String>>()
         val transitions = mutableListOf<CynefinTransition>()
