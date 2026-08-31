@@ -1,3 +1,9 @@
+// Kotlin/Wasm webpack exports an async module under the generated global name.
+// Normalize it to the small host contract used by this page before rendering.
+const wasmExport = window['mermaid-web'];
+if (wasmExport?.then) wasmExport.then(exports => { window.mermaidNative = exports; window.dispatchEvent(new Event('mermaid-native-ready')); }).catch(() => {});
+else if (wasmExport) window.mermaidNative = wasmExport;
+
 const examples = [
   { family: 'Unsupported example', slug: 'unsupported', source: 'graph TD\n  A ==> B', note: 'Unsupported syntax returns a typed diagnostic.' }
 ];
