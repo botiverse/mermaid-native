@@ -20,7 +20,7 @@ const familyExamples = [
   ['Packet','packet-beta\n  0-7: "Header"\n  8-15: "Payload"','Bit ranges and labels.'],
   ['Pie','pie title Browser share\n  "Chrome" : 65\n  "Safari" : 20\n  "Other" : 15','A small data visualization.'],
   ['Quadrant Chart','quadrantChart\n  title Product portfolio\n  x-axis Effort --> Value\n  y-axis Low --> High\n  "Docs": [0.3, 0.8]','Axes and plotted points.'],
-  ['Radar','radar-beta\n  title Team skills\n  axis Docs,Code,UX\n  "Team": [8,7,6]','Axes and a bounded series.'],
+  ['Radar','radar-beta\n  title Team skills\n  axis Docs,Code,UX\n  curve Team{8,7,6}','Axes and a bounded series.'],
   ['Railroad','railroad-beta\n  start=>start: Request\n  end=>end: Done\n  start->end','A compact grammar flow.'],
   ['Requirement Diagram','requirementDiagram\n  requirement req {\n    id: 1\n    text: Safe render\n    risk: low\n  }','Requirement metadata.'],
   ['Sankey','sankey-beta\n  Solar,Grid,40\n  Grid,App,35\n  Solar,App,20','Flow quantities (bounded).'],

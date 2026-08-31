@@ -480,6 +480,16 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesRadarGallerySeriesSyntax() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("radar-beta\ntitle Team skills\naxis Docs,Code,UX\ncurve Team{8,7,6}"),
+        )
+        val diagram = assertIs<RadarChartDiagram>(result.diagram)
+        assertEquals(3, diagram.axes.size)
+        assertEquals(listOf(8.0, 7.0, 6.0), diagram.curves.single().values)
+    }
+
+    @Test
     fun radarDefaultsToMax100AndAcceptsSplitAxisStatements() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("radar-beta\naxis a, b, c\naxis d[\"Depth\"], a2[\"Depth\"], f\ncurve one{1, 2, 3, 4, 5, 6}")
