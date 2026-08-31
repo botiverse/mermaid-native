@@ -61,6 +61,25 @@ class MermaidWebAdapterTest {
     }
 
     @Test
+    fun userJourneyGallerySourceRendersThroughPublicConsumer() {
+        val source = "journey\n  title Checkout\n  section Purchase\n  Open cart: 5: User\n  Pay: 3: User"
+        val result = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assertContains(result.svg, "Checkout")
+        assertContains(result.svg, "Purchase")
+        assertContains(result.svg, "Open cart")
+    }
+
+    @Test
+    fun userJourneyTaskWithoutSectionFailsClosedWithTypedDiagnostic() {
+        val source = "journey\n  title Checkout\n  Open cart: 5: User"
+        val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assert(result.diagnostics.isNotEmpty())
+        assert(result.diagnostics.all { it.code == MermaidDiagnosticCode.UNSUPPORTED_SYNTAX })
+    }
+
+    @Test
     fun paddingAffectsRenderedScene() {
         val source = "flowchart TD\nA[Start] --> B[End]"
         val compact = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source, MermaidWebLayoutOptions(8.0))))

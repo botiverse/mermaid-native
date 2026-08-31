@@ -122,6 +122,11 @@ tasks.register("verifyWebAcceptance") {
         ) { "Swimlane gallery source must use the bounded swimlane-beta grammar" }
         check(
             js.contains(
+                "['User Journey','journey\\n  title Checkout\\n  section Purchase\\n  Open cart: 5: User\\n  Pay: 3: User'",
+            ),
+        ) { "User Journey gallery source must include a bounded section and task grammar" }
+        check(
+            js.contains(
                 "['Radar','radar-beta\\n  title Team skills\\n  axis Docs,Code,UX\\n  curve Team{8,7,6}'",
             ),
         ) { "Radar gallery source must stay aligned with the bounded curve grammar" }

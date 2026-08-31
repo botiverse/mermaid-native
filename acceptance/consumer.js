@@ -29,7 +29,7 @@ const familyExamples = [
   ['TreeView','flowchart TD\n  Root --> ChildA\n  Root --> ChildB','Tree-shaped hierarchy.'],
   ['Treemap','treemap-beta\n  "Product"\n    "Docs": 40\n    "Runtime": 60','Nested weighted leaves.'],
   ['Usecase','usecaseDiagram\n  actor User\n  RenderDiagram("Render diagram")\n  User --> RenderDiagram','Actors and use cases.'],
-  ['User Journey','journey\n  title Checkout\n  User: Open cart: 5\n  User: Pay: 3','Actor steps and scores.'],
+  ['User Journey','journey\n  title Checkout\n  section Purchase\n  Open cart: 5: User\n  Pay: 3: User','Sections, actor steps, and scores.'],
   ['Venn','venn-beta\n  title Team overlap\n  A: 10\n  B: 8\n  A&B: 3','Set overlap (bounded).'],
   ['Wardley','wardley-beta\n  title Tea shop\n  anchor: Customer\n  component: Tea [0.6, 0.8]','Anchor and component evolution.'],
   ['XY Chart','xychart-beta\n  title Quarterly sales\n  x-axis [Q1, Q2, Q3]\n  y-axis Sales --> 100\n  bar [30, 55, 80]','Categorical bars.'],
