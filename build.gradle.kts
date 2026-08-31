@@ -117,6 +117,11 @@ tasks.register("verifyWebAcceptance") {
         check(js.contains("renderMermaidResultJson")) { "Consumer must use the typed Wasm result API" }
         check(
             js.contains(
+                "['Swimlane','swimlane-beta LR\\n  subgraph Support\\n    A[Ticket]\\n    B[Resolve]\\n  end\\n  A --> B'",
+            ),
+        ) { "Swimlane gallery source must use the bounded swimlane-beta grammar" }
+        check(
+            js.contains(
                 "['Radar','radar-beta\\n  title Team skills\\n  axis Docs,Code,UX\\n  curve Team{8,7,6}'",
             ),
         ) { "Radar gallery source must stay aligned with the bounded curve grammar" }
