@@ -43,6 +43,24 @@ class MermaidWebAdapterTest {
     }
 
     @Test
+    fun swimlaneGallerySourceRendersThroughPublicConsumer() {
+        val source = "swimlane-beta LR\n  subgraph Support\n    A[Ticket]\n    B[Resolve]\n  end\n  A --> B"
+        val result = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assertContains(result.svg, "Support")
+        assertContains(result.svg, "Ticket")
+        assertContains(result.svg, "Resolve")
+    }
+
+    @Test
+    fun unsupportedSwimlaneFlowchartWrapperFailsClosedWithTypedDiagnostic() {
+        val source = "flowchart LR\n  subgraph Support\n    A[Ticket] --> B[Resolve]\n  end"
+        val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, result.diagnostics.single().code)
+    }
+
+    @Test
     fun paddingAffectsRenderedScene() {
         val source = "flowchart TD\nA[Start] --> B[End]"
         val compact = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source, MermaidWebLayoutOptions(8.0))))
