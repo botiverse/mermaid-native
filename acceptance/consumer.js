@@ -24,7 +24,7 @@ const familyExamples = [
   ['Railroad','railroad-beta\n  start=>start: Request\n  end=>end: Done\n  start->end','A compact grammar flow.'],
   ['Requirement Diagram','requirementDiagram\n  requirement req {\n    id: 1\n    text: Safe render\n    risk: low\n  }','Requirement metadata.'],
   ['Sankey','sankey-beta\n  Solar,Grid,40\n  Grid,App,35\n  Solar,App,20','Flow quantities (bounded).'],
-  ['Swimlane','flowchart LR\n  subgraph Support\n    A[Ticket] --> B[Resolve]\n  end','Swimlane via subgraph.'],
+  ['Swimlane','swimlane-beta LR\n  subgraph Support\n    A[Ticket]\n    B[Resolve]\n  end\n  A --> B','Swimlane lanes and edges (bounded).'],
   ['Timeline','timeline\n  title Product history\n  2024 : Launch\n  2025 : Teams','Dates and events.'],
   ['TreeView','flowchart TD\n  Root --> ChildA\n  Root --> ChildB','Tree-shaped hierarchy.'],
   ['Treemap','treemap-beta\n  "Product"\n    "Docs": 40\n    "Runtime": 60','Nested weighted leaves.'],
