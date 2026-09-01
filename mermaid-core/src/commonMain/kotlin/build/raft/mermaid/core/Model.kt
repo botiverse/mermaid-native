@@ -265,7 +265,7 @@ public data class RequirementRelationship(
     val kind: RequirementRelationshipKind,
 )
 
-public enum class RequirementRelationshipKind { SATISFIES, VERIFIES }
+public enum class RequirementRelationshipKind { CONTAINS, SATISFIES, VERIFIES }
 
 public data class KanbanDiagram(val columns: List<KanbanColumn>) : MermaidDiagram
 public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>)

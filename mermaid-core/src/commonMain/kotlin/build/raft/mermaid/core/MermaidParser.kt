@@ -1413,7 +1413,11 @@ public object MermaidParser {
                 relationships += RequirementRelationship(
                     from = it.groupValues[1],
                     to = it.groupValues[3],
-                    kind = RequirementRelationshipKind.valueOf(it.groupValues[2].uppercase()),
+                    kind = when (it.groupValues[2].lowercase()) {
+                        "contains" -> RequirementRelationshipKind.CONTAINS
+                        "satisfies" -> RequirementRelationshipKind.SATISFIES
+                        else -> RequirementRelationshipKind.VERIFIES
+                    },
                 )
                 return@forEach
             }
@@ -1428,7 +1432,7 @@ public object MermaidParser {
         }
         val names = requirements.keys + elements.keys
         relationships.forEach { relationship ->
-            if (relationship.from !in names || relationship.to !in names) {
+            if (names.isNotEmpty() && (relationship.from !in names || relationship.to !in names)) {
                 diagnostics += MermaidDiagnostic(
                     MermaidDiagnosticCode.INVALID_VALUE,
                     "Requirement relationship references an unknown artifact: ${relationship.from} -> ${relationship.to}",
@@ -1436,11 +1440,11 @@ public object MermaidParser {
                 )
             }
         }
-        return if (diagnostics.isEmpty() && requirements.isNotEmpty()) {
+        return if (diagnostics.isEmpty() && (requirements.isNotEmpty() || elements.isNotEmpty() || relationships.isNotEmpty())) {
             MermaidParseResult.Success(RequirementDiagram(requirements.values.toList(), elements.values.toList(), relationships))
         } else {
             if (requirements.isEmpty() && diagnostics.isEmpty()) {
-                diagnostics += unsupported(statements.first(), "requirementDiagram requires at least one requirement")
+                diagnostics += unsupported(statements.first(), "requirementDiagram requires at least one requirement or element")
             }
             MermaidParseResult.Failure(diagnostics)
         }
@@ -2730,7 +2734,7 @@ private val REQUIREMENT_START = Regex("^requirement\\s+([A-Za-z_][A-Za-z0-9_-]*)
 private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
 private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
 private val REQUIREMENT_RELATION = Regex(
-    "^([A-Za-z_][A-Za-z0-9_-]*)\\s+-\\s+(satisfies|verifies)\\s+->\\s+([A-Za-z_][A-Za-z0-9_-]*)$",
+    "^([A-Za-z_][A-Za-z0-9_-]*)\\s+-\\s+(contains|satisfies|verifies)\\s+->\\s+([A-Za-z_][A-Za-z0-9_-]*)$",
     RegexOption.IGNORE_CASE,
 )
 private val REQUIREMENT_FIELDS = setOf("id", "text", "risk", "verifymethod")
