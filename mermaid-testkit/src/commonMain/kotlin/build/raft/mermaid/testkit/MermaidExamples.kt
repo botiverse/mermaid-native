@@ -2,6 +2,7 @@ package build.raft.mermaid.testkit
 
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdge
+import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
@@ -458,6 +459,23 @@ public object MermaidExamples {
         ),
     )
 
+    public val flowchartThickArrow: MermaidExample = MermaidExample(
+        path = "samples/flowchart-thick-arrow.mmd",
+        source = """
+            graph TD
+              A[Start] ==> B[Process]
+              B --> C[End]
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TD,
+            nodes = listOf(FlowNode("A", "Start"), FlowNode("B", "Process"), FlowNode("C", "End")),
+            edges = listOf(
+                FlowEdge("A", "B", FlowEdgeStyle.THICK),
+                FlowEdge("B", "C"),
+            ),
+        ),
+    )
+
     public val flowchartLeftToRight: MermaidExample = MermaidExample(
         path = "samples/flowchart-left-to-right.mmd",
         source = """
@@ -843,6 +861,7 @@ public object MermaidExamples {
         classAnimal,
         piePets,
         flowchartLinear,
+        flowchartThickArrow,
         flowchartLeftToRight,
         sequenceRequestResponse,
         stateLifecycle,

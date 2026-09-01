@@ -91,11 +91,16 @@ public object MermaidParser {
             if (edge != null) {
                 val sourceId = edge.groupValues[1]
                 val sourceLabel = edge.groupValues[2].ifEmpty { null }
-                val targetId = edge.groupValues[3]
-                val targetLabel = edge.groupValues[4].ifEmpty { null }
+                val operator = edge.groupValues[3]
+                val targetId = edge.groupValues[4]
+                val targetLabel = edge.groupValues[5].ifEmpty { null }
                 register(sourceId, sourceLabel)
                 register(targetId, targetLabel)
-                edges += FlowEdge(sourceId = sourceId, targetId = targetId)
+                edges += FlowEdge(
+                    sourceId = sourceId,
+                    targetId = targetId,
+                    style = if (operator == "==>") FlowEdgeStyle.THICK else FlowEdgeStyle.NORMAL,
+                )
                 return@forEach
             }
 
@@ -2438,7 +2443,7 @@ public object MermaidParser {
     )
     private val FLOW_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
     private val FLOW_EDGE = Regex(
-        "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*-->\\s*" +
+        "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*(-->|==>)\\s*" +
             "($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$",
     )
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")

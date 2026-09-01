@@ -683,6 +683,22 @@ class MermaidParserTest {
     }
 
     @Test
+    fun parsesFlowchartThickArrow() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse("graph TD\nA ==> B"),
+        )
+
+        assertEquals(
+            FlowchartDiagram(
+                direction = FlowDirection.TD,
+                nodes = listOf(FlowNode("A", "A"), FlowNode("B", "B")),
+                edges = listOf(FlowEdge("A", "B", FlowEdgeStyle.THICK)),
+            ),
+            result.diagram,
+        )
+    }
+
+    @Test
     fun parsesGraphAliasAndSemicolonSeparatedStatements() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("graph TD; A; A-->B"),

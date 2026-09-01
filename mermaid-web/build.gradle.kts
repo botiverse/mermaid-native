@@ -15,6 +15,9 @@ kotlin {
             implementation(project(":mermaid-layout-simple"))
             implementation(project(":mermaid-render-svg"))
         }
-        commonTest.dependencies { implementation(kotlin("test")) }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(project(":mermaid-testkit"))
+        }
     }
 }

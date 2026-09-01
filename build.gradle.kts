@@ -115,21 +115,27 @@ tasks.register("verifyWebAcceptance") {
         check(html.contains("aria-live=\"polite\"")) { "Web acceptance requires a live status region" }
         check(html.contains("type=\"module\"")) { "Web acceptance must use a module script" }
         check(js.contains("renderMermaidResultJson")) { "Consumer must use the typed Wasm result API" }
-        check(
-            js.contains(
-                "['Swimlane','swimlane-beta LR\\n  subgraph Support\\n    A[Ticket]\\n    B[Resolve]\\n  end\\n  A --> B'",
-            ),
-        ) { "Swimlane gallery source must use the bounded swimlane-beta grammar" }
-        check(
-            js.contains(
-                "['User Journey','journey\\n  title Checkout\\n  section Purchase\\n  Open cart: 5: User\\n  Pay: 3: User'",
-            ),
-        ) { "User Journey gallery source must include a bounded section and task grammar" }
-        check(
-            js.contains(
-                "['Radar','radar-beta\\n  title Team skills\\n  axis Docs,Code,UX\\n  curve Team{8,7,6}'",
-            ),
-        ) { "Radar gallery source must stay aligned with the bounded curve grammar" }
+        check(!js.contains("unsupportedExamples") && !js.contains("negativeControls")) {
+            "Negative controls must stay outside the browser gallery consumer"
+        }
+        check(js.contains("familyExamples.length === 32")) {
+            "Gallery must assert exactly 32 positive family examples"
+        }
+        check(js.contains("A[Start] ==> B[Process]")) {
+            "Flowchart gallery must cover the supported thick arrow"
+        }
+        check(js.contains("['Swimlane',`swimlane-beta LR")) {
+            "Swimlane gallery source must use the bounded swimlane-beta grammar"
+        }
+        check(js.contains("['User Journey',`journey")) {
+            "User Journey gallery source must include a bounded section and task grammar"
+        }
+        check(js.contains("['Radar',`radar-beta")) {
+            "Radar gallery source must stay aligned with the bounded curve grammar"
+        }
+        check(js.contains("['Event Modeling',`eventmodeling")) {
+            "Event Modeling gallery source must use the bounded eventmodeling grammar"
+        }
         check(!js.contains("eval(") && !js.contains("fetch(") && !js.contains("innerHTML = source")) {
             "Consumer must not evaluate or transmit Mermaid source"
         }

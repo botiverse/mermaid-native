@@ -13,6 +13,7 @@ import build.raft.mermaid.core.EntityKey
 import build.raft.mermaid.core.EntityRelationship
 import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.FlowEdge
+import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowNode
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.IshikawaDiagram
@@ -493,6 +494,21 @@ class SimpleMermaidLayoutTest {
         assertEquals("#334155", stateRects.first().fill.value)
         assertEquals("#334155", stateRects.last().fill.value)
         assertTrue(stateRects.first().cornerRadius > 0.0)
+    }
+
+    @Test
+    fun thickFlowchartEdgesUseThickStroke() {
+        val scene = SimpleMermaidLayout.layout(
+            FlowchartDiagram(
+                direction = FlowDirection.TD,
+                nodes = listOf(FlowNode("A", "Start"), FlowNode("B", "Finish")),
+                edges = listOf(FlowEdge("A", "B", FlowEdgeStyle.THICK)),
+            ),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+
+        assertEquals(3.0, scene.commands.filterIsInstance<DrawLine>().single().strokeWidth)
     }
 
     @Test

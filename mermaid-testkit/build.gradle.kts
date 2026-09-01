@@ -4,6 +4,9 @@ plugins {
 }
 
 kotlin {
+    wasmJs {
+        browser()
+    }
     sourceSets {
         commonMain.dependencies {
             api(project(":mermaid-core"))
