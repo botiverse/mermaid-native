@@ -1435,8 +1435,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         } + diagram.elements.flatMap { element ->
             listOf("type: ${element.type}", "docref: ${element.docRef}")
         }
-        val measuredHeadingWidth = headingLines.maxOf { textMeasurer.measure(it, heading).width }
-        val measuredBodyWidth = bodyLines.maxOf { textMeasurer.measure(it, body).width }
+        val measuredHeadingWidth = headingLines.maxOfOrNull { textMeasurer.measure(it, heading).width } ?: 0.0
+        val measuredBodyWidth = bodyLines.maxOfOrNull { textMeasurer.measure(it, body).width } ?: 0.0
         val cardWidth = max(270.0, max(measuredHeadingWidth, measuredBodyWidth) + 24.0)
         val requirementHeight = 132.0
         val elementHeight = 96.0
@@ -1452,7 +1452,14 @@ public object SimpleMermaidLayout : DiagramLayout {
             rects[element.name] = SceneRect(elementX, config.padding + index * (elementHeight + rowGap), cardWidth, elementHeight)
         }
         val commands = mutableListOf<DrawCommand>()
-        var relationshipRightExtent = rects.values.maxOf { it.x + it.width }
+        val missingRelationshipNames = diagram.relationships
+            .flatMap { listOf(it.from, it.to) }
+            .filterNot(rects::containsKey)
+            .distinct()
+        missingRelationshipNames.forEachIndexed { index, name ->
+            rects[name] = SceneRect(requirementX, config.padding + (diagram.requirements.size + index) * (elementHeight + rowGap), cardWidth, elementHeight)
+        }
+        var relationshipRightExtent = rects.values.maxOfOrNull { it.x + it.width } ?: (config.padding + cardWidth)
         diagram.relationships.forEach { relationship ->
             val from = rects.getValue(relationship.from)
             val to = rects.getValue(relationship.to)
@@ -1461,6 +1468,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val start = ScenePoint(if (leftward) from.x else from.x + from.width, from.y + from.height / 2.0)
             val end = ScenePoint(if (leftward || sameColumn) to.x + to.width else to.x, to.y + to.height / 2.0)
             val label = when (relationship.kind) {
+                RequirementRelationshipKind.CONTAINS -> "contains"
                 RequirementRelationshipKind.SATISFIES -> "satisfies"
                 RequirementRelationshipKind.VERIFIES -> "verifies"
             }
