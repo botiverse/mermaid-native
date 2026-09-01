@@ -2743,6 +2743,7 @@ private data class ParsedMindmapNode(
 
 private fun String.toRequirementType(): RequirementType = when (lowercase()) {
     "functionalrequirement" -> RequirementType.FUNCTIONAL_REQUIREMENT
+    "interfacerequirement" -> RequirementType.INTERFACE_REQUIREMENT
     else -> RequirementType.REQUIREMENT
 }
 
@@ -2762,7 +2763,7 @@ private sealed interface RequirementBlock {
     ) : RequirementBlock
 }
 
-private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
+private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
 private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
 private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
 private val REQUIREMENT_RELATION = Regex(
