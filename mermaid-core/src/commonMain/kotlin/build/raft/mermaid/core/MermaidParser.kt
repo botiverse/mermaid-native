@@ -1094,16 +1094,20 @@ public object MermaidParser {
 
     private fun parseTimeline(statements: List<SourceStatement>): MermaidParseResult {
         var title: String? = null
+        var section: String? = null
         val events = mutableListOf<TimelineEvent>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         statements.drop(1).forEach { statement ->
             if (statement.text.startsWith("title ", ignoreCase = true)) {
                 val value = statement.text.substringAfter(' ').trim()
                 if (value.isEmpty() || title != null) diagnostics += unsupported(statement, "Timeline requires at most one non-empty title") else title = value
+            } else if (statement.text.startsWith("section ", ignoreCase = true)) {
+                val value = statement.text.substringAfter(' ').trim()
+                if (value.isEmpty()) diagnostics += unsupported(statement, "Timeline section requires a non-empty name") else section = value
             } else {
                 val parts = statement.text.split(':').map { it.trim() }
                 if (parts.size < 2 || parts.any { it.isEmpty() }) diagnostics += unsupported(statement, "Timeline event requires period : event [: event]")
-                else events += TimelineEvent(parts.first(), parts.drop(1))
+                else events += TimelineEvent(parts.first(), parts.drop(1), section)
             }
         }
         if (events.isEmpty()) diagnostics += unsupported(statements.first(), "timeline requires at least one event")
