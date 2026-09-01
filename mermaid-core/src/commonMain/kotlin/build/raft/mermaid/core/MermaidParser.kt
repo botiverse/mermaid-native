@@ -709,13 +709,27 @@ public object MermaidParser {
         val classes = linkedMapOf<String, ClassDefinition>()
         val relationships = mutableListOf<ClassRelationship>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var currentNamespace: String? = null
 
-        fun ensure(id: String) { if (id !in classes) classes[id] = ClassDefinition(id) }
+        fun ensure(id: String) {
+            if (id !in classes) classes[id] = ClassDefinition(id, namespaceName = currentNamespace)
+        }
         statements.drop(1).forEach { statement ->
+            CLASS_NAMESPACE.matchEntire(statement.text)?.let {
+                if (currentNamespace != null) diagnostics += unsupported(statement, "Nested class namespaces are not supported")
+                else currentNamespace = it.groupValues[1]
+                return@forEach
+            }
+            if (statement.text == "}") {
+                if (currentNamespace == null) diagnostics += unsupported(statement, "Unexpected class namespace terminator")
+                else currentNamespace = null
+                return@forEach
+            }
             CLASS_DECLARATION.matchEntire(statement.text)?.let {
                 val id = it.groupValues[1]
                 val label = it.groupValues[2].ifEmpty { id }
-                classes[id] = classes[id]?.copy(label = label) ?: ClassDefinition(id, label)
+                classes[id] = classes[id]?.copy(label = label, namespaceName = currentNamespace)
+                    ?: ClassDefinition(id, label, namespaceName = currentNamespace)
                 return@forEach
             }
             CLASS_MEMBER.matchEntire(statement.text)?.let {
@@ -748,6 +762,7 @@ public object MermaidParser {
             }
             diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
         }
+        if (currentNamespace != null) diagnostics += unsupported(statements.last(), "Unclosed class namespace")
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
         } else MermaidParseResult.Failure(diagnostics)
@@ -2471,6 +2486,7 @@ public object MermaidParser {
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
     private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
+    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*\\{$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
     private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
     private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")

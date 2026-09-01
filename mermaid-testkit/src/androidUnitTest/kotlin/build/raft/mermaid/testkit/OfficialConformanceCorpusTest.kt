@@ -1,5 +1,6 @@
 package build.raft.mermaid.testkit
 
+import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.EventModelingDiagram
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.MermaidDiagnosticCode
@@ -96,6 +97,9 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
         relations.joinToString(",") { "${it.sourceFrameId}>${it.targetFrameId}" }
     is PieDiagram -> "pie|${showData}|${title.orEmpty()}|" +
         sections.joinToString(",") { "${it.label}:${it.value}" }
+    is ClassDiagram -> "class|" +
+        classes.joinToString(",") { "${it.id}:${it.label}:${it.members.joinToString(";") { member -> member.signature }}:${it.namespaceName.orEmpty()}" } + "|" +
+        relationships.joinToString(",") { "${it.from}>${it.to}:${it.kind.name}" }
     else -> error("Corpus pilot has no semantic adapter for ${this::class.simpleName}")
 }
 

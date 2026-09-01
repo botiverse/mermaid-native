@@ -188,7 +188,7 @@ tasks.register("verifyConformanceCorpus") {
             "Conformance manifest must be sorted by family and case"
         }
         check(rows.map { it[0] to it[1] }.distinct().size == rows.size) { "Conformance family/case keys must be unique" }
-        check(rows.map { it[0] }.toSet() == setOf("eventmodeling", "flowchart", "pie", "sequence")) {
+        check(rows.map { it[0] }.toSet() == setOf("class", "eventmodeling", "flowchart", "pie", "sequence")) {
             "Corpus must cover the current eventmodeling, flowchart, pie, and sequence batches"
         }
         check(rows.all { it[2] in setOf("supported", "unsupported", "deferred") }) {
