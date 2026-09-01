@@ -90,6 +90,7 @@ public data class ClassDefinition(
     val id: String,
     val label: String = id,
     val members: List<ClassMember> = emptyList(),
+    val namespaceName: String? = null,
 )
 
 public data class ClassMember(

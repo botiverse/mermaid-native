@@ -98,7 +98,7 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
     is PieDiagram -> "pie|${showData}|${title.orEmpty()}|" +
         sections.joinToString(",") { "${it.label}:${it.value}" }
     is ClassDiagram -> "class|" +
-        classes.joinToString(",") { "${it.id}:${it.label}:${it.members.joinToString(";") { member -> member.signature }}" } + "|" +
+        classes.joinToString(",") { "${it.id}:${it.label}:${it.members.joinToString(";") { member -> member.signature }}:${it.namespaceName.orEmpty()}" } + "|" +
         relationships.joinToString(",") { "${it.from}>${it.to}:${it.kind.name}" }
     else -> error("Corpus pilot has no semantic adapter for ${this::class.simpleName}")
 }
