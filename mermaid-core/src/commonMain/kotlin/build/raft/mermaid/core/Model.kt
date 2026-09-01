@@ -22,9 +22,15 @@ public data class FlowNode(
     val label: String,
 )
 
+public enum class FlowEdgeStyle {
+    NORMAL,
+    THICK,
+}
+
 public data class FlowEdge(
     val sourceId: String,
     val targetId: String,
+    val style: FlowEdgeStyle = FlowEdgeStyle.NORMAL,
 )
 
 public data class SequenceDiagram(

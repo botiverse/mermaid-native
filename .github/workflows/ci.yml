@@ -15,7 +15,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew verifyThirdPartyNotices cyclonedxBom compileDebugKotlinAndroid compileKotlinIosSimulatorArm64
+      - run: ./gradlew check :mermaid-core:allTests :mermaid-layout-simple:allTests :mermaid-testkit:allTests :mermaid-web:allTests cyclonedxBom
+      - run: ./scripts/verify-web-consumer-mutation.sh
       - uses: actions/upload-artifact@v4
         with:
           name: mermaid-native-sbom

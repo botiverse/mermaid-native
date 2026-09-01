@@ -1,12 +1,33 @@
 package build.raft.mermaid.web
 
 import build.raft.mermaid.core.MermaidDiagnosticCode
+import build.raft.mermaid.testkit.MermaidExamples
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class MermaidWebAdapterTest {
+    @Test
+    fun everyPositiveGalleryFixtureRendersThroughPublicConsumer() {
+        MermaidExamples.all.forEach { example ->
+            val result = assertIs<MermaidWebResult.Success>(
+                MermaidWebAdapter.render(MermaidWebRequest(example.source)),
+                example.path,
+            )
+            assertContains(result.svg, "<svg", message = example.path)
+        }
+    }
+
+    @Test
+    fun negativeControlReturnsTypedDiagnostic() {
+        val result = assertIs<MermaidWebResult.Failure>(
+            MermaidWebAdapter.render(MermaidWebRequest("graph TD\n  A => B")),
+        )
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, result.diagnostics.single().code)
+    }
+
     @Test
     fun supportedSourceProducesDeterministicSvg() {
         val request = MermaidWebRequest("flowchart TD\nA[Start] --> B[End]")
@@ -75,8 +96,8 @@ class MermaidWebAdapterTest {
         val source = "journey\n  title Checkout\n  Open cart: 5: User"
         val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest(source)))
 
-        assert(result.diagnostics.isNotEmpty())
-        assert(result.diagnostics.all { it.code == MermaidDiagnosticCode.UNSUPPORTED_SYNTAX })
+        assertTrue(result.diagnostics.isNotEmpty())
+        assertTrue(result.diagnostics.all { it.code == MermaidDiagnosticCode.UNSUPPORTED_SYNTAX })
     }
 
     @Test

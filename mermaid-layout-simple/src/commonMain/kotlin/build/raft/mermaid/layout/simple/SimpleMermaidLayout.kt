@@ -1,6 +1,7 @@
 package build.raft.mermaid.layout.simple
 
 import build.raft.mermaid.core.FlowDirection
+import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassVisibility
@@ -1982,7 +1983,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             val source = rects[edge.sourceId] ?: return@forEach
             val target = rects[edge.targetId] ?: return@forEach
             val anchors = edgeAnchors(source, target, horizontal)
-            commands += DrawLine(anchors.first, anchors.second)
+            commands += DrawLine(
+                anchors.first,
+                anchors.second,
+                strokeWidth = if (edge.style == FlowEdgeStyle.THICK) 3.0 else 1.5,
+            )
             commands += arrowHead(anchors.first, anchors.second)
         }
         diagram.nodes.forEach { node ->
