@@ -1435,23 +1435,31 @@ public object SimpleMermaidLayout : DiagramLayout {
         } + diagram.elements.flatMap { element ->
             listOf("type: ${element.type}", "docref: ${element.docRef}")
         }
+        val accessibilityLines = listOfNotNull(diagram.accessibilityTitle, diagram.accessibilityDescription)
         val measuredHeadingWidth = headingLines.maxOfOrNull { textMeasurer.measure(it, heading).width } ?: 0.0
-        val measuredBodyWidth = bodyLines.maxOfOrNull { textMeasurer.measure(it, body).width } ?: 0.0
+        val measuredBodyWidth = (bodyLines + accessibilityLines).maxOfOrNull { textMeasurer.measure(it, body).width } ?: 0.0
         val cardWidth = max(270.0, max(measuredHeadingWidth, measuredBodyWidth) + 24.0)
         val requirementHeight = 132.0
         val elementHeight = 96.0
         val columnGap = 150.0
         val rowGap = 28.0
+        val accessibilityOffset = if (diagram.accessibilityTitle != null || diagram.accessibilityDescription != null) 48.0 else 0.0
         val requirementX = config.padding
         val elementX = config.padding + cardWidth + columnGap
         val rects = linkedMapOf<String, SceneRect>()
         diagram.requirements.forEachIndexed { index, requirement ->
-            rects[requirement.name] = SceneRect(requirementX, config.padding + index * (requirementHeight + rowGap), cardWidth, requirementHeight)
+            rects[requirement.name] = SceneRect(requirementX, config.padding + accessibilityOffset + index * (requirementHeight + rowGap), cardWidth, requirementHeight)
         }
         diagram.elements.forEachIndexed { index, element ->
-            rects[element.name] = SceneRect(elementX, config.padding + index * (elementHeight + rowGap), cardWidth, elementHeight)
+            rects[element.name] = SceneRect(elementX, config.padding + accessibilityOffset + index * (elementHeight + rowGap), cardWidth, elementHeight)
         }
         val commands = mutableListOf<DrawCommand>()
+        diagram.accessibilityTitle?.let { title ->
+            commands += DrawText("accTitle: $title", ScenePoint(requirementX, config.padding + 18.0), style = body)
+        }
+        diagram.accessibilityDescription?.let { description ->
+            commands += DrawText("accDescr: $description", ScenePoint(requirementX, config.padding + 34.0), style = body)
+        }
         val missingRelationshipNames = diagram.relationships
             .flatMap { listOf(it.from, it.to) }
             .filterNot(rects::containsKey)
