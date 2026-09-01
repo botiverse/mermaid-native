@@ -1361,7 +1361,7 @@ public object MermaidParser {
                     if (id == null || text == null || risk == null || method == null) {
                         diagnostics += unsupported(statement, "Requirement requires id, text, risk low|medium|high, and verifymethod")
                     } else {
-                        requirements[current.name] = RequirementDefinition(current.name, id, text, risk, method)
+                        requirements[current.name] = RequirementDefinition(current.name, id, text, risk, method, current.type)
                     }
                 }
                 is RequirementBlock.Element -> {
@@ -1416,9 +1416,9 @@ public object MermaidParser {
                 return@forEach
             }
             REQUIREMENT_START.matchEntire(statement.text)?.let {
-                val name = it.groupValues[1]
+                val name = it.groupValues[2]
                 if (duplicateName(name)) diagnostics += unsupported(statement, "Duplicate requirement artifact name")
-                else block = RequirementBlock.Requirement(name)
+                else block = RequirementBlock.Requirement(name, type = it.groupValues[1].toRequirementType())
                 return@forEach
             }
             ELEMENT_START.matchEntire(statement.text)?.let {
@@ -2741,12 +2741,18 @@ private data class ParsedMindmapNode(
     val explicitId: Boolean,
 )
 
+private fun String.toRequirementType(): RequirementType = when (lowercase()) {
+    "functionalrequirement" -> RequirementType.FUNCTIONAL_REQUIREMENT
+    else -> RequirementType.REQUIREMENT
+}
+
 private sealed interface RequirementBlock {
     val name: String
     val fields: MutableMap<String, String>
 
     data class Requirement(
         override val name: String,
+        val type: RequirementType = RequirementType.REQUIREMENT,
         override val fields: MutableMap<String, String> = linkedMapOf(),
     ) : RequirementBlock
 
@@ -2756,7 +2762,7 @@ private sealed interface RequirementBlock {
     ) : RequirementBlock
 }
 
-private val REQUIREMENT_START = Regex("^requirement\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
+private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
 private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
 private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
 private val REQUIREMENT_RELATION = Regex(
