@@ -7,6 +7,7 @@ import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.MermaidDiagnosticCode
 import build.raft.mermaid.core.MermaidDiagram
 import build.raft.mermaid.core.PieDiagram
+import build.raft.mermaid.core.RequirementDiagram
 import build.raft.mermaid.core.TimelineDiagram
 import build.raft.mermaid.core.MermaidParseResult
 import build.raft.mermaid.core.MermaidParser
@@ -112,6 +113,10 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
         }
     is TimelineDiagram -> "timeline|${title.orEmpty()}|" +
         events.joinToString(",") { event -> "${event.period}:${event.labels.joinToString(";")}" }
+    is RequirementDiagram -> "requirement|" +
+        requirements.joinToString(",") { "${it.name}:${it.id}:${it.text}:${it.risk.name}:${it.verifyMethod.name}" } + "|" +
+        elements.joinToString(",") { "${it.name}:${it.type}:${it.docRef}" } + "|" +
+        relationships.joinToString(",") { "${it.from}>${it.to}:${it.kind.name}" }
     else -> error("Corpus pilot has no semantic adapter for ${this::class.simpleName}")
 }
 
