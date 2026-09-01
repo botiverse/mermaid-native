@@ -240,6 +240,8 @@ public data class RequirementDiagram(
     val requirements: List<RequirementDefinition>,
     val elements: List<RequirementElement>,
     val relationships: List<RequirementRelationship>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class RequirementDefinition(

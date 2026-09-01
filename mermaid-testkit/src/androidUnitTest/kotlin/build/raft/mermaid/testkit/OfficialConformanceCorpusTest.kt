@@ -113,7 +113,7 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
         }
     is TimelineDiagram -> "timeline|${title.orEmpty()}|" +
         events.joinToString(",") { event -> "${event.section.orEmpty()}:${event.period}:${event.labels.joinToString(";")}" }
-    is RequirementDiagram -> "requirement|" +
+    is RequirementDiagram -> "requirement|${accessibilityTitle.orEmpty()}:${accessibilityDescription.orEmpty()}|" +
         requirements.joinToString(",") { "${it.name}:${it.id}:${it.text}:${it.risk.name}:${it.verifyMethod.name}" } + "|" +
         elements.joinToString(",") { "${it.name}:${it.type}:${it.docRef}" } + "|" +
         relationships.joinToString(",") { "${it.from}>${it.to}:${it.kind.name}" }

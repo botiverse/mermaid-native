@@ -1344,6 +1344,8 @@ public object MermaidParser {
         val elements = linkedMapOf<String, RequirementElement>()
         val relationships = mutableListOf<RequirementRelationship>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        var accessibilityTitle: String? = null
+        var accessibilityDescription: String? = null
         var block: RequirementBlock? = null
 
         fun duplicateName(name: String): Boolean = name in requirements || name in elements
@@ -1401,6 +1403,18 @@ public object MermaidParser {
                 return@forEach
             }
 
+            if (statement.text.startsWith("accTitle:", ignoreCase = true)) {
+                val value = statement.text.substringAfter(':').trim()
+                if (value.isEmpty() || accessibilityTitle != null) diagnostics += unsupported(statement, "Requirement accessibility title must be non-empty and unique")
+                else accessibilityTitle = value
+                return@forEach
+            }
+            if (statement.text.startsWith("accDescr:", ignoreCase = true)) {
+                val value = statement.text.substringAfter(':').trim()
+                if (value.isEmpty() || accessibilityDescription != null) diagnostics += unsupported(statement, "Requirement accessibility description must be non-empty and unique")
+                else accessibilityDescription = value
+                return@forEach
+            }
             REQUIREMENT_START.matchEntire(statement.text)?.let {
                 val name = it.groupValues[1]
                 if (duplicateName(name)) diagnostics += unsupported(statement, "Duplicate requirement artifact name")
@@ -1445,7 +1459,15 @@ public object MermaidParser {
             }
         }
         return if (diagnostics.isEmpty() && (requirements.isNotEmpty() || elements.isNotEmpty() || relationships.isNotEmpty())) {
-            MermaidParseResult.Success(RequirementDiagram(requirements.values.toList(), elements.values.toList(), relationships))
+            MermaidParseResult.Success(
+                RequirementDiagram(
+                    requirements = requirements.values.toList(),
+                    elements = elements.values.toList(),
+                    relationships = relationships,
+                    accessibilityTitle = accessibilityTitle,
+                    accessibilityDescription = accessibilityDescription,
+                )
+            )
         } else {
             if (requirements.isEmpty() && diagnostics.isEmpty()) {
                 diagnostics += unsupported(statements.first(), "requirementDiagram requires at least one requirement or element")
