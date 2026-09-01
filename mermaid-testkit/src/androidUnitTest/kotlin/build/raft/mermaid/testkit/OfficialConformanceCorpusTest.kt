@@ -2,6 +2,7 @@ package build.raft.mermaid.testkit
 
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.EventModelingDiagram
+import build.raft.mermaid.core.GanttDiagram
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.MermaidDiagnosticCode
 import build.raft.mermaid.core.MermaidDiagram
@@ -30,7 +31,9 @@ class OfficialConformanceCorpusTest {
             val source = File(root, row.fixture).readText()
             when (row.classification) {
                 "supported" -> {
-                    val success = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source), row.key)
+                    val parsed = MermaidParser.parse(source)
+                    if (parsed is MermaidParseResult.Failure) error("${row.key}: ${parsed.diagnostics}")
+                    val success = assertIs<MermaidParseResult.Success>(parsed, row.key)
                     assertEquals(row.expectedSemantics, success.diagram.semanticProjection(), row.key)
                     val first = render(success.diagram)
                     assertEquals(first, render(success.diagram), "Non-deterministic SVG: ${row.key}")
@@ -100,6 +103,12 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
     is ClassDiagram -> "class|" +
         classes.joinToString(",") { "${it.id}:${it.label}:${it.members.joinToString(";") { member -> member.signature }}:${it.namespaceName.orEmpty()}" } + "|" +
         relationships.joinToString(",") { "${it.from}>${it.to}:${it.kind.name}" }
+    is GanttDiagram -> "gantt|${title.orEmpty()}|$dateFormat|" +
+        sections.joinToString(",") { section ->
+            "${section.name}:" + section.tasks.joinToString(";") { task ->
+                "${task.name}:${task.id}:${task.startDay}:${task.durationDays}:${task.status.name}"
+            }
+        }
     else -> error("Corpus pilot has no semantic adapter for ${this::class.simpleName}")
 }
 
