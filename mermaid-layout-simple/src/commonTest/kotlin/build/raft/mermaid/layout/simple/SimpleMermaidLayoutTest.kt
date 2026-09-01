@@ -560,6 +560,21 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun timelineRendersSectionLabelsAndBoundaries() {
+        val diagram = TimelineDiagram(
+            "History",
+            listOf(
+                TimelineEvent("2024", listOf("Launch"), section = "Early"),
+                TimelineEvent("2025", listOf("Scale"), section = "Later"),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val texts = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue("Early" in texts && "Later" in texts)
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().size >= 3)
+    }
+
+    @Test
     fun userJourneyProducesDeterministicSectionAndTaskCards() {
         val diagram = UserJourneyDiagram(
             "Checkout journey",

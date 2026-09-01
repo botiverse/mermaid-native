@@ -1536,15 +1536,28 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutTimeline(diagram: TimelineDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val body = TextStyle(fontSize = 12.0)
+        val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val labelWidth = diagram.events.maxOf { textMeasurer.measure(it.period, body).width } + 32.0
-        val width = max(420.0, config.padding * 2 + labelWidth + 300.0)
+        val sectionWidth = diagram.events.mapNotNull { it.section }.maxOfOrNull { textMeasurer.measure(it, sectionStyle).width } ?: 0.0
+        val width = max(420.0, config.padding * 2 + labelWidth + max(300.0, sectionWidth + 40.0))
         val height = config.padding * 2 + 44.0 + diagram.events.size * 42.0
         val axisX = config.padding + labelWidth
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
         commands += DrawLine(ScenePoint(axisX, config.padding + 32.0), ScenePoint(axisX, height - config.padding))
+        var previousSection: String? = null
         diagram.events.forEachIndexed { index, event ->
             val y = config.padding + 52.0 + index * 42.0
+            if (event.section != null && event.section != previousSection) {
+                val sectionY = y - 18.0
+                commands += DrawText(requireNotNull(event.section), ScenePoint(axisX + 18.0, sectionY), style = sectionStyle)
+                commands += DrawLine(
+                    ScenePoint(config.padding, sectionY + 6.0),
+                    ScenePoint(width - config.padding, sectionY + 6.0),
+                    stroke = SceneColor("#cbd5e1"),
+                )
+            }
+            previousSection = event.section
             commands += DrawText(event.period, ScenePoint(config.padding, y + 5.0), style = body)
             commands += DrawPolygon(listOf(ScenePoint(axisX, y), ScenePoint(axisX + 7.0, y + 7.0), ScenePoint(axisX, y + 14.0), ScenePoint(axisX - 7.0, y + 7.0)), fill = SceneColor("#2563eb"))
             commands += DrawText(event.labels.joinToString(" · "), ScenePoint(axisX + 18.0, y + 11.0), style = body)

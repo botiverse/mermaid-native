@@ -184,7 +184,7 @@ public data class GanttTask(val name: String, val id: String, val startDay: Int,
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 
 public data class TimelineDiagram(val title: String?, val events: List<TimelineEvent>) : MermaidDiagram
-public data class TimelineEvent(val period: String, val labels: List<String>)
+public data class TimelineEvent(val period: String, val labels: List<String>, val section: String? = null)
 
 public data class QuadrantChartDiagram(
     val title: String?,

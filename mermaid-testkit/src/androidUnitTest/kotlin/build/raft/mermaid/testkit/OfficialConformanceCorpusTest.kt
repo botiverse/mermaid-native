@@ -112,7 +112,7 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
             }
         }
     is TimelineDiagram -> "timeline|${title.orEmpty()}|" +
-        events.joinToString(",") { event -> "${event.period}:${event.labels.joinToString(";")}" }
+        events.joinToString(",") { event -> "${event.section.orEmpty()}:${event.period}:${event.labels.joinToString(";")}" }
     is RequirementDiagram -> "requirement|" +
         requirements.joinToString(",") { "${it.name}:${it.id}:${it.text}:${it.risk.name}:${it.verifyMethod.name}" } + "|" +
         elements.joinToString(",") { "${it.name}:${it.type}:${it.docRef}" } + "|" +
@@ -124,6 +124,11 @@ private fun MermaidDiagram.expectedVisibleLabels(): List<String> = when (this) {
     is FlowchartDiagram -> nodes.map { it.label }
     is SequenceDiagram -> actors.map { it.label } + messages.map { it.label }
     is EventModelingDiagram -> frames.map { it.entityId }
+    is TimelineDiagram -> events.flatMap { event ->
+        listOfNotNull(event.section, event.period) + event.labels.flatMap { label ->
+            listOf(label.substringBefore('<').trim().takeIf { it.isNotEmpty() } ?: label)
+        }
+    }
     else -> emptyList()
 }
 
