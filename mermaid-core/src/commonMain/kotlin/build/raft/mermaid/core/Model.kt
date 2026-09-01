@@ -250,8 +250,10 @@ public data class RequirementDefinition(
     val text: String,
     val risk: RequirementRisk,
     val verifyMethod: RequirementVerifyMethod,
+    val type: RequirementType = RequirementType.REQUIREMENT,
 )
 
+public enum class RequirementType { REQUIREMENT, FUNCTIONAL_REQUIREMENT }
 public enum class RequirementRisk { LOW, MEDIUM, HIGH }
 public enum class RequirementVerifyMethod { ANALYSIS, DEMONSTRATION, INSPECTION, TEST }
 
