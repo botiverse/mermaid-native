@@ -253,7 +253,7 @@ public data class RequirementDefinition(
     val type: RequirementType = RequirementType.REQUIREMENT,
 )
 
-public enum class RequirementType { REQUIREMENT, FUNCTIONAL_REQUIREMENT, INTERFACE_REQUIREMENT }
+public enum class RequirementType { REQUIREMENT, FUNCTIONAL_REQUIREMENT, INTERFACE_REQUIREMENT, PERFORMANCE_REQUIREMENT }
 public enum class RequirementRisk { LOW, MEDIUM, HIGH }
 public enum class RequirementVerifyMethod { ANALYSIS, DEMONSTRATION, INSPECTION, TEST }
 
