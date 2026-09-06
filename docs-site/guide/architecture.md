@@ -10,8 +10,9 @@ rendering:
    EPL-2.0, not MIT.
 4. `mermaid-render-svg` serializes common data; an ASCII renderer may be added
    later as a separate module.
-5. `mermaid-kuikly` and platform samples provide host text measurement and
-   drawing; no DOM, WebView, or JavaScript type belongs in `commonMain`.
+5. `mermaid-kuikly` reserves the future host text-measurement and drawing
+   adapter seam; its native renderer is not implemented yet. No DOM, WebView,
+   or JavaScript type belongs in `commonMain`.
 
 The AST intentionally has no coordinates or font assumptions. Layout receives a
 text-measurement seam and returns stable geometry. This makes parser tests and

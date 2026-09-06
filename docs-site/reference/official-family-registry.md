@@ -1,7 +1,7 @@
 # Official Mermaid family registry
 
 The machine-readable registry in
-[`diagram-families.csv`](./diagram-families.csv)
+[`diagram-families.csv`](/reference/diagram-families.csv)
 is pinned to Mermaid revision
 `04ee3364045d6573f84034d3c9368cc50233a92f` (see
 [`compatibility/upstreams.lock`](https://github.com/botiverse/mermaid-native/blob/main/compatibility/upstreams.lock)). It is the

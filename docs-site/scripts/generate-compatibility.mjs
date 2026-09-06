@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { copyFile, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -6,6 +6,7 @@ const docsRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..')
 const repositoryRoot = resolve(docsRoot, '..')
 const csvPath = resolve(repositoryRoot, 'compatibility/diagram-families.csv')
 const outputPath = resolve(docsRoot, 'reference/families.md')
+const publishedCsvPath = resolve(docsRoot, 'public/reference/diagram-families.csv')
 const lines = (await readFile(csvPath, 'utf8')).trim().split('\n').slice(1)
 
 const rows = lines.map((line) => {
@@ -23,9 +24,13 @@ const rows = lines.map((line) => {
 })
 
 const statusLabel = (value) => value === 'in_progress' ? 'In progress' : value.replaceAll('_', ' ')
-const table = rows.map((row) =>
-  `| \`${row.family}\` | [${row.syntax}](https://mermaid.js.org/syntax/${row.syntax}.html) | ${statusLabel(row.status)} | ${row.parser} | ${row.layout} | ${row.svg} |`,
-).join('\n')
+const syntaxReference = {
+  usecase: 'https://mermaid.js.org/intro/syntax-reference.html',
+}
+const table = rows.map((row) => {
+  const url = syntaxReference[row.syntax] ?? `https://mermaid.js.org/syntax/${row.syntax}.html`
+  return `| \`${row.family}\` | [${row.syntax}](${url}) | ${statusLabel(row.status)} | ${row.parser} | ${row.layout} | ${row.svg} |`
+}).join('\n')
 
 const body = `# Diagram family matrix
 
@@ -45,3 +50,4 @@ _Last generated from ${rows.length} registry entries._
 `
 
 await writeFile(outputPath, body)
+await copyFile(csvPath, publishedCsvPath)
