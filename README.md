@@ -13,10 +13,12 @@ diagnostics rather than silently rendering a different diagram.
 - `mermaid-layout-api`: toolkit-neutral scene graph, draw commands, and layout SPI.
 - `mermaid-layout-simple`: deterministic Apache-2.0 starter layout.
 - `mermaid-render-svg`: common SVG serializer.
-- `mermaid-kuikly`: Kuikly Canvas/Text adapter for Raft Mobile.
+- `mermaid-kuikly`: reserved module for the future Kuikly Canvas/Text adapter; the native renderer is not implemented yet.
 - `mermaid-testkit`: compatibility fixtures and geometry goldens.
 
 All artifacts share one version and are published under `build.raft.mermaid`.
+
+Read the optimized documentation site at https://botiverse.github.io/mermaid-native/.
 ELK support is deliberately outside the Apache-2.0 core; any future `layout-elk`
 artifact must carry its own EPL-2.0 obligations.
 

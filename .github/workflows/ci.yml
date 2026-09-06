@@ -21,3 +21,18 @@ jobs:
         with:
           name: mermaid-native-sbom
           path: build/reports/cyclonedx-direct/bom.*
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - name: Build VitePress documentation
+        working-directory: docs-site
+        run: |
+          npm ci
+          npm run docs:build
