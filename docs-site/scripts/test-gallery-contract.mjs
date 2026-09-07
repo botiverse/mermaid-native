@@ -1,6 +1,13 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  ALLOWED_TAGS,
+  ALLOWED_ATTRS,
+  validateAttributeValue,
+  sanitizeSvg,
+  sanitizeSvgText
+} from '../../acceptance/svg-sanitizer.js'
 
 const docsRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..')
 const repoRoot = resolve(docsRoot, '..')
@@ -79,50 +86,17 @@ for (const [family, source] of familyTuples) {
 }
 console.log('✓ acceptance/consumer.js matches all 32 canonical samples/*.mmd')
 
-// 4. Verify MermaidGallery.vue has security allowlist and debounce
+// 4. Verify MermaidGallery.vue imports shared sanitizer and contains debounce watch
 const vueCode = await readFile(vueComponentPath, 'utf8')
-if (!vueCode.includes('ALLOWED_TAGS') || !vueCode.includes('ALLOWED_ATTRS')) {
-  throw new Error('MermaidGallery.vue missing fail-closed allowlists')
+if (!vueCode.includes("from '../utils/svg-sanitizer'") && !vueCode.includes('sanitizeSvg')) {
+  throw new Error('MermaidGallery.vue missing shared sanitizer import')
 }
 if (!vueCode.includes('debounceTimer') || !vueCode.includes('watch(editorSource')) {
   throw new Error('MermaidGallery.vue missing debounced editor watch')
 }
-console.log('✓ MermaidGallery.vue contains fail-closed allowlists and debounced input watch')
+console.log('✓ MermaidGallery.vue imports shared sanitizer and implements debounced input watch')
 
-// 5. Test SVG Security Sanitizer logic against malicious payloads
-const ALLOWED_TAGS = new Set([
-  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan'
-])
-const ALLOWED_ATTRS = new Set([
-  'xmlns', 'width', 'height', 'viewbox', 'role', 'aria-label', 'aria-hidden',
-  'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points',
-  'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray',
-  'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'opacity',
-  'transform', 'text-anchor', 'font-family', 'font-size', 'font-weight', 'font-style',
-  'letter-spacing', 'dominant-baseline', 'alignment-baseline', 'class', 'id'
-])
-
-function testSanitizerXml(xml) {
-  const tagMatches = [...xml.matchAll(/<([a-zA-Z0-9:-]+)/g)].map(m => m[1].toLowerCase()).filter(t => !t.startsWith('?') && !t.startsWith('/'))
-  for (const tag of tagMatches) {
-    if (!ALLOWED_TAGS.has(tag)) return { ok: false, error: `Forbidden tag <${tag}>` }
-  }
-  const attrMatches = [...xml.matchAll(/\s+([a-zA-Z0-9:-]+)=["\']([^"\']*)["\']/g)]
-  for (const match of attrMatches) {
-    const attrName = match[1].toLowerCase()
-    const attrVal = match[2].toLowerCase().replace(/[\s\x00-\x1f]+/g, '')
-    if (attrName.startsWith('on')) return { ok: false, error: `Forbidden event handler ${attrName}` }
-    if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style') {
-      return { ok: false, error: `Forbidden attribute ${attrName}` }
-    }
-    if (!ALLOWED_ATTRS.has(attrName)) return { ok: false, error: `Disallowed attribute ${attrName}` }
-    if (attrVal.includes('javascript:') || attrVal.includes('vbscript:') || attrVal.includes('data:text') || attrVal.includes('data:image') || attrVal.includes('url(')) {
-      return { ok: false, error: `Unsafe scheme in ${attrName}` }
-    }
-  }
-  return { ok: true }
-}
-
+// 5. Test SVG Security Sanitizer logic against malicious payloads using shared implementation
 const maliciousPayloads = [
   { name: 'XSS <a> tag with javascript: link', payload: '<svg><a href="javascript:alert(1)"><text>Click</text></a></svg>' },
   { name: 'Inline <style> tag injection', payload: '<svg><style>body { display: none; }</style><rect width="10" height="10"/></svg>' },
@@ -135,26 +109,32 @@ const maliciousPayloads = [
   { name: 'Event handler onload attribute', payload: '<svg onload="alert(1)"><rect width="10" height="10"/></svg>' },
   { name: 'Unsafe url(javascript:) scheme', payload: '<svg><text fill="url(javascript:alert(1))">test</text></svg>' },
   { name: 'style attribute', payload: '<svg><rect style="fill:red" width="10" height="10"/></svg>' },
-  { name: '<animate> tag', payload: '<svg><animate attributeName="x" from="0" to="10"/></svg>' }
+  { name: '<animate> tag', payload: '<svg><animate attributeName="x" from="0" to="10"/></svg>' },
+  { name: 'CSS escape \\72 bypass vector', payload: '<svg><text fill="u\\72 l(#probe)">x</text></svg>' },
+  { name: 'CSS escape backslash in stroke', payload: '<svg><line x1="0" y1="0" x2="10" y2="10" stroke="\\75 rl(http://evil.com)"/></svg>' },
+  { name: 'External fragment url in fill', payload: '<svg><rect fill="url(#probe)" width="10" height="10"/></svg>' },
+  { name: 'External resource url in stroke', payload: '<svg><rect stroke="url(https://evil.com/leak)" width="10" height="10"/></svg>' },
+  { name: 'id attribute injection', payload: '<svg><rect id="custom-id" width="10" height="10"/></svg>' },
+  { name: 'class attribute injection', payload: '<svg><rect class="custom-class" width="10" height="10"/></svg>' }
 ]
 
 for (const testCase of maliciousPayloads) {
-  const result = testSanitizerXml(testCase.payload)
+  const result = sanitizeSvgText(testCase.payload)
   if (result.ok) {
     throw new Error(`Sanitizer failed to reject malicious payload: ${testCase.name}`)
   }
 }
-console.log(`✓ Sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors`)
+console.log(`✓ Shared sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors (including CSS escape & fragment vectors)`)
 
-// Test all 34 samples pass sanitizer
+// 6. Test all 34 golden samples pass the shared strict fail-closed sanitizer
 const sampleFiles = await readdir(samplesDir)
 for (const file of sampleFiles.filter(f => f.endsWith('.svg'))) {
   const svgContent = await readFile(resolve(samplesDir, file), 'utf8')
-  const result = testSanitizerXml(svgContent)
+  const result = sanitizeSvgText(svgContent)
   if (!result.ok) {
-    throw new Error(`Sanitizer falsely rejected valid sample ${file}: ${result.error}`)
+    throw new Error(`Shared sanitizer falsely rejected valid sample ${file}: ${result.error}`)
   }
 }
-console.log('✓ All 34 golden sample SVGs pass the strict fail-closed sanitizer')
+console.log('✓ All 34 golden sample SVGs pass the shared strict fail-closed sanitizer')
 
 console.log('--- ALL GALLERY CONTRACT AND SECURITY TESTS PASSED ---')

@@ -269,36 +269,13 @@ const sharedSource = decodeSource();
 if (sharedSource && editor) editor.value = sharedSource;
 
 function runtime() { return window.mermaidNative; }
-const ALLOWED_TAGS = new Set([
-  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan'
-]);
-const ALLOWED_ATTRS = new Set([
-  'xmlns', 'width', 'height', 'viewbox', 'role', 'aria-label', 'aria-hidden',
-  'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points',
-  'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray',
-  'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'opacity',
-  'transform', 'text-anchor', 'font-family', 'font-size', 'font-weight', 'font-style',
-  'letter-spacing', 'dominant-baseline', 'alignment-baseline', 'class', 'id'
-]);
+import { sanitizeSvg } from './svg-sanitizer.js';
 
 function safeSvg(payload) {
   if (!payload?.svg || typeof payload.svg !== 'string') return null;
-  const parsed = new DOMParser().parseFromString(payload.svg, 'image/svg+xml');
-  if (parsed.querySelector('parsererror')) return null;
-  const root = parsed.documentElement;
-  if (!root || root.localName.toLowerCase() !== 'svg') return null;
-  const allElements = [root, ...Array.from(root.querySelectorAll('*'))];
-  for (const node of allElements) {
-    const tag = node.localName.toLowerCase();
-    if (!ALLOWED_TAGS.has(tag)) return null;
-    for (const attr of Array.from(node.attributes)) {
-      const name = attr.name.toLowerCase();
-      if (name.startsWith('on') || name === 'href' || name.endsWith(':href') || name === 'src' || name === 'style' || !ALLOWED_ATTRS.has(name)) return null;
-      const val = attr.value.toLowerCase().replace(/[\s\x00-\x1f]+/g, '');
-      if (val.includes('javascript:') || val.includes('vbscript:') || val.includes('data:text') || val.includes('data:image') || val.includes('url(')) return null;
-    }
-  }
-  return document.importNode(root, true);
+  const res = sanitizeSvg(payload.svg);
+  if (!res.ok) return null;
+  return res.element ? document.importNode(res.element, true) : null;
 }
 function renderCard(card, target = gallery) {
   const article = document.createElement('article'); article.className = 'example'; article.id = card.slug;

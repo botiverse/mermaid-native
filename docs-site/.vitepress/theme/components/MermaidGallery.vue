@@ -18,6 +18,8 @@ const wasmStatus = ref<'loading' | 'ready' | 'offline'>('loading')
 const filterQuery = ref('')
 const copiedSlug = ref('')
 
+import { ALLOWED_TAGS, ALLOWED_ATTRS, sanitizeSvg } from '../utils/svg-sanitizer'
+
 const filteredExamples = computed(() => {
   const q = filterQuery.value.trim().toLowerCase()
   if (!q) return familyExamples
@@ -29,107 +31,15 @@ const filteredExamples = computed(() => {
   )
 })
 
-const ALLOWED_TAGS = new Set([
-  'svg',
-  'g',
-  'rect',
-  'circle',
-  'ellipse',
-  'line',
-  'polyline',
-  'polygon',
-  'path',
-  'text',
-  'tspan',
-])
-
-const ALLOWED_ATTRS = new Set([
-  'xmlns',
-  'width',
-  'height',
-  'viewbox',
-  'role',
-  'aria-label',
-  'aria-hidden',
-  'x',
-  'y',
-  'x1',
-  'y1',
-  'x2',
-  'y2',
-  'cx',
-  'cy',
-  'r',
-  'rx',
-  'ry',
-  'd',
-  'points',
-  'fill',
-  'fill-opacity',
-  'stroke',
-  'stroke-width',
-  'stroke-dasharray',
-  'stroke-linecap',
-  'stroke-linejoin',
-  'stroke-miterlimit',
-  'stroke-opacity',
-  'opacity',
-  'transform',
-  'text-anchor',
-  'font-family',
-  'font-size',
-  'font-weight',
-  'font-style',
-  'letter-spacing',
-  'dominant-baseline',
-  'alignment-baseline',
-  'class',
-  'id',
-])
-
 function safeSvg(payload: any): { ok: true; svg: string } | { ok: false; error: string } {
   if (!payload?.svg || typeof payload.svg !== 'string') {
     return { ok: false, error: 'Empty or missing SVG payload' }
   }
-  const parsed = new DOMParser().parseFromString(payload.svg, 'image/svg+xml')
-  if (parsed.querySelector('parsererror')) {
-    return { ok: false, error: 'Malformed XML in SVG payload' }
+  const res = sanitizeSvg(payload.svg)
+  if (!res.ok) {
+    return { ok: false, error: res.error }
   }
-  const root = parsed.documentElement
-  if (!root || root.localName.toLowerCase() !== 'svg') {
-    return { ok: false, error: 'Root element must be <svg>' }
-  }
-
-  const allElements = [root, ...Array.from(root.querySelectorAll('*'))]
-  for (const node of allElements) {
-    const tagName = node.localName.toLowerCase()
-    if (!ALLOWED_TAGS.has(tagName)) {
-      return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
-    }
-    for (const attr of Array.from(node.attributes)) {
-      const attrName = attr.name.toLowerCase()
-      if (attrName.startsWith('on')) {
-        return { ok: false, error: `Forbidden event handler attribute "${attr.name}" in SVG output` }
-      }
-      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style') {
-        return { ok: false, error: `Forbidden attribute "${attr.name}" in SVG output` }
-      }
-      if (!ALLOWED_ATTRS.has(attrName)) {
-        return { ok: false, error: `Forbidden attribute "${attr.name}" in SVG output` }
-      }
-      const val = attr.value.toLowerCase().replace(/[\s\x00-\x1f]+/g, '')
-      if (
-        val.includes('javascript:') ||
-        val.includes('vbscript:') ||
-        val.includes('data:text') ||
-        val.includes('data:image') ||
-        val.includes('url(')
-      ) {
-        return { ok: false, error: `Potentially unsafe script/URL scheme in attribute "${attr.name}"` }
-      }
-    }
-  }
-  return { ok: true, svg: root.outerHTML }
+  return { ok: true, svg: res.svg }
 }
 
 function decodeSource(): string | null {

@@ -145,8 +145,12 @@ tasks.register("verifyWebAcceptance") {
         check(js.contains("64-95: \"Data\"")) {
             "Packet in consumer.js must include full field ranges"
         }
-        check(js.contains("ALLOWED_TAGS") && js.contains("ALLOWED_ATTRS")) {
-            "Consumer SVG sanitizer must use fail-closed allowlists"
+        val sanitizer = shell.file("svg-sanitizer.js").asFile.readText()
+        check(sanitizer.contains("ALLOWED_TAGS") && sanitizer.contains("ALLOWED_ATTRS")) {
+            "SVG sanitizer must use fail-closed allowlists"
+        }
+        check(sanitizer.contains("validateAttributeValue") && sanitizer.contains("\\\\")) {
+            "SVG sanitizer must strictly validate attribute values and reject escapes"
         }
         check(js.contains("editorDebounceTimer")) {
             "Consumer must support debounced editor input"
