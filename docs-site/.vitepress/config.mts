@@ -10,6 +10,9 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   appearance: true,
+  ignoreDeadLinks: [
+    /^\/playground/,
+  ],
   themeConfig: {
     logo: '/logo.svg',
     siteTitle: 'Mermaid Native',

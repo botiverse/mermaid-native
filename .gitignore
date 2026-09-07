@@ -1,6 +1,8 @@
 /.gradle/
 /build/
 /*/build/
+kotlin-js-store/
+_site/
 local.properties
 *.hprof
 .DS_Store
