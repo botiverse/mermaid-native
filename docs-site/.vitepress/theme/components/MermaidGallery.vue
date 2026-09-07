@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useData } from 'vitepress'
 import familyExamples from '../data/family-examples.json'
 
@@ -29,21 +29,107 @@ const filteredExamples = computed(() => {
   )
 })
 
-function safeSvg(payload: any): string | null {
-  if (!payload?.svg) return null
-  const parsed = new DOMParser().parseFromString(payload.svg, 'image/svg+xml')
-  const svg = parsed.documentElement
-  if (svg.localName !== 'svg' || parsed.querySelector('parsererror,script,iframe,foreignObject')) {
-    return null
+const ALLOWED_TAGS = new Set([
+  'svg',
+  'g',
+  'rect',
+  'circle',
+  'ellipse',
+  'line',
+  'polyline',
+  'polygon',
+  'path',
+  'text',
+  'tspan',
+])
+
+const ALLOWED_ATTRS = new Set([
+  'xmlns',
+  'width',
+  'height',
+  'viewbox',
+  'role',
+  'aria-label',
+  'aria-hidden',
+  'x',
+  'y',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'cx',
+  'cy',
+  'r',
+  'rx',
+  'ry',
+  'd',
+  'points',
+  'fill',
+  'fill-opacity',
+  'stroke',
+  'stroke-width',
+  'stroke-dasharray',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'stroke-miterlimit',
+  'stroke-opacity',
+  'opacity',
+  'transform',
+  'text-anchor',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'font-style',
+  'letter-spacing',
+  'dominant-baseline',
+  'alignment-baseline',
+  'class',
+  'id',
+])
+
+function safeSvg(payload: any): { ok: true; svg: string } | { ok: false; error: string } {
+  if (!payload?.svg || typeof payload.svg !== 'string') {
+    return { ok: false, error: 'Empty or missing SVG payload' }
   }
-  parsed.querySelectorAll('*').forEach((node) => {
-    ;[...node.attributes].forEach((attr) => {
-      if (attr.name.toLowerCase().startsWith('on')) {
-        node.removeAttribute(attr.name)
+  const parsed = new DOMParser().parseFromString(payload.svg, 'image/svg+xml')
+  if (parsed.querySelector('parsererror')) {
+    return { ok: false, error: 'Malformed XML in SVG payload' }
+  }
+  const root = parsed.documentElement
+  if (!root || root.localName.toLowerCase() !== 'svg') {
+    return { ok: false, error: 'Root element must be <svg>' }
+  }
+
+  const allElements = [root, ...Array.from(root.querySelectorAll('*'))]
+  for (const node of allElements) {
+    const tagName = node.localName.toLowerCase()
+    if (!ALLOWED_TAGS.has(tagName)) {
+      return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
+    }
+    for (const attr of Array.from(node.attributes)) {
+      const attrName = attr.name.toLowerCase()
+      if (attrName.startsWith('on')) {
+        return { ok: false, error: `Forbidden event handler attribute "${attr.name}" in SVG output` }
       }
-    })
-  })
-  return svg.outerHTML
+      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style') {
+        return { ok: false, error: `Forbidden attribute "${attr.name}" in SVG output` }
+      }
+      if (!ALLOWED_ATTRS.has(attrName)) {
+        return { ok: false, error: `Forbidden attribute "${attr.name}" in SVG output` }
+      }
+      const val = attr.value.toLowerCase().replace(/[\s\x00-\x1f]+/g, '')
+      if (
+        val.includes('javascript:') ||
+        val.includes('vbscript:') ||
+        val.includes('data:text') ||
+        val.includes('data:image') ||
+        val.includes('url(')
+      ) {
+        return { ok: false, error: `Potentially unsafe script/URL scheme in attribute "${attr.name}"` }
+      }
+    }
+  }
+  return { ok: true, svg: root.outerHTML }
 }
 
 function decodeSource(): string | null {
@@ -57,7 +143,24 @@ function decodeSource(): string | null {
   }
 }
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(editorSource, () => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+  debounceTimer = setTimeout(() => {
+    if (wasmStatus.value === 'ready') {
+      renderEditor()
+    }
+  }, 300)
+})
+
 function renderEditor() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
   if (typeof window === 'undefined') return
   const rt = (window as any).mermaidNative
   if (!rt?.renderMermaidResultJson) {
@@ -70,14 +173,14 @@ function renderEditor() {
     const payload = JSON.parse(rt.renderMermaidResultJson(editorSource.value))
     if (payload.ok && payload.svg) {
       const sanitized = safeSvg(payload)
-      if (sanitized) {
-        editorPreviewHtml.value = sanitized
+      if (sanitized.ok) {
+        editorPreviewHtml.value = sanitized.svg
         editorError.value = ''
         editorStatus.value = 'Rendered successfully'
       } else {
         editorPreviewHtml.value = ''
-        editorError.value = 'SVG output rejected by security policy'
-        editorStatus.value = 'Render rejected'
+        editorError.value = `SVG rejected by security policy: ${sanitized.error}`
+        editorStatus.value = 'Render rejected (security policy)'
       }
     } else {
       editorPreviewHtml.value = ''
@@ -232,6 +335,13 @@ onMounted(() => {
   }
 
   initWasm()
+})
+
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
 })
 </script>
 

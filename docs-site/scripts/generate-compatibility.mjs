@@ -119,6 +119,15 @@ for (const [family, source, note] of familyTuples) {
   if (!existsSync(svgPath)) {
     throw new Error(`Sample SVG file missing: ${svgPath}`)
   }
+  const mmdFile = sampleFile.replace(/\.svg$/, '.mmd')
+  const mmdPath = resolve(samplesDir, mmdFile)
+  if (!existsSync(mmdPath)) {
+    throw new Error(`Sample MMD file missing: ${mmdPath}`)
+  }
+  const canonicalMmd = (await readFile(mmdPath, 'utf8')).trim()
+  if (source.trim() !== canonicalMmd) {
+    throw new Error(`Source mismatch for family "${family}" between consumer.js and ${mmdFile}`)
+  }
   const svg = (await readFile(svgPath, 'utf8')).trim()
   const slug = family.toLowerCase().replace(/[^a-z0-9]+/g, '-')
   galleryExamples.push({

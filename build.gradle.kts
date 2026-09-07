@@ -136,6 +136,21 @@ tasks.register("verifyWebAcceptance") {
         check(js.contains("['Event Modeling',`eventmodeling")) {
             "Event Modeling gallery source must use the bounded eventmodeling grammar"
         }
+        check(js.contains("treeView-beta\n    project/")) {
+            "TreeView in consumer.js must use positive four-space indentation"
+        }
+        check(js.contains("Subject moved too quickly")) {
+            "Ishikawa in consumer.js must include Environment section"
+        }
+        check(js.contains("64-95: \"Data\"")) {
+            "Packet in consumer.js must include full field ranges"
+        }
+        check(js.contains("ALLOWED_TAGS") && js.contains("ALLOWED_ATTRS")) {
+            "Consumer SVG sanitizer must use fail-closed allowlists"
+        }
+        check(js.contains("editorDebounceTimer")) {
+            "Consumer must support debounced editor input"
+        }
         check(!js.contains("eval(") && !js.contains("fetch(") && !js.contains("innerHTML = source")) {
             "Consumer must not evaluate or transmit Mermaid source"
         }
