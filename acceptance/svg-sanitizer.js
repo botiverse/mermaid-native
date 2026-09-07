@@ -2,8 +2,9 @@
  * Shared fail-closed SVG sanitizer for Mermaid Native web consumers and gallery.
  *
  * Enforces strict tag allowlists, attribute allowlists, duplicate attribute detection,
- * and per-attribute value grammar.
- * Rejects CSS escapes, backslashes, controls, event handlers, and URL/resource schemes.
+ * per-attribute value grammar, and document structure validation.
+ * Rejects doctypes, processing instructions (e.g. xml-stylesheet), external references,
+ * CSS escapes, backslashes, controls, event handlers, and URL/resource schemes.
  */
 
 export const ALLOWED_TAGS = new Set([
@@ -108,14 +109,61 @@ export function validateAttributeValue(attrName, attrVal) {
 }
 
 /**
- * Validates an instantiated DOM Document / Element tree against strict allowlists.
- * Works uniformly with browser DOM, xmldom, and jsdom.
+ * Validates an instantiated DOM Document / Element tree against strict allowlists and document structure.
+ * Rejects DocumentType, ProcessingInstruction, and non-whitelisted node types.
  */
-export function validateSvgDomTree(rootElement) {
+export function validateSvgDomTree(docOrElement) {
+  let doc = null
+  let rootElement = null
+
+  if (docOrElement && docOrElement.nodeType === 9) { // DOCUMENT_NODE
+    doc = docOrElement
+    rootElement = doc.documentElement
+  } else if (docOrElement && docOrElement.nodeType === 1) { // ELEMENT_NODE
+    rootElement = docOrElement
+    doc = rootElement.ownerDocument || null
+  } else {
+    return { ok: false, error: 'Invalid document or element node' }
+  }
+
+  // 1. If we have Document context, validate top-level nodes (prolog / epilog)
+  if (doc) {
+    if (doc.doctype) {
+      return { ok: false, error: 'Forbidden DocumentType declaration (DOCTYPE) in SVG' }
+    }
+    const topChildren = doc.childNodes || []
+    const topLen = topChildren.length ?? 0
+    let elementCount = 0
+    for (let i = 0; i < topLen; i++) {
+      const node = topChildren.item ? topChildren.item(i) : topChildren[i]
+      if (node.nodeType === 10) { // DOCUMENT_TYPE_NODE
+        return { ok: false, error: 'Forbidden DocumentType declaration in SVG document' }
+      }
+      if (node.nodeType === 7) { // PROCESSING_INSTRUCTION_NODE
+        return { ok: false, error: `Forbidden ProcessingInstruction <${node.nodeName}> in SVG document` }
+      }
+      if (node.nodeType === 1) { // ELEMENT_NODE
+        elementCount++
+        if (elementCount > 1) {
+          return { ok: false, error: 'Multiple root elements in SVG document' }
+        }
+      } else if (node.nodeType === 3) { // TEXT_NODE
+        if (node.nodeValue && node.nodeValue.trim() !== '') {
+          return { ok: false, error: 'Non-whitespace text outside root SVG element' }
+        }
+      } else if (node.nodeType === 8) { // COMMENT_NODE
+        // Comments outside root are benign
+      } else {
+        return { ok: false, error: `Disallowed top-level node type ${node.nodeType} in SVG document` }
+      }
+    }
+  }
+
   if (!rootElement || (rootElement.localName || rootElement.nodeName || '').toLowerCase() !== 'svg') {
     return { ok: false, error: 'Root element must be <svg>' }
   }
 
+  // 2. Validate tree structure and node types inside root element
   const elements = [rootElement]
   const stack = [rootElement]
   while (stack.length > 0) {
@@ -127,10 +175,19 @@ export function validateSvgDomTree(rootElement) {
       if (child.nodeType === 1) { // ELEMENT_NODE
         elements.push(child)
         stack.push(child)
+      } else if (child.nodeType === 3 || child.nodeType === 8) {
+        // TEXT_NODE (3) and COMMENT_NODE (8) are allowed
+      } else if (child.nodeType === 7) { // PROCESSING_INSTRUCTION_NODE
+        return { ok: false, error: `Forbidden ProcessingInstruction <${child.nodeName}> inside SVG element` }
+      } else if (child.nodeType === 4) { // CDATA_SECTION_NODE
+        return { ok: false, error: 'Forbidden CDATA section inside SVG element' }
+      } else {
+        return { ok: false, error: `Forbidden node type ${child.nodeType} inside SVG element` }
       }
     }
   }
 
+  // 3. Validate tag and attribute allowlists on all elements
   for (const el of elements) {
     const tagName = (el.localName || el.nodeName || '').toLowerCase()
     if (!ALLOWED_TAGS.has(tagName)) {
@@ -167,16 +224,15 @@ export function validateSvgDomTree(rootElement) {
 }
 
 /**
- * Universal SVG sanitizer that parses and verifies XML via DOMParser (browser, xmldom, or passed customParser).
+ * Universal SVG sanitizer that parses, verifies, and serializes XML via DOMParser and XMLSerializer.
+ * Never falls back to unvalidated raw input strings.
  */
-export function sanitizeSvg(svgString, customParser) {
+export function sanitizeSvg(svgString, customParser, customSerializer) {
   if (!svgString || typeof svgString !== 'string' || !svgString.trim()) {
     return { ok: false, error: 'Empty or missing SVG payload' }
   }
 
   let parser = customParser
-  let parseError = null
-
   if (!parser) {
     if (typeof DOMParser !== 'undefined') {
       parser = new DOMParser()
@@ -199,14 +255,30 @@ export function sanitizeSvg(svgString, customParser) {
     return { ok: false, error: 'Failed to construct XML DOM document' }
   }
 
-  const validation = validateSvgDomTree(doc.documentElement)
+  // Validate entire document tree (including top-level nodes, DOCTYPE, and PIs)
+  const validation = validateSvgDomTree(doc)
   if (!validation.ok) {
     return validation
   }
 
+  // Serialize strictly the validated root element using XMLSerializer or Element.outerHTML
+  let serializedSvg = ''
+  let serializer = customSerializer
+  if (!serializer && typeof XMLSerializer !== 'undefined') {
+    serializer = new XMLSerializer()
+  }
+
+  if (serializer && typeof serializer.serializeToString === 'function') {
+    serializedSvg = serializer.serializeToString(doc.documentElement)
+  } else if (typeof doc.documentElement.outerHTML === 'string' && doc.documentElement.outerHTML) {
+    serializedSvg = doc.documentElement.outerHTML
+  } else {
+    return { ok: false, error: 'No XMLSerializer or outerHTML available to serialize sanitized SVG' }
+  }
+
   return {
     ok: true,
-    svg: doc.documentElement.outerHTML || svgString.trim(),
+    svg: serializedSvg,
     element: doc.documentElement
   }
 }

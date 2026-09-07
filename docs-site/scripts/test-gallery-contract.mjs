@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DOMParser as XmlDomParser } from '@xmldom/xmldom'
+import { DOMParser as XmlDomParser, XMLSerializer as XmlDomSerializer } from '@xmldom/xmldom'
 import {
   ALLOWED_TAGS,
   ALLOWED_ATTRS,
@@ -97,7 +97,7 @@ if (!vueCode.includes('debounceTimer') || !vueCode.includes('watch(editorSource'
 }
 console.log('✓ MermaidGallery.vue imports shared sanitizer and implements debounced input watch')
 
-// 5. Test SVG Security Sanitizer logic using real XML DOMParser with strict error reporting
+// 5. Test SVG Security Sanitizer logic using real XML DOMParser and XMLSerializer with strict error reporting
 function createStrictXmlParser() {
   let parseError = null
   const parser = new XmlDomParser({
@@ -117,6 +117,7 @@ function createStrictXmlParser() {
 }
 
 const strictParser = createStrictXmlParser()
+const strictSerializer = new XmlDomSerializer()
 
 const maliciousPayloads = [
   { name: 'XSS <a> tag with javascript: link', payload: '<svg><a href="javascript:alert(1)"><text>Click</text></a></svg>' },
@@ -140,26 +141,38 @@ const maliciousPayloads = [
   { name: 'Unquoted onload attribute bypass', payload: '<svg><rect onload=alert(1) width="10" height="10"/></svg>' },
   { name: 'Unquoted href attribute bypass', payload: '<svg><rect href=javascript:alert(1) width="10" height="10"/></svg>' },
   { name: 'Mismatched closing tags', payload: '<svg><rect width="10" height="10"></svg>' },
-  { name: 'Duplicate attribute injection', payload: '<svg><rect width="10" width="20" height="10"/></svg>' }
+  { name: 'Duplicate attribute injection', payload: '<svg><rect width="10" width="20" height="10"/></svg>' },
+  // Document-level / Prolog malicious vectors
+  { name: 'xml-stylesheet with external href', payload: '<?xml-stylesheet href="https://evil.example/a.css" type="text/css"?><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'xml-stylesheet with data URI', payload: '<?xml-stylesheet href="data:text/css,body{background:red}" type="text/css"?><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'Arbitrary processing instruction outside root', payload: '<?custom-pi content?><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'Processing instruction inside SVG element', payload: '<svg xmlns="http://www.w3.org/2000/svg"><?pi inside?><rect width="10" height="10"/></svg>' },
+  { name: 'External SYSTEM DOCTYPE declaration', payload: '<!DOCTYPE svg SYSTEM "https://evil.example/dtd"><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'External PUBLIC DOCTYPE declaration', payload: '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'Internal ENTITY declaration in DOCTYPE', payload: '<!DOCTYPE svg [ <!ENTITY xxe SYSTEM "http://evil.com"> ]><svg xmlns="http://www.w3.org/2000/svg"/>' },
+  { name: 'CDATA section inside SVG element', payload: '<svg xmlns="http://www.w3.org/2000/svg"><![CDATA[<script>alert(1)</script>]]></svg>' }
 ]
 
 for (const testCase of maliciousPayloads) {
-  const result = sanitizeSvg(testCase.payload, strictParser)
+  const result = sanitizeSvg(testCase.payload, strictParser, strictSerializer)
   if (result.ok) {
     throw new Error(`Sanitizer failed to reject malicious payload: ${testCase.name}`)
   }
 }
-console.log(`✓ DOM-based sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors (including unquoted attrs, malformed XML & duplicate attrs)`)
+console.log(`✓ DOM-based sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors (including doctype, xml-stylesheet, PIs, CDATA, unquoted attrs, malformed XML & duplicate attrs)`)
 
-// 6. Test all 34 golden samples pass the shared strict fail-closed sanitizer
+// 6. Test all 34 golden samples pass the shared strict fail-closed sanitizer and are cleanly serialized
 const sampleFiles = await readdir(samplesDir)
 for (const file of sampleFiles.filter(f => f.endsWith('.svg'))) {
   const svgContent = await readFile(resolve(samplesDir, file), 'utf8')
-  const result = sanitizeSvg(svgContent, strictParser)
+  const result = sanitizeSvg(svgContent, strictParser, strictSerializer)
   if (!result.ok) {
     throw new Error(`Shared sanitizer falsely rejected valid sample ${file}: ${result.error}`)
   }
+  if (!result.svg.startsWith('<svg') || !result.svg.endsWith('</svg>')) {
+    throw new Error(`Serialized output for sample ${file} is not a valid root <svg> element`)
+  }
 }
-console.log('✓ All 34 golden sample SVGs pass the DOM-based fail-closed sanitizer')
+console.log('✓ All 34 golden sample SVGs pass the DOM-based fail-closed sanitizer and serialize cleanly via XMLSerializer')
 
 console.log('--- ALL GALLERY CONTRACT AND SECURITY TESTS PASSED ---')
