@@ -1,12 +1,13 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DOMParser as XmlDomParser } from '@xmldom/xmldom'
 import {
   ALLOWED_TAGS,
   ALLOWED_ATTRS,
   validateAttributeValue,
-  sanitizeSvg,
-  sanitizeSvgText
+  validateSvgDomTree,
+  sanitizeSvg
 } from '../../acceptance/svg-sanitizer.js'
 
 const docsRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..')
@@ -96,7 +97,27 @@ if (!vueCode.includes('debounceTimer') || !vueCode.includes('watch(editorSource'
 }
 console.log('✓ MermaidGallery.vue imports shared sanitizer and implements debounced input watch')
 
-// 5. Test SVG Security Sanitizer logic against malicious payloads using shared implementation
+// 5. Test SVG Security Sanitizer logic using real XML DOMParser with strict error reporting
+function createStrictXmlParser() {
+  let parseError = null
+  const parser = new XmlDomParser({
+    onError: (level, msg) => {
+      // Treat any warning, error or fatalError as fail-closed XML error
+      if (!parseError) parseError = `XML ${level}: ${msg}`
+    }
+  })
+  return {
+    parseFromString: (str, type) => {
+      parseError = null
+      const doc = parser.parseFromString(str, type)
+      if (parseError) throw new Error(parseError)
+      return doc
+    }
+  }
+}
+
+const strictParser = createStrictXmlParser()
+
 const maliciousPayloads = [
   { name: 'XSS <a> tag with javascript: link', payload: '<svg><a href="javascript:alert(1)"><text>Click</text></a></svg>' },
   { name: 'Inline <style> tag injection', payload: '<svg><style>body { display: none; }</style><rect width="10" height="10"/></svg>' },
@@ -115,26 +136,30 @@ const maliciousPayloads = [
   { name: 'External fragment url in fill', payload: '<svg><rect fill="url(#probe)" width="10" height="10"/></svg>' },
   { name: 'External resource url in stroke', payload: '<svg><rect stroke="url(https://evil.com/leak)" width="10" height="10"/></svg>' },
   { name: 'id attribute injection', payload: '<svg><rect id="custom-id" width="10" height="10"/></svg>' },
-  { name: 'class attribute injection', payload: '<svg><rect class="custom-class" width="10" height="10"/></svg>' }
+  { name: 'class attribute injection', payload: '<svg><rect class="custom-class" width="10" height="10"/></svg>' },
+  { name: 'Unquoted onload attribute bypass', payload: '<svg><rect onload=alert(1) width="10" height="10"/></svg>' },
+  { name: 'Unquoted href attribute bypass', payload: '<svg><rect href=javascript:alert(1) width="10" height="10"/></svg>' },
+  { name: 'Mismatched closing tags', payload: '<svg><rect width="10" height="10"></svg>' },
+  { name: 'Duplicate attribute injection', payload: '<svg><rect width="10" width="20" height="10"/></svg>' }
 ]
 
 for (const testCase of maliciousPayloads) {
-  const result = sanitizeSvgText(testCase.payload)
+  const result = sanitizeSvg(testCase.payload, strictParser)
   if (result.ok) {
     throw new Error(`Sanitizer failed to reject malicious payload: ${testCase.name}`)
   }
 }
-console.log(`✓ Shared sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors (including CSS escape & fragment vectors)`)
+console.log(`✓ DOM-based sanitizer successfully rejected all ${maliciousPayloads.length} malicious SVG vectors (including unquoted attrs, malformed XML & duplicate attrs)`)
 
 // 6. Test all 34 golden samples pass the shared strict fail-closed sanitizer
 const sampleFiles = await readdir(samplesDir)
 for (const file of sampleFiles.filter(f => f.endsWith('.svg'))) {
   const svgContent = await readFile(resolve(samplesDir, file), 'utf8')
-  const result = sanitizeSvgText(svgContent)
+  const result = sanitizeSvg(svgContent, strictParser)
   if (!result.ok) {
     throw new Error(`Shared sanitizer falsely rejected valid sample ${file}: ${result.error}`)
   }
 }
-console.log('✓ All 34 golden sample SVGs pass the shared strict fail-closed sanitizer')
+console.log('✓ All 34 golden sample SVGs pass the DOM-based fail-closed sanitizer')
 
 console.log('--- ALL GALLERY CONTRACT AND SECURITY TESTS PASSED ---')

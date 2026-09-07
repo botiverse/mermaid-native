@@ -1,7 +1,8 @@
 /**
  * Shared fail-closed SVG sanitizer for Mermaid Native web consumers and gallery.
  *
- * Enforces strict tag allowlists, attribute allowlists, and per-attribute value grammar.
+ * Enforces strict tag allowlists, attribute allowlists, duplicate attribute detection,
+ * and per-attribute value grammar.
  * Rejects CSS escapes, backslashes, controls, event handlers, and URL/resource schemes.
  */
 
@@ -107,98 +108,105 @@ export function validateAttributeValue(attrName, attrVal) {
 }
 
 /**
- * Parses and sanitizes SVG using standard DOMParser in browser environments,
- * or structural XML verification in non-DOM environments.
+ * Validates an instantiated DOM Document / Element tree against strict allowlists.
+ * Works uniformly with browser DOM, xmldom, and jsdom.
  */
-export function sanitizeSvg(svgString) {
-  if (!svgString || typeof svgString !== 'string') {
-    return { ok: false, error: 'Empty or missing SVG payload' }
+export function validateSvgDomTree(rootElement) {
+  if (!rootElement || (rootElement.localName || rootElement.nodeName || '').toLowerCase() !== 'svg') {
+    return { ok: false, error: 'Root element must be <svg>' }
   }
 
-  // If DOMParser is available (browser / jsdom)
-  if (typeof DOMParser !== 'undefined') {
-    const parsed = new DOMParser().parseFromString(svgString, 'image/svg+xml')
-    if (parsed.querySelector('parsererror')) {
-      return { ok: false, error: 'Malformed XML in SVG payload' }
-    }
-    const root = parsed.documentElement
-    if (!root || root.localName.toLowerCase() !== 'svg') {
-      return { ok: false, error: 'Root element must be <svg>' }
-    }
-
-    const allElements = [root, ...Array.from(root.querySelectorAll('*'))]
-    for (const node of allElements) {
-      const tagName = node.localName.toLowerCase()
-      if (!ALLOWED_TAGS.has(tagName)) {
-        return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
-      }
-      for (const attr of Array.from(node.attributes)) {
-        const attrName = attr.name.toLowerCase()
-        if (attrName.startsWith('on')) {
-          return { ok: false, error: `Forbidden event handler attribute "${attr.name}" in SVG output` }
-        }
-        if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'id' || attrName === 'class') {
-          return { ok: false, error: `Forbidden attribute "${attr.name}" in SVG output` }
-        }
-        if (!ALLOWED_ATTRS.has(attrName)) {
-          return { ok: false, error: `Disallowed attribute "${attr.name}" in SVG output` }
-        }
-        if (!validateAttributeValue(attrName, attr.value)) {
-          return { ok: false, error: `Attribute "${attr.name}" rejected by strict value grammar: "${attr.value}"` }
-        }
+  const elements = [rootElement]
+  const stack = [rootElement]
+  while (stack.length > 0) {
+    const el = stack.pop()
+    const children = el.childNodes || []
+    const len = children.length ?? 0
+    for (let i = 0; i < len; i++) {
+      const child = children.item ? children.item(i) : children[i]
+      if (child.nodeType === 1) { // ELEMENT_NODE
+        elements.push(child)
+        stack.push(child)
       }
     }
-    return { ok: true, svg: root.outerHTML, element: root }
   }
 
-  // Pure textual/regex verification for Node.js build-time / test environments
-  return sanitizeSvgText(svgString)
+  for (const el of elements) {
+    const tagName = (el.localName || el.nodeName || '').toLowerCase()
+    if (!ALLOWED_TAGS.has(tagName)) {
+      return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
+    }
+
+    const attrs = el.attributes || []
+    const attrLen = attrs.length ?? 0
+    const seenAttrs = new Set()
+    for (let i = 0; i < attrLen; i++) {
+      const attr = attrs.item ? attrs.item(i) : attrs[i]
+      const attrName = (attr.name || attr.localName || '').toLowerCase()
+      if (seenAttrs.has(attrName)) {
+        return { ok: false, error: `Duplicate attribute "${attrName}" in <${tagName}>` }
+      }
+      seenAttrs.add(attrName)
+
+      if (attrName.startsWith('on')) {
+        return { ok: false, error: `Forbidden event handler attribute "${attrName}" in SVG output` }
+      }
+      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'id' || attrName === 'class') {
+        return { ok: false, error: `Forbidden attribute "${attrName}" in SVG output` }
+      }
+      if (!ALLOWED_ATTRS.has(attrName)) {
+        return { ok: false, error: `Disallowed attribute "${attrName}" in SVG output` }
+      }
+      if (!validateAttributeValue(attrName, attr.value)) {
+        return { ok: false, error: `Attribute "${attrName}" rejected by strict value grammar: "${attr.value}"` }
+      }
+    }
+  }
+
+  return { ok: true }
 }
 
 /**
- * Textual / regex structural sanitizer for Node environments without DOM.
+ * Universal SVG sanitizer that parses and verifies XML via DOMParser (browser, xmldom, or passed customParser).
  */
-export function sanitizeSvgText(svgString) {
+export function sanitizeSvg(svgString, customParser) {
   if (!svgString || typeof svgString !== 'string' || !svgString.trim()) {
-    return { ok: false, error: 'Empty SVG payload' }
+    return { ok: false, error: 'Empty or missing SVG payload' }
   }
 
-  // Validate root tag is <svg ...>
-  const trimmed = svgString.trim()
-  if (!/^<svg\b/i.test(trimmed)) {
-    return { ok: false, error: 'SVG payload must start with <svg>' }
-  }
+  let parser = customParser
+  let parseError = null
 
-  // Check all opening / self-closing tags
-  const tagMatches = [...svgString.matchAll(/<([a-zA-Z0-9:-]+)/g)]
-    .map(m => m[1].toLowerCase())
-    .filter(t => !t.startsWith('?') && !t.startsWith('/'))
-
-  for (const tag of tagMatches) {
-    if (!ALLOWED_TAGS.has(tag)) {
-      return { ok: false, error: `Forbidden element <${tag}> in SVG output` }
+  if (!parser) {
+    if (typeof DOMParser !== 'undefined') {
+      parser = new DOMParser()
+    } else {
+      return { ok: false, error: 'DOMParser is not available in current environment' }
     }
   }
 
-  // Check all attributes
-  const attrMatches = [...svgString.matchAll(/\s+([a-zA-Z0-9:-]+)=["']([^"']*)["']/g)]
-  for (const match of attrMatches) {
-    const attrName = match[1].toLowerCase()
-    const attrVal = match[2]
-
-    if (attrName.startsWith('on')) {
-      return { ok: false, error: `Forbidden event handler attribute "${attrName}"` }
+  let doc = null
+  try {
+    doc = parser.parseFromString(svgString, 'image/svg+xml')
+    if (doc.querySelector && doc.querySelector('parsererror')) {
+      return { ok: false, error: 'XML parser error in SVG payload' }
     }
-    if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'id' || attrName === 'class') {
-      return { ok: false, error: `Forbidden attribute "${attrName}" in SVG output` }
-    }
-    if (!ALLOWED_ATTRS.has(attrName)) {
-      return { ok: false, error: `Disallowed attribute "${attrName}" in SVG output` }
-    }
-    if (!validateAttributeValue(attrName, attrVal)) {
-      return { ok: false, error: `Attribute "${attrName}" rejected by strict value grammar: "${attrVal}"` }
-    }
+  } catch (err) {
+    return { ok: false, error: `XML parse exception: ${err.message}` }
   }
 
-  return { ok: true, svg: trimmed }
+  if (!doc || !doc.documentElement) {
+    return { ok: false, error: 'Failed to construct XML DOM document' }
+  }
+
+  const validation = validateSvgDomTree(doc.documentElement)
+  if (!validation.ok) {
+    return validation
+  }
+
+  return {
+    ok: true,
+    svg: doc.documentElement.outerHTML || svgString.trim(),
+    element: doc.documentElement
+  }
 }

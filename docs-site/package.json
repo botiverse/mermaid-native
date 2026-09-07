@@ -10,6 +10,7 @@
     "test": "node scripts/test-gallery-contract.mjs"
   },
   "devDependencies": {
+    "@xmldom/xmldom": "^0.9.12",
     "vitepress": "1.6.4"
   }
 }
