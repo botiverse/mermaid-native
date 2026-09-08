@@ -7,22 +7,22 @@ else if (wasmExport) window.mermaidNative = wasmExport;
 const examples = [];
 const familyExamples = [
   ['Architecture',`architecture-beta
-  group api(cloud)[API & gateway]
-  service db(database)[Database] in api
-  service server(server)[Application server] in api
-  db:B --> T:server`,'Service nodes and directed edges (bounded).'],
+group api(cloud)[API & gateway]
+service db(database)[Database] in api
+service server(server)[Application server] in api
+db:B --> T:server`,'Service nodes and directed edges (bounded).'],
   ['Block',`block
-  columns 3
-  api[Public & partner API]:2
-  db[Database]
-  worker[Worker]:2
-  api --> worker
-  db --> worker`,'Blocks and connections (bounded).'],
+columns 3
+api[Public & partner API]:2
+db[Database]
+worker[Worker]:2
+api --> worker
+db --> worker`,'Blocks and connections (bounded).'],
   ['C4',`C4Context
-  title Banking context
-  Person(customer, "Customer & partner", "Uses the app")
-  System(bank, "Banking system", "Shows balances")
-  Rel(customer, bank, "Uses", "HTTPS")`,'Context nodes and relationships (bounded).'],
+title Banking context
+Person(customer, "Customer & partner", "Uses the app")
+System(bank, "Banking system", "Shows balances")
+Rel(customer, bank, "Uses", "HTTPS")`,'Context nodes and relationships (bounded).'],
   ['Entity Relationship',`erDiagram
   CUSTOMER {
     int id PK
@@ -47,15 +47,17 @@ const familyExamples = [
   commit id: "release" type: REVERSE
   merge develop id: "merge" tag: "v2 & stable"`,'Commits, branches and merge.'],
   ['Ishikawa',`ishikawa-beta
-  Blurry Photo
-  Process
-    Out of focus
-    Shutter speed too slow
-  Equipment
-    LENS
-      Dirty lens
-    SENSOR
-      Damaged sensor`,'Cause/effect analysis (bounded).'],
+    Blurry Photo
+    Process
+        Out of focus
+        Shutter speed too slow
+    Equipment
+        LENS
+            Dirty lens
+        SENSOR
+            Damaged sensor
+    Environment
+        Subject moved too quickly`,'Cause/effect analysis (bounded).'],
   ['Kanban',`kanban
 todo[Todo]
   spec[Write & review spec]
@@ -74,7 +76,8 @@ done[Done]
   0-15: "Source Port"
   16-31: "Destination Port"
   32-47: "Length"
-  48-63: "Checksum"`,'Bit ranges and labels.'],
+  48-63: "Checksum"
+  64-95: "Data"`,'Bit ranges and labels.'],
   ['Pie',`pie showData title Pets adopted
   "Dogs" : 386
   "Cats" : 85
@@ -90,11 +93,11 @@ done[Done]
   Campaign A: [0.3, 0.6]
   Campaign B: [0.75, 0.25]`,'Axes and plotted points.'],
   ['Radar',`radar-beta
-  title Team skill matrix
-  axis m["Math"], s["Science"], e["English"]
-  curve alice["Alice"]{85, 78, 92}
-  curve bob["Bob"]{62, 84, 55}
-  max 100`,'Axes and a bounded series.'],
+title Team skill matrix
+axis m["Math"], s["Science"], e["English"]
+curve alice["Alice"]{85, 78, 92}
+curve bob["Bob"]{62, 84, 55}
+max 100`,'Axes and a bounded series.'],
   ['Railroad',`railroad-beta
 Diagram(
   Sequence(
@@ -135,14 +138,14 @@ Industry,Losses & exports,2.5`,'Flow quantities (bounded).'],
   triage --> answer --> receive`,'Swimlane lanes and edges (bounded).'],
   ['Timeline',`timeline
   title Product history
-  2024 : Launch : First users
+2024 : Launch : First users
   2025 : Scale`,'Dates and events.'],
   ['TreeView',`treeView-beta
-  project/
-    src/
-      index.ts
-    "README file.md"
-  package.json`,'Tree-shaped hierarchy.'],
+    project/
+        src/
+            index.ts
+        "README file.md"
+    package.json`,'Tree-shaped hierarchy.'],
   ['Treemap',`treemap-beta
 "Products & services"
   "Mobile": 45
@@ -266,13 +269,13 @@ const sharedSource = decodeSource();
 if (sharedSource && editor) editor.value = sharedSource;
 
 function runtime() { return window.mermaidNative; }
+import { sanitizeSvg } from './svg-sanitizer.js';
+
 function safeSvg(payload) {
-  if (!payload?.svg) return null;
-  const parsed = new DOMParser().parseFromString(payload.svg, 'image/svg+xml');
-  const svg = parsed.documentElement;
-  if (svg.localName !== 'svg' || parsed.querySelector('parsererror,script,iframe,foreignObject')) return null;
-  parsed.querySelectorAll('*').forEach(node => [...node.attributes].forEach(a => { if (a.name.toLowerCase().startsWith('on')) node.removeAttribute(a.name); }));
-  return document.importNode(svg, true);
+  if (!payload?.svg || typeof payload.svg !== 'string') return null;
+  const res = sanitizeSvg(payload.svg);
+  if (!res.ok) return null;
+  return res.element ? document.importNode(res.element, true) : null;
 }
 function renderCard(card, target = gallery) {
   const article = document.createElement('article'); article.className = 'example'; article.id = card.slug;
@@ -300,6 +303,8 @@ function renderEditor() {
   else { const error = document.createElement('p'); error.className = 'error'; error.textContent = payload.diagnostics?.map(d => `${d.code}: ${d.message} (line ${d.line ?? '?'}, column ${d.column ?? '?'})`).join('\n') || 'Render rejected'; editorPreview.append(error); editorStatus.textContent = 'Render failed'; }
 }
 renderButton?.addEventListener('click', renderEditor);
+let editorDebounceTimer = null;
+editor?.addEventListener('input', () => { clearTimeout(editorDebounceTimer); editorDebounceTimer = setTimeout(renderEditor, 300); });
 copyEditor?.addEventListener('click', async () => { await navigator.clipboard?.writeText(editor.value); editorStatus.textContent = 'Source copied'; });
 window.addEventListener('mermaid-native-ready', () => { if (editor) renderEditor(); }, { once: true });
 update();

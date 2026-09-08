@@ -5,10 +5,12 @@
   "scripts": {
     "docs:dev": "vitepress dev .",
     "docs:generate": "node scripts/generate-compatibility.mjs",
-    "docs:build": "npm run docs:generate && vitepress build .",
-    "docs:preview": "vitepress preview ."
+    "docs:build": "npm run test && npm run docs:generate && vitepress build .",
+    "docs:preview": "vitepress preview .",
+    "test": "node scripts/test-gallery-contract.mjs"
   },
   "devDependencies": {
+    "@xmldom/xmldom": "^0.9.12",
     "vitepress": "1.6.4"
   }
 }
