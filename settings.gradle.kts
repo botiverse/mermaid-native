@@ -12,6 +12,14 @@ dependencyResolutionManagement {
     // resolve the pinned Node distribution locally and in Hosted CI.
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
+        maven {
+            name = "RaftArtifactsKuiklyRelease"
+            url = uri("https://maven.artifacts.botiverse.dev")
+            content {
+                includeGroup("com.tencent.kuikly-open")
+                includeGroupByRegex("com\\.tencent\\.kuikly-open\\.compose\\..+")
+            }
+        }
         google()
         mavenCentral()
         mavenLocal()
