@@ -11,7 +11,7 @@ export default defineConfig({
   lastUpdated: true,
   appearance: true,
   ignoreDeadLinks: [
-    /^\/playground/,
+    /^\/acceptance\/?/,
   ],
   themeConfig: {
     logo: '/logo.svg',

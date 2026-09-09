@@ -215,10 +215,14 @@ async function copySource(source: string, slug?: string) {
   }
 }
 
+function encodeSourceHash(source: string): string {
+  const bytes = unescape(encodeURIComponent(source || ''))
+  return btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
 async function copyPermalink() {
   if (typeof window === 'undefined') return
-  const bytes = unescape(encodeURIComponent(editorSource.value || ''))
-  const encoded = btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const encoded = encodeSourceHash(editorSource.value || '')
   const permalink = `${location.origin}${location.pathname}#source=${encoded}`
   if (navigator?.clipboard?.writeText) {
     await navigator.clipboard.writeText(permalink)
@@ -228,6 +232,14 @@ async function copyPermalink() {
 }
 
 function tryInEditor(card: any) {
+  if (props.galleryOnly) {
+    if (typeof window !== 'undefined') {
+      const encoded = encodeSourceHash(card.source)
+      const basePath = base.endsWith('/') ? base : base + '/'
+      window.location.href = `${basePath}playground#source=${encoded}`
+    }
+    return
+  }
   editorSource.value = card.source
   if (wasmStatus.value === 'ready') {
     renderEditor()

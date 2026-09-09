@@ -13,4 +13,4 @@ The live gallery above reflects the current bounded support matrix:
 - **Deterministic output**: Every diagram matches its golden SVG across Kotlin/JVM, Kotlin/Native, and Kotlin/Wasm targets.
 - **Local & safe execution**: The Kotlin/Wasm adapter executes client-side in your browser. All SVG output is sanitized and stripped of script and event handlers.
 - **Source corpus**: You can inspect the paired `.mmd` sources and deterministic `.svg` outputs in [`samples/`](https://github.com/botiverse/mermaid-native/tree/main/samples).
-- **Standalone acceptance**: For automated CI testing and headless verification, the bare-metal Wasm acceptance runner remains available at [`/playground/`](/playground/).
+- **Standalone acceptance**: For automated CI testing and headless verification, the bare-metal Wasm acceptance runner remains available at [`/acceptance/`](/acceptance/).
