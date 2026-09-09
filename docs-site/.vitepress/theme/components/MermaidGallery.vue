@@ -4,6 +4,11 @@ import { useData } from 'vitepress'
 import familyExamples from '../data/family-examples.json'
 import familySections from '../data/family-sections.json'
 
+const props = defineProps<{
+  playgroundOnly?: boolean
+  galleryOnly?: boolean
+}>()
+
 const { site } = useData()
 const base = site.value.base || '/'
 
@@ -347,7 +352,7 @@ onUnmounted(() => {
 <template>
   <div class="mermaid-gallery-container">
     <!-- Interactive Live Playground -->
-    <section class="playground-card" aria-labelledby="playground-heading">
+    <section v-if="!props.galleryOnly" class="playground-card" aria-labelledby="playground-heading">
       <div class="playground-header">
         <div>
           <h2 id="playground-heading" class="playground-title">Interactive Playground</h2>
@@ -432,6 +437,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Toolbar for Gallery -->
+    <template v-if="!props.playgroundOnly">
     <div class="gallery-toolbar" role="search">
       <div class="search-input-wrap">
         <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -562,6 +568,7 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
+    </template>
   </div>
 </template>
 

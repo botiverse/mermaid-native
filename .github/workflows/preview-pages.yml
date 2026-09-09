@@ -41,11 +41,11 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/playground _site/wasm
+          mkdir -p _site/acceptance _site/wasm
           cp -R docs-site/.vitepress/dist/. _site/
-          cp acceptance/index.html acceptance/consumer.css acceptance/consumer.js acceptance/svg-sanitizer.js _site/playground/
-          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/playground/
-          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/playground/
+          cp acceptance/index.html acceptance/consumer.css acceptance/consumer.js acceptance/svg-sanitizer.js _site/acceptance/
+          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/acceptance/
+          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/acceptance/
           cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/wasm/
           cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/wasm/
           printf '%s\n' "${GITHUB_SHA}" > _site/SOURCE_SHA

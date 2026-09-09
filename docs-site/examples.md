@@ -3,7 +3,7 @@
 The Mermaid Native project maintains deterministic, verified Kotlin Multiplatform implementations across 32 diagram families.
 Every example below is exercised in our continuous multiplatform test suite and rendered with the native SVG engine.
 
-<MermaidGallery />
+<MermaidGallery :gallery-only="true" />
 
 ## Verification & Architecture
 
