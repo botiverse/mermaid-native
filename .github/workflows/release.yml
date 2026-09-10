@@ -11,6 +11,7 @@ permissions:
 jobs:
   publish:
     runs-on: macos-14
+    environment: raft-artifacts
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -21,8 +22,9 @@ jobs:
       - name: Verify and publish
         shell: bash
         env:
-          MERMAID_MAVEN_USER: ${{ github.actor }}
-          MERMAID_MAVEN_TOKEN: ${{ github.token }}
+          MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
+          MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
+          MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
           MERMAID_SIGNING_KEY: ${{ secrets.MERMAID_SIGNING_KEY }}
           MERMAID_SIGNING_PASSWORD: ${{ secrets.MERMAID_SIGNING_PASSWORD }}
         run: |
