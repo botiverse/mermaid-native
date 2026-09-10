@@ -11,7 +11,7 @@ export default defineConfig({
   lastUpdated: true,
   appearance: true,
   ignoreDeadLinks: [
-    /^\/playground/,
+    /^\/acceptance\/?/,
   ],
   themeConfig: {
     logo: '/logo.svg',
@@ -20,6 +20,7 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/compatibility' },
       { text: 'Architecture', link: '/guide/architecture' },
       { text: 'Examples', link: '/examples' },
+      { text: 'Playground', link: '/playground' },
       { text: 'GitHub', link: 'https://github.com/botiverse/mermaid-native' },
     ],
     sidebar: {

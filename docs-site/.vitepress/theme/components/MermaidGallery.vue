@@ -4,6 +4,11 @@ import { useData } from 'vitepress'
 import familyExamples from '../data/family-examples.json'
 import familySections from '../data/family-sections.json'
 
+const props = defineProps<{
+  playgroundOnly?: boolean
+  galleryOnly?: boolean
+}>()
+
 const { site } = useData()
 const base = site.value.base || '/'
 
@@ -210,10 +215,14 @@ async function copySource(source: string, slug?: string) {
   }
 }
 
+function encodeSourceHash(source: string): string {
+  const bytes = unescape(encodeURIComponent(source || ''))
+  return btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
 async function copyPermalink() {
   if (typeof window === 'undefined') return
-  const bytes = unescape(encodeURIComponent(editorSource.value || ''))
-  const encoded = btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const encoded = encodeSourceHash(editorSource.value || '')
   const permalink = `${location.origin}${location.pathname}#source=${encoded}`
   if (navigator?.clipboard?.writeText) {
     await navigator.clipboard.writeText(permalink)
@@ -223,6 +232,14 @@ async function copyPermalink() {
 }
 
 function tryInEditor(card: any) {
+  if (props.galleryOnly) {
+    if (typeof window !== 'undefined') {
+      const encoded = encodeSourceHash(card.source)
+      const basePath = base.endsWith('/') ? base : base + '/'
+      window.location.href = `${basePath}playground#source=${encoded}`
+    }
+    return
+  }
   editorSource.value = card.source
   if (wasmStatus.value === 'ready') {
     renderEditor()
@@ -347,7 +364,7 @@ onUnmounted(() => {
 <template>
   <div class="mermaid-gallery-container">
     <!-- Interactive Live Playground -->
-    <section class="playground-card" aria-labelledby="playground-heading">
+    <section v-if="!props.galleryOnly" class="playground-card" aria-labelledby="playground-heading">
       <div class="playground-header">
         <div>
           <h2 id="playground-heading" class="playground-title">Interactive Playground</h2>
@@ -432,6 +449,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Toolbar for Gallery -->
+    <template v-if="!props.playgroundOnly">
     <div class="gallery-toolbar" role="search">
       <div class="search-input-wrap">
         <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -562,6 +580,7 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
+    </template>
   </div>
 </template>
 

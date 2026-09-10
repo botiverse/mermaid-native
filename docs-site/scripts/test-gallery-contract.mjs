@@ -87,7 +87,7 @@ for (const [family, source] of familyTuples) {
 }
 console.log('✓ acceptance/consumer.js matches all 32 canonical samples/*.mmd')
 
-// 4. Verify MermaidGallery.vue imports shared sanitizer and contains debounce watch
+// 4. Verify MermaidGallery.vue imports shared sanitizer, implements debounce watch, and handles galleryOnly navigation
 const vueCode = await readFile(vueComponentPath, 'utf8')
 if (!vueCode.includes("from '../utils/svg-sanitizer'") && !vueCode.includes('sanitizeSvg')) {
   throw new Error('MermaidGallery.vue missing shared sanitizer import')
@@ -95,7 +95,10 @@ if (!vueCode.includes("from '../utils/svg-sanitizer'") && !vueCode.includes('san
 if (!vueCode.includes('debounceTimer') || !vueCode.includes('watch(editorSource')) {
   throw new Error('MermaidGallery.vue missing debounced editor watch')
 }
-console.log('✓ MermaidGallery.vue imports shared sanitizer and implements debounced input watch')
+if (!vueCode.includes('encodeSourceHash') || !vueCode.includes('props.galleryOnly') || !vueCode.includes('playground#source=')) {
+  throw new Error('MermaidGallery.vue missing galleryOnly transfer to playground')
+}
+console.log('✓ MermaidGallery.vue imports shared sanitizer, implements debounced input watch, and routes galleryOnly Try-in-editor to /playground')
 
 // 5. Test SVG Security Sanitizer logic using real XML DOMParser and XMLSerializer with strict error reporting
 function createStrictXmlParser() {

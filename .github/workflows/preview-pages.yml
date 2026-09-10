@@ -1,6 +1,8 @@
 name: Deploy Mermaid Native documentation and Web preview
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -39,15 +41,28 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/playground _site/wasm
+          mkdir -p _site/acceptance _site/wasm
           cp -R docs-site/.vitepress/dist/. _site/
-          cp acceptance/index.html acceptance/consumer.css acceptance/consumer.js acceptance/svg-sanitizer.js _site/playground/
-          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/playground/
-          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/playground/
+          cp acceptance/index.html acceptance/consumer.css acceptance/consumer.js acceptance/svg-sanitizer.js _site/acceptance/
+          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/acceptance/
+          cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/acceptance/
           cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/mermaid-web.js _site/wasm/
           cp mermaid-web/build/kotlin-webpack/wasmJs/productionExecutable/*.wasm _site/wasm/
           printf '%s\n' "${GITHUB_SHA}" > _site/SOURCE_SHA
           printf '%s\n' "non-production-preview" > _site/RELEASE_CLASS
+      - name: Assert Pages structure and acceptance routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+          test -f _site/playground.html -o -f _site/playground/index.html
+          test -f _site/examples.html -o -f _site/examples/index.html
+          test -f _site/acceptance/index.html
+          test -f _site/acceptance/consumer.js
+          test -f _site/acceptance/svg-sanitizer.js
+          test -f _site/acceptance/mermaid-web.js
+          test -f _site/wasm/mermaid-web.js
+          echo "Pages static structure assertions passed."
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
