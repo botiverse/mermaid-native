@@ -8,6 +8,8 @@ plugins {
 }
 
 group = providers.gradleProperty("group").orElse("build.raft.mermaid").get()
+// Local dev fallback only. Production release MUST be driven by -Pversion
+// (release.yml sets it from the git tag); never publish with this SNAPSHOT default.
 version = providers.gradleProperty("version").orElse("0.1.0-SNAPSHOT").get()
 
 // OHOS-plane Kuikly version. The normal plane uses 2.24.0-raft.1-2.1.21; the
