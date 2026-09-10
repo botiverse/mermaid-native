@@ -18,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Verify and publish
+      - name: Verify and publish normal plane (android/ios)
         shell: bash
         env:
           MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
@@ -27,6 +27,15 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           ./gradlew -Pversion="$version" verifyThirdPartyNotices cyclonedxBom publishAllPublicationsToMermaidRegistryRepository
+      - name: Publish OHOS plane (ohosArm64)
+        shell: bash
+        env:
+          MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
+          MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
+          MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ./gradlew -c settings.ohos.gradle.kts -Pversion="$version" publishAllPublicationsToMermaidRegistryRepository
       - uses: actions/upload-artifact@v4
         with:
           name: mermaid-native-sbom
