@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useData } from 'vitepress'
 import familyExamples from '../data/family-examples.json'
+import familySections from '../data/family-sections.json'
 
 const { site } = useData()
 const base = site.value.base || '/'
@@ -18,6 +19,72 @@ const wasmStatus = ref<'loading' | 'ready' | 'offline'>('loading')
 const filterQuery = ref('')
 const copiedSlug = ref('')
 
+// Interactive zoom state. Each zoomable preview keeps its own scale/pan so
+// card-level zoom never leaks into other cards or into the playground preview.
+const zoomStates = ref<Record<string, { scale: number; x: number; y: number }>>({})
+
+function zoomState(key: string) {
+  if (!zoomStates.value[key]) {
+    zoomStates.value[key] = { scale: 1, x: 0, y: 0 }
+  }
+  return zoomStates.value[key]
+}
+
+function zoomIn(key: string) {
+  const s = zoomState(key)
+  s.scale = Math.min(4, +(s.scale * 1.25).toFixed(4))
+}
+
+function zoomOut(key: string) {
+  const s = zoomState(key)
+  s.scale = Math.max(0.25, +(s.scale / 1.25).toFixed(4))
+}
+
+function zoomReset(key: string) {
+  const s = zoomState(key)
+  s.scale = 1
+  s.x = 0
+  s.y = 0
+}
+
+function zoomFit(key: string) {
+  const s = zoomState(key)
+  s.scale = 1
+  s.x = 0
+  s.y = 0
+}
+
+function zoomBy(key: string, delta: number) {
+  const s = zoomState(key)
+  s.scale = Math.min(4, Math.max(0.25, +(s.scale * (delta > 0 ? 1.15 : 1 / 1.15)).toFixed(4)))
+}
+
+// Pointer-drag pan state keyed by target.
+const dragState = ref<{ key: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
+
+function onPanStart(key: string, e: PointerEvent) {
+  const s = zoomState(key)
+  dragState.value = { key, startX: e.clientX, startY: e.clientY, origX: s.x, origY: s.y }
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+}
+
+function onPanMove(e: PointerEvent) {
+  const d = dragState.value
+  if (!d) return
+  const s = zoomState(d.key)
+  s.x = +(d.origX + (e.clientX - d.startX)).toFixed(1)
+  s.y = +(d.origY + (e.clientY - d.startY)).toFixed(1)
+}
+
+function onPanEnd(e: PointerEvent) {
+  dragState.value = null
+}
+
+function svgTransform(key: string) {
+  const s = zoomState(key)
+  return `translate(${s.x}px, ${s.y}px) scale(${s.scale})`
+}
+
 import { ALLOWED_TAGS, ALLOWED_ATTRS, sanitizeSvg } from '../utils/svg-sanitizer'
 
 const filteredExamples = computed(() => {
@@ -29,6 +96,28 @@ const filteredExamples = computed(() => {
     item.source.toLowerCase().includes(q) ||
     item.note.toLowerCase().includes(q)
   )
+})
+
+// Group the (possibly filtered) examples into the canonical sections for
+// chaptered presentation. Sections with zero matches are hidden.
+const groupedSections = computed(() => {
+  const q = filterQuery.value.trim().toLowerCase()
+  return familySections
+    .map((section: any) => {
+      const items = familyExamples.filter((item: any) => {
+        const inSection = section.families.includes(item.family)
+        if (!inSection) return false
+        if (!q) return true
+        return (
+          item.family.toLowerCase().includes(q) ||
+          item.slug.toLowerCase().includes(q) ||
+          item.source.toLowerCase().includes(q) ||
+          item.note.toLowerCase().includes(q)
+        )
+      })
+      return { ...section, items }
+    })
+    .filter((section: any) => section.items.length > 0)
 })
 
 function safeSvg(payload: any): { ok: true; svg: string } | { ok: false; error: string } {
@@ -375,63 +464,104 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 32 Families Gallery -->
-    <section class="gallery-list" aria-label="Mermaid diagram families gallery">
-      <article
-        v-for="card in filteredExamples"
-        :id="card.slug"
-        :key="card.slug"
-        class="diagram-card"
+    <!-- Section quick-nav -->
+    <nav class="section-nav" aria-label="Diagram family sections">
+      <a
+        v-for="section in groupedSections"
+        :key="section.id"
+        :href="`#section-${section.id}`"
+        class="section-nav-link"
       >
-        <div class="card-header">
-          <div class="card-title-group">
-            <span class="family-eyebrow">{{ card.family }}</span>
-            <h3 class="card-title">
-              <a :href="`#${card.slug}`" class="header-anchor">#</a>
-              {{ card.family }}
-            </h3>
-            <p class="card-note">{{ card.note }}</p>
-          </div>
-          <div class="card-actions">
-            <button
-              type="button"
-              class="card-btn try-btn"
-              @click="tryInEditor(card)"
-            >
-              Try in editor
-            </button>
-            <button
-              type="button"
-              class="card-btn copy-btn"
-              @click="copySource(card.source, card.slug)"
-            >
-              {{ copiedSlug === card.slug ? 'Copied!' : 'Copy source' }}
-            </button>
-          </div>
-        </div>
+        {{ section.title }}
+        <span class="section-nav-count">{{ section.items.length }}</span>
+      </a>
+    </nav>
 
-        <div class="card-content-grid">
-          <div class="card-code-col">
-            <div class="code-badge">Mermaid</div>
-            <pre class="card-source"><code>{{ card.source }}</code></pre>
+    <!-- 32 Families Gallery, grouped by section -->
+    <div class="gallery-sections" aria-label="Mermaid diagram families gallery">
+      <section
+        v-for="section in groupedSections"
+        :id="`section-${section.id}`"
+        :key="section.id"
+        class="gallery-section"
+        :aria-labelledby="`section-${section.id}-heading`"
+      >
+        <h2 :id="`section-${section.id}-heading`" class="gallery-section-title">
+          {{ section.title }}
+          <span class="gallery-section-meta">{{ section.items.length }} families</span>
+        </h2>
+        <article
+          v-for="card in section.items"
+          :id="card.slug"
+          :key="card.slug"
+          class="diagram-card"
+        >
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="family-eyebrow">{{ card.family }}</span>
+              <h3 class="card-title">
+                <a :href="`#${card.slug}`" class="header-anchor">#</a>
+                {{ card.family }}
+              </h3>
+              <p class="card-note">{{ card.note }}</p>
+            </div>
+            <div class="card-actions">
+              <button
+                type="button"
+                class="card-btn try-btn"
+                @click="tryInEditor(card)"
+              >
+                Try in editor
+              </button>
+              <button
+                type="button"
+                class="card-btn copy-btn"
+                @click="copySource(card.source, card.slug)"
+              >
+                {{ copiedSlug === card.slug ? 'Copied!' : 'Copy source' }}
+              </button>
+            </div>
           </div>
-          <div class="card-preview-col">
-            <div
-              class="diagram-preview-canvas"
-              :aria-label="`Rendered ${card.family} diagram`"
-              v-html="card.svg"
-            ></div>
-          </div>
-        </div>
-      </article>
 
-      <div v-if="filteredExamples.length === 0" class="no-results-notice">
+          <div class="card-content-grid">
+            <div class="card-code-col">
+              <div class="code-badge">Mermaid</div>
+              <pre class="card-source"><code>{{ card.source }}</code></pre>
+            </div>
+            <div class="card-preview-col">
+              <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for ${card.family}`">
+                <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut(card.slug)">−</button>
+                <span class="zoom-level">{{ Math.round(zoomState(card.slug).scale * 100) }}%</span>
+                <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn(card.slug)">+</button>
+                <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset(card.slug)">Reset</button>
+              </div>
+              <div
+                class="diagram-preview-canvas"
+                :aria-label="`Rendered ${card.family} diagram`"
+                @wheel.prevent="zoomBy(card.slug, $event.deltaY < 0 ? 1 : -1)"
+                @pointerdown="onPanStart(card.slug, $event)"
+                @pointermove="onPanMove"
+                @pointerup="onPanEnd"
+                @pointercancel="onPanEnd"
+              >
+                <div
+                  class="zoomable-surface"
+                  :style="{ transform: svgTransform(card.slug) }"
+                  v-html="card.svg"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <div v-if="groupedSections.length === 0" class="no-results-notice">
         <p>No diagram families match <strong>"{{ filterQuery }}"</strong>.</p>
         <button type="button" class="action-button secondary" @click="filterQuery = ''">
           Reset filter
         </button>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -723,11 +853,130 @@ onUnmounted(() => {
   color: var(--vp-c-text-2);
 }
 
-/* Gallery Cards */
-.gallery-list {
+/* Section quick-nav */
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.section-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.section-nav-link:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+
+.section-nav-count {
+  font-size: 0.7rem;
+  color: var(--vp-c-text-3);
+  background: var(--vp-c-bg-elv);
+  border-radius: 9999px;
+  padding: 0.05rem 0.4rem;
+}
+
+/* Gallery sections */
+.gallery-sections {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
+}
+
+.gallery-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.gallery-section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--vp-c-text-1);
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--vp-c-brand-soft);
+  scroll-margin-top: calc(var(--vp-nav-height) + 1rem);
+}
+
+.gallery-section-meta {
+  margin-left: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--vp-c-text-3);
+  vertical-align: middle;
+}
+
+/* Zoom toolbar + zoomable surface */
+.zoom-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.zoom-btn {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.zoom-btn:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+
+.zoom-btn.zoom-reset {
+  margin-left: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0 0.6rem;
+}
+
+.zoom-level {
+  min-width: 48px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+
+.zoomable-surface {
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+  will-change: transform;
+}
+
+.diagram-preview-canvas {
+  cursor: grab;
+}
+
+.diagram-preview-canvas:active {
+  cursor: grabbing;
 }
 
 .diagram-card {
@@ -887,9 +1136,8 @@ onUnmounted(() => {
 }
 
 :deep(.diagram-preview-canvas svg) {
-  max-width: 100%;
-  height: auto;
   display: block;
+  height: auto;
 }
 
 .no-results-notice {
