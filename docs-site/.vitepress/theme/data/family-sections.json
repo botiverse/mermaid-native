@@ -1,0 +1,27 @@
+[
+  {
+    "id": "flow",
+    "title": "Flowcharts & Behavior",
+    "families": ["Flowchart", "Sequence", "State", "Class", "Usecase", "Event Modeling", "ZenUML", "Railroad"]
+  },
+  {
+    "id": "charts",
+    "title": "Charts & Data Visualization",
+    "families": ["Pie", "XY Chart", "Quadrant Chart", "Sankey", "Radar", "Venn", "Treemap", "Gantt", "Timeline", "GitGraph"]
+  },
+  {
+    "id": "structure",
+    "title": "Structure & Relationships",
+    "families": ["Architecture", "C4", "Block", "Entity Relationship", "Requirement Diagram"]
+  },
+  {
+    "id": "organize",
+    "title": "Whiteboards & Organization",
+    "families": ["Mindmap", "Kanban", "Ishikawa", "Packet", "TreeView", "Wardley"]
+  },
+  {
+    "id": "special",
+    "title": "Special-Purpose",
+    "families": ["User Journey", "Swimlane", "Cynefin"]
+  }
+]
