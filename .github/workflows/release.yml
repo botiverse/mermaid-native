@@ -3,6 +3,16 @@ name: Publish Maven artifacts
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without leading v), e.g. 0.1.1'
+        required: false
+        default: ''
+      plane:
+        description: 'Which plane to publish (normal | ohos | both)'
+        required: false
+        default: 'both'
 
 permissions:
   contents: read
@@ -18,25 +28,39 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Verify and publish normal plane (android/ios)
+      - name: Publish normal plane (android/ios)
+        if: ${{ github.event_name == 'push' || inputs.plane == 'normal' || inputs.plane == 'both' }}
         shell: bash
         env:
           MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
           MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
           MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
           ./gradlew -Pversion="$version" verifyThirdPartyNotices cyclonedxBom publishAllPublicationsToMermaidRegistryRepository
       - name: Publish OHOS plane (ohosArm64)
+        if: ${{ github.event_name == 'push' || inputs.plane == 'ohos' || inputs.plane == 'both' }}
         shell: bash
         env:
           MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
           MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
           MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          ./gradlew -c settings.ohos.gradle.kts -Pversion="$version" publishAllPublicationsToMermaidRegistryRepository
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          # OHOS plane publishes under an independent `-ohos` version coordinate
+          # (matching the Kuikly `-2.0.21-ohos` vs `-2.1.21` plane-split convention),
+          # so normal and OHOS root kotlinMultiplatform publications never collide.
+          ./gradlew -c settings.ohos.gradle.kts -Pversion="$version-ohos" publishAllPublicationsToMermaidRegistryRepository
       - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name == 'push' }}
         with:
           name: mermaid-native-sbom
           path: build/reports/cyclonedx-direct/bom.*
