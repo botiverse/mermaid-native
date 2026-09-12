@@ -19,6 +19,7 @@ subprojects {
             androidTarget { publishLibraryVariants("release") }
             iosArm64()
             iosSimulatorArm64()
+            iosX64()
             // OHOS is enabled by the Kuikly host build once its signed toolchain
             // is available; keeping the core graph free of that plugin is
             // intentional and preserves ordinary KMP consumers.
