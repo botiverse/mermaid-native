@@ -321,12 +321,14 @@ public object SimpleMermaidLayout : DiagramLayout {
                     if (rowIndex < rows.lastIndex) yOffset += row.height + rowGap
                     centerY
                 }
-                val leftSpine = 3.0
-                val rightSpine = width - 3.0
+                val leftSpine = 0.0
+                val rightSpine = width
                 commands += DrawLine(ScenePoint(leftSpine, rowCenters.first()), ScenePoint(leftSpine, rowCenters.last()))
                 commands += DrawLine(ScenePoint(rightSpine, rowCenters.first()), ScenePoint(rightSpine, rowCenters.last()))
-                commands += DrawLine(ScenePoint(leftSpine, rowCenters.first()), ScenePoint(inset, rowCenters.first()))
                 rows.forEachIndexed { rowIndex, row ->
+                    // task #342: connect EVERY row to both rails (ladder), so the left rail
+                    // does not run past its last tap and leave a dangling endpoint (gap).
+                    commands += DrawLine(ScenePoint(leftSpine, rowCenters[rowIndex]), ScenePoint(inset, rowCenters[rowIndex]))
                     commands += DrawLine(ScenePoint(inset + row.width, rowCenters[rowIndex]), ScenePoint(rightSpine, rowCenters[rowIndex]))
                 }
                 val height = yOffset + rows.last().height
@@ -338,8 +340,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val indent = 16.0
                 val contentWidth = branches.maxOf { it.width }
                 val width = indent + contentWidth + 12.0
-                val spineLeft = 4.0
-                val spineRight = width - 4.0
+                val spineLeft = 0.0
+                val spineRight = width
                 var yOffset = 0.0
                 val branchCenters = branches.mapIndexed { branchIndex, branch ->
                     val centerY = yOffset + branch.center

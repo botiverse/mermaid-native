@@ -164,6 +164,69 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.width >= required, "width ${first.width} below required $required")
     }
 
+    /**
+     * task #342 regression: railroad connector lines must meet their neighbours exactly.
+     *
+     * The Choice/Stack composite boxes previously inset their connector spines by 3-4px
+     * from the box edge, while a wrapping Sequence connected at the raw box edge, leaving
+     * a visible 3-4px gap ("disconnected lines"). This asserts every horizontal connector
+     * endpoint coincides with another primitive's vertex (so no dangling gap can return).
+     */
+    @Test
+    fun railroadConnectorsMeetTheirNeighboursWithoutGaps() {
+        val diagram = RailroadDiagram(
+            RailroadSequence(
+                listOf(
+                    RailroadTerminal("token"),
+                    RailroadChoice(
+                        0,
+                        listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+                    ),
+                    RailroadStack(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
+                ),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+
+        // Every vertex contributed by any primitive (line endpoints, polyline vertices, rect corners).
+        val vertices = mutableListOf<ScenePoint>()
+        scene.commands.forEach { command ->
+            when (command) {
+                is DrawLine -> {
+                    vertices += command.from
+                    vertices += command.to
+                }
+                is DrawPolyline -> vertices += command.points
+                is DrawRect -> {
+                    vertices += ScenePoint(command.rect.x, command.rect.y)
+                    vertices += ScenePoint(command.rect.x + command.rect.width, command.rect.y)
+                    vertices += ScenePoint(command.rect.x, command.rect.y + command.rect.height)
+                    vertices += ScenePoint(command.rect.x + command.rect.width, command.rect.y + command.rect.height)
+                }
+                else -> Unit
+            }
+        }
+
+        val lines = scene.commands.filterIsInstance<DrawLine>()
+        assertTrue(lines.isNotEmpty(), "railroad layout produced no connector lines")
+
+        fun coveredByVertex(point: ScenePoint): Boolean = vertices.count { it == point } >= 2
+        fun coveredByRectEdge(point: ScenePoint): Boolean = scene.commands.filterIsInstance<DrawRect>().any { command ->
+            val r = command.rect
+            val onVerticalEdge = (point.x == r.x || point.x == r.x + r.width) && point.y in r.y..(r.y + r.height)
+            val onHorizontalEdge = (point.y == r.y || point.y == r.y + r.height) && point.x in r.x..(r.x + r.width)
+            onVerticalEdge || onHorizontalEdge
+        }
+
+        val dangling = lines.flatMap { listOf(it.from, it.to) }.filter { endpoint ->
+            !coveredByVertex(endpoint) && !coveredByRectEdge(endpoint)
+        }
+        assertTrue(
+            dangling.isEmpty(),
+            "railroad connector endpoints dangle (gap) at: $dangling",
+        )
+    }
+
     @Test
     fun zenumlProducesDeterministicMeasuredLifelines() {
         val longParticipant = "participant-".repeat(20)
