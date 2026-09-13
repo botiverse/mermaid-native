@@ -31,6 +31,18 @@ public sealed interface MermaidWebResult {
     ) : MermaidWebResult
 }
 
+/** Result of the Canvas2D export path; carries a JSON draw-script instead of SVG markup. */
+public sealed interface MermaidWebCanvasResult {
+    public data class Success(
+        val script: String,
+        val diagram: MermaidDiagram,
+    ) : MermaidWebCanvasResult
+
+    public data class Failure(
+        val diagnostics: List<MermaidDiagnostic>,
+    ) : MermaidWebCanvasResult
+}
+
 /**
  * Browser-safe adapter: parsing, layout and SVG serialization all remain in
  * commonMain. Host DOM, sizing, lifecycle and accessibility are deliberately
@@ -49,6 +61,28 @@ public object MermaidWebAdapter {
             )
             MermaidWebResult.Success(
                 svg = SvgRenderer.render(scene),
+                diagram = parsed.diagram,
+            )
+        }
+    }
+
+    /**
+     * Canvas2D companion to [render]: identical parse + layout, but serializes the scene to a
+     * JSON draw-script ([MermaidCanvasRenderer]) instead of SVG markup. Same determinism, same
+     * failure taxonomy.
+     */
+    public fun renderCanvas(request: MermaidWebRequest): MermaidWebCanvasResult = when (
+        val parsed = MermaidParser.parse(request.source)
+    ) {
+        is MermaidParseResult.Failure -> MermaidWebCanvasResult.Failure(parsed.diagnostics)
+        is MermaidParseResult.Success -> {
+            val scene = SimpleMermaidLayout.layout(
+                parsed.diagram,
+                FixedWidthTextMeasurer,
+                LayoutConfig(padding = request.layout.padding),
+            )
+            MermaidWebCanvasResult.Success(
+                script = MermaidCanvasRenderer.render(scene),
                 diagram = parsed.diagram,
             )
         }

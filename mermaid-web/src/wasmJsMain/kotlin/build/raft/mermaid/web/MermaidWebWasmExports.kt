@@ -21,6 +21,20 @@ public fun renderMermaidResultJson(source: String): String = when (val result = 
     }}]}"
 }
 
+/**
+ * Canvas2D draw-script export (task #364 successor). Returns a JSON `{width,height,ops:[...]}`
+ * that the host page replays onto a `<canvas>` 2D context — the same `LayoutScene` the SVG
+ * path serializes, so the two outputs are geometrically identical.
+ */
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+public fun renderMermaidCanvasJson(source: String): String = when (val result = MermaidWebAdapter.renderCanvas(MermaidWebRequest(source))) {
+    is MermaidWebCanvasResult.Success -> result.script
+    is MermaidWebCanvasResult.Failure -> "{\"ok\":false,\"diagnostics\":[${result.diagnostics.joinToString(",") { diagnostic ->
+        "{\"code\":${jsonString(diagnostic.code.name)},\"message\":${jsonString(diagnostic.message)},\"line\":${diagnostic.location.line},\"column\":${diagnostic.location.column}}"
+    }}]}"
+}
+
 private fun jsonString(value: String): String = buildString {
     append('"')
     value.forEach { c ->
