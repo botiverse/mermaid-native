@@ -100,9 +100,9 @@ class MermaidParserTest {
 
     @Test
     fun parsesEventModelingCompactRelaxedResetAndExplicitRelations() {
-        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
         val diagram = assertIs<EventModelingDiagram>(result.diagram)
-        assertEquals("Cart & inventory", diagram.title)
+        assertEquals(null, diagram.title)
         assertEquals(listOf("01", "02", "03", "04", "05"), diagram.frames.map { it.id })
         assertEquals(EventModelingEntityKind.READ_MODEL, diagram.frames.last().kind)
         assertTrue(diagram.frames[3].reset)
@@ -125,6 +125,7 @@ class MermaidParserTest {
             "eventmodeling\ntf 01 ui Cart { value: string }",
             "eventmodeling\ndata Cart {",
             "eventmodeling\naccTitle: deferred",
+            "eventmodeling\ntitle Cart inventory\ntf 01 ui Cart",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 

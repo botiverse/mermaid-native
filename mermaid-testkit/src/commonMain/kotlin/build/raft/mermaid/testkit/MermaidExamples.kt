@@ -156,9 +156,9 @@ public object MermaidExamples {
 
     public val eventModelingCartFlow: MermaidExample = MermaidExample(
         path = "samples/eventmodeling-cart-flow.mmd",
-        source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
+        source = "eventmodeling\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
         expected = EventModelingDiagram(
-            title = "Cart & inventory",
+            title = null,
             frames = listOf(
                 EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
                 EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
