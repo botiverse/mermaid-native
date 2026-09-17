@@ -24,3 +24,22 @@
 .VPFeature {
   border-radius: 16px;
 }
+
+
+/* Gallery/playground pages carry wide native SVGs. Keep them inside the
+ * content column instead of overflowing the VitePress shell. */
+.VPDoc:has(.mermaid-gallery-container) {
+  overflow-x: clip;
+}
+
+.VPDoc:has(.mermaid-gallery-container) .container,
+.VPDoc:has(.mermaid-gallery-container) .content-container,
+.VPDoc:has(.mermaid-gallery-container) .content {
+  max-width: min(1120px, 100%);
+}
+
+.vp-doc .mermaid-gallery-container {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}

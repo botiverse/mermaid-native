@@ -230,6 +230,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val directoryStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val rowHeight = 36.0
         val indent = 42.0
+        val nodeRadius = 5.0
         val maxLabelRight = diagram.nodes.maxOf { node ->
             config.padding + node.depth * indent + 18.0 + textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width
         }
@@ -245,15 +246,15 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val parent = points[parentIndex]
                 commands += DrawPolyline(
                     listOf(
-                        ScenePoint(parent.x + 5.0, parent.y + 7.0),
-                        ScenePoint(parent.x + 5.0, point.y),
-                        ScenePoint(point.x - 8.0, point.y),
+                        ScenePoint(parent.x, parent.y + nodeRadius),
+                        ScenePoint(parent.x, point.y),
+                        ScenePoint(point.x - nodeRadius, point.y),
                     ).map { it.canonical() },
                     stroke = SceneColor("#94a3b8"),
                     strokeWidth = 1.5,
                 )
             }
-            commands += DrawEllipse(point, 5.0, 5.0, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
+            commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
             commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)

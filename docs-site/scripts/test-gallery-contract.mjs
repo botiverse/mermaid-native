@@ -98,7 +98,11 @@ if (!vueCode.includes('debounceTimer') || !vueCode.includes('watch(editorSource'
 if (!vueCode.includes('encodeSourceHash') || !vueCode.includes('props.galleryOnly') || !vueCode.includes('playground#source=')) {
   throw new Error('MermaidGallery.vue missing galleryOnly transfer to playground')
 }
+if (!vueCode.includes('max-width: 100%') || !vueCode.includes('minmax(0, 1fr)')) {
+  throw new Error('MermaidGallery.vue missing overflow containment (svg max-width / shrinking grid tracks)')
+}
 console.log('✓ MermaidGallery.vue imports shared sanitizer, implements debounced input watch, and routes galleryOnly Try-in-editor to /playground')
+console.log('✓ MermaidGallery.vue constrains wide SVGs and grid tracks so gallery cards cannot overflow the page')
 
 // 5. Test SVG Security Sanitizer logic using real XML DOMParser and XMLSerializer with strict error reporting
 function createStrictXmlParser() {
