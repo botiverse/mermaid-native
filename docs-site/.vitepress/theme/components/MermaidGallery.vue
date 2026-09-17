@@ -91,6 +91,7 @@ function svgTransform(key: string) {
 }
 
 import { ALLOWED_TAGS, ALLOWED_ATTRS, sanitizeSvg } from '../utils/svg-sanitizer'
+import OfficialMermaidPreview from './OfficialMermaidPreview.vue'
 
 const filteredExamples = computed(() => {
   const q = filterQuery.value.trim().toLowerCase()
@@ -425,7 +426,7 @@ onUnmounted(() => {
         </div>
 
         <div class="preview-pane">
-          <div class="pane-label">Rendered Preview</div>
+          <div class="pane-label">Native</div>
           <div
             id="editor-preview"
             class="editor-preview-surface"
@@ -443,6 +444,15 @@ onUnmounted(() => {
             <div v-else class="preview-placeholder">
               Click <strong>Render</strong> to preview output.
             </div>
+          </div>
+        </div>
+        <div class="preview-pane">
+          <div class="pane-label">Official Mermaid <span class="compare-hint">comparison only</span></div>
+          <div class="editor-preview-surface official-surface">
+            <OfficialMermaidPreview
+              :source="editorSource"
+              render-key="playground"
+            />
           </div>
         </div>
       </div>
@@ -543,10 +553,11 @@ onUnmounted(() => {
 
           <div class="card-content-grid">
             <div class="card-code-col">
-              <div class="code-badge">Mermaid</div>
+              <div class="code-badge">Source</div>
               <pre class="card-source"><code>{{ card.source }}</code></pre>
             </div>
             <div class="card-preview-col">
+              <div class="code-badge">Native</div>
               <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for ${card.family}`">
                 <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut(card.slug)">−</button>
                 <span class="zoom-level">{{ Math.round(zoomState(card.slug).scale * 100) }}%</span>
@@ -555,7 +566,7 @@ onUnmounted(() => {
               </div>
               <div
                 class="diagram-preview-canvas"
-                :aria-label="`Rendered ${card.family} diagram`"
+                :aria-label="`Native ${card.family} diagram`"
                 @wheel.prevent="zoomBy(card.slug, $event.deltaY < 0 ? 1 : -1)"
                 @pointerdown="onPanStart(card.slug, $event)"
                 @pointermove="onPanMove"
@@ -567,6 +578,18 @@ onUnmounted(() => {
                   :style="{ transform: svgTransform(card.slug) }"
                   v-html="card.svg"
                 ></div>
+              </div>
+            </div>
+            <div class="card-preview-col">
+              <div class="code-badge">Official Mermaid <span class="compare-hint">comparison only</span></div>
+              <div
+                class="diagram-preview-canvas official-canvas"
+                :aria-label="`Official Mermaid ${card.family} diagram`"
+              >
+                <OfficialMermaidPreview
+                  :source="card.source"
+                  :render-key="card.slug"
+                />
               </div>
             </div>
           </div>
@@ -680,12 +703,12 @@ onUnmounted(() => {
 
 .playground-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   min-width: 0;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .playground-grid {
     grid-template-columns: 1fr;
   }
@@ -1106,16 +1129,23 @@ onUnmounted(() => {
 
 .card-content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
   min-width: 0;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .card-content-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.compare-hint {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--vp-c-text-3);
 }
 
 .card-code-col {

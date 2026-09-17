@@ -104,6 +104,19 @@ if (!vueCode.includes('max-width: 100%') || !vueCode.includes('minmax(0, 1fr)'))
 console.log('✓ MermaidGallery.vue imports shared sanitizer, implements debounced input watch, and routes galleryOnly Try-in-editor to /playground')
 console.log('✓ MermaidGallery.vue constrains wide SVGs and grid tracks so gallery cards cannot overflow the page')
 
+const officialPreviewPath = resolve(docsRoot, '.vitepress/theme/components/OfficialMermaidPreview.vue')
+const officialPreview = await readFile(officialPreviewPath, 'utf8')
+if (!officialPreview.includes("import('mermaid')") || !officialPreview.includes("securityLevel: 'strict'")) {
+  throw new Error('OfficialMermaidPreview.vue must lazy-load mermaid with securityLevel strict')
+}
+if (!vueCode.includes('OfficialMermaidPreview') || !vueCode.includes('Official Mermaid') || !vueCode.includes('comparison only')) {
+  throw new Error('MermaidGallery.vue missing official Mermaid comparison pane')
+}
+if (vueCode.includes('fallback') && vueCode.includes('mermaid.render') && vueCode.includes('editorPreviewHtml')) {
+  throw new Error('Official Mermaid must not replace the Native preview path')
+}
+console.log('✓ Official Mermaid comparison pane is present, lazy-loaded, strict, and not a Native fallback')
+
 // 5. Test SVG Security Sanitizer logic using real XML DOMParser and XMLSerializer with strict error reporting
 function createStrictXmlParser() {
   let parseError = null

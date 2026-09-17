@@ -12,5 +12,8 @@
   "devDependencies": {
     "@xmldom/xmldom": "^0.9.12",
     "vitepress": "1.6.4"
+  },
+  "dependencies": {
+    "mermaid": "^11.17.2"
   }
 }
