@@ -41,6 +41,7 @@ import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.core.ArchitectureDiagram
 import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.core.C4Diagram
+import build.raft.mermaid.core.C4Element
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
@@ -605,7 +606,13 @@ public object SimpleMermaidLayout : DiagramLayout {
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 10.0)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val contentWidth = diagram.elements.maxOf { max(textMeasurer.measure(it.label, style).width, it.description?.let { description -> textMeasurer.measure(description, bodyStyle).width } ?: 0.0) }
+        val stereotypeStyle = TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))
+        val contentWidth = diagram.elements.maxOf { element ->
+            max(
+                max(textMeasurer.measure(element.label, style).width, element.description?.let { description -> textMeasurer.measure(description, bodyStyle).width } ?: 0.0),
+                textMeasurer.measure(c4Stereotype(element), stereotypeStyle).width,
+            )
+        }
         val cardWidth = max(180.0, contentWidth + 36.0)
         val columns = 3
         val cardHeight = 92.0
@@ -623,18 +630,32 @@ public object SimpleMermaidLayout : DiagramLayout {
             val from = usecaseBoundaryPoint(fromCenter, toCenter, cardWidth / 2.0, cardHeight / 2.0, false)
             val to = usecaseBoundaryPoint(toCenter, fromCenter, cardWidth / 2.0, cardHeight / 2.0, false)
             commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
-            commands += DrawText(relationship.label, ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0 - 8.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
+            val mid = ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0)
+            commands += DrawText(relationship.label, mid.copy(y = mid.y - 10.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
+            relationship.technology?.let { technology ->
+                commands += DrawText("[$technology]", mid.copy(y = mid.y + 12.0).canonical(), anchor = TextAnchor.MIDDLE, style = stereotypeStyle)
+            }
             if (relationship.bidirectional) commands += arrowHead(to, from)
             commands += arrowHead(from, to)
         }
         diagram.elements.forEach { element ->
             val point = points.getValue(element.id)
             val fill = if (element.external) SceneColor("#fef3c7") else if (element.kind == C4ElementKind.PERSON) SceneColor("#dcfce7") else SceneColor("#dbeafe")
-            commands += DrawRect(SceneRect(point.x - cardWidth / 2.0, point.y - cardHeight / 2.0, cardWidth, cardHeight).canonical(), 8.0, fill = fill, stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
-            commands += DrawText(element.label, point.copy(y = point.y - 10.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
-            element.description?.let { commands += DrawText(it, point.copy(y = point.y + 16.0).canonical(), anchor = TextAnchor.MIDDLE, style = bodyStyle) }
+            val stroke = SceneColor("#2563eb")
+            commands += DrawRect(SceneRect(point.x - cardWidth / 2.0, point.y - cardHeight / 2.0, cardWidth, cardHeight).canonical(), 8.0, fill = fill, stroke = stroke, strokeWidth = 1.5)
+            if (element.kind == C4ElementKind.PERSON) {
+                commands += DrawEllipse(ScenePoint(point.x, point.y - cardHeight / 2.0).canonical(), 10.0, 10.0, fill = fill, stroke = stroke, strokeWidth = 1.5)
+            }
+            commands += DrawText(element.label, point.copy(y = point.y - 16.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
+            commands += DrawText(c4Stereotype(element), point.copy(y = point.y + 2.0).canonical(), anchor = TextAnchor.MIDDLE, style = stereotypeStyle)
+            element.description?.let { commands += DrawText(it, point.copy(y = point.y + 20.0).canonical(), anchor = TextAnchor.MIDDLE, style = bodyStyle) }
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+    }
+
+    private fun c4Stereotype(element: C4Element): String = when (element.kind) {
+        C4ElementKind.PERSON -> "[Person]"
+        C4ElementKind.SYSTEM -> "[Software System]"
     }
 
     private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
