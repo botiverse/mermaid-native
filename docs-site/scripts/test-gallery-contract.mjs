@@ -112,6 +112,9 @@ if (!officialPreview.includes("import('mermaid')") || !officialPreview.includes(
 if (!vueCode.includes('OfficialMermaidPreview') || !vueCode.includes('Official Mermaid') || !vueCode.includes('comparison only')) {
   throw new Error('MermaidGallery.vue missing official Mermaid comparison pane')
 }
+if (!vueCode.includes('card-compare-grid') || !vueCode.includes('playground-compare-grid') || !vueCode.includes('-official')) {
+  throw new Error('Official comparison pane must be full-width with its own zoom controls')
+}
 if (vueCode.includes('fallback') && vueCode.includes('mermaid.render') && vueCode.includes('editorPreviewHtml')) {
   throw new Error('Official Mermaid must not replace the Native preview path')
 }
