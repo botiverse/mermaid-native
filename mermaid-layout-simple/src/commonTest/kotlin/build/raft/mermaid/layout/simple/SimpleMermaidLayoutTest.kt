@@ -336,6 +336,46 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun treeViewConnectorsMeetCenteredEllipses() {
+        val diagram = TreeViewDiagram(
+            listOf(
+                TreeViewNode("project", 0, null, true),
+                TreeViewNode("src", 1, 0, true),
+                TreeViewNode("index.ts", 2, 1, false),
+                TreeViewNode("README.md", 1, 0, false),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val ellipses = scene.commands.filterIsInstance<DrawEllipse>()
+        val polylines = scene.commands.filterIsInstance<DrawPolyline>()
+        assertEquals(4, ellipses.size)
+        assertEquals(3, polylines.size)
+
+        fun onEllipseBoundary(point: ScenePoint, ellipse: DrawEllipse): Boolean {
+            val nx = (point.x - ellipse.center.x) / ellipse.radiusX
+            val ny = (point.y - ellipse.center.y) / ellipse.radiusY
+            return kotlin.math.abs(nx * nx + ny * ny - 1.0) <= 0.05
+        }
+
+        polylines.forEach { poly ->
+            assertEquals(3, poly.points.size)
+            val start = poly.points.first()
+            val elbow = poly.points[1]
+            val end = poly.points.last()
+            assertEquals(start.x, elbow.x)
+            assertEquals(elbow.y, end.y)
+            assertTrue(
+                ellipses.any { ellipse -> ellipse.center.x == start.x && onEllipseBoundary(start, ellipse) },
+                "vertical spine start $start is not centered on a parent ellipse",
+            )
+            assertTrue(
+                ellipses.any { ellipse -> ellipse.center.y == end.y && onEllipseBoundary(end, ellipse) },
+                "horizontal run end $end does not meet a child ellipse",
+            )
+        }
+    }
+
+    @Test
     fun swimlanesProduceDeterministicMeasuredLanesNodesAndEdges() {
         val long = "handoff-".repeat(20)
         val diagram = SwimlaneDiagram(

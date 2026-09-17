@@ -590,6 +590,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 /* Playground Card */
@@ -676,8 +680,9 @@ onUnmounted(() => {
 
 .playground-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
+  min-width: 0;
 }
 
 @media (max-width: 860px) {
@@ -769,10 +774,14 @@ onUnmounted(() => {
   justify-content: center;
   overflow: auto;
   box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .rendered-svg-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   justify-content: center;
   overflow: auto;
@@ -1005,6 +1014,8 @@ onUnmounted(() => {
   padding: 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   transition: border-color 0.2s ease;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .diagram-card:hover {
@@ -1095,9 +1106,10 @@ onUnmounted(() => {
 
 .card-content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
+  min-width: 0;
 }
 
 @media (max-width: 860px) {
@@ -1109,6 +1121,8 @@ onUnmounted(() => {
 .card-code-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .code-badge {
@@ -1138,6 +1152,8 @@ onUnmounted(() => {
 .card-preview-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .diagram-preview-canvas {
@@ -1152,10 +1168,13 @@ onUnmounted(() => {
   overflow: auto;
   box-sizing: border-box;
   min-height: 200px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 :deep(.diagram-preview-canvas svg) {
   display: block;
+  max-width: 100%;
   height: auto;
 }
 

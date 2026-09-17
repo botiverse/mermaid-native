@@ -1,3 +1,8 @@
+---
+aside: false
+outline: false
+---
+
 # Diagram Examples & Live Gallery
 
 The Mermaid Native project maintains deterministic, verified Kotlin Multiplatform implementations across 32 diagram families.
