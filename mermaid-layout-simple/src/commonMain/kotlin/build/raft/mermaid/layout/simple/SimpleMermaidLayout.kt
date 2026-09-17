@@ -2163,6 +2163,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
 
         val commands = mutableListOf<DrawCommand>()
+        val edgeStroke = SceneColor("#666666")
+        val arrowFill = SceneColor("#333333")
         diagram.edges.forEach { edge ->
             val source = rects[edge.sourceId] ?: return@forEach
             val target = rects[edge.targetId] ?: return@forEach
@@ -2170,13 +2172,20 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawLine(
                 anchors.first,
                 anchors.second,
+                stroke = edgeStroke,
                 strokeWidth = if (edge.style == FlowEdgeStyle.THICK) 3.0 else 1.5,
             )
-            commands += arrowHead(anchors.first, anchors.second)
+            commands += arrowHead(anchors.first, anchors.second, fill = arrowFill)
         }
         diagram.nodes.forEach { node ->
             val rect = rects.getValue(node.id)
-            commands += DrawRect(rect = rect, cornerRadius = 4.0)
+            commands += DrawRect(
+                rect = rect,
+                cornerRadius = 5.0,
+                fill = SceneColor("#eeeeee"),
+                stroke = SceneColor("#999999"),
+                strokeWidth = 1.5,
+            )
             commands += DrawText(
                 text = node.label,
                 origin = ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),
@@ -2543,7 +2552,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
     }
 
-    private fun arrowHead(from: ScenePoint, to: ScenePoint): DrawPolygon {
+    private fun arrowHead(from: ScenePoint, to: ScenePoint, fill: SceneColor = SceneColor("#475569")): DrawPolygon {
         val dx = to.x - from.x
         val dy = to.y - from.y
         val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
@@ -2553,7 +2562,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val baseY = to.y - unitY * 9.0
         val perpendicularX = -unitY * 4.5
         val perpendicularY = unitX * 4.5
-        return DrawPolygon(listOf(to, ScenePoint(baseX + perpendicularX, baseY + perpendicularY), ScenePoint(baseX - perpendicularX, baseY - perpendicularY)))
+        return DrawPolygon(listOf(to, ScenePoint(baseX + perpendicularX, baseY + perpendicularY), ScenePoint(baseX - perpendicularX, baseY - perpendicularY)), fill = fill)
     }
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
