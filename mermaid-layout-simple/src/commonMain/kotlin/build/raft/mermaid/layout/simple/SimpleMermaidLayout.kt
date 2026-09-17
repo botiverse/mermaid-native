@@ -1767,19 +1767,32 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutGantt(diagram: GanttDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val body = TextStyle(fontSize = 12.0)
+        val tickStyle = TextStyle(fontSize = 10.0)
         val tasks = diagram.sections.flatMap { section -> section.tasks.map { section.name to it } }
         val minDay = tasks.minOfOrNull { it.second.startDay } ?: 0
         val maxDay = tasks.maxOfOrNull { it.second.startDay + it.second.durationDays } ?: minDay + 1
-        val scale = 28.0
-        val labelWidth = tasks.maxOfOrNull { textMeasurer.measure(it.second.name, body).width }?.plus(24.0) ?: 120.0
-        val width = config.padding * 2 + labelWidth + (maxDay - minDay) * scale
-        val height = config.padding * 2 + maxOf(1, tasks.size) * 34.0 + 28.0
+        val tickLabelWidth = textMeasurer.measure("0000-00-00", tickStyle).width
+        val scale = max(28.0, tickLabelWidth + 8.0)
+        val labelWidth = tasks.maxOfOrNull { textMeasurer.measure("${it.first}: ${it.second.name}", body).width }?.plus(16.0) ?: 120.0
+        val span = max(1, maxDay - minDay)
+        val width = config.padding * 2 + labelWidth + span * scale
+        val titleOffset = if (diagram.title == null) 0.0 else 28.0
+        val axisY = config.padding + titleOffset + 8.0
+        val tasksTop = axisY + 28.0
+        val height = tasksTop + maxOf(1, tasks.size) * 34.0 + config.padding
+        val axisStartX = (config.padding + labelWidth).xyCoordinate()
+        val axisEndX = (width - config.padding).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
-        commands += DrawLine(ScenePoint((config.padding + labelWidth).xyCoordinate(), (config.padding + 24.0).xyCoordinate()), ScenePoint((width - config.padding).xyCoordinate(), (config.padding + 24.0).xyCoordinate()))
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 16.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        commands += DrawLine(ScenePoint(axisStartX, axisY.xyCoordinate()), ScenePoint(axisEndX, axisY.xyCoordinate()))
+        for (day in minDay..maxDay) {
+            val x = (config.padding + labelWidth + (day - minDay) * scale).xyCoordinate()
+            commands += DrawLine(ScenePoint(x, axisY.xyCoordinate()), ScenePoint(x, (axisY + 6.0).xyCoordinate()), strokeWidth = 1.0)
+            commands += DrawText(isoDayToYmd(day), ScenePoint(x, axisY + 20.0), TextAnchor.MIDDLE, tickStyle)
+        }
         var row = 0
         tasks.forEach { (section, task) ->
-            val y = config.padding + 42.0 + row * 34.0
+            val y = tasksTop + row * 34.0
             commands += DrawText("$section: ${task.name}", ScenePoint(config.padding, y + 13.0), style = body)
             val x = (config.padding + labelWidth + (task.startDay - minDay) * scale).xyCoordinate()
             val fill = when (task.status) { GanttTaskStatus.DONE -> "#16a34a"; GanttTaskStatus.ACTIVE -> "#2563eb"; GanttTaskStatus.CRITICAL -> "#dc2626"; GanttTaskStatus.TODO -> "#94a3b8" }
@@ -2508,6 +2521,27 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.MIDDLE, noteStyle)
         }
         return LayoutScene(width, height, commands)
+    }
+
+    private fun isoDayToYmd(day: Int): String {
+        var remaining = day
+        var year = 0
+        fun leap(value: Int) = value % 4 == 0 && (value % 100 != 0 || value % 400 == 0)
+        while (true) {
+            val yearLength = if (leap(year)) 366 else 365
+            if (remaining < yearLength) break
+            remaining -= yearLength
+            year += 1
+        }
+        val monthDays = intArrayOf(31, if (leap(year)) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+        var month = 1
+        for (days in monthDays) {
+            if (remaining < days) break
+            remaining -= days
+            month += 1
+        }
+        val date = remaining + 1
+        return "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}"
     }
 
     private fun erInset(from: ScenePoint, to: ScenePoint, distance: Double): ScenePoint {
