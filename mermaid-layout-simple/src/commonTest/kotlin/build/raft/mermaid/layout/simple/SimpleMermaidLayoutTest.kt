@@ -544,9 +544,30 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, first.commands.filterIsInstance<DrawRect>().size)
-        assertEquals(1, first.commands.filterIsInstance<DrawLine>().size)
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "0..*" })
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "int id PK" })
+        assertTrue(first.commands.filterIsInstance<DrawLine>().size > 1)
+        assertEquals(1, first.commands.filterIsInstance<DrawEllipse>().size)
+        val labels = first.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("CUSTOMER", "ORDER", "int", "id", "PK", "customerId", "FK", "places")))
+        assertTrue(labels.none { it == "int id PK" || it == "0..*" || it == "1" })
+    }
+
+    @Test
+    fun entityRelationshipSplitsTypedRowsAndDrawsCrowsFoot() {
+        val diagram = EntityRelationshipDiagram(
+            entities = listOf(
+                EntityDefinition("CUSTOMER", listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("string", "name"))),
+                EntityDefinition("ORDER", listOf(EntityAttribute("int", "id", EntityKey.PK), EntityAttribute("int", "customerId", EntityKey.FK))),
+            ),
+            relationships = listOf(
+                EntityRelationship("CUSTOMER", "ORDER", EntityCardinality.ONLY_ONE, EntityCardinality.ZERO_OR_MORE, "places"),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(listOf("places", "CUSTOMER", "int", "id", "PK", "string", "name", "ORDER", "int", "id", "PK", "int", "customerId", "FK"), labels)
+        assertEquals(1, scene.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().size >= 8)
     }
 
     @Test

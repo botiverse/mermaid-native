@@ -1858,22 +1858,31 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene {
-        val style = TextStyle()
-        fun attributeLine(type: String, name: String, key: EntityKey): String = buildString {
-            append(type).append(' ').append(name)
-            if (key != EntityKey.NONE) append(' ').append(key.name)
-        }
-        fun cardinalityLabel(cardinality: EntityCardinality): String = when (cardinality) {
-            EntityCardinality.ONLY_ONE -> "1"
-            EntityCardinality.ZERO_OR_ONE -> "0..1"
-            EntityCardinality.ONE_OR_MORE -> "1..*"
-            EntityCardinality.ZERO_OR_MORE -> "0..*"
-        }
+        val titleStyle = TextStyle(fontWeight = 600)
+        val typeStyle = TextStyle(fontSize = 12.0, color = SceneColor("#64748b"))
+        val nameStyle = TextStyle()
+        val keyStyle = TextStyle(fontSize = 11.0, fontWeight = 600)
+        val rowHeight = 22.0
+        val headerHeight = 28.0
+        val pad = 12.0
+        val gutter = 10.0
         val sizes = diagram.entities.associate { entity ->
-            val lines = listOf(entity.id) + entity.attributes.map { attributeLine(it.type, it.name, it.key) }
+            val typeCol = entity.attributes.maxOfOrNull { textMeasurer.measure(it.type, typeStyle).width } ?: 0.0
+            val nameCol = max(
+                textMeasurer.measure(entity.id, titleStyle).width,
+                entity.attributes.maxOfOrNull { textMeasurer.measure(it.name, nameStyle).width } ?: 0.0,
+            )
+            val keyCol = entity.attributes.maxOfOrNull { attribute ->
+                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure(attribute.key.name, keyStyle).width
+            } ?: 0.0
+            val contentWidth = if (entity.attributes.isEmpty()) {
+                nameCol
+            } else {
+                typeCol + gutter + nameCol + if (keyCol > 0.0) gutter + keyCol else 0.0
+            }
             entity.id to SceneSize(
-                max(140.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0),
-                max(48.0, lines.size * 22.0 + 16.0),
+                max(160.0, contentWidth + pad * 2),
+                headerHeight + if (entity.attributes.isEmpty()) 8.0 else 8.0 + entity.attributes.size * rowHeight + 8.0,
             )
         }
         val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
@@ -1891,23 +1900,45 @@ public object SimpleMermaidLayout : DiagramLayout {
             val target = rects[relationship.to] ?: return@forEach
             val from = ScenePoint(source.x + source.width / 2, source.y + source.height)
             val to = ScenePoint(target.x + target.width / 2, target.y)
-            commands += DrawLine(from, to)
-            commands += DrawText(cardinalityLabel(relationship.fromCardinality), ScenePoint(from.x + 8.0, from.y + 16.0), style = style)
-            commands += DrawText(cardinalityLabel(relationship.toCardinality), ScenePoint(to.x + 8.0, to.y - 8.0), style = style)
+            val insetFrom = erInset(from, to, 16.0)
+            val insetTo = erInset(to, from, 16.0)
+            commands += DrawLine(insetFrom, insetTo)
+            commands += erCardinalityMarks(from, to, relationship.fromCardinality)
+            commands += erCardinalityMarks(to, from, relationship.toCardinality)
             if (relationship.label.isNotEmpty()) {
                 commands += DrawText(
                     relationship.label,
                     ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
-                    style = style,
+                    style = nameStyle,
                 )
             }
         }
         diagram.entities.forEach { entity ->
             val rect = rects.getValue(entity.id)
+            val typeCol = entity.attributes.maxOfOrNull { textMeasurer.measure(it.type, typeStyle).width } ?: 0.0
+            val keyCol = entity.attributes.maxOfOrNull { attribute ->
+                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure(attribute.key.name, keyStyle).width
+            } ?: 0.0
             commands += DrawRect(rect, cornerRadius = 4.0)
-            val lines = listOf(entity.id) + entity.attributes.map { attributeLine(it.type, it.name, it.key) }
-            lines.forEachIndexed { index, line ->
-                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
+            commands += DrawText(entity.id, ScenePoint(rect.x + pad, rect.y + 18.0), style = titleStyle)
+            if (entity.attributes.isNotEmpty()) {
+                val ruleY = rect.y + headerHeight
+                commands += DrawLine(ScenePoint(rect.x, ruleY), ScenePoint(rect.x + rect.width, ruleY), stroke = SceneColor("#334155"), strokeWidth = 1.0)
+                val typeX = rect.x + pad
+                val nameX = typeX + typeCol + gutter
+                val keyX = rect.x + rect.width - pad - keyCol
+                commands += DrawLine(ScenePoint(nameX - gutter / 2.0, ruleY), ScenePoint(nameX - gutter / 2.0, rect.y + rect.height), stroke = SceneColor("#334155"), strokeWidth = 1.0)
+                if (keyCol > 0.0) {
+                    commands += DrawLine(ScenePoint(keyX - gutter / 2.0, ruleY), ScenePoint(keyX - gutter / 2.0, rect.y + rect.height), stroke = SceneColor("#334155"), strokeWidth = 1.0)
+                }
+                entity.attributes.forEachIndexed { index, attribute ->
+                    val rowY = ruleY + 16.0 + index * rowHeight
+                    commands += DrawText(attribute.type, ScenePoint(typeX, rowY), style = typeStyle)
+                    commands += DrawText(attribute.name, ScenePoint(nameX, rowY), style = nameStyle)
+                    if (attribute.key != EntityKey.NONE) {
+                        commands += DrawText(attribute.key.name, ScenePoint(keyX, rowY), style = keyStyle)
+                    }
+                }
             }
         }
         return LayoutScene(width, height, commands)
@@ -2468,6 +2499,48 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.MIDDLE, noteStyle)
         }
         return LayoutScene(width, height, commands)
+    }
+
+    private fun erInset(from: ScenePoint, to: ScenePoint, distance: Double): ScenePoint {
+        val dx = to.x - from.x
+        val dy = to.y - from.y
+        val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
+        return ScenePoint(from.x + dx / length * distance, from.y + dy / length * distance)
+    }
+
+    private fun erCardinalityMarks(anchor: ScenePoint, toward: ScenePoint, cardinality: EntityCardinality): List<DrawCommand> {
+        val dx = toward.x - anchor.x
+        val dy = toward.y - anchor.y
+        val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
+        val unitX = dx / length
+        val unitY = dy / length
+        val perpX = -unitY
+        val perpY = unitX
+        fun along(distance: Double): ScenePoint = ScenePoint(anchor.x + unitX * distance, anchor.y + unitY * distance)
+        fun bar(at: ScenePoint): DrawLine = DrawLine(
+            ScenePoint(at.x + perpX * 6.0, at.y + perpY * 6.0),
+            ScenePoint(at.x - perpX * 6.0, at.y - perpY * 6.0),
+            strokeWidth = 1.5,
+        )
+        fun crow(tip: ScenePoint): List<DrawLine> {
+            val vertex = ScenePoint(tip.x + unitX * 10.0, tip.y + unitY * 10.0)
+            return listOf(
+                DrawLine(vertex, tip),
+                DrawLine(ScenePoint(vertex.x + perpX * 6.0, vertex.y + perpY * 6.0), tip),
+                DrawLine(ScenePoint(vertex.x - perpX * 6.0, vertex.y - perpY * 6.0), tip),
+            )
+        }
+        return when (cardinality) {
+            EntityCardinality.ONLY_ONE -> listOf(bar(along(4.0)), bar(along(8.0)))
+            EntityCardinality.ZERO_OR_ONE -> listOf(
+                DrawEllipse(along(6.0), 4.0, 4.0, fill = SceneColor("#ffffff")),
+                bar(along(12.0)),
+            )
+            EntityCardinality.ONE_OR_MORE -> listOf(bar(along(4.0))) + crow(along(14.0))
+            EntityCardinality.ZERO_OR_MORE -> listOf(
+                DrawEllipse(along(6.0), 4.0, 4.0, fill = SceneColor("#ffffff")),
+            ) + crow(along(16.0))
+        }
     }
 
     private fun arrowHead(from: ScenePoint, to: ScenePoint): DrawPolygon {

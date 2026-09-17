@@ -1,14 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="214.79999999999998" height="268" viewBox="0 0 214.79999999999998 268" role="img">
-  <line x1="94" y1="106" x2="107.39999999999999" y2="162" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <text x="102" y="122" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">1</text>
-  <text x="115.39999999999999" y="154" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">0..*</text>
-  <text x="112.69999999999999" y="134" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">places</text>
-  <rect x="24" y="24" width="140" height="82" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="36" y="42" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">CUSTOMER</text>
-  <text x="36" y="64" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">int id PK</text>
-  <text x="36" y="86" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">string name</text>
-  <rect x="24" y="162" width="166.79999999999998" height="82" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="36" y="180" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">ORDER</text>
-  <text x="36" y="202" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">int id PK</text>
-  <text x="36" y="224" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">int customerId FK</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="215.6" height="280" viewBox="0 0 215.6 280" role="img">
+  <line x1="107.11491458572502" y1="127.98532633308271" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="101.63423127152524" y1="115.73942455291755" x2="113.62322602133727" y2="116.2532386136238" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="101.4629599179565" y1="119.73575613618824" x2="113.45195466776853" y2="120.24957019689448" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <ellipse cx="105.65690703035311" cy="162.00550262509398" rx="4" ry="4" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
+  <line x1="106.51326379819683" y1="142.02384470874057" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="112.50776117310285" y1="142.2807517390937" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="100.51876642329081" y1="141.76693767838745" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <text x="118.6" y="140" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">places</text>
+  <rect x="24" y="24" width="167.6" height="88" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="42" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">CUSTOMER</text>
+  <line x1="24" y1="52" x2="191.6" y2="52" stroke="#334155" stroke-width="1" fill="none"/>
+  <line x1="84.19999999999999" y1="52" x2="84.19999999999999" y2="112" stroke="#334155" stroke-width="1" fill="none"/>
+  <line x1="161.4" y1="52" x2="161.4" y2="112" stroke="#334155" stroke-width="1" fill="none"/>
+  <text x="36" y="68" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#64748b">int</text>
+  <text x="89.19999999999999" y="68" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">id</text>
+  <text x="166.4" y="68" text-anchor="start" font-family="sans-serif" font-size="11" font-weight="600" fill="#111827">PK</text>
+  <text x="36" y="90" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#64748b">string</text>
+  <text x="89.19999999999999" y="90" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">name</text>
+  <rect x="24" y="168" width="162.79999999999998" height="88" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="186" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">ORDER</text>
+  <line x1="24" y1="196" x2="186.79999999999998" y2="196" stroke="#334155" stroke-width="1" fill="none"/>
+  <line x1="62.599999999999994" y1="196" x2="62.599999999999994" y2="256" stroke="#334155" stroke-width="1" fill="none"/>
+  <line x1="156.6" y1="196" x2="156.6" y2="256" stroke="#334155" stroke-width="1" fill="none"/>
+  <text x="36" y="212" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#64748b">int</text>
+  <text x="67.6" y="212" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">id</text>
+  <text x="161.6" y="212" text-anchor="start" font-family="sans-serif" font-size="11" font-weight="600" fill="#111827">PK</text>
+  <text x="36" y="234" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#64748b">int</text>
+  <text x="67.6" y="234" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">customerId</text>
+  <text x="161.6" y="234" text-anchor="start" font-family="sans-serif" font-size="11" font-weight="600" fill="#111827">FK</text>
 </svg>
