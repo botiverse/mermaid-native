@@ -2320,10 +2320,25 @@ public object SimpleMermaidLayout : DiagramLayout {
                     }
                 }
                 commands += DrawPolygon(points, fill = SceneColor(PIE_COLORS[index % PIE_COLORS.size]))
+                if (diagram.showData) {
+                    val mid = (angle + end) / 2.0
+                    val labelRadius = radius * 0.62
+                    val percent = round(fraction * 100.0).toInt()
+                    commands += DrawText(
+                        "$percent%",
+                        ScenePoint(
+                            (center.x + labelRadius * cos(mid)).pieCoordinate(),
+                            (center.y + labelRadius * sin(mid)).pieCoordinate(),
+                        ),
+                        TextAnchor.MIDDLE,
+                        bodyStyle,
+                    )
+                }
             }
             val legendY = legendStartY + index * 28.0
             commands += DrawRect(SceneRect(legendX, legendY - 11.0, 14.0, 14.0), cornerRadius = 2.0, fill = SceneColor(PIE_COLORS[index % PIE_COLORS.size]))
-            commands += DrawText(if (diagram.showData) "${section.label}: ${section.value}" else section.label, ScenePoint(legendX + 22.0, legendY), style = bodyStyle)
+            val legendLabel = if (diagram.showData) "${section.label} [${pieShowDataValue(section.value)}]" else section.label
+            commands += DrawText(legendLabel, ScenePoint(legendX + 22.0, legendY), style = bodyStyle)
             angle = end
         }
         val legendWidth = diagram.sections.maxOfOrNull { textMeasurer.measure(it.label, bodyStyle).width } ?: 0.0
@@ -2334,6 +2349,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         )
     }
 
+
+    private fun pieShowDataValue(value: Double): String {
+        val asInt = value.toInt()
+        return if (value == asInt.toDouble()) asInt.toString() else value.toString()
+    }
     private fun layoutEventModeling(diagram: EventModelingDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle(fontSize = 12.0, fontWeight = 600)
         val lanes = EventModelingEntityKind.entries.filter { kind -> diagram.frames.any { it.kind == kind } }
