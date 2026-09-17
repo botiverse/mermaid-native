@@ -9,7 +9,7 @@ class MermaidParserTest {
     @Test
     fun acceptsOfficialGalleryHeaderAliases() {
         val aliases = listOf(
-            "block-beta\ncolumns 2\nA[Client]\nB[Server]\nA --> B",
+            "block-beta\ncolumns 2\nA[\"Client\"]\nB[\"Server\"]\nA --> B",
             "fishbone\nEffect\n  Cause",
             "packet-beta\n0-7: \"Header\"",
             "sankey-beta\nSolar,Grid,40",
@@ -1277,7 +1277,7 @@ class MermaidParserTest {
     }
 
     @Test fun parsesBlockGridSpansAndEdges() {
-        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 3\napi[Public API]:2\ndb[Database]\napi --> db"))
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 3\napi[\"Public API\"]:2\ndb[\"Database\"]\napi --> db"))
         assertEquals(
             BlockDiagram(3, listOf(BlockNode("api", "Public API", 2), BlockNode("db", "Database")), listOf(BlockEdge("api", "db"))),
             result.diagram,
@@ -1296,6 +1296,8 @@ class MermaidParserTest {
             "block\ncolumns 2\na --> missing\na",
             "block\ncolumns 2\na --> a\na",
             "block\ncolumns 2\na b",
+            "block\ncolumns 2\napi[Public API]",
+            "block\ncolumns 2\napi['Public API']",
             "block\ncolumns 2\nblock:group\na\nend",
             "block\ncolumns 2\na\nstyle a fill:#fff",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }

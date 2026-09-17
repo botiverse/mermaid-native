@@ -251,7 +251,7 @@ public object MermaidExamples {
     )
     public val blockServiceMap: MermaidExample = MermaidExample(
         "samples/block-service-map.mmd",
-        "block\ncolumns 3\napi[Public & partner API]:2\ndb[Database]\nworker[Worker]:2\napi --> worker\ndb --> worker",
+        "block\ncolumns 3\napi[\"Public & partner API\"]:2\ndb[\"Database\"]\nworker[\"Worker\"]:2\napi --> worker\ndb --> worker",
         BlockDiagram(
             3,
             listOf(BlockNode("api", "Public & partner API", 2), BlockNode("db", "Database"), BlockNode("worker", "Worker", 2)),

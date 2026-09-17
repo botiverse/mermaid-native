@@ -13,9 +13,9 @@ service server(server)[Application server] in api
 db:B --> T:server`,'Service nodes and directed edges (bounded).'],
   ['Block',`block
 columns 3
-api[Public & partner API]:2
-db[Database]
-worker[Worker]:2
+api["Public & partner API"]:2
+db["Database"]
+worker["Worker"]:2
 api --> worker
 db --> worker`,'Blocks and connections (bounded).'],
   ['C4',`C4Context
