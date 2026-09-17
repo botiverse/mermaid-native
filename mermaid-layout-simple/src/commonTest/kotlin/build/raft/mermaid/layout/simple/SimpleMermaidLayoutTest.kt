@@ -1061,14 +1061,31 @@ class SimpleMermaidLayoutTest {
     @Test
     fun ganttProducesDeterministicTimelineBars() {
         val diagram = GanttDiagram("Plan", "YYYY-MM-DD", listOf(GanttSection("Build", listOf(
-            GanttTask("Parser", "parse", 100, 2, GanttTaskStatus.DONE),
-            GanttTask("Renderer", "render", 102, 3, GanttTaskStatus.ACTIVE),
+            GanttTask("Parser", "parse", 740212, 2, GanttTaskStatus.DONE),
+            GanttTask("Renderer", "render", 740214, 3, GanttTaskStatus.ACTIVE),
         ))))
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val bars = first.commands.filterIsInstance<DrawRect>()
-        assertEquals(listOf(56.0, 84.0), bars.map { it.rect.width })
+        assertEquals(listOf(136.0, 204.0), bars.map { it.rect.width })
         assertEquals(listOf("#16a34a", "#2563eb"), bars.map { it.fill.value })
+    }
+
+    @Test
+    fun ganttDrawsIsoDateAxisTicks() {
+        val diagram = GanttDiagram("Plan", "YYYY-MM-DD", listOf(GanttSection("Build", listOf(
+            GanttTask("Parser", "parse", 740212, 2, GanttTaskStatus.DONE),
+            GanttTask("Renderer", "render", 740214, 3, GanttTaskStatus.ACTIVE),
+        ))))
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(
+            listOf("2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24"),
+            labels.filter { it.startsWith("2026-") },
+        )
+        assertTrue(labels.containsAll(listOf("Plan", "Build: Parser", "Build: Renderer")))
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().size >= 7)
     }
 
     @Test
