@@ -1150,12 +1150,14 @@ class SimpleMermaidLayoutTest {
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         // Per curve: one filled area polygon plus one diamond vertex marker per value.
         assertEquals(8, first.commands.filterIsInstance<DrawPolygon>().size)
-        // Four concentric rings plus two closed curve outlines.
-        assertEquals(6, first.commands.filterIsInstance<DrawPolyline>().size)
+        // Two closed curve outlines. Graticule is circular ellipses, not polygons.
+        assertEquals(2, first.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(5, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(first.commands.filterIsInstance<DrawEllipse>().all { it.radiusX == it.radiusY && it.fillOpacity == 0.0 })
         // One spoke per axis.
         assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Science" })
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "25" })
+        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "20" })
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Alice" })
     }
 
@@ -1176,16 +1178,20 @@ class SimpleMermaidLayoutTest {
         // Closed curve outlines are the polylines with stroke-width 2.
         val outlines = scene.commands.filterIsInstance<DrawPolyline>().filter { it.strokeWidth == 2.0 }
         assertEquals(1, outlines.size)
-        assertEquals(
-            listOf(
-                ScenePoint(320.0, 102.0), // axis 0 starts at -90° (top); value=max → outer ring
-                ScenePoint(320.0, 272.0), // axis 1 is at 0° (right); value=0 → center
-                ScenePoint(320.0, 442.0), // axis 2 is at 90° (bottom); value=max → outer ring
-                ScenePoint(235.0, 272.0), // axis 3 is at 180° (left); value=max/2 → half radius
-                ScenePoint(320.0, 102.0), // outline closes back to the first vertex
-            ),
-            outlines.single().points,
+        val vertices = listOf(
+            ScenePoint(320.0, 102.0), // axis 0 starts at -90° (top); value=max → outer ring
+            ScenePoint(320.0, 272.0), // axis 1 is at 0° (right); value=0 → center
+            ScenePoint(320.0, 442.0), // axis 2 is at 90° (bottom); value=max → outer ring
+            ScenePoint(235.0, 272.0), // axis 3 is at 180° (left); value=max/2 → half radius
         )
+        val outline = outlines.single().points
+        assertEquals(vertices.first(), outline.first())
+        assertEquals(vertices.first(), outline.last())
+        vertices.forEach { vertex ->
+            assertTrue(outline.contains(vertex), "smoothed curve must still pass through $vertex")
+        }
+        assertTrue(outline.size > vertices.size + 1)
+        assertEquals(5, scene.commands.filterIsInstance<DrawEllipse>().size)
     }
 
     @Test
