@@ -404,16 +404,22 @@ public data class TreeViewNode(
 )
 
 /** Bounded platform-neutral model for Mermaid railroad-beta expression trees. */
-public data class RailroadDiagram(val root: RailroadNode) : MermaidDiagram
+public data class RailroadDiagram(
+    val title: String? = null,
+    val rules: List<RailroadRule>,
+) : MermaidDiagram
+
+public data class RailroadRule(
+    val name: String,
+    val definition: RailroadNode,
+)
+
 public sealed interface RailroadNode
 public data class RailroadTerminal(val label: String) : RailroadNode
 public data class RailroadNonTerminal(val label: String) : RailroadNode
-public data object RailroadSkip : RailroadNode
-public data object RailroadStart : RailroadNode
-public data object RailroadEnd : RailroadNode
+public data class RailroadSpecial(val text: String) : RailroadNode
 public data class RailroadSequence(val children: List<RailroadNode>) : RailroadNode
-public data class RailroadStack(val children: List<RailroadNode>) : RailroadNode
-public data class RailroadChoice(val priority: Int, val children: List<RailroadNode>) : RailroadNode
+public data class RailroadChoice(val children: List<RailroadNode>) : RailroadNode
 public data class RailroadOptional(val child: RailroadNode) : RailroadNode
 public data class RailroadOneOrMore(val child: RailroadNode) : RailroadNode
 public data class RailroadZeroOrMore(val child: RailroadNode) : RailroadNode

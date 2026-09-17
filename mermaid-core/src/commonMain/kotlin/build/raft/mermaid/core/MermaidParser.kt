@@ -2170,9 +2170,11 @@ public object MermaidParser {
     }
 
     /**
-     * Bounded railroad-beta slice: one Diagram/ComplexDiagram root over Terminal,
-     * NonTerminal, Skip, Start, End, Sequence, Stack, Choice, Optional, OneOrMore,
-     * and ZeroOrMore with single-quoted literal labels. Anything else fails closed.
+     * Bounded official railroad-beta slice: optional line-based `title ...`
+     * plus one or more `name = expression;` rules. Expressions are the official
+     * lowercase constructors: sequence, choice, optional, oneOrMore, zeroOrMore,
+     * terminal, nonterminal, special. JS Diagram()/Stack()/Choice(0, ...) and
+     * ABNF/EBNF/PEG dialects fail closed.
      */
     private fun parseRailroad(source: String): MermaidParseResult {
         var headerEnd = -1
@@ -2234,8 +2236,32 @@ public object MermaidParser {
             return true
         }
 
+        fun parseIdentifier(): String? {
+            skipWhitespace()
+            val first = peek() ?: return null
+            if (!first.isLetter() && first != '_') {
+                return null
+            }
+            val value = StringBuilder()
+            while (true) {
+                val character = peek() ?: break
+                if (character.isLetterOrDigit() || character == '_') {
+                    value.append(character)
+                    advance()
+                } else {
+                    break
+                }
+            }
+            return value.toString().ifEmpty { null }
+        }
+
         fun parseStringLiteral(): String? {
-            advance() // opening quote
+            skipWhitespace()
+            if (peek() != '"') {
+                fail("Railroad strings must use double quotes")
+                return null
+            }
+            advance()
             val value = StringBuilder()
             while (true) {
                 when (val character = peek()) {
@@ -2243,9 +2269,27 @@ public object MermaidParser {
                         fail("Unterminated railroad string literal")
                         return null
                     }
-                    '\'' -> {
+                    '"' -> {
                         advance()
                         break
+                    }
+                    '\\' -> {
+                        advance()
+                        when (val escaped = peek()) {
+                            null -> {
+                                fail("Unterminated railroad string escape")
+                                return null
+                            }
+                            'n' -> value.append('\n')
+                            't' -> value.append('\t')
+                            '"' -> value.append('"')
+                            '\\' -> value.append('\\')
+                            else -> {
+                                fail("Unsupported railroad string escape")
+                                return null
+                            }
+                        }
+                        advance()
                     }
                     else -> {
                         value.append(character)
@@ -2260,85 +2304,56 @@ public object MermaidParser {
             return value.toString()
         }
 
-        fun parseInteger(): Int? {
-            val startLocation = location()
-            val digits = StringBuilder()
-            if (peek() == '-') {
-                digits.append('-')
-                advance()
-            }
-            while (peek()?.isDigit() == true) {
-                digits.append(peek())
-                advance()
-            }
-            val raw = digits.toString()
-            if (raw.isEmpty() || raw == "-") {
-                fail("Expected a railroad Choice priority number")
-                return null
-            }
-            val parsed = raw.toIntOrNull()
-            if (parsed == null || parsed < 0) {
-                diagnostics += MermaidDiagnostic(
-                    code = MermaidDiagnosticCode.INVALID_VALUE,
-                    message = "Railroad Choice priority must be a non-negative integer",
-                    location = startLocation,
-                )
-                return null
-            }
-            return parsed
+        fun skipSpaces() {
+            while (peek() == ' ' || peek() == '\t') advance()
         }
 
-        fun parseIdentifier(): String {
-            val name = StringBuilder()
-            while (peek()?.let { it.isLetterOrDigit() || it == '_' } == true) {
-                name.append(peek())
+        fun parseTitleLine(): String? {
+            skipSpaces()
+            if (peek() == null || peek() == '\n' || peek() == '\r') {
+                fail("railroad title must not be empty")
+                return null
+            }
+            val raw = StringBuilder()
+            while (true) {
+                val character = peek()
+                if (character == null || character == '\n' || character == '\r') break
+                raw.append(character)
                 advance()
             }
-            return name.toString()
+            var text = raw.toString().trimEnd()
+            if (text.length >= 2 &&
+                ((text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("'") && text.endsWith("'")))
+            ) {
+                text = text.substring(1, text.length - 1)
+            }
+            if (text.isEmpty()) {
+                fail("railroad title must not be empty")
+                return null
+            }
+            return text
         }
 
         fun requireExactlyOneChild(symbol: String, children: List<RailroadNode>): RailroadNode? {
-            val child = children.singleOrNull()
-            if (child == null) fail("railroad $symbol takes exactly one child")
-            return child
+            if (children.size != 1) {
+                fail("railroad $symbol takes exactly one argument")
+                return null
+            }
+            return children[0]
         }
 
         fun parseExpression(): RailroadNode? {
             skipWhitespace()
-            when (peek()) {
-                null -> {
-                    fail("Unexpected end of railroad expression")
-                    return null
-                }
-                '\'' -> return parseStringLiteral()?.let { RailroadTerminal(it) }
-                else -> if (!(peek() as Char).isLetter() && peek() != '_') {
-                    fail("Unsupported railroad syntax")
-                    return null
-                }
-            }
             val identifier = parseIdentifier()
-            skipWhitespace()
-            when (identifier) {
-                "Skip" -> {
-                    if (peek() == '(') fail("railroad Skip takes no arguments")
-                    return RailroadSkip
-                }
-                "Start" -> {
-                    if (peek() == '(') fail("railroad Start takes no arguments")
-                    return RailroadStart
-                }
-                "End" -> {
-                    if (peek() == '(') fail("railroad End takes no arguments")
-                    return RailroadEnd
-                }
-                else -> if (peek() != '(') {
-                    fail("Unsupported railroad symbol: $identifier")
-                    return null
-                }
+            if (identifier == null) {
+                fail("Expected a railroad expression")
+                return null
             }
-            advance() // opening parenthesis
+            if (!expect('(', "railroad $identifier requires parentheses")) {
+                return null
+            }
             val children = mutableListOf<RailroadNode>()
-            var priority: Int? = null
+            var stringArg: String? = null
             loop@ while (true) {
                 skipWhitespace()
                 when (peek()) {
@@ -2355,54 +2370,59 @@ public object MermaidParser {
                         continue@loop
                     }
                 }
-                if (identifier == "Choice" && priority == null && children.isEmpty() &&
-                    (peek()?.isDigit() == true || peek() == '-')
+                if ((identifier == "terminal" || identifier == "nonterminal" || identifier == "special") &&
+                    children.isEmpty() && stringArg == null
                 ) {
-                    val parsedPriority = parseInteger() ?: return null
-                    priority = parsedPriority
-                    continue@loop
-                }
-                if ((identifier == "Terminal" || identifier == "NonTerminal") && children.isEmpty()) {
-                    skipWhitespace()
-                    if (peek() != '\'') {
-                        fail("railroad $identifier takes exactly one quoted label")
-                        return null
-                    }
-                    val label = parseStringLiteral() ?: return null
-                    children += if (identifier == "Terminal") RailroadTerminal(label) else RailroadNonTerminal(label)
+                    stringArg = parseStringLiteral() ?: return null
                     continue@loop
                 }
                 val child = parseExpression() ?: return null
                 children += child
             }
             return when (identifier) {
-                "Sequence" ->
+                "sequence" ->
                     if (children.isEmpty()) {
-                        fail("railroad Sequence requires at least one child")
+                        fail("railroad sequence requires at least one child")
                         null
-                    } else RailroadSequence(children.toList())
-                "Stack" ->
-                    if (children.isEmpty()) {
-                        fail("railroad Stack requires at least one child")
-                        null
-                    } else RailroadStack(children.toList())
-                "Choice" ->
-                    when {
-                        priority == null -> {
-                            fail("railroad Choice requires a non-negative priority first argument")
-                            null
-                        }
-                        children.isEmpty() -> {
-                            fail("railroad Choice requires at least one branch")
-                            null
-                        }
-                        else -> RailroadChoice(priority ?: 0, children.toList())
+                    } else if (children.size == 1) {
+                        children[0]
+                    } else {
+                        RailroadSequence(children.toList())
                     }
-                "Optional" -> requireExactlyOneChild(identifier, children)?.let { RailroadOptional(it) }
-                "OneOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadOneOrMore(it) }
-                "ZeroOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadZeroOrMore(it) }
-                "Terminal", "NonTerminal" ->
-                    requireExactlyOneChild(identifier, children)
+                "choice" ->
+                    if (children.isEmpty()) {
+                        fail("railroad choice requires at least one branch")
+                        null
+                    } else {
+                        RailroadChoice(children.toList())
+                    }
+                "optional" -> requireExactlyOneChild(identifier, children)?.let { RailroadOptional(it) }
+                "oneOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadOneOrMore(it) }
+                "zeroOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadZeroOrMore(it) }
+                "terminal" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad terminal takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadTerminal(stringArg)
+                    }
+                }
+                "nonterminal" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad nonterminal takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadNonTerminal(stringArg)
+                    }
+                }
+                "special" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad special takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadSpecial(stringArg)
+                    }
+                }
                 else -> {
                     fail("Unsupported railroad symbol: $identifier")
                     null
@@ -2411,25 +2431,51 @@ public object MermaidParser {
         }
 
         skipWhitespace()
-        val rootName = parseIdentifier()
-        if (rootName != "Diagram" && rootName != "ComplexDiagram") {
-            fail("railroad-beta requires a single top-level Diagram or ComplexDiagram expression")
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        if (!expect('(', "railroad $rootName requires parentheses")) {
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        val root = parseExpression() ?: return MermaidParseResult.Failure(diagnostics.toList())
-        if (!expect(')', "railroad $rootName must be closed")) {
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        skipWhitespace()
-        if (peek() != null) {
-            fail("Unexpected content after the railroad diagram")
-            return MermaidParseResult.Failure(diagnostics.toList())
+        var title: String? = null
+        val rules = mutableListOf<RailroadRule>()
+        while (peek() != null) {
+            skipWhitespace()
+            if (peek() == null) break
+            val name = parseIdentifier()
+            if (name == null) {
+                fail("Expected a railroad rule or title")
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            skipWhitespace()
+            if (name == "title") {
+                if (peek() == '=') {
+                    fail("railroad title must be a line, not a named rule")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                if (rules.isNotEmpty()) {
+                    fail("railroad title must appear before rules")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                if (title != null) {
+                    fail("railroad-beta accepts at most one title")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                title = parseTitleLine() ?: return MermaidParseResult.Failure(diagnostics.toList())
+                continue
+            }
+            if (!expect('=', "railroad rule '$name' requires '='")) {
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            val definition = parseExpression() ?: return MermaidParseResult.Failure(diagnostics.toList())
+            if (!expect(';', "railroad rule '$name' must end with ';'")) {
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            rules += RailroadRule(name, definition)
         }
         if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics.toList())
-        return MermaidParseResult.Success(RailroadDiagram(root))
+        if (rules.isEmpty()) {
+            return failure(
+                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                "railroad-beta requires at least one named rule",
+                SourceLocation(headerLineIndex + 2, 1),
+            )
+        }
+        return MermaidParseResult.Success(RailroadDiagram(title = title, rules = rules.toList()))
     }
 
     private fun parseSwimlaneNode(line: String): SwimlaneNode? {

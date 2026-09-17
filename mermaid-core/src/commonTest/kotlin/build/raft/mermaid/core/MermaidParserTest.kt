@@ -132,22 +132,38 @@ class MermaidParserTest {
     fun parsesRailroadExpressionTree() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(
-                "railroad-beta\nDiagram(\n  Sequence('token',\n    Choice(0, Sequence('user', Terminal('password')), NonTerminal('oauth')),\n    Stack(Skip, Optional('mfa'))\n  )\n)",
+                """
+                railroad-beta
+                title "Auth"
+                auth = sequence(
+                  terminal("token"),
+                  choice(
+                    sequence(terminal("user"), terminal("password")),
+                    nonterminal("oauth")
+                  ),
+                  optional(terminal("mfa"))
+                );
+                """.trimIndent(),
             ),
         )
         assertEquals(
             RailroadDiagram(
-                RailroadSequence(
-                    listOf(
-                        RailroadTerminal("token"),
-                        RailroadChoice(
-                            0,
+                title = "Auth",
+                rules = listOf(
+                    RailroadRule(
+                        name = "auth",
+                        definition = RailroadSequence(
                             listOf(
-                                RailroadSequence(listOf(RailroadTerminal("user"), RailroadTerminal("password"))),
-                                RailroadNonTerminal("oauth"),
+                                RailroadTerminal("token"),
+                                RailroadChoice(
+                                    listOf(
+                                        RailroadSequence(listOf(RailroadTerminal("user"), RailroadTerminal("password"))),
+                                        RailroadNonTerminal("oauth"),
+                                    ),
+                                ),
+                                RailroadOptional(RailroadTerminal("mfa")),
                             ),
                         ),
-                        RailroadStack(listOf(RailroadSkip, RailroadOptional(RailroadTerminal("mfa")))),
                     ),
                 ),
             ),
@@ -156,14 +172,31 @@ class MermaidParserTest {
     }
 
     @Test
-    fun parsesRailroadRepeatAndBoundarySymbols() {
-        val parsed = MermaidParser.parse("railroad-beta\nComplexDiagram(OneOrMore(ZeroOrMore(Sequence(Start, 'a', End))))")
+    fun parsesRailroadRepeatSymbols() {
+        val parsed = MermaidParser.parse(
+            """
+            railroad-beta
+            loop = oneOrMore(zeroOrMore(terminal("a")));
+            mark = special("EOF");
+            """.trimIndent(),
+        )
         val result = assertIs<MermaidParseResult.Success>(
             parsed,
             (parsed as? MermaidParseResult.Failure)?.diagnostics.toString(),
         )
         assertEquals(
-            RailroadDiagram(RailroadOneOrMore(RailroadZeroOrMore(RailroadSequence(listOf(RailroadStart, RailroadTerminal("a"), RailroadEnd))))),
+            RailroadDiagram(
+                rules = listOf(
+                    RailroadRule(
+                        name = "loop",
+                        definition = RailroadOneOrMore(RailroadZeroOrMore(RailroadTerminal("a"))),
+                    ),
+                    RailroadRule(
+                        name = "mark",
+                        definition = RailroadSpecial("EOF"),
+                    ),
+                ),
+            ),
             result.diagram,
         )
     }
@@ -172,22 +205,20 @@ class MermaidParserTest {
     fun malformedRailroadFailsClosed() {
         listOf(
             "railroad-beta",
-            "railroad\nDiagram('a')",
-            "railroad-beta\nDiagram()",
-            "railroad-beta\nFoo('a')",
-            "railroad-beta\nDiagram(\"double quoted\")",
-            "railroad-beta\nDiagram(Terminal(\"x\"))",
-            "railroad-beta\nDiagram('a', 'b')",
-            "railroad-beta\nDiagram(Choice('a', 'b'))",
-            "railroad-beta\nDiagram(Choice(-1, 'a'))",
-            "railroad-beta\nDiagram(Optional())",
-            "railroad-beta\nDiagram(Sequence())",
-            "railroad-beta\nDiagram(Terminal())",
-            "railroad-beta\nDiagram(Terminal(5))",
-            "railroad-beta\nDiagram('unterminated)",
-            "railroad-beta\nDiagram(Skip())",
-            "railroad-beta\nDiagram(Stack('a')) extra",
-            "railroad-beta\nDiagram(Sequence('a'))\nDiagram(Sequence('b'))",
+            "railroad\nauth = terminal(\"a\");",
+            "railroad-beta\nDiagram(sequence(terminal(\"a\")));",
+            "railroad-beta\nauth = Sequence(terminal(\"a\"));",
+            "railroad-beta\nauth = terminal('a');",
+            "railroad-beta\nauth = terminal(\"a\")",
+            "railroad-beta\nauth = choice();",
+            "railroad-beta\nauth = sequence();",
+            "railroad-beta\nauth = terminal();",
+            "railroad-beta\nauth = terminal(5);",
+            "railroad-beta\nauth = terminal(\"unterminated);",
+            "railroad-beta\nauth = Stack(terminal(\"a\"));",
+            "railroad-beta\ntitle = terminal(\"a\");",
+            "railroad-beta\nauth = special();",
+            "railroad-beta\nauth = sequence(terminal(\"a\")); extra",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
