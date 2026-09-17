@@ -858,8 +858,11 @@ class SimpleMermaidLayoutTest {
         )
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
-        assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "cloud", "Database", "database", "Server", "server")))
+        assertEquals(7, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(5, first.commands.filterIsInstance<DrawEllipse>().size)
+        val labels = first.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("API", "Database", "Server")))
+        assertTrue(labels.none { it in listOf("cloud", "database", "server") })
         val edge = first.commands.filterIsInstance<DrawPolyline>().single()
         assertTrue(edge.points.first().y < edge.points.last().y)
     }
@@ -873,14 +876,29 @@ class SimpleMermaidLayoutTest {
         )
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val rectangles = scene.commands.filterIsInstance<DrawRect>()
-        val groupOne = rectangles[0].rect
-        val groupTwo = rectangles[1].rect
-        val serviceOne = rectangles[2].rect
-        val serviceTwo = rectangles[3].rect
+        val groupRects = rectangles.filter { it.fill.value == "#f8fafc" }.map { it.rect }
+        val serviceCards = rectangles.filter { it.rect.height == 76.0 }.map { it.rect }
+        val groupOne = groupRects[0]
+        val groupTwo = groupRects[1]
+        val serviceOne = serviceCards[0]
+        val serviceTwo = serviceCards[1]
         assertTrue(serviceOne.x >= groupOne.x && serviceOne.x + serviceOne.width <= groupOne.x + groupOne.width)
         assertTrue(serviceTwo.x >= groupTwo.x && serviceTwo.x + serviceTwo.width <= groupTwo.x + groupTwo.width)
         val measured = FixedWidthTextMeasurer.measure(longGroup, build.raft.mermaid.layout.TextStyle(fontSize = 15.0, fontWeight = 600))
         assertTrue(scene.width >= measured.width + LayoutConfig().padding * 2 + 32.0)
+    }
+
+    @Test fun architectureUnknownIconsStayAsText() {
+        val diagram = ArchitectureDiagram(
+            groups = listOf(ArchitectureGroup("api", "mystery", "API")),
+            services = listOf(ArchitectureService("app", "custom", "Server", "api")),
+            edges = emptyList(),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(0, scene.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "mystery", "Server", "custom")))
     }
 
     @Test fun c4ProducesMeasuredDeterministicCardsAndBoundaryArrows() {

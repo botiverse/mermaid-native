@@ -642,9 +642,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         val groupStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
         val iconStyle = TextStyle(fontSize = 10.0, color = SceneColor("#475569"))
         val serviceLabelWidth = diagram.services.maxOfOrNull { textMeasurer.measure(it.label, textStyle).width } ?: 0.0
-        val serviceIconWidth = diagram.services.maxOfOrNull { textMeasurer.measure(it.icon, iconStyle).width } ?: 0.0
+        val serviceIconWidth = diagram.services.maxOfOrNull { architectureIconReserve(it.icon, textMeasurer, iconStyle) } ?: 0.0
         val groupLabelWidth = diagram.groups.maxOfOrNull { textMeasurer.measure(it.label, groupStyle).width } ?: 0.0
-        val groupIconWidth = diagram.groups.maxOfOrNull { textMeasurer.measure(it.icon, iconStyle).width } ?: 0.0
+        val groupIconWidth = diagram.groups.maxOfOrNull { architectureIconReserve(it.icon, textMeasurer, iconStyle) } ?: 0.0
         val nodeWidth = max(150.0, max(serviceLabelWidth, serviceIconWidth) + 42.0)
         val columnWidth = max(nodeWidth + 32.0, groupLabelWidth + groupIconWidth + 60.0)
         val hasStandalone = diagram.services.any { it.groupId == null }
@@ -667,7 +667,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             val rect = groupRects.getValue(group.id)
             commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
             commands += DrawText(group.label, ScenePoint(rect.x + 14.0, rect.y + 24.0), style = groupStyle)
-            commands += DrawText(group.icon, ScenePoint(rect.x + rect.width - 14.0, rect.y + 24.0), anchor = TextAnchor.END, style = iconStyle)
+            commands += architectureIconCommands(
+                icon = group.icon,
+                center = if (isKnownArchitectureIcon(group.icon)) ScenePoint(rect.x + rect.width - 24.0, rect.y + 20.0) else ScenePoint(rect.x + rect.width - 14.0, rect.y + 24.0),
+                unknownAnchor = TextAnchor.END,
+                unknownStyle = iconStyle,
+            )
         }
         diagram.edges.forEach { edge ->
             val from = servicePoints.getValue(edge.sourceId)
@@ -691,7 +696,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.services.forEach { service ->
             val point = servicePoints.getValue(service.id)
             commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 6.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
-            commands += DrawText(service.icon, point.copy(y = point.y - 11.0).canonical(), anchor = TextAnchor.MIDDLE, style = iconStyle)
+            commands += architectureIconCommands(
+                icon = service.icon,
+                center = if (isKnownArchitectureIcon(service.icon)) point.copy(y = point.y - 14.0).canonical() else point.copy(y = point.y - 11.0).canonical(),
+                unknownAnchor = TextAnchor.MIDDLE,
+                unknownStyle = iconStyle,
+            )
             commands += DrawText(service.label, point.copy(y = point.y + 13.0).canonical(), anchor = TextAnchor.MIDDLE, style = textStyle)
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
@@ -710,6 +720,49 @@ public object SimpleMermaidLayout : DiagramLayout {
         ArchitecturePort.LEFT -> ScenePoint(-1.0, 0.0)
         ArchitecturePort.RIGHT -> ScenePoint(1.0, 0.0)
     }
+
+    private fun isKnownArchitectureIcon(icon: String): Boolean = when (icon.lowercase()) {
+        "cloud", "database", "server" -> true
+        else -> false
+    }
+
+    private fun architectureIconReserve(icon: String, textMeasurer: TextMeasurer, style: TextStyle): Double =
+        if (isKnownArchitectureIcon(icon)) 22.0 else textMeasurer.measure(icon, style).width
+
+    private fun architectureIconCommands(
+        icon: String,
+        center: ScenePoint,
+        unknownAnchor: TextAnchor,
+        unknownStyle: TextStyle,
+    ): List<DrawCommand> {
+        val origin = center.canonical()
+        val fill = SceneColor("#ffffff")
+        val stroke = SceneColor("#475569")
+        return when (icon.lowercase()) {
+            "cloud" -> architectureCloudIcon(origin, fill, stroke)
+            "database" -> architectureDatabaseIcon(origin, fill, stroke)
+            "server" -> architectureServerIcon(origin, fill, stroke)
+            else -> listOf(DrawText(icon, origin, unknownAnchor, unknownStyle))
+        }
+    }
+
+    private fun architectureCloudIcon(center: ScenePoint, fill: SceneColor, stroke: SceneColor): List<DrawCommand> = listOf(
+        DrawEllipse(ScenePoint(center.x - 7.0, center.y + 2.0).canonical(), 8.0, 5.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawEllipse(ScenePoint(center.x + 7.0, center.y + 2.0).canonical(), 8.0, 5.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawEllipse(ScenePoint(center.x, center.y - 3.0).canonical(), 9.0, 6.0, fill = fill, stroke = stroke, strokeWidth = 1.2),
+    )
+
+    private fun architectureDatabaseIcon(center: ScenePoint, fill: SceneColor, stroke: SceneColor): List<DrawCommand> = listOf(
+        DrawRect(SceneRect(center.x - 9.0, center.y - 5.0, 18.0, 12.0).canonical(), 0.0, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawEllipse(ScenePoint(center.x, center.y + 7.0).canonical(), 9.0, 3.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawEllipse(ScenePoint(center.x, center.y - 5.0).canonical(), 9.0, 3.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+    )
+
+    private fun architectureServerIcon(center: ScenePoint, fill: SceneColor, stroke: SceneColor): List<DrawCommand> = listOf(
+        DrawRect(SceneRect(center.x - 10.0, center.y - 11.0, 20.0, 7.0).canonical(), 1.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawRect(SceneRect(center.x - 10.0, center.y - 3.0, 20.0, 7.0).canonical(), 1.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+        DrawRect(SceneRect(center.x - 10.0, center.y + 5.0, 20.0, 7.0).canonical(), 1.5, fill = fill, stroke = stroke, strokeWidth = 1.2),
+    )
 
     private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
