@@ -612,7 +612,18 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Dogs: 3.0" })
+        val labels = first.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("Pets", "75%", "25%", "Dogs [3]", "Cats [1]")))
+        assertTrue(labels.none { it.contains(": 3.0") || it.contains(": 1.0") })
+    }
+
+    @Test
+    fun pieShowDataDrawsSlicePercentsAndBracketValues() {
+        val diagram = PieDiagram(title = "Pets", showData = true, sections = listOf(PieSection("Dogs", 386.0), PieSection("Cats", 85.0), PieSection("Rats", 15.0)))
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(listOf("Pets", "79%", "Dogs [386]", "17%", "Cats [85]", "3%", "Rats [15]"), labels)
     }
 
     @Test
