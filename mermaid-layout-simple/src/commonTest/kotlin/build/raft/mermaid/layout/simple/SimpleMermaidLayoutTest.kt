@@ -657,6 +657,38 @@ class SimpleMermaidLayoutTest {
         )
 
         assertEquals(3.0, scene.commands.filterIsInstance<DrawLine>().single().strokeWidth)
+        assertEquals("#666666", scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals("#333333", scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
+        assertEquals(setOf("#eeeeee"), scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }.toSet())
+        assertEquals(setOf("#999999"), scene.commands.filterIsInstance<DrawRect>().map { it.stroke.value }.toSet())
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.cornerRadius == 5.0 })
+    }
+
+    @Test
+    fun flowchartNodesUseOfficialNeutralChrome() {
+        val scene = SimpleMermaidLayout.layout(
+            FlowchartDiagram(
+                direction = FlowDirection.TD,
+                nodes = listOf(FlowNode("A", "Start"), FlowNode("B", "Finish")),
+                edges = listOf(FlowEdge("A", "B")),
+            ),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        assertEquals(scene, SimpleMermaidLayout.layout(
+            FlowchartDiagram(
+                direction = FlowDirection.TD,
+                nodes = listOf(FlowNode("A", "Start"), FlowNode("B", "Finish")),
+                edges = listOf(FlowEdge("A", "B")),
+            ),
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        ))
+        val nodes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, nodes.size)
+        assertTrue(nodes.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 })
+        assertEquals("#666666", scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals("#333333", scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
     }
 
     @Test
