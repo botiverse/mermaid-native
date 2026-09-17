@@ -904,10 +904,13 @@ class SimpleMermaidLayoutTest {
     @Test fun c4ProducesMeasuredDeterministicCardsAndBoundaryArrows() {
         val title = "T".repeat(100)
         val description = "D".repeat(100)
-        val diagram = C4Diagram(title, listOf(C4Element("p", "Person", description, C4ElementKind.PERSON), C4Element("s", "System", null, C4ElementKind.SYSTEM, true)), listOf(C4Relationship("p", "s", "Uses")))
+        val diagram = C4Diagram(title, listOf(C4Element("p", "Person", description, C4ElementKind.PERSON), C4Element("s", "System", null, C4ElementKind.SYSTEM, true)), listOf(C4Relationship("p", "s", "Uses", "HTTPS")))
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawEllipse>().size)
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("[Person]", "[Software System]", "Uses", "[HTTPS]")))
         val edge = scene.commands.filterIsInstance<DrawLine>().single()
         assertTrue(edge.from.x < edge.to.x)
         val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
