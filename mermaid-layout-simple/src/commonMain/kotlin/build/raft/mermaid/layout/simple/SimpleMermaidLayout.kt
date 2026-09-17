@@ -1353,7 +1353,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val bodyStyle = TextStyle(fontSize = 12.0)
         val radius = 170.0
         val labelRadius = radius + 26.0
-        val ringFractions = listOf(0.25, 0.5, 0.75, 1.0)
+        val ringFractions = listOf(0.2, 0.4, 0.6, 0.8, 1.0)
         val axisCount = diagram.axes.size
         val axisAngles = List(axisCount) { index -> -PI / 2.0 + 2.0 * PI * index / axisCount }
 
@@ -1386,13 +1386,20 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let {
             commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
         }
-        // Concentric polygon rings with tick values along the vertical top spoke.
+        // Official radar uses circular graticule rings, not axis polygons.
         ringFractions.forEach { fraction ->
-            val points = List(axisCount) { vertex(it, fraction) }
-            commands += DrawPolyline(points + points.first())
+            val ringRadius = radius * fraction
+            commands += DrawEllipse(
+                ScenePoint(centerX, centerY),
+                ringRadius,
+                ringRadius,
+                fillOpacity = 0.0,
+                stroke = SceneColor("#d4d4d4"),
+                strokeWidth = 1.0,
+            )
             commands += DrawText(
                 (diagram.maximum * fraction).radarTickLabel(),
-                ScenePoint(centerX + 8.0, (centerY - radius * fraction + 4.0).radarCoordinate()),
+                ScenePoint(centerX + 8.0, (centerY - ringRadius + 4.0).radarCoordinate()),
                 style = bodyStyle,
             )
         }
@@ -1417,8 +1424,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             val points = curve.values.mapIndexed { axisIndex, value ->
                 vertex(axisIndex, (value / diagram.maximum).coerceIn(0.0, 1.0))
             }
-            commands += DrawPolygon(points, fill = SceneColor(fill))
-            commands += DrawPolyline(points + points.first(), stroke = SceneColor(stroke), strokeWidth = 2.0)
+            val curvePoints = closedCurveSamples(points)
+            commands += DrawPolygon(curvePoints, fill = SceneColor(fill))
+            commands += DrawPolyline(curvePoints + curvePoints.first(), stroke = SceneColor(stroke), strokeWidth = 2.0)
             points.forEach { point ->
                 commands += DrawPolygon(
                     listOf(
@@ -2643,6 +2651,30 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun Double.pieCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
     private fun Double.xyCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
+
+    private fun closedCurveSamples(vertices: List<ScenePoint>, stepsPerSegment: Int = 8): List<ScenePoint> {
+        if (vertices.size < 3) return vertices
+        val count = vertices.size
+        val samples = mutableListOf<ScenePoint>()
+        for (index in 0 until count) {
+            val p0 = vertices[(index - 1 + count) % count]
+            val p1 = vertices[index]
+            val p2 = vertices[(index + 1) % count]
+            val p3 = vertices[(index + 2) % count]
+            val control1 = ScenePoint(p1.x + (p2.x - p0.x) / 6.0, p1.y + (p2.y - p0.y) / 6.0)
+            val control2 = ScenePoint(p2.x - (p3.x - p1.x) / 6.0, p2.y - (p3.y - p1.y) / 6.0)
+            for (step in 0 until stepsPerSegment) {
+                val t = step / stepsPerSegment.toDouble()
+                val one = 1.0 - t
+                samples += ScenePoint(
+                    (one * one * one * p1.x + 3.0 * one * one * t * control1.x + 3.0 * one * t * t * control2.x + t * t * t * p2.x).radarCoordinate(),
+                    (one * one * one * p1.y + 3.0 * one * one * t * control1.y + 3.0 * one * t * t * control2.y + t * t * t * p2.y).radarCoordinate(),
+                )
+            }
+        }
+        return samples
+    }
+
     private fun Double.radarCoordinate(): Double = round(this * 1_000_000.0) / 1_000_000.0
 
     private fun Double.radarTickLabel(): String {
