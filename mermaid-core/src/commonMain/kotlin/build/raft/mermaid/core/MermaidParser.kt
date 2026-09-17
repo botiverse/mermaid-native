@@ -1398,7 +1398,17 @@ public object MermaidParser {
                 if (key !in allowed || key in current.fields) {
                     diagnostics += unsupported(statement, "Unknown or duplicate requirement block field")
                 } else {
-                    current.fields[key] = field.groupValues[2].trim()
+                    val raw = field.groupValues[2].trim()
+                    val value = if (raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"")) {
+                        raw.substring(1, raw.length - 1)
+                    } else {
+                        raw
+                    }
+                    if (value.isEmpty()) {
+                        diagnostics += unsupported(statement, "Requirement field values must not be empty")
+                    } else {
+                        current.fields[key] = value
+                    }
                 }
                 return@forEach
             }

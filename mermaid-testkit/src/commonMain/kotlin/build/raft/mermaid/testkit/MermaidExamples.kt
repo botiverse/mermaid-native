@@ -293,7 +293,7 @@ public object MermaidExamples {
         source = """
             requirementDiagram
               requirement secure_login {
-                id: AUTH-1
+                id: "AUTH-1"
                 text: Users authenticate securely
                 risk: high
                 verifymethod: test
