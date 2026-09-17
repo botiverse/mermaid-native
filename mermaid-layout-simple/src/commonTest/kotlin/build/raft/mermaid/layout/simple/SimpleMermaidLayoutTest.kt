@@ -1051,11 +1051,31 @@ class SimpleMermaidLayoutTest {
         )
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(2, first.commands.filterIsInstance<DrawEllipse>().size)
         assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
         assertEquals(4, first.commands.filterIsInstance<DrawText>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Mindmap" })
         assertTrue(first.width > 0.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun mindmapDoubleCircleUsesConcentricEllipses() {
+        val diagram = MindmapDiagram(
+            listOf(
+                MindmapNode("root", "Mindmap", null, 0, MindmapNodeShape.DOUBLE_CIRCLE),
+                MindmapNode("a", "Origins", "root", 1),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val circles = scene.commands.filterIsInstance<DrawEllipse>()
+        assertEquals(2, circles.size)
+        assertEquals(circles[0].center, circles[1].center)
+        assertEquals(circles[0].radiusX, circles[0].radiusY)
+        assertEquals(circles[1].radiusX, circles[1].radiusY)
+        assertEquals(4.0, circles[0].radiusX - circles[1].radiusX)
+        assertEquals(1, scene.commands.filterIsInstance<DrawRect>().size)
     }
 
     @Test
