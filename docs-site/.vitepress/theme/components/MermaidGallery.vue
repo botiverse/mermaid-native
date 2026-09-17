@@ -425,16 +425,29 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div class="playground-compare-grid">
         <div class="preview-pane">
           <div class="pane-label">Native</div>
+          <div class="zoom-toolbar" role="toolbar" aria-label="Zoom controls for playground Native">
+            <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut('playground-native')">−</button>
+            <span class="zoom-level">{{ Math.round(zoomState('playground-native').scale * 100) }}%</span>
+            <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn('playground-native')">+</button>
+            <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset('playground-native')">Reset</button>
+          </div>
           <div
             id="editor-preview"
             class="editor-preview-surface"
             aria-live="polite"
+            @wheel.prevent="zoomBy('playground-native', $event.deltaY < 0 ? 1 : -1)"
+            @pointerdown="onPanStart('playground-native', $event)"
+            @pointermove="onPanMove"
+            @pointerup="onPanEnd"
+            @pointercancel="onPanEnd"
           >
             <div
               v-if="editorPreviewHtml"
-              class="rendered-svg-wrap"
+              class="zoomable-surface"
+              :style="{ transform: svgTransform('playground-native') }"
               v-html="editorPreviewHtml"
             ></div>
             <div v-else-if="editorError" class="render-error">
@@ -448,12 +461,31 @@ onUnmounted(() => {
         </div>
         <div class="preview-pane">
           <div class="pane-label">Official Mermaid <span class="compare-hint">comparison only</span></div>
-          <div class="editor-preview-surface official-surface">
-            <OfficialMermaidPreview
-              :source="editorSource"
-              render-key="playground"
-            />
+          <div class="zoom-toolbar" role="toolbar" aria-label="Zoom controls for playground Official Mermaid">
+            <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut('playground-official')">−</button>
+            <span class="zoom-level">{{ Math.round(zoomState('playground-official').scale * 100) }}%</span>
+            <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn('playground-official')">+</button>
+            <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset('playground-official')">Reset</button>
           </div>
+          <div
+            class="editor-preview-surface official-surface"
+            @wheel.prevent="zoomBy('playground-official', $event.deltaY < 0 ? 1 : -1)"
+            @pointerdown="onPanStart('playground-official', $event)"
+            @pointermove="onPanMove"
+            @pointerup="onPanEnd"
+            @pointercancel="onPanEnd"
+          >
+            <div
+              class="zoomable-surface"
+              :style="{ transform: svgTransform('playground-official') }"
+            >
+              <OfficialMermaidPreview
+                :source="editorSource"
+                render-key="playground"
+              />
+            </div>
+          </div>
+        </div>
         </div>
       </div>
     </section>
@@ -556,6 +588,7 @@ onUnmounted(() => {
               <div class="code-badge">Source</div>
               <pre class="card-source"><code>{{ card.source }}</code></pre>
             </div>
+            <div class="card-compare-grid">
             <div class="card-preview-col">
               <div class="code-badge">Native</div>
               <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for ${card.family}`">
@@ -582,15 +615,32 @@ onUnmounted(() => {
             </div>
             <div class="card-preview-col">
               <div class="code-badge">Official Mermaid <span class="compare-hint">comparison only</span></div>
+              <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for official ${card.family}`">
+                <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut(`${card.slug}-official`)">−</button>
+                <span class="zoom-level">{{ Math.round(zoomState(`${card.slug}-official`).scale * 100) }}%</span>
+                <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn(`${card.slug}-official`)">+</button>
+                <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset(`${card.slug}-official`)">Reset</button>
+              </div>
               <div
                 class="diagram-preview-canvas official-canvas"
                 :aria-label="`Official Mermaid ${card.family} diagram`"
+                @wheel.prevent="zoomBy(`${card.slug}-official`, $event.deltaY < 0 ? 1 : -1)"
+                @pointerdown="onPanStart(`${card.slug}-official`, $event)"
+                @pointermove="onPanMove"
+                @pointerup="onPanEnd"
+                @pointercancel="onPanEnd"
               >
-                <OfficialMermaidPreview
-                  :source="card.source"
-                  :render-key="card.slug"
-                />
+                <div
+                  class="zoomable-surface"
+                  :style="{ transform: svgTransform(`${card.slug}-official`) }"
+                >
+                  <OfficialMermaidPreview
+                    :source="card.source"
+                    :render-key="card.slug"
+                  />
+                </div>
               </div>
+            </div>
             </div>
           </div>
         </article>
@@ -703,13 +753,20 @@ onUnmounted(() => {
 
 .playground-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   min-width: 0;
 }
 
 @media (max-width: 1100px) {
-  .playground-grid {
+  .playground-compare-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -787,7 +844,7 @@ onUnmounted(() => {
 }
 
 .editor-preview-surface {
-  min-height: 215px;
+  min-height: 280px;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   background: #ffffff; /* keep diagram canvas white for sharp SVG contrast */
@@ -1129,14 +1186,22 @@ onUnmounted(() => {
 
 .card-content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.card-compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
   min-width: 0;
 }
 
 @media (max-width: 1100px) {
-  .card-content-grid {
+  .card-compare-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1197,7 +1262,7 @@ onUnmounted(() => {
   justify-content: center;
   overflow: auto;
   box-sizing: border-box;
-  min-height: 200px;
+  min-height: 280px;
   max-width: 100%;
   min-width: 0;
 }
