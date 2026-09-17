@@ -1684,7 +1684,13 @@ public object SimpleMermaidLayout : DiagramLayout {
         val sizes = diagram.nodes.associate { node ->
             val text = textMeasurer.measure(node.label, style)
             val horizontalPadding = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) 44.0 else 32.0
-            node.id to SceneSize(max(92.0, text.width + horizontalPadding), max(42.0, text.height + 20.0))
+            val width = max(92.0, text.width + horizontalPadding)
+            val height = max(42.0, text.height + 20.0)
+            val side = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) max(width, height) else 0.0
+            node.id to SceneSize(
+                if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) side else width,
+                if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) side else height,
+            )
         }
         val depths = diagram.nodes.maxOfOrNull { it.depth } ?: 0
         val columnWidths = (0..depths).map { depth ->
@@ -1736,18 +1742,14 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.nodes.forEach { node ->
             val rect = rects.getValue(node.id)
-            val radius = when (node.shape) {
-                MindmapNodeShape.DEFAULT -> 12.0
-                MindmapNodeShape.RECTANGLE -> 2.0
-                MindmapNodeShape.DOUBLE_CIRCLE -> rect.height / 2.0
-            }
-            commands += DrawRect(rect, cornerRadius = radius)
             if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) {
-                val inset = 4.0
-                commands += DrawRect(
-                    SceneRect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2),
-                    cornerRadius = (rect.height - inset * 2) / 2.0,
-                )
+                val center = ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0)
+                val radius = rect.width / 2.0
+                commands += DrawEllipse(center, radius, radius)
+                commands += DrawEllipse(center, radius - 4.0, radius - 4.0)
+            } else {
+                val radius = if (node.shape == MindmapNodeShape.RECTANGLE) 2.0 else 12.0
+                commands += DrawRect(rect, cornerRadius = radius)
             }
             commands += DrawText(
                 node.label,
