@@ -558,7 +558,28 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
-        assertEquals(1, scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(2, scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(0, scene.commands.filterIsInstance<DrawPolygon>().size)
+    }
+
+    @Test
+    fun classDiagramSeparatesAttributesMethodsAndKeepsInheritanceHollow() {
+        val diagram = ClassDiagram(
+            classes = listOf(
+                ClassDefinition("Animal", members = listOf(ClassMember("String name"), ClassMember("eat()"))),
+                ClassDefinition("Duck", members = listOf(ClassMember("swim()"))),
+            ),
+            relationships = listOf(ClassRelationship("Animal", "Duck", ClassRelationshipKind.INHERITANCE)),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(4, scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(0, scene.commands.filterIsInstance<DrawPolygon>().size)
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(listOf("Animal", "+String name", "+eat()", "Duck", "+swim()"), labels)
     }
 
     @Test

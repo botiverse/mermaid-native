@@ -4,6 +4,8 @@ import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
+import build.raft.mermaid.core.ClassDefinition
+import build.raft.mermaid.core.ClassMember
 import build.raft.mermaid.core.ClassVisibility
 import build.raft.mermaid.core.ClassRelationshipKind
 import build.raft.mermaid.core.EntityCardinality
@@ -1880,15 +1882,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutClass(diagram: ClassDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle()
         val sizes = diagram.classes.associate { klass ->
-            val lines = listOf(klass.label) + klass.members.map { member ->
-                val prefix = when (member.visibility) {
-                    ClassVisibility.PUBLIC -> "+"
-                    ClassVisibility.PRIVATE -> "-"
-                    ClassVisibility.PROTECTED -> "#"
-                    ClassVisibility.PACKAGE -> "~"
-                }
-                "$prefix${member.signature}"
-            }
+            val lines = classCompartmentLines(klass)
             klass.id to SceneSize(max(120.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0), max(48.0, lines.size * 22.0 + 16.0))
         }
         val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
@@ -1911,25 +1905,57 @@ public object SimpleMermaidLayout : DiagramLayout {
                 ClassRelationshipKind.ASSOCIATION -> sourceBottom to targetTop
             }
             commands += DrawLine(from, to)
-            commands += arrowHead(from, to)
+            if (relation.kind == ClassRelationshipKind.INHERITANCE) {
+                commands += hollowArrowHead(from, to)
+            } else {
+                commands += arrowHead(from, to)
+            }
         }
         diagram.classes.forEach { klass ->
             val rect = rects.getValue(klass.id)
             commands += DrawRect(rect, cornerRadius = 4.0)
-            val lines = listOf(klass.label) + klass.members.map { member ->
-                val prefix = when (member.visibility) {
-                    ClassVisibility.PUBLIC -> "+"
-                    ClassVisibility.PRIVATE -> "-"
-                    ClassVisibility.PROTECTED -> "#"
-                    ClassVisibility.PACKAGE -> "~"
-                }
-                "$prefix${member.signature}"
-            }
+            val attributes = klass.members.filterNot { classMemberIsMethod(it) }
+            val methods = klass.members.filter { classMemberIsMethod(it) }
+            val lines = listOf(klass.label) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
             lines.forEachIndexed { index, line ->
                 commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
             }
+            if (attributes.isNotEmpty() || methods.isNotEmpty()) {
+                commands += classCompartmentRule(rect, 0)
+            }
+            if (attributes.isNotEmpty() && methods.isNotEmpty()) {
+                commands += classCompartmentRule(rect, attributes.size)
+            }
         }
         return LayoutScene(width, height, commands)
+    }
+
+    private fun classMemberIsMethod(member: ClassMember): Boolean = member.signature.contains("(")
+
+    private fun classMemberLabel(member: ClassMember): String {
+        val prefix = when (member.visibility) {
+            ClassVisibility.PUBLIC -> "+"
+            ClassVisibility.PRIVATE -> "-"
+            ClassVisibility.PROTECTED -> "#"
+            ClassVisibility.PACKAGE -> "~"
+        }
+        return "$prefix${member.signature}"
+    }
+
+    private fun classCompartmentLines(klass: ClassDefinition): List<String> {
+        val attributes = klass.members.filterNot { classMemberIsMethod(it) }
+        val methods = klass.members.filter { classMemberIsMethod(it) }
+        return listOf(klass.label) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
+    }
+
+    private fun classCompartmentRule(rect: SceneRect, afterLineIndex: Int): DrawLine {
+        val y = rect.y + 29.0 + afterLineIndex * 22.0
+        return DrawLine(ScenePoint(rect.x, y), ScenePoint(rect.x + rect.width, y), stroke = SceneColor("#334155"), strokeWidth = 1.0)
+    }
+
+    private fun hollowArrowHead(from: ScenePoint, to: ScenePoint): DrawPolyline {
+        val points = arrowHead(from, to).points
+        return DrawPolyline(points + points.first(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
     }
 
     private fun layoutState(
