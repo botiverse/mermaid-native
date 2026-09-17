@@ -114,7 +114,7 @@ import build.raft.mermaid.core.RailroadDiagram
 import build.raft.mermaid.core.RailroadNonTerminal
 import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
-import build.raft.mermaid.core.RailroadStack
+import build.raft.mermaid.core.RailroadRule
 import build.raft.mermaid.core.RailroadTerminal
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
@@ -722,26 +722,28 @@ public object MermaidExamples {
         path = "samples/railroad-auth-flow.mmd",
         source = """
             railroad-beta
-            Diagram(
-              Sequence(
-                'token',
-                Choice(0,
-                  NonTerminal('session'),
-                  Optional('refresh')
-                ),
-                Stack('validate', 'store')
-              )
-            )
+            auth = sequence(
+              terminal("token"),
+              choice(
+                nonterminal("session"),
+                optional(terminal("refresh"))
+              ),
+              sequence(terminal("validate"), terminal("store"))
+            );
         """.trimIndent(),
         expected = RailroadDiagram(
-            RailroadSequence(
-                listOf(
-                    RailroadTerminal("token"),
-                    RailroadChoice(
-                        0,
-                        listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+            rules = listOf(
+                RailroadRule(
+                    name = "auth",
+                    definition = RailroadSequence(
+                        listOf(
+                            RailroadTerminal("token"),
+                            RailroadChoice(
+                                listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+                            ),
+                            RailroadSequence(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
+                        ),
                     ),
-                    RailroadStack(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
                 ),
             ),
         ),

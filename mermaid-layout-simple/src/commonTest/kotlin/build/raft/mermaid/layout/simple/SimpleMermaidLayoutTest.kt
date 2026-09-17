@@ -104,6 +104,7 @@ import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadDiagram
+import build.raft.mermaid.core.RailroadRule
 import build.raft.mermaid.core.WardleyEvolution
 import build.raft.mermaid.core.WardleyLink
 import build.raft.mermaid.core.WardleyMapDiagram
@@ -112,14 +113,10 @@ import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.ZenumlParticipant
 import build.raft.mermaid.core.ZenumlSyncMessage
-import build.raft.mermaid.core.RailroadEnd
 import build.raft.mermaid.core.RailroadNonTerminal
 import build.raft.mermaid.core.RailroadOneOrMore
 import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
-import build.raft.mermaid.core.RailroadSkip
-import build.raft.mermaid.core.RailroadStack
-import build.raft.mermaid.core.RailroadStart
 import build.raft.mermaid.core.RailroadTerminal
 import build.raft.mermaid.core.RailroadZeroOrMore
 import build.raft.mermaid.layout.DrawLine
@@ -140,25 +137,25 @@ class SimpleMermaidLayoutTest {
     fun railroadProducesDeterministicMeasuredTracks() {
         val long = "step-".repeat(20)
         val diagram = RailroadDiagram(
-            RailroadSequence(
-                listOf(
-                    RailroadStart,
-                    RailroadChoice(
-                        0,
-                        listOf(RailroadTerminal(long), RailroadOptional(RailroadNonTerminal("alternative path"))),
+            rules = listOf(
+                RailroadRule(
+                    name = "flow",
+                    definition = RailroadSequence(
+                        listOf(
+                            RailroadChoice(
+                                listOf(RailroadTerminal(long), RailroadOptional(RailroadNonTerminal("alternative path"))),
+                            ),
+                            RailroadOneOrMore(RailroadTerminal("next")),
+                            RailroadZeroOrMore(RailroadTerminal("tail")),
+                        ),
                     ),
-                    RailroadStack(listOf(RailroadNonTerminal("first"), RailroadNonTerminal("second"))),
-                    RailroadOneOrMore(RailroadSkip),
-                    RailroadZeroOrMore(RailroadTerminal("tail")),
-                    RailroadEnd,
                 ),
             ),
         )
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
         assertTrue(first.commands.filterIsInstance<DrawRect>().isNotEmpty())
-        assertTrue(first.commands.filterIsInstance<DrawPolyline>().size >= 4)
+        assertTrue(first.commands.filterIsInstance<DrawPolyline>().size >= 2)
         assertTrue(first.commands.filterIsInstance<DrawLine>().isNotEmpty())
         val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 24.0 + 24.0
         assertTrue(first.width >= required, "width ${first.width} below required $required")
@@ -167,7 +164,7 @@ class SimpleMermaidLayoutTest {
     /**
      * task #342 regression: railroad connector lines must meet their neighbours exactly.
      *
-     * The Choice/Stack composite boxes previously inset their connector spines by 3-4px
+     * The Choice composite boxes previously inset their connector spines by 3-4px
      * from the box edge, while a wrapping Sequence connected at the raw box edge, leaving
      * a visible 3-4px gap ("disconnected lines"). This asserts every horizontal connector
      * endpoint coincides with another primitive's vertex (so no dangling gap can return).
@@ -175,20 +172,23 @@ class SimpleMermaidLayoutTest {
     @Test
     fun railroadConnectorsMeetTheirNeighboursWithoutGaps() {
         val diagram = RailroadDiagram(
-            RailroadSequence(
-                listOf(
-                    RailroadTerminal("token"),
-                    RailroadChoice(
-                        0,
-                        listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+            rules = listOf(
+                RailroadRule(
+                    name = "auth",
+                    definition = RailroadSequence(
+                        listOf(
+                            RailroadTerminal("token"),
+                            RailroadChoice(
+                                listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+                            ),
+                            RailroadSequence(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
+                        ),
                     ),
-                    RailroadStack(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
                 ),
             ),
         )
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
 
-        // Every vertex contributed by any primitive (line endpoints, polyline vertices, rect corners).
         val vertices = mutableListOf<ScenePoint>()
         scene.commands.forEach { command ->
             when (command) {

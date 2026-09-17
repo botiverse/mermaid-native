@@ -50,6 +50,7 @@ import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
 import build.raft.mermaid.core.RailroadChoice
+import build.raft.mermaid.core.RailroadSpecial
 import build.raft.mermaid.core.RailroadDiagram
 import build.raft.mermaid.core.ZenumlDiagram
 import build.raft.mermaid.core.WardleyEvolution
@@ -62,15 +63,11 @@ import build.raft.mermaid.core.EventModelingEntityKind
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlMessage
 import build.raft.mermaid.core.ZenumlSyncMessage
-import build.raft.mermaid.core.RailroadEnd
 import build.raft.mermaid.core.RailroadNode
 import build.raft.mermaid.core.RailroadNonTerminal
 import build.raft.mermaid.core.RailroadOneOrMore
 import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
-import build.raft.mermaid.core.RailroadSkip
-import build.raft.mermaid.core.RailroadStack
-import build.raft.mermaid.core.RailroadStart
 import build.raft.mermaid.core.RailroadTerminal
 import build.raft.mermaid.core.RailroadZeroOrMore
 import build.raft.mermaid.layout.DiagramLayout
@@ -261,38 +258,54 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     /**
-     * Bounded deterministic railroad layout: terminals as rectangles, non-terminals
-     * as pills, sequence/stack/choice measured composition, and optional/repeat
-     * bypass polylines. Arrow markers, labels, comments, and styling are not claimed.
+     * Bounded deterministic railroad layout for official named rules: terminals as
+     * rectangles, non-terminals as pills, special as dashed pills, sequence/choice
+     * measured composition, and optional/repeat bypass polylines. Arrow markers,
+     * comments, ABNF/EBNF/PEG, and full styling are not claimed.
      */
     private fun layoutRailroad(diagram: RailroadDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        val root = buildRailroadBox(diagram.root, textMeasurer, mutableListOf())
-        val commands = root.commands.map { command -> command.offsetBy(config.padding, config.padding).canonical() }
-        val width = max(360.0, root.width + config.padding * 2.0)
-        val height = max(180.0, root.height + config.padding * 2.0)
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        val commands = mutableListOf<DrawCommand>()
+        var y = config.padding
+        var width = 360.0
+        val title = diagram.title
+        if (title != null) {
+            val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+            val measured = textMeasurer.measure(title, titleStyle)
+            commands += DrawText(
+                text = title,
+                origin = ScenePoint(config.padding, y + measured.height),
+                anchor = TextAnchor.START,
+                style = titleStyle,
+            )
+            y += measured.height + 16.0
+            width = max(width, config.padding * 2.0 + measured.width)
+        }
+        diagram.rules.forEach { rule ->
+            val nameStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+            val nameMeasured = textMeasurer.measure(rule.name, nameStyle)
+            val box = buildRailroadBox(rule.definition, textMeasurer, mutableListOf())
+            val nameWidth = max(48.0, nameMeasured.width + 8.0)
+            val trackX = config.padding + nameWidth + 16.0
+            val centerY = y + box.center
+            commands += DrawText(
+                text = rule.name,
+                origin = ScenePoint(config.padding + nameWidth, centerY + nameMeasured.height * 0.35),
+                anchor = TextAnchor.END,
+                style = nameStyle,
+            )
+            commands += box.commands.map { command -> command.offsetBy(trackX, y) }
+            width = max(width, trackX + box.width + config.padding)
+            y += max(box.height, nameMeasured.height) + 20.0
+        }
+        val height = max(180.0, y + config.padding)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands.map { command -> command.canonical() })
     }
 
     private fun buildRailroadBox(node: RailroadNode, textMeasurer: TextMeasurer, commands: MutableList<DrawCommand>): RailroadBox =
         when (node) {
             is RailroadTerminal -> railroadLabelBox(node.label, cornerRadius = 0.0, fill = SceneColor("#ffffff"), textMeasurer, commands)
             is RailroadNonTerminal -> railroadLabelBox(node.label, cornerRadius = null, fill = SceneColor("#e2e8f0"), textMeasurer, commands)
-            RailroadSkip -> {
-                val local = mutableListOf<DrawCommand>()
-                local += DrawLine(ScenePoint(0.0, 4.0), ScenePoint(28.0, 4.0))
-                RailroadBox(width = 28.0, height = 8.0, center = 4.0, commands = local)
-            }
-            RailroadStart -> {
-                val local = mutableListOf<DrawCommand>()
-                local += DrawEllipse(ScenePoint(7.0, 7.0), radiusX = 5.0, radiusY = 5.0, fill = SceneColor("#111827"))
-                RailroadBox(width = 14.0, height = 14.0, center = 7.0, commands = local)
-            }
-            RailroadEnd -> {
-                val local = mutableListOf<DrawCommand>()
-                local += DrawEllipse(ScenePoint(8.0, 8.0), radiusX = 6.0, radiusY = 6.0)
-                local += DrawEllipse(ScenePoint(8.0, 8.0), radiusX = 3.0, radiusY = 3.0, fill = SceneColor("#111827"), strokeWidth = 1.0)
-                RailroadBox(width = 16.0, height = 16.0, center = 8.0, commands = local)
-            }
+            is RailroadSpecial -> railroadLabelBox(node.text, cornerRadius = null, fill = SceneColor("#f8fafc"), textMeasurer, commands)
             is RailroadSequence -> {
                 val children = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
                 val gap = 18.0
@@ -309,31 +322,6 @@ public object SimpleMermaidLayout : DiagramLayout {
                 }
                 val height = max(center * 2.0, children.maxOf { it.height + (center - it.center) })
                 RailroadBox(width, height, center, commands.toList().also { commands.clear() }.toMutableList())
-            }
-            is RailroadStack -> {
-                val rows = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
-                val rowGap = 14.0
-                val inset = 10.0
-                val width = inset * 2.0 + rows.maxOf { it.width }
-                var yOffset = 0.0
-                val rowCenters = rows.mapIndexed { rowIndex, row ->
-                    val centerY = yOffset + row.center
-                    commands += row.commands.map { command -> command.offsetBy(inset, yOffset) }
-                    if (rowIndex < rows.lastIndex) yOffset += row.height + rowGap
-                    centerY
-                }
-                val leftSpine = 0.0
-                val rightSpine = width
-                commands += DrawLine(ScenePoint(leftSpine, rowCenters.first()), ScenePoint(leftSpine, rowCenters.last()))
-                commands += DrawLine(ScenePoint(rightSpine, rowCenters.first()), ScenePoint(rightSpine, rowCenters.last()))
-                rows.forEachIndexed { rowIndex, row ->
-                    // task #342: connect EVERY row to both rails (ladder), so the left rail
-                    // does not run past its last tap and leave a dangling endpoint (gap).
-                    commands += DrawLine(ScenePoint(leftSpine, rowCenters[rowIndex]), ScenePoint(inset, rowCenters[rowIndex]))
-                    commands += DrawLine(ScenePoint(inset + row.width, rowCenters[rowIndex]), ScenePoint(rightSpine, rowCenters[rowIndex]))
-                }
-                val height = yOffset + rows.last().height
-                RailroadBox(width, height, rowCenters.first(), commands.toList().also { commands.clear() }.toMutableList())
             }
             is RailroadChoice -> {
                 val branches = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
@@ -355,8 +343,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawLine(ScenePoint(spineLeft, branchCenters.first()), ScenePoint(spineLeft, branchCenters.last()))
                 commands += DrawLine(ScenePoint(spineRight, branchCenters.first()), ScenePoint(spineRight, branchCenters.last()))
                 val height = yOffset + branches.last().height
-                val priorityCenter = branchCenters.getOrElse(node.priority) { branchCenters.first() }
-                RailroadBox(width, height, priorityCenter, commands.toList().also { commands.clear() }.toMutableList())
+                RailroadBox(width, height, branchCenters.first(), commands.toList().also { commands.clear() }.toMutableList())
             }
             is RailroadOptional -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 20.0, arrowHead = false, bottomBypass = false)
             is RailroadOneOrMore -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 22.0, arrowHead = true, bottomBypass = false)

@@ -76,10 +76,10 @@ a deterministic fishbone without claiming tabs in indentation, directives,
 configuration, styling, or full family parity.
 
 `railroad-auth-flow.mmd` is an original compatibility fixture based on the
-documented `railroad-beta` expression syntax. It covers Terminal/NonTerminal
-boxes, Choice branches, Optional bypass, and Stack rows with measured tracks
-without claiming comments, escapes, arrow markers, styling, configuration, or
-full family parity.
+official `railroad-beta` named-rule expression syntax. It covers terminal /
+nonterminal boxes, choice branches, optional bypass, and nested sequence
+tracks without claiming ABNF/EBNF/PEG dialects, comments, styling,
+configuration, or full family parity.
 
 `zenuml-token-handshake.mmd` is an original compatibility fixture based on the
 documented `zenuml` syntax at the pinned Mermaid revision. It covers the
