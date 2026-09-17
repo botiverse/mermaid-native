@@ -542,12 +542,19 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val domainStyle = TextStyle(fontSize = 16.0, fontWeight = 600)
+        val descriptionStyle = TextStyle(fontSize = 11.0, color = SceneColor("#64748b"))
         val itemStyle = TextStyle(fontSize = 12.0)
         val titleStyle = TextStyle(fontSize = 20.0, fontWeight = 600)
-        val labels = diagram.domains.flatMap { it.items }
-        val measuredItemWidth = labels.maxOfOrNull { textMeasurer.measure(it, itemStyle).width } ?: 0.0
-        val quadrantWidth = max(280.0, measuredItemWidth + 56.0)
-        val quadrantHeight = max(220.0, (diagram.domains.maxOfOrNull { it.items.size } ?: 0) * 32.0 + 86.0)
+        val itemsByDomain = diagram.domains.associate { it.domain to it.items }
+        val measuredItemWidth = itemsByDomain.values.flatten().maxOfOrNull { textMeasurer.measure(it, itemStyle).width } ?: 0.0
+        val measuredDescriptionWidth = CynefinDomain.entries.maxOf { domain ->
+            max(
+                cynefinDomainModel(domain)?.let { textMeasurer.measure(it, descriptionStyle).width } ?: 0.0,
+                textMeasurer.measure(cynefinDomainPractice(domain), descriptionStyle).width,
+            )
+        }
+        val quadrantWidth = max(280.0, max(measuredItemWidth, measuredDescriptionWidth) + 56.0)
+        val quadrantHeight = max(220.0, (diagram.domains.maxOfOrNull { it.items.size } ?: 0) * 32.0 + 126.0)
         val quadrantGap = 40.0
         val titleOffset = if (diagram.title == null) 0.0 else 48.0
         val width = max(720.0, config.padding * 2.0 + quadrantWidth * 2.0 + quadrantGap)
@@ -585,17 +592,25 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += arrowHead(start, end)
             transition.label?.let { label -> commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, TextStyle(fontSize = 11.0)) }
         }
-        diagram.domains.forEach { block ->
-            val center = centers.getValue(block.domain)
-            val visibleItems = if (block.domain == CynefinDomain.CONFUSION) block.items.take(3) else block.items
-            val titleY = if (block.domain == CynefinDomain.CONFUSION) center.y - 28.0 else center.y - quadrantHeight / 2.0 + 30.0
-            commands += DrawText(block.domain.name.lowercase().replaceFirstChar { it.uppercase() }, ScenePoint(center.x, titleY), TextAnchor.MIDDLE, domainStyle)
-            visibleItems.forEachIndexed { index, item ->
-                val y = if (block.domain == CynefinDomain.CONFUSION) center.y - 3.0 + index * 19.0 else titleY + 34.0 + index * 30.0
-                commands += DrawText(item, ScenePoint(center.x, y), TextAnchor.MIDDLE, itemStyle)
+        CynefinDomain.entries.forEach { domain ->
+            val center = centers.getValue(domain)
+            val items = itemsByDomain[domain].orEmpty()
+            val visibleItems = if (domain == CynefinDomain.CONFUSION) items.take(3) else items
+            val titleY = if (domain == CynefinDomain.CONFUSION) center.y - 28.0 else center.y - quadrantHeight / 2.0 + 30.0
+            commands += DrawText(cynefinDomainLabel(domain), ScenePoint(center.x, titleY), TextAnchor.MIDDLE, domainStyle)
+            var lineY = titleY + 20.0
+            cynefinDomainModel(domain)?.let { model ->
+                commands += DrawText(model, ScenePoint(center.x, lineY), TextAnchor.MIDDLE, descriptionStyle)
+                lineY += 16.0
             }
-            if (block.domain == CynefinDomain.CONFUSION && block.items.size > 3) {
-                commands += DrawText("+${block.items.size - 3} more", ScenePoint(center.x, center.y + 54.0), TextAnchor.MIDDLE, itemStyle)
+            commands += DrawText(cynefinDomainPractice(domain), ScenePoint(center.x, lineY), TextAnchor.MIDDLE, descriptionStyle)
+            val itemStartY = if (domain == CynefinDomain.CONFUSION) lineY + 20.0 else lineY + 22.0
+            val itemStep = if (domain == CynefinDomain.CONFUSION) 19.0 else 30.0
+            visibleItems.forEachIndexed { index, item ->
+                commands += DrawText(item, ScenePoint(center.x, itemStartY + index * itemStep), TextAnchor.MIDDLE, itemStyle)
+            }
+            if (domain == CynefinDomain.CONFUSION && items.size > 3) {
+                commands += DrawText("+${items.size - 3} more", ScenePoint(center.x, itemStartY + visibleItems.size * itemStep), TextAnchor.MIDDLE, itemStyle)
             }
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
@@ -603,6 +618,25 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun cynefinBoundaryPoint(center: ScenePoint, toward: ScenePoint, ellipse: Boolean, quadrantWidth: Double, quadrantHeight: Double): ScenePoint =
         usecaseBoundaryPoint(center, toward, if (ellipse) 92.0 else quadrantWidth / 2.0, if (ellipse) 66.0 else quadrantHeight / 2.0, ellipse)
+
+    private fun cynefinDomainLabel(domain: CynefinDomain): String =
+        domain.name.lowercase().replaceFirstChar { it.uppercase() }
+
+    private fun cynefinDomainModel(domain: CynefinDomain): String? = when (domain) {
+        CynefinDomain.COMPLEX -> "Probe → Sense → Respond"
+        CynefinDomain.COMPLICATED -> "Sense → Analyse → Respond"
+        CynefinDomain.CLEAR -> "Sense → Categorise → Respond"
+        CynefinDomain.CHAOTIC -> "Act → Sense → Respond"
+        CynefinDomain.CONFUSION -> null
+    }
+
+    private fun cynefinDomainPractice(domain: CynefinDomain): String = when (domain) {
+        CynefinDomain.COMPLEX -> "Emergent Practices"
+        CynefinDomain.COMPLICATED -> "Good Practices"
+        CynefinDomain.CLEAR -> "Best Practices"
+        CynefinDomain.CHAOTIC -> "Novel Practices"
+        CynefinDomain.CONFUSION -> "Disorder"
+    }
 
     private fun layoutC4(diagram: C4Diagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)

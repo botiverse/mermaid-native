@@ -95,6 +95,9 @@ import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4Element
 import build.raft.mermaid.core.C4ElementKind
 import build.raft.mermaid.core.C4Relationship
+import build.raft.mermaid.core.CynefinDiagram
+import build.raft.mermaid.core.CynefinDomain
+import build.raft.mermaid.core.CynefinDomainBlock
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.Swimlane
 import build.raft.mermaid.core.SwimlaneNode
@@ -920,6 +923,32 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
         assertEquals(0, scene.commands.filterIsInstance<DrawEllipse>().size)
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "mystery", "Server", "custom")))
+    }
+
+    @Test fun cynefinDrawsOfficialDomainDescriptionsOnEveryQuadrant() {
+        val diagram = CynefinDiagram(
+            title = "Incident response",
+            domains = listOf(
+                CynefinDomainBlock(CynefinDomain.COMPLEX, listOf("Investigate & learn")),
+                CynefinDomainBlock(CynefinDomain.CONFUSION, listOf("Unknown failure")),
+            ),
+            transitions = emptyList(),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf(
+            "Complex", "Complicated", "Clear", "Chaotic", "Confusion",
+            "Probe → Sense → Respond", "Emergent Practices",
+            "Sense → Analyse → Respond", "Good Practices",
+            "Sense → Categorise → Respond", "Best Practices",
+            "Act → Sense → Respond", "Novel Practices",
+            "Disorder",
+            "Investigate & learn",
+            "Unknown failure",
+        )))
+        assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawEllipse>().size)
     }
 
     @Test fun c4ProducesMeasuredDeterministicCardsAndBoundaryArrows() {
