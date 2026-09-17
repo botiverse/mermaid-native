@@ -2023,15 +2023,13 @@ public object MermaidParser {
         if (headerLine != "eventmodeling") {
             return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected exact eventmodeling header", SourceLocation(1, 1))
         }
-        var title: String? = null
         val frames = linkedMapOf<String, EventModelingFrame>()
         val relations = mutableListOf<EventModelingRelation>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var inferenceSource: String? = null
         statements.drop(1).forEach { statement ->
-            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let { m ->
-                val value = m.groupValues[1].trim()
-                if (title != null || value.isEmpty()) diagnostics += unsupported(statement, "Duplicate or empty Event Modeling title") else title = value
+            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let {
+                diagnostics += unsupported(statement, "Event Modeling title is not official mermaid syntax")
                 return@forEach
             }
             EVENT_MODELING_FRAME.matchEntire(statement.text)?.let { m ->
@@ -2045,7 +2043,7 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported Event Modeling syntax")
         }
         if (frames.isEmpty()) diagnostics += unsupported(statements.first(), "Event Modeling requires at least one frame")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(EventModelingDiagram(title, frames.values.toList(), relations.toList())) else MermaidParseResult.Failure(diagnostics)
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(EventModelingDiagram(title = null, frames = frames.values.toList(), relations = relations.toList())) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseSwimlane(source: String): MermaidParseResult {
