@@ -2610,7 +2610,7 @@ public object MermaidParser {
     )
     private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
     private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
-    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?(?::([1-9][0-9]*))?$")
+    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"\\])?(?::([1-9][0-9]*))?$")
     private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
     private val TREEMAP_NODE = Regex("^\"([^\"\\r\\n]+)\"(?:\\s*:\\s*(\\S+))?$")
     private val VENN_IDENTIFIER = Regex("(?:[A-Za-z_][A-Za-z0-9_-]*|\"[^\"\\r\\n]+\")")
