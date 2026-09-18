@@ -1254,14 +1254,14 @@ public object SimpleMermaidLayout : DiagramLayout {
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val commitStyle = TextStyle(fontSize = 12.0)
         val tagStyle = TextStyle(fontSize = 11.0, color = SceneColor("#7c3aed"))
-        val labelWidth = (diagram.branches.maxOf { textMeasurer.measure(it.name, labelStyle).width } + 28.0).xyCoordinate()
+        val labelWidth = (diagram.branches.maxOf { textMeasurer.measure(it.name, labelStyle).width } + 36.0).xyCoordinate()
         val columnWidths = diagram.commits.map { commit ->
             max(
                 80.0,
                 max(
                     textMeasurer.measure(commit.id, commitStyle).width,
                     commit.tag?.let { textMeasurer.measure(it, tagStyle).width } ?: 0.0,
-                ) + 20.0,
+                ) + 28.0,
             )
         }
         val startX = (config.padding + labelWidth).xyCoordinate()
@@ -1273,8 +1273,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         val width = max(480.0, cursor + config.padding - 20.0).xyCoordinate()
         val laneGap = 92.0
-        val firstLaneY = config.padding + 42.0
-        val height = firstLaneY + (diagram.branches.size - 1) * laneGap + 72.0
+        val firstLaneY = config.padding + 52.0
+        val height = firstLaneY + (diagram.branches.size - 1) * laneGap + 80.0
         val laneByName = diagram.branches.mapIndexed { index, branch -> branch.name to index }.toMap()
         val centerById = diagram.commits.mapIndexed { index, commit ->
             commit.id to ScenePoint(centersX[index], firstLaneY + laneByName.getValue(commit.branch) * laneGap)
@@ -1285,13 +1285,24 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.branches.forEachIndexed { index, branch ->
             val y = firstLaneY + index * laneGap
             val color = SceneColor(colors[index % colors.size])
+            val chipWidth = textMeasurer.measure(branch.name, labelStyle).width + 16.0
             val branchStartX = branch.parentCommitId?.let { centerById.getValue(it).x } ?: startX
             val branchEndX = diagram.commits
                 .filter { it.branch == branch.name }
                 .maxOfOrNull { centerById.getValue(it.id).x }
                 ?.let { max(it, branchStartX) }
                 ?: branchStartX
-            commands += DrawText(branch.name, ScenePoint(config.padding, y + 5.0), style = labelStyle.copy(color = color))
+            commands += DrawRect(
+                SceneRect(config.padding - 2.0, y - 12.0, chipWidth, 22.0),
+                cornerRadius = 4.0,
+                fill = color,
+                stroke = color,
+            )
+            commands += DrawText(
+                branch.name,
+                ScenePoint(config.padding + 6.0, y + 4.0),
+                style = labelStyle.copy(color = SceneColor("#ffffff")),
+            )
             commands += DrawLine(ScenePoint(branchStartX, y), ScenePoint(branchEndX, y), stroke = color, strokeWidth = 2.0)
         }
         diagram.commits.forEach { commit ->
@@ -1300,20 +1311,53 @@ public object SimpleMermaidLayout : DiagramLayout {
             commit.parentIds.forEach { parentId ->
                 commands += DrawLine(centerById.getValue(parentId), center, stroke = color, strokeWidth = 2.0)
             }
-            val rect = when (commit.type) {
-                GitGraphCommitType.HIGHLIGHT -> SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0)
-                else -> SceneRect(center.x - 9.0, center.y - 9.0, 18.0, 18.0)
+            when {
+                commit.type == GitGraphCommitType.HIGHLIGHT -> {
+                    commands += DrawRect(SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0), cornerRadius = 2.0, fill = color, stroke = color)
+                    commands += DrawRect(SceneRect(center.x - 6.0, center.y - 6.0, 12.0, 12.0), cornerRadius = 1.0, fill = SceneColor("#ffffff"), stroke = color, strokeWidth = 1.0)
+                }
+                commit.isMerge -> {
+                    commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
+                    commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"))
+                }
+                else -> {
+                    commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
+                    if (commit.type == GitGraphCommitType.REVERSE) {
+                        commands += DrawLine(ScenePoint(center.x - 5.0, center.y - 5.0), ScenePoint(center.x + 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
+                        commands += DrawLine(ScenePoint(center.x + 5.0, center.y - 5.0), ScenePoint(center.x - 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
+                    }
+                }
             }
-            commands += DrawRect(rect, cornerRadius = if (commit.type == GitGraphCommitType.HIGHLIGHT) 2.0 else 9.0, fill = color, stroke = color)
-            if (commit.isMerge) {
-                commands += DrawRect(SceneRect(center.x - 5.0, center.y - 5.0, 10.0, 10.0), cornerRadius = 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"), strokeWidth = 1.0)
+            commit.tag?.let { tag ->
+                val tagWidth = textMeasurer.measure(tag, tagStyle).width
+                val top = center.y - 34.0
+                val bottom = center.y - 18.0
+                val left = center.x - tagWidth / 2.0
+                val right = center.x + tagWidth / 2.0 + 6.0
+                val tipX = left - 10.0
+                commands += DrawPolygon(
+                    listOf(
+                        ScenePoint(tipX + 4.0, center.y - 22.0),
+                        ScenePoint(tipX + 4.0, center.y - 26.0),
+                        ScenePoint(left, top),
+                        ScenePoint(right, top),
+                        ScenePoint(right, bottom),
+                        ScenePoint(left, bottom),
+                    ),
+                    fill = SceneColor("#ede9fe"),
+                )
+                commands += DrawEllipse(ScenePoint(tipX + 8.0, center.y - 24.0), 2.0, 2.0, fill = SceneColor("#7c3aed"), stroke = SceneColor("#7c3aed"))
+                commands += DrawText(tag, ScenePoint(center.x, center.y - 20.0), TextAnchor.MIDDLE, tagStyle)
             }
-            if (commit.type == GitGraphCommitType.REVERSE) {
-                commands += DrawLine(ScenePoint(center.x - 5.0, center.y - 5.0), ScenePoint(center.x + 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
-                commands += DrawLine(ScenePoint(center.x + 5.0, center.y - 5.0), ScenePoint(center.x - 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
-            }
-            commit.tag?.let { commands += DrawText(it, ScenePoint(center.x, center.y - 18.0), TextAnchor.MIDDLE, tagStyle) }
-            commands += DrawText(commit.id, ScenePoint(center.x, center.y + 27.0), TextAnchor.MIDDLE, commitStyle)
+            val idWidth = textMeasurer.measure(commit.id, commitStyle).width
+            commands += DrawRect(
+                SceneRect(center.x - idWidth / 2.0 - 6.0, center.y + 16.0, idWidth + 12.0, 16.0),
+                cornerRadius = 3.0,
+                fill = SceneColor("#f8fafc"),
+                stroke = SceneColor("#cbd5e1"),
+                strokeWidth = 1.0,
+            )
+            commands += DrawText(commit.id, ScenePoint(center.x, center.y + 28.0), TextAnchor.MIDDLE, commitStyle)
         }
         return LayoutScene(width, height, commands)
     }
