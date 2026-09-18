@@ -956,6 +956,21 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.width >= measured.width + 48.0)
     }
 
+    @Test
+    fun treemapDrawsSectionAndLeafValues() {
+        val diagram = TreemapDiagram(
+            listOf(TreemapNode("Products", children = listOf(TreemapNode("Mobile", 45.0), TreemapNode("Web", 35.0), TreemapNode("API", 20.0)))),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>()
+        assertTrue(labels.any { it.text == "Products" })
+        assertTrue(labels.any { it.text == "100" && it.anchor == TextAnchor.END })
+        assertEquals(setOf("45", "35", "20"), labels.filter { it.anchor == TextAnchor.MIDDLE && it.text.all { ch -> ch.isDigit() } }.map { it.text }.toSet())
+        val mobile = labels.single { it.text == "Mobile" }
+        assertEquals(TextAnchor.MIDDLE, mobile.anchor)
+    }
+
     @Test fun treemapNeverProducesNegativeGeometryForDenseSmallWeightedNodes() {
         val tinyLeaves = (1..200).map { TreemapNode("Leaf $it", if (it == 1) 1.0 else 1e-12) }
         val roots = (1..150).map { index -> TreemapNode("Root $index", children = tinyLeaves.map { it.copy(label = "${it.label}-$index") }) }
