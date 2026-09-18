@@ -1317,7 +1317,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutPacket(diagram: PacketDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val labelStyle = TextStyle(fontSize = 11.0)
-        val rangeStyle = TextStyle(fontSize = 9.0, color = SceneColor("#475569"))
+        val bitIndexStyle = TextStyle(fontSize = 9.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val bitWidth = max(24.0, diagram.fields.maxOf { field ->
             val firstRow = field.startBit / PACKET_BITS_PER_ROW
@@ -1331,7 +1331,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             (textMeasurer.measure(field.label, labelStyle).width + 20.0) / narrowestSegmentBits
         })
         val titleHeight = if (diagram.title == null) 0.0 else 34.0
-        val rowHeight = 60.0
+        val indexBand = 14.0
+        val blockHeight = 38.0
+        val rowHeight = indexBand + blockHeight + 8.0
         val rowCount = diagram.fields.maxOf { it.endBit } / PACKET_BITS_PER_ROW + 1
         val gridWidth = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
         val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
@@ -1351,10 +1353,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val x = config.padding + (segmentStart - rowStart) * bitWidth
                 val y = config.padding + titleHeight + row * rowHeight
                 val segmentWidth = (segmentEnd - segmentStart + 1) * bitWidth
-                commands += DrawRect(SceneRect(x, y, segmentWidth, 38.0), cornerRadius = 2.0, fill = SceneColor("#eff6ff"))
-                commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + 23.0), TextAnchor.MIDDLE, labelStyle)
-                val range = if (segmentStart == segmentEnd) "$segmentStart" else "$segmentStart-$segmentEnd"
-                commands += DrawText(range, ScenePoint(x + segmentWidth / 2.0, y + 53.0), TextAnchor.MIDDLE, rangeStyle)
+                commands += DrawText("$segmentStart", ScenePoint(x, y + 10.0), TextAnchor.START, bitIndexStyle)
+                commands += DrawText("$segmentEnd", ScenePoint(x + segmentWidth, y + 10.0), TextAnchor.END, bitIndexStyle)
+                commands += DrawRect(SceneRect(x, y + indexBand, segmentWidth, blockHeight), cornerRadius = 2.0, fill = SceneColor("#eff6ff"))
+                commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + indexBand + 23.0), TextAnchor.MIDDLE, labelStyle)
             }
         }
         return LayoutScene(width, height, commands)

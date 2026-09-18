@@ -53,8 +53,8 @@ const packet = galleryJson.find(c => c.family === 'Packet')
 if (!packet.source.includes('64-95: "Data"')) {
   throw new Error('Packet source missing Data range')
 }
-if (!packet.svg.includes('64-95')) {
-  throw new Error('Packet SVG missing Data range')
+if (!packet.svg.includes('>64<') || !packet.svg.includes('>95<') || !packet.svg.includes('>Data<')) {
+  throw new Error('Packet SVG missing Data start/end bit indexes')
 }
 console.log('✓ Packet Data field matched across source and SVG golden')
 
