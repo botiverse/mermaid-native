@@ -1055,6 +1055,28 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.commands.filterIsInstance<DrawRect>().last().rect.width >= measured.width + 32.0)
     }
 
+    @Test
+    fun sankeyDrawsNodeValues() {
+        val diagram = SankeyDiagram(
+            listOf(
+                SankeyNode("grid", "Grid"),
+                SankeyNode("industry", "Industry"),
+                SankeyNode("homes", "Heating, homes"),
+                SankeyNode("loss", "Losses & exports"),
+            ),
+            listOf(
+                SankeyLink("grid", "industry", 12.5),
+                SankeyLink("grid", "homes", 7.25),
+                SankeyLink("industry", "loss", 2.5),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(listOf("Grid 19.75", "Industry 12.5", "Heating, homes 7.25", "Losses & exports 2.5"), labels)
+        assertEquals("#dbeafe", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+    }
+
     @Test fun treemapProducesMeasuredDeterministicWeightedRectangles() {
         val longLabel = "D".repeat(100)
         val diagram = TreemapDiagram(
