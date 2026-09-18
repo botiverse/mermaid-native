@@ -1047,7 +1047,32 @@ class SimpleMermaidLayoutTest {
         val messageLines = scene.commands.filterIsInstance<DrawLine>().drop(2)
         assertEquals(listOf(StrokePattern.SOLID, StrokePattern.DASHED), messageLines.map { it.pattern })
         assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.valid() })
+    }
+
+    @Test
+    fun sequenceDrawsTopAndBottomActorsAndFilledArrowheads() {
+        val diagram = SequenceDiagram(
+            actors = listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
+            messages = listOf(
+                message("A", "B", "Hello Bob!", SequenceLineStyle.SOLID),
+                message("B", "A", "Hi Alice!", SequenceLineStyle.DASHED),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(4, boxes.size)
+        assertTrue(boxes.all { it.fill.value == "#eaeaea" && it.stroke.value == "#666666" && it.cornerRadius == 3.0 })
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertEquals(2, labels.count { it == "Alice" })
+        assertEquals(2, labels.count { it == "Bob" })
+        val heads = scene.commands.filterIsInstance<DrawPolygon>()
+        assertEquals(2, heads.size)
+        assertTrue(heads.all { it.fill.value == "#333333" })
+        val lifelines = scene.commands.filterIsInstance<DrawLine>().take(2)
+        assertTrue(lifelines.all { it.stroke.value == "#999999" && it.pattern == StrokePattern.SOLID })
     }
 
     @Test

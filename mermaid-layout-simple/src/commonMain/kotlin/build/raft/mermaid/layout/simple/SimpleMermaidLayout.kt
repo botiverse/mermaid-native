@@ -2261,14 +2261,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         val actorTop = config.padding
         val messageTop = actorTop + actorHeight + 40.0
         val messageRows = diagram.messages.sumOf { if (it.from == it.to) 2L else 1L }.toInt()
-        val height = messageTop + max(1, messageRows) * config.messageGap + config.padding
+        val actorBottom = messageTop + max(1, messageRows) * config.messageGap
+        val height = actorBottom + actorHeight + config.padding
         val commands = mutableListOf<DrawCommand>()
         diagram.actors.forEach { actor ->
             val center = centers.getValue(actor.id)
             commands += DrawLine(
                 ScenePoint(center, actorTop + actorHeight),
-                ScenePoint(center, height - config.padding),
-                pattern = StrokePattern.DASHED,
+                ScenePoint(center, actorBottom),
+                stroke = SceneColor("#999999"),
+                strokeWidth = 1.0,
             )
         }
         var messageY = messageTop
@@ -2280,25 +2282,36 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val loopRight = minOf(width - config.padding, fromX + 48.0)
                 val endY = messageY + 24.0
                 val points = listOf(ScenePoint(fromX, messageY), ScenePoint(loopRight, messageY), ScenePoint(loopRight, endY), ScenePoint(fromX, endY))
-                commands += DrawPolyline(points, pattern = pattern)
-                commands += arrowHead(points[points.lastIndex - 1], points.last())
+                commands += DrawPolyline(points, pattern = pattern, stroke = SceneColor("#333333"))
+                commands += arrowHead(points[points.lastIndex - 1], points.last(), fill = SceneColor("#333333"))
                 commands += DrawText(message.label, ScenePoint(fromX + 8.0, messageY - 8.0), style = style)
                 messageY += config.messageGap * 2
             } else {
                 val from = ScenePoint(fromX, messageY)
                 val to = ScenePoint(toX, messageY)
-                commands += DrawLine(from, to, pattern = pattern)
-                commands += arrowHead(from, to)
+                commands += DrawLine(from, to, pattern = pattern, stroke = SceneColor("#333333"))
+                commands += arrowHead(from, to, fill = SceneColor("#333333"))
                 commands += DrawText(message.label, ScenePoint((fromX + toX) / 2, messageY - 8.0), TextAnchor.MIDDLE, style)
                 messageY += config.messageGap
             }
         }
-        diagram.actors.forEach { actor ->
-            val actorWidth = actorWidths.getValue(actor.id)
-            val center = centers.getValue(actor.id)
-            val rect = SceneRect(center - actorWidth / 2, actorTop, actorWidth, actorHeight)
-            commands += DrawRect(rect, cornerRadius = 4.0)
-            commands += DrawText(actor.label, ScenePoint(center, actorTop + actorHeight / 2 + style.fontSize * 0.35), TextAnchor.MIDDLE, style)
+        listOf(actorTop, actorBottom).forEach { actorY ->
+            diagram.actors.forEach { actor ->
+                val actorWidth = actorWidths.getValue(actor.id)
+                val center = centers.getValue(actor.id)
+                commands += DrawRect(
+                    SceneRect(center - actorWidth / 2, actorY, actorWidth, actorHeight),
+                    cornerRadius = 3.0,
+                    fill = SceneColor("#eaeaea"),
+                    stroke = SceneColor("#666666"),
+                )
+                commands += DrawText(
+                    actor.label,
+                    ScenePoint(center, actorY + actorHeight / 2 + style.fontSize * 0.35),
+                    TextAnchor.MIDDLE,
+                    style,
+                )
+            }
         }
         return LayoutScene(width, height, commands)
     }
