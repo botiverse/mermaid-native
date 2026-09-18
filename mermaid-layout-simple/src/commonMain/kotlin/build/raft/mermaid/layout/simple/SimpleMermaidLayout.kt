@@ -1431,22 +1431,49 @@ public object SimpleMermaidLayout : DiagramLayout {
         val midX = (left + right) / 2.0
         val midY = (top + bottom) / 2.0
         val body = TextStyle(fontSize = 12.0)
+        val quadrantTitle = TextStyle(fontSize = 12.0, fontWeight = 600)
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, 26.0), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
-        commands += DrawRect(SceneRect(left, top, right - left, bottom - top), cornerRadius = 0.0)
+        val fills = listOf(
+            SceneColor("#dbeafe"),
+            SceneColor("#dcfce7"),
+            SceneColor("#fef3c7"),
+            SceneColor("#fce7f3"),
+        )
+        val quadrantRects = listOf(
+            SceneRect(midX, top, right - midX, midY - top),
+            SceneRect(left, top, midX - left, midY - top),
+            SceneRect(left, midY, midX - left, bottom - midY),
+            SceneRect(midX, midY, right - midX, bottom - midY),
+        )
+        quadrantRects.forEachIndexed { index, rect ->
+            commands += DrawRect(rect, cornerRadius = 0.0, fill = fills[index], stroke = fills[index], strokeWidth = 1.0)
+        }
         commands += DrawLine(ScenePoint(midX, top), ScenePoint(midX, bottom))
         commands += DrawLine(ScenePoint(left, midY), ScenePoint(right, midY))
+        commands += DrawPolyline(
+            listOf(
+                ScenePoint(left, top),
+                ScenePoint(right, top),
+                ScenePoint(right, bottom),
+                ScenePoint(left, bottom),
+                ScenePoint(left, top),
+            ),
+            stroke = SceneColor("#334155"),
+        )
         commands += DrawText(diagram.xAxis.lowLabel, ScenePoint(left, bottom + 22.0), style = body)
         commands += DrawText(diagram.xAxis.highLabel, ScenePoint(right, bottom + 22.0), TextAnchor.END, body)
         commands += DrawText(diagram.yAxis.lowLabel, ScenePoint(left - 10.0, bottom), TextAnchor.END, body)
         commands += DrawText(diagram.yAxis.highLabel, ScenePoint(left - 10.0, top + 10.0), TextAnchor.END, body)
         val quadrantPositions = listOf(
-            ScenePoint(right - 10.0, top + 20.0) to TextAnchor.END,
-            ScenePoint(left + 10.0, top + 20.0) to TextAnchor.START,
-            ScenePoint(left + 10.0, bottom - 12.0) to TextAnchor.START,
-            ScenePoint(right - 10.0, bottom - 12.0) to TextAnchor.END,
+            ScenePoint((midX + right) / 2.0, top + 20.0) to TextAnchor.MIDDLE,
+            ScenePoint((left + midX) / 2.0, top + 20.0) to TextAnchor.MIDDLE,
+            ScenePoint((left + midX) / 2.0, midY + 20.0) to TextAnchor.MIDDLE,
+            ScenePoint((midX + right) / 2.0, midY + 20.0) to TextAnchor.MIDDLE,
         )
-        diagram.quadrantLabels.forEachIndexed { index, label -> label?.let { commands += DrawText(it, quadrantPositions[index].first, quadrantPositions[index].second, body) } }
+        diagram.quadrantLabels.forEachIndexed { index, label ->
+            label?.let { commands += DrawText(it, quadrantPositions[index].first, quadrantPositions[index].second, quadrantTitle) }
+        }
         diagram.points.forEach { point ->
             val x = (left + point.x * (right - left)).xyCoordinate()
             val y = (bottom - point.y * (bottom - top)).xyCoordinate()

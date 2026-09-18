@@ -1454,8 +1454,26 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
-        assertEquals(1, first.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(4, first.commands.filterIsInstance<DrawRect>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "High engagement" })
+    }
+
+    @Test
+    fun quadrantChartDrawsFilledQuadrantsAndCenteredLabels() {
+        val diagram = QuadrantChartDiagram(
+            "Portfolio",
+            QuadrantAxis("Low reach", "High reach"),
+            QuadrantAxis("Low engagement", "High engagement"),
+            listOf("Expand", "Promote", "Re-evaluate", "Improve"),
+            listOf(QuadrantPoint("A", 0.25, 0.75)),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val fills = scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }
+        assertEquals(listOf("#dbeafe", "#dcfce7", "#fef3c7", "#fce7f3"), fills)
+        val expand = scene.commands.filterIsInstance<DrawText>().first { it.text == "Expand" }
+        assertEquals(TextAnchor.MIDDLE, expand.anchor)
+        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
     }
 
     @Test
