@@ -418,13 +418,13 @@ class SimpleMermaidLayoutTest {
         assertTrue(rails.all { it.fill.value == "#fcfcfc" && it.stroke.value == "#707070" })
         val bodies = rects.filter { it.rect.width > 32.0 && it.stroke.value == "#707070" }
         assertEquals(2, bodies.size)
-        val nodes = rects.filter { it.fill.value == "#eeeeee" }
+        val nodes = rects.filter { it.fill.value == "#ffffff" && it.stroke.value == "#2563eb" }
         assertEquals(1, nodes.size)
-        assertTrue(nodes.all { it.stroke.value == "#999999" && it.cornerRadius == 0.0 })
+        assertTrue(nodes.all { it.cornerRadius == 0.0 })
         val diamond = scene.commands.filterIsInstance<DrawPolygon>().single { it.points.size == 4 }
-        assertEquals("#eeeeee", diamond.fill.value)
+        assertEquals("#fef3c7", diamond.fill.value)
         val outline = scene.commands.filterIsInstance<DrawPolyline>().single { it.points.size == 5 }
-        assertEquals("#999999", outline.stroke.value)
+        assertEquals("#d97706", outline.stroke.value)
         assertTrue(scene.commands.filterIsInstance<DrawLine>().all { it.stroke.value == "#666666" })
         assertTrue(scene.commands.filterIsInstance<DrawPolygon>().filter { it.points.size == 3 }.all { it.fill.value == "#333333" })
     }

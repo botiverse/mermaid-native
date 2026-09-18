@@ -529,9 +529,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.lanes.flatMap { it.nodes }.forEach { node ->
             val point = nodePoints.getValue(node.id)
             when (node.shape) {
-                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.0)
-                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 5.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.0)
-                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.0)
+                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 12.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
                 SwimlaneNodeShape.DECISION -> {
                     val diamond = listOf(
                         ScenePoint(point.x, point.y - nodeHeight / 2.0),
@@ -539,10 +539,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(point.x, point.y + nodeHeight / 2.0),
                         ScenePoint(point.x - nodeWidth / 2.0, point.y),
                     ).map { it.canonical() }
-                    commands += DrawPolygon(diamond, fill = SceneColor("#eeeeee"))
-                    commands += DrawPolyline(diamond + diamond.first(), stroke = SceneColor("#999999"), strokeWidth = 1.0)
+                    commands += DrawPolygon(diamond, fill = SceneColor("#fef3c7"))
+                    commands += DrawPolyline(diamond + diamond.first(), stroke = SceneColor("#d97706"), strokeWidth = 1.5)
                 }
-                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.0)
+                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor("#dcfce7"), stroke = SceneColor("#15803d"), strokeWidth = 1.5)
             }
             commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), TextAnchor.MIDDLE, nodeStyle)
         }
