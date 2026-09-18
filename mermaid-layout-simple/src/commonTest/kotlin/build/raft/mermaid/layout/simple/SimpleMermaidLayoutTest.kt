@@ -275,19 +275,42 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         // The effect renders as the fish head polygon plus a horizontal spine.
-        assertEquals(1, first.commands.filterIsInstance<DrawPolygon>().size)
+        assertTrue(first.commands.filterIsInstance<DrawPolygon>().isNotEmpty())
         assertTrue(first.commands.filterIsInstance<DrawPolyline>().isNotEmpty())
         // Causes alternate sides of the spine: upper labels above, lower below.
         val labelY = { text: String ->
             first.commands.filterIsInstance<DrawText>().first { it.text == text }.origin.y
         }
-        val spineY = labelY("Blurry Photo")
+        val spineY = first.commands.filterIsInstance<DrawPolyline>().first().points.first().y
         assertTrue(labelY("Process") < spineY, "first cause should sit above the spine")
         assertTrue(labelY("Equipment") > spineY, "second cause should sit below the spine")
         assertTrue(labelY("Environment") < spineY, "third cause should sit above the spine")
         // Measured layout: the widest sub-cause label must fit inside the scene.
         val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0)).width + 160.0
         assertTrue(first.width >= required, "width ${first.width} below required $required")
+    }
+
+    @Test
+    fun ishikawaDrawsCauseLabelBoxesAndFishHead() {
+        val diagram = IshikawaDiagram(
+            IshikawaNode(
+                "Blurry Photo",
+                listOf(
+                    IshikawaNode("Process", listOf(IshikawaNode("Out of focus"))),
+                    IshikawaNode("Equipment", listOf(IshikawaNode("Dirty lens"))),
+                    IshikawaNode("Environment", listOf(IshikawaNode("Too dark"))),
+                ),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(3, boxes.size)
+        assertTrue(boxes.all { it.fill.value == "#e2e8f0" })
+        assertEquals("#e2e8f0", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("Blurry", "Photo", "Process", "Equipment", "Environment")))
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().size > 3)
     }
 
     @Test

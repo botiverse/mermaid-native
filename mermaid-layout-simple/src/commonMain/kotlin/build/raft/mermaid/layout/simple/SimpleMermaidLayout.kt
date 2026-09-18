@@ -2617,13 +2617,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene {
         val style = TextStyle(fontSize = 13.0)
-        val headStyle = TextStyle(fontSize = 15.0, fontWeight = 600, color = SceneColor("#ffffff"))
+        val headStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
+        val causeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val chromeFill = SceneColor("#e2e8f0")
         val spineColor = SceneColor("#334155")
         val boneColor = SceneColor("#475569")
         val subBoneColor = SceneColor("#94a3b8")
         val spineBase = 240.0
         val rowHeight = 26.0
         val boneSlope = 0.42
+        val labelBoxHeight = 24.0
         val causes = diagram.effect.children
 
         fun descendants(node: IshikawaNode): Int = node.children.sumOf { 1 + descendants(it) }
@@ -2648,12 +2651,13 @@ public object SimpleMermaidLayout : DiagramLayout {
                 else -> max(minSideLen, max(pool * total / all, side.maxOf { flatten(it).size } * rowHeight))
             }
         }
-        val upperLen = sideLength(upperCauses, upperTotal, descendantTotal)
-        val lowerLen = sideLength(lowerCauses, lowerTotal, descendantTotal)
+        val upperLen = sideLength(upperCauses, upperTotal, descendantTotal) + labelBoxHeight
+        val lowerLen = sideLength(lowerCauses, lowerTotal, descendantTotal) + labelBoxHeight
 
-        val headLabelWidth = textMeasurer.measure(diagram.effect.text, headStyle).width
-        val headWidth = headLabelWidth + 48.0
-        val headHeight = max(48.0, headStyle.fontSize * 3.2)
+        val headLines = diagram.effect.text.split(Regex("\\s+")).filter { it.isNotEmpty() }.ifEmpty { listOf(diagram.effect.text) }
+        val headLabelWidth = headLines.maxOf { textMeasurer.measure(it, headStyle).width }
+        val headWidth = max(headLabelWidth + 56.0, 96.0)
+        val headHeight = max(64.0, headLines.size * (headStyle.fontSize + 6.0) + 28.0)
         val slotGap = 44.0
         val slotPadding = 96.0
         val tail = 40.0
@@ -2662,8 +2666,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val contentWidths = causes.map { subtreeWidth(it) }
         val slots = contentWidths.map { it + slotPadding + slotGap }
         val width = config.padding * 2.0 + slots.sum() - (if (causes.isEmpty()) slotGap else 0.0) + tail + headWidth
-        val spineY = config.padding + upperLen
-        val height = config.padding * 2.0 + upperLen + lowerLen
+        val spineY = config.padding + labelBoxHeight + upperLen
+        val height = config.padding * 2.0 + labelBoxHeight * 2.0 + upperLen + lowerLen
         val headX = width - config.padding - headWidth
 
         val commands = mutableListOf<DrawCommand>()
@@ -2672,19 +2676,29 @@ public object SimpleMermaidLayout : DiagramLayout {
             stroke = spineColor,
             strokeWidth = 2.0,
         )
-        commands += DrawPolygon(
-            listOf(
-                ScenePoint(headX, spineY - headHeight / 2.0),
-                ScenePoint(headX + headWidth, spineY),
-                ScenePoint(headX, spineY + headHeight / 2.0),
-            ),
-            fill = SceneColor("#334155"),
-        )
-        commands += DrawText(
-            diagram.effect.text,
-            ScenePoint(headX + 18.0, spineY + headStyle.fontSize * 0.5),
-            style = headStyle,
-        )
+        val headTop = ScenePoint(headX, spineY - headHeight / 2.0)
+        val headBottom = ScenePoint(headX, spineY + headHeight / 2.0)
+        val headControl = ScenePoint(headX + headWidth * 2.0, spineY)
+        val headCurve = (0..8).map { step ->
+            val t = step / 8.0
+            val u = 1.0 - t
+            ScenePoint(
+                u * u * headBottom.x + 2.0 * u * t * headControl.x + t * t * headTop.x,
+                u * u * headBottom.y + 2.0 * u * t * headControl.y + t * t * headTop.y,
+            )
+        }
+        val headPoints = listOf(headTop) + headCurve
+        commands += DrawPolygon(headPoints, fill = chromeFill)
+        commands += DrawPolyline(headPoints + headTop, stroke = spineColor, strokeWidth = 2.0)
+        val headLineGap = headStyle.fontSize + 6.0
+        val headTextStart = spineY - (headLines.size - 1) * headLineGap / 2.0 + headStyle.fontSize * 0.35
+        headLines.forEachIndexed { index, line ->
+            commands += DrawText(
+                line,
+                ScenePoint(headX + 18.0, headTextStart + index * headLineGap),
+                style = headStyle,
+            )
+        }
 
         var cursorX = config.padding
         causes.forEachIndexed { index, cause ->
@@ -2696,20 +2710,34 @@ public object SimpleMermaidLayout : DiagramLayout {
             val anchor = ScenePoint(slotCenter, spineY)
             val boneEnd = ScenePoint(slotCenter - sideLen * boneSlope, spineY + side * sideLen)
             commands += DrawLine(anchor, boneEnd, stroke = boneColor)
+            commands += arrowHead(boneEnd, anchor, spineColor)
+            val causeWidth = textMeasurer.measure(cause.text, causeStyle).width
+            val boxWidth = causeWidth + 16.0
+            commands += DrawRect(
+                SceneRect(boneEnd.x - boxWidth / 2.0, boneEnd.y - labelBoxHeight / 2.0, boxWidth, labelBoxHeight),
+                cornerRadius = 2.0,
+                fill = chromeFill,
+                stroke = spineColor,
+            )
             commands += DrawText(
                 cause.text,
-                ScenePoint(slotCenter + 6.0, spineY + side * 6.0 + (if (upper) 0.0 else style.fontSize * 0.4)),
-                style = TextStyle(fontSize = 13.0, fontWeight = 600),
+                ScenePoint(boneEnd.x, boneEnd.y + causeStyle.fontSize * 0.35),
+                TextAnchor.MIDDLE,
+                causeStyle,
             )
             val entries = flatten(cause).drop(1)
                 .mapIndexed { entryIndex, pair -> Triple(pair.first, pair.second, entryIndex) }
                 .sortedWith(compareBy({ it.second }, { it.third }))
+            val usable = max(rowHeight, sideLen - labelBoxHeight)
             entries.forEachIndexed { _, (entry, depth, orderIndex) ->
-                val y = spineY + side * min((orderIndex + 1) * rowHeight, sideLen)
+                val y = spineY + side * min((orderIndex + 1) * rowHeight, usable)
                 val t = abs(y - spineY) / sideLen
                 val boneX = slotCenter - t * sideLen * boneSlope
                 val stub = 20.0 + depth * 14.0
-                commands += DrawLine(ScenePoint(boneX, y), ScenePoint(boneX - stub, y), stroke = subBoneColor)
+                val stubStart = ScenePoint(boneX, y)
+                val stubEnd = ScenePoint(boneX - stub, y)
+                commands += DrawLine(stubStart, stubEnd, stroke = subBoneColor)
+                commands += arrowHead(stubEnd, stubStart, subBoneColor)
                 commands += DrawText(
                     entry.text,
                     ScenePoint(boneX - stub - 6.0, y + style.fontSize * 0.4),
