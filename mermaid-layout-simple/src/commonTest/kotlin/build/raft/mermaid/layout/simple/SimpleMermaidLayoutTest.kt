@@ -1203,6 +1203,10 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Overlap", longLabel, "Beta", "Gamma", "AB", "All")))
         val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600))
         assertTrue(first.width >= measured.width + 80.0)
+        val ellipses = first.commands.filterIsInstance<DrawEllipse>()
+        assertTrue(ellipses[2].center.y < ellipses[0].center.y)
+        assertTrue(ellipses[2].center.y < ellipses[1].center.y)
+        assertEquals("#60a5fa", ellipses[0].fill.value)
     }
 
     @Test fun vennMeasuresLongTitleWithItsRenderedStyle() {
