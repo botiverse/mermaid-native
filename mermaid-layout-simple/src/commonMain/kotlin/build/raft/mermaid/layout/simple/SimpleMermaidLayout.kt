@@ -1086,10 +1086,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         val textStyle = TextStyle(fontSize = 12.0, fontWeight = 500)
         val layerGap = 120.0
         val nodeGap = 24.0
-        val nodeWidth = max(160.0, diagram.nodes.maxOf { textMeasurer.measure(it.label, textStyle).width + 32.0 }).xyCoordinate()
         val maxValue = diagram.links.maxOf { it.value }
         val incoming = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.targetId == node.id }.sumOf { it.value } }
         val outgoing = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.sourceId == node.id }.sumOf { it.value } }
+        fun nodeWeight(id: String): Double = max(incoming.getValue(id), outgoing.getValue(id))
+        fun nodeCaption(label: String, id: String): String = "${label} ${nodeWeight(id).canonicalNumber()}"
+        val nodeWidth = max(160.0, diagram.nodes.maxOf { textMeasurer.measure(nodeCaption(it.label, it.id), textStyle).width + 32.0 }).xyCoordinate()
         val nodeHeights = diagram.nodes.associate { node ->
             node.id to max(40.0, max(incoming.getValue(node.id), outgoing.getValue(node.id)) / maxValue * 100.0).xyCoordinate()
         }
@@ -1144,7 +1146,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val rect = placements.getValue(node.id)
             commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"))
             commands += DrawText(
-                node.label,
+                nodeCaption(node.label, node.id),
                 ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + 4.0),
                 anchor = TextAnchor.MIDDLE,
                 style = textStyle,
