@@ -401,6 +401,35 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun swimlaneDrawsLaneTitleRailsAndDecisionChrome() {
+        val diagram = SwimlaneDiagram(
+            FlowDirection.LR,
+            listOf(
+                Swimlane("customer", "Customer", listOf(SwimlaneNode("request", "Request", SwimlaneNodeShape.RECTANGLE))),
+                Swimlane("support", "Support", listOf(SwimlaneNode("triage", "Triage", SwimlaneNodeShape.DECISION))),
+            ),
+            listOf(SwimlaneEdge("request", "triage")),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val rects = scene.commands.filterIsInstance<DrawRect>()
+        val rails = rects.filter { it.rect.width == 32.0 }
+        assertEquals(2, rails.size)
+        assertTrue(rails.all { it.fill.value == "#fcfcfc" && it.stroke.value == "#707070" })
+        val bodies = rects.filter { it.rect.width > 32.0 && it.stroke.value == "#707070" }
+        assertEquals(2, bodies.size)
+        val nodes = rects.filter { it.fill.value == "#eeeeee" }
+        assertEquals(1, nodes.size)
+        assertTrue(nodes.all { it.stroke.value == "#999999" && it.cornerRadius == 0.0 })
+        val diamond = scene.commands.filterIsInstance<DrawPolygon>().single { it.points.size == 4 }
+        assertEquals("#eeeeee", diamond.fill.value)
+        val outline = scene.commands.filterIsInstance<DrawPolyline>().single { it.points.size == 5 }
+        assertEquals("#999999", outline.stroke.value)
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().all { it.stroke.value == "#666666" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().filter { it.points.size == 3 }.all { it.fill.value == "#333333" })
+    }
+
+    @Test
     fun requirementProducesDeterministicCardsAndRelationship() {
         val diagram = RequirementDiagram(
             requirements = listOf(RequirementDefinition("secure_login", "AUTH-1", "Users authenticate securely", RequirementRisk.HIGH, RequirementVerifyMethod.TEST)),
