@@ -115,6 +115,14 @@ if (!vueCode.includes('OfficialMermaidPreview') || !vueCode.includes('Official M
 if (!vueCode.includes('card-compare-grid') || !vueCode.includes('playground-compare-grid') || !vueCode.includes('-official')) {
   throw new Error('Official comparison pane must be full-width with its own zoom controls')
 }
+const customCssPath = resolve(docsRoot, '.vitepress/theme/custom.css')
+const customCss = await readFile(customCssPath, 'utf8')
+if (
+  !customCss.includes(':not(.has-sidebar):has(.mermaid-gallery-container)') ||
+  !customCss.includes('max-width: none')
+) {
+  throw new Error('examples/playground must beat VitePress 752px doc column with a full-width content well')
+}
 if (vueCode.includes('fallback') && vueCode.includes('mermaid.render') && vueCode.includes('editorPreviewHtml')) {
   throw new Error('Official Mermaid must not replace the Native preview path')
 }
