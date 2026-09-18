@@ -306,18 +306,45 @@ class SimpleMermaidLayoutTest {
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         // Only the non-anchor node renders as an ellipse.
         assertEquals(1, first.commands.filterIsInstance<DrawEllipse>().size)
-        // Axes plus one dependency link plus one dashed evolution arrow.
+        // Axes, three stage dividers, one dependency link, and one dashed evolution arrow.
         val lines = first.commands.filterIsInstance<DrawLine>()
-        assertEquals(4, lines.size)
-        assertEquals(1, lines.count { it.pattern == StrokePattern.DASHED })
+        assertEquals(7, lines.size)
+        assertEquals(4, lines.count { it.pattern == StrokePattern.DASHED })
         // Visibility inversion: the visibility-1.0 anchor sits above the visibility-0.0 component.
         val anchorLabel = first.commands.filterIsInstance<DrawText>().first { it.text == "Business" }
         val componentLabel = first.commands.filterIsInstance<DrawText>().first { it.text == "Cup of Tea" }
         assertTrue(anchorLabel.origin.y < componentLabel.origin.y)
         // Evolution arrow keeps visibility constant (horizontal) and points right.
-        val evolutionLine = lines.first { it.pattern == StrokePattern.DASHED }
+        val evolutionLine = lines.first { it.stroke.value == "#dc2626" }
+        assertEquals(StrokePattern.DASHED, evolutionLine.pattern)
         assertEquals(evolutionLine.from.y, evolutionLine.to.y)
         assertTrue(evolutionLine.to.x > evolutionLine.from.x)
+    }
+
+    @Test
+    fun wardleyDrawsEvolutionVisibilityAxesAndStages() {
+        val diagram = WardleyMapDiagram(
+            title = "Tea Shop",
+            nodes = listOf(
+                WardleyNode("Business", 1.0, 0.9, anchor = true),
+                WardleyNode("Cup of Tea", 0.0, 0.1, anchor = false),
+            ),
+            links = listOf(WardleyLink("Business", "Cup of Tea")),
+            evolutions = listOf(WardleyEvolution("Cup of Tea", 0.9)),
+            notes = listOf(build.raft.mermaid.core.WardleyNote("note text", 0.5, 0.5)),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue("Evolution" in labels)
+        assertTrue("Visibility" in labels)
+        assertEquals(listOf("Genesis", "Custom Built", "Product", "Commodity"), labels.filter { it in setOf("Genesis", "Custom Built", "Product", "Commodity") })
+        assertTrue("note text" in labels)
+        assertEquals(600, scene.commands.filterIsInstance<DrawText>().first { it.text == "note text" }.style.fontWeight)
+        val evolve = scene.commands.filterIsInstance<DrawLine>().first { it.stroke.value == "#dc2626" }
+        assertEquals(StrokePattern.DASHED, evolve.pattern)
+        assertEquals(evolve.from.y, evolve.to.y)
+        assertTrue(evolve.to.x > evolve.from.x)
     }
 
     @Test
