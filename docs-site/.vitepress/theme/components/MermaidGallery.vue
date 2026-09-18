@@ -148,6 +148,15 @@ function decodeSource(): string | null {
   }
 }
 
+// Dialects that are not implemented in official Mermaid.js (or exist only in a
+// Native-only experimental slice). For these the comparison preview can never
+// succeed and would only show a dead "could not render" error, so we hide it.
+const OFFICIAL_UNSUPPORTED_SLUGS = new Set(['usecase', 'zenuml'])
+
+function officialComparable(card: any): boolean {
+  return !OFFICIAL_UNSUPPORTED_SLUGS.has(card.slug)
+}
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(editorSource, () => {
@@ -635,9 +644,15 @@ onUnmounted(() => {
                   :style="{ transform: svgTransform(`${card.slug}-official`) }"
                 >
                   <OfficialMermaidPreview
+                    v-if="officialComparable(card)"
                     :source="card.source"
                     :render-key="card.slug"
                   />
+                  <p v-else class="official-parked">
+                    Comparison preview is not available for {{ card.family }} —
+                    the dialect is Native-only and not implemented in official
+                    Mermaid. Native render on the left is the reference.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1149,6 +1164,16 @@ onUnmounted(() => {
   font-size: 0.875rem;
   color: var(--vp-c-text-2);
   max-width: 680px;
+}
+
+.official-parked {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-3);
+  background: var(--vp-c-bg-soft);
+  border: 1px dashed var(--vp-c-divider);
+  border-radius: 6px;
 }
 
 .card-actions {
