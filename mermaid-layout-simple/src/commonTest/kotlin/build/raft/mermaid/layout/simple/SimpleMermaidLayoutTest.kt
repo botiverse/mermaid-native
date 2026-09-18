@@ -332,10 +332,32 @@ class SimpleMermaidLayoutTest {
         )
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
-        assertEquals(2, first.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(4, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertEquals(3, first.commands.filterIsInstance<DrawPolyline>().size)
         val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600)).width + 48.0
         assertTrue(first.width >= required)
+    }
+
+    @Test
+    fun treeViewDrawsOfficialRootAndBoldDirectories() {
+        val diagram = TreeViewDiagram(
+            listOf(
+                TreeViewNode("project", 0, null, true),
+                TreeViewNode("src", 1, 0, true),
+                TreeViewNode("index.ts", 2, 1, false),
+                TreeViewNode("package.json", 0, null, false),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>()
+        assertEquals("/", labels.first().text)
+        assertEquals(600, labels.first().style.fontWeight)
+        assertEquals(listOf("/", "project", "src"), labels.filter { it.style.fontWeight == 600 }.map { it.text })
+        assertEquals(listOf("index.ts", "package.json"), labels.filter { it.style.fontWeight == 400 }.map { it.text })
+        val dots = scene.commands.filterIsInstance<DrawEllipse>()
+        assertEquals("#f59e0b", dots.first().fill.value)
+        assertEquals("#3b82f6", dots.last().fill.value)
     }
 
     @Test
@@ -351,8 +373,8 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val ellipses = scene.commands.filterIsInstance<DrawEllipse>()
         val polylines = scene.commands.filterIsInstance<DrawPolyline>()
-        assertEquals(4, ellipses.size)
-        assertEquals(3, polylines.size)
+        assertEquals(5, ellipses.size)
+        assertEquals(4, polylines.size)
 
         fun onEllipseBoundary(point: ScenePoint, ellipse: DrawEllipse): Boolean {
             val nx = (point.x - ellipse.center.x) / ellipse.radiusX
