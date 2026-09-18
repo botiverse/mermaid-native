@@ -1,19 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="711.5999999999999" height="274" viewBox="0 0 711.5999999999999 274" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="711.5999999999999" height="346" viewBox="0 0 711.5999999999999 346" role="img">
   <text x="355.79999999999995" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Checkout journey</text>
-  <rect x="24" y="66" width="108" height="68" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <rect x="24" y="66" width="108" height="86" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
   <text x="36" y="104" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Discover</text>
-  <rect x="144" y="66" width="264.79999999999995" height="68" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
-  <text x="154" y="90" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Find product</text>
-  <text x="154" y="114" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper</text>
-  <rect x="422.79999999999995" y="66" width="264.79999999999995" height="68" rx="8" fill="#fef3c7" stroke="#334155" stroke-width="1.5"/>
-  <text x="432.79999999999995" y="90" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Review &amp; compare</text>
-  <text x="432.79999999999995" y="114" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 3 · Shopper, Advisor</text>
-  <rect x="24" y="158" width="108" height="68" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
-  <text x="36" y="196" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Purchase</text>
-  <rect x="144" y="158" width="264.79999999999995" height="68" rx="8" fill="#bbf7d0" stroke="#334155" stroke-width="1.5"/>
-  <text x="154" y="182" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Add to cart</text>
-  <text x="154" y="206" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 5 · Shopper</text>
-  <rect x="422.79999999999995" y="158" width="264.79999999999995" height="68" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
-  <text x="432.79999999999995" y="182" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Pay securely</text>
-  <text x="432.79999999999995" y="206" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper, Payment service</text>
+  <rect x="144" y="66" width="264.79999999999995" height="86" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
+  <text x="154" y="88" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Find product</text>
+  <text x="154" y="108" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper</text>
+  <ellipse cx="160" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="174" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="188" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="202" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="216" cy="130" rx="5" ry="5" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="394.79999999999995" cy="82" rx="4" ry="4" fill="#8FBC8F" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <rect x="422.79999999999995" y="66" width="264.79999999999995" height="86" rx="8" fill="#fef3c7" stroke="#334155" stroke-width="1.5"/>
+  <text x="432.79999999999995" y="88" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Review &amp; compare</text>
+  <text x="432.79999999999995" y="108" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 3 · Shopper, Advisor</text>
+  <ellipse cx="438.79999999999995" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="452.79999999999995" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="466.79999999999995" cy="130" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="480.79999999999995" cy="130" rx="5" ry="5" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="494.79999999999995" cy="130" rx="5" ry="5" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="673.5999999999999" cy="82" rx="4" ry="4" fill="#8FBC8F" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="661.5999999999999" cy="82" rx="4" ry="4" fill="#7CFC00" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <rect x="24" y="176" width="108" height="86" rx="8" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <text x="36" y="214" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Purchase</text>
+  <rect x="144" y="176" width="264.79999999999995" height="86" rx="8" fill="#bbf7d0" stroke="#334155" stroke-width="1.5"/>
+  <text x="154" y="198" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Add to cart</text>
+  <text x="154" y="218" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 5 · Shopper</text>
+  <ellipse cx="160" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="174" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="188" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="202" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="216" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="394.79999999999995" cy="192" rx="4" ry="4" fill="#8FBC8F" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <rect x="422.79999999999995" y="176" width="264.79999999999995" height="86" rx="8" fill="#dcfce7" stroke="#334155" stroke-width="1.5"/>
+  <text x="432.79999999999995" y="198" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Pay securely</text>
+  <text x="432.79999999999995" y="218" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Score 4 · Shopper, Payment service</text>
+  <ellipse cx="438.79999999999995" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="452.79999999999995" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="466.79999999999995" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="480.79999999999995" cy="240" rx="5" ry="5" fill="#334155" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="494.79999999999995" cy="240" rx="5" ry="5" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="673.5999999999999" cy="192" rx="4" ry="4" fill="#8FBC8F" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="661.5999999999999" cy="192" rx="4" ry="4" fill="#00FFFF" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <ellipse cx="30" cy="294" rx="6" ry="6" fill="#8FBC8F" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <text x="40" y="298" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Shopper</text>
+  <ellipse cx="124.4" cy="294" rx="6" ry="6" fill="#7CFC00" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <text x="134.4" y="298" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Advisor</text>
+  <ellipse cx="218.8" cy="294" rx="6" ry="6" fill="#00FFFF" fill-opacity="1" stroke="#334155" stroke-width="1"/>
+  <text x="228.8" y="298" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Payment service</text>
 </svg>

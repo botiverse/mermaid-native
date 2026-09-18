@@ -889,6 +889,32 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun userJourneyDrawsScoreDotsAndActorLegend() {
+        val diagram = UserJourneyDiagram(
+            "Checkout journey",
+            listOf(
+                UserJourneySection(
+                    "Discover",
+                    listOf(
+                        UserJourneyTask("Find product", 4, listOf("Shopper")),
+                        UserJourneyTask("Review & compare", 3, listOf("Shopper", "Advisor")),
+                    ),
+                ),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val dots = scene.commands.filterIsInstance<DrawEllipse>()
+        assertEquals(10 + 3 + 2, dots.size)
+        assertEquals(4, dots.take(5).count { it.fill.value == "#334155" })
+        assertEquals(1, dots.take(5).count { it.fill.value == "#ffffff" })
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue("Shopper" in labels && "Advisor" in labels)
+        assertEquals("#8FBC8F", dots[dots.lastIndex - 1].fill.value)
+        assertEquals("#7CFC00", dots.last().fill.value)
+    }
+
+    @Test
     fun userJourneyWidthContainsLongTitle() {
         val title = "A".repeat(100)
         val diagram = UserJourneyDiagram(
