@@ -1016,10 +1016,30 @@ class SimpleMermaidLayoutTest {
         )
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
         assertTrue(first.commands.filterIsInstance<DrawLine>().size >= 7)
         assertTrue(first.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("main", "develop", "beta", "merge")))
         assertTrue(first.width >= 480.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun gitGraphDrawsCommitCirclesAndTagFlags() {
+        val diagram = GitGraphDiagram(
+            listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
+            listOf(
+                GitGraphCommit("base", "main", emptyList()),
+                GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT, "beta"),
+                GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
+                GitGraphCommit("merge", "main", listOf("release", "feature"), isMerge = true),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val ellipses = scene.commands.filterIsInstance<DrawEllipse>()
+        assertTrue(ellipses.size >= 4)
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolygon>().size)
+        assertEquals("#ede9fe", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals("beta", scene.commands.filterIsInstance<DrawText>().first { it.style.color.value == "#7c3aed" }.text)
     }
 
     @Test fun kanbanProducesMeasuredDeterministicColumnsAndCards() {
