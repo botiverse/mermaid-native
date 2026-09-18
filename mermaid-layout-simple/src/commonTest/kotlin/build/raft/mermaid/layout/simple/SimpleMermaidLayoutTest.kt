@@ -603,6 +603,28 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun xyChartDrawsAxisTicksAndSeriesValueLabels() {
+        val diagram = XyChartDiagram(
+            title = "Sales",
+            xAxis = XyAxis("Quarter", listOf("Q1", "Q2", "Q3", "Q4")),
+            yAxis = NumericAxis("Revenue", 0.0, 100.0),
+            series = listOf(
+                XySeries(XySeriesKind.BAR, listOf(20.0, 45.0, 70.0, 85.0)),
+                XySeries(XySeriesKind.LINE, listOf(25.0, 40.0, 75.0, 90.0)),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("0", "10", "50", "100", "Q1", "Q4")))
+        assertTrue("100.0" !in labels && "0.0" !in labels)
+        assertTrue(labels.containsAll(listOf("20", "45", "70", "85", "25", "40", "75", "90")))
+        assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals("#16a34a", scene.commands.filterIsInstance<DrawPolyline>().first().stroke.value)
+    }
+
+    @Test
     fun entityRelationshipDiagramRendersCardinalityAndAttributesDeterministically() {
         val diagram = EntityRelationshipDiagram(
             entities = listOf(
