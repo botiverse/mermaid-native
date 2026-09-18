@@ -52,6 +52,7 @@ import build.raft.mermaid.core.IshikawaNode
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
+import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadSpecial
 import build.raft.mermaid.core.RailroadDiagram
@@ -226,22 +227,32 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    private fun treeViewNodesWithOfficialRoot(nodes: List<TreeViewNode>): List<TreeViewNode> {
+        if (nodes.isEmpty() || (nodes.first().label == "/" && nodes.first().depth == 0 && nodes.first().parentIndex == null)) {
+            return nodes
+        }
+        return listOf(TreeViewNode("/", 0, null, true)) + nodes.map { node ->
+            node.copy(depth = node.depth + 1, parentIndex = node.parentIndex?.plus(1) ?: 0)
+        }
+    }
+
     private fun layoutTreeView(diagram: TreeViewDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val nodes = treeViewNodesWithOfficialRoot(diagram.nodes)
         val labelStyle = TextStyle(fontSize = 13.0)
         val directoryStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val rowHeight = 36.0
         val indent = 42.0
         val nodeRadius = 5.0
-        val maxLabelRight = diagram.nodes.maxOf { node ->
+        val maxLabelRight = nodes.maxOf { node ->
             config.padding + node.depth * indent + 18.0 + textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width
         }
         val width = max(360.0, maxLabelRight + config.padding)
-        val height = max(180.0, config.padding * 2.0 + diagram.nodes.size * rowHeight)
-        val points = diagram.nodes.mapIndexed { index, node ->
+        val height = max(180.0, config.padding * 2.0 + nodes.size * rowHeight)
+        val points = nodes.mapIndexed { index, node ->
             ScenePoint(config.padding + node.depth * indent, config.padding + index * rowHeight + rowHeight / 2.0)
         }
         val commands = mutableListOf<DrawCommand>()
-        diagram.nodes.forEachIndexed { index, node ->
+        nodes.forEachIndexed { index, node ->
             val point = points[index]
             node.parentIndex?.let { parentIndex ->
                 val parent = points[parentIndex]
