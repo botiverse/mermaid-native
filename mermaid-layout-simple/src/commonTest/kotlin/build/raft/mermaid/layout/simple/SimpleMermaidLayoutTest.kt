@@ -553,7 +553,24 @@ class SimpleMermaidLayoutTest {
         assertEquals(first, second)
         assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
         assertEquals(2, first.commands.filterIsInstance<DrawText>().count { it.text == "Cross-row payload" })
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "32-40" })
+        val labels = first.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("16", "31", "32", "40")))
+        assertTrue(labels.none { "-" in it && it[0].isDigit() })
+    }
+
+    @Test
+    fun packetDrawsStartAndEndBitIndexes() {
+        val diagram = PacketDiagram(
+            "UDP Packet",
+            listOf(PacketField(0, 15, "Source Port"), PacketField(16, 31, "Destination Port")),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val indexes = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 9.0 }
+        assertEquals(listOf("0", "15", "16", "31"), indexes.map { it.text })
+        assertEquals(TextAnchor.START, indexes[0].anchor)
+        assertEquals(TextAnchor.END, indexes[1].anchor)
+        assertEquals("#eff6ff", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
     }
 
     @Test
