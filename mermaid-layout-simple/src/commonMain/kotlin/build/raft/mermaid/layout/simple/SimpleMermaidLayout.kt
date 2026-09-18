@@ -2621,8 +2621,12 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene {
         val labelStyle = TextStyle(fontSize = 13.0)
         val anchorStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val noteStyle = TextStyle(fontSize = 12.0, fontWeight = 400, color = SceneColor("#475569"))
+        val noteStyle = TextStyle(fontSize = 12.0, fontWeight = 600)
+        val axisStyle = TextStyle(fontSize = 12.0, fontWeight = 600)
+        val stageStyle = TextStyle(fontSize = 11.0)
         val evolveColor = SceneColor("#dc2626")
+        val axisColor = SceneColor("#334155")
+        val stageLineColor = SceneColor("#64748b")
         val commands = mutableListOf<DrawCommand>()
         var cursorY = config.padding
         diagram.title?.let { title ->
@@ -2631,24 +2635,43 @@ public object SimpleMermaidLayout : DiagramLayout {
             cursorY += 30.0
         }
         val width = 720.0
-        val height = cursorY + 480.0
+        val stageNames = listOf("Genesis", "Custom Built", "Product", "Commodity")
+        val axisBand = 44.0
+        val height = cursorY + 480.0 + axisBand
         val plotLeft = config.padding + 40.0
         val plotRight = width - config.padding
-        val plotTop = cursorY + 16.0
-        val plotBottom = height - config.padding - 24.0
+        val plotTop = cursorY + 20.0
+        val plotBottom = height - config.padding - axisBand
         // OWM axes: visibility grows bottom-to-top, evolution grows left-to-right.
         fun x(evolution: Double): Double = plotLeft + evolution * (plotRight - plotLeft)
         fun y(visibility: Double): Double = plotBottom - visibility * (plotBottom - plotTop)
-        commands += DrawLine(
-            ScenePoint(plotLeft, plotTop),
-            ScenePoint(plotLeft, plotBottom),
-            stroke = SceneColor("#334155"),
+        commands += DrawLine(ScenePoint(plotLeft, plotTop), ScenePoint(plotLeft, plotBottom), stroke = axisColor)
+        commands += DrawLine(ScenePoint(plotLeft, plotBottom), ScenePoint(plotRight, plotBottom), stroke = axisColor)
+        stageNames.forEachIndexed { index, name ->
+            if (index > 0) {
+                val dividerX = x(index / stageNames.size.toDouble())
+                commands += DrawLine(
+                    ScenePoint(dividerX, plotTop),
+                    ScenePoint(dividerX, plotBottom),
+                    stroke = stageLineColor,
+                    strokeWidth = 1.0,
+                    pattern = StrokePattern.DASHED,
+                )
+            }
+            commands += DrawText(
+                name,
+                ScenePoint(x((index + 0.5) / stageNames.size), plotBottom + 16.0),
+                TextAnchor.MIDDLE,
+                stageStyle,
+            )
+        }
+        commands += DrawText(
+            "Evolution",
+            ScenePoint((plotLeft + plotRight) / 2.0, plotBottom + 34.0),
+            TextAnchor.MIDDLE,
+            axisStyle,
         )
-        commands += DrawLine(
-            ScenePoint(plotLeft, plotBottom),
-            ScenePoint(plotRight, plotBottom),
-            stroke = SceneColor("#334155"),
-        )
+        commands += DrawText("Visibility", ScenePoint(plotLeft, plotTop - 8.0), TextAnchor.START, axisStyle)
         val centers = diagram.nodes.associateWith { node -> ScenePoint(x(node.evolution), y(node.visibility)) }
         diagram.links.forEach { link: WardleyLink ->
             val from = centers.getValue(diagram.nodes.first { it.name == link.from })
@@ -2671,7 +2694,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(node.name, ScenePoint(center.x, center.y - 12.0), TextAnchor.MIDDLE, if (node.anchor) anchorStyle else labelStyle)
         }
         diagram.notes.forEach { note ->
-            commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.MIDDLE, noteStyle)
+            commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.START, noteStyle)
         }
         return LayoutScene(width, height, commands)
     }
