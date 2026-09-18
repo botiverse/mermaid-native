@@ -957,9 +957,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             listOf(ScenePoint(centerX - 82.0, 220.0 + titleOffset), ScenePoint(centerX + 82.0, 220.0 + titleOffset))
         } else {
             listOf(
-                ScenePoint(centerX - 92.0, 205.0 + titleOffset),
-                ScenePoint(centerX + 92.0, 205.0 + titleOffset),
-                ScenePoint(centerX, 337.0 + titleOffset),
+                ScenePoint(centerX - 92.0, 280.0 + titleOffset),
+                ScenePoint(centerX + 92.0, 280.0 + titleOffset),
+                ScenePoint(centerX, 148.0 + titleOffset),
             )
         }
         val maxSize = diagram.sets.mapNotNull { it.size }.maxOrNull()
