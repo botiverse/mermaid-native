@@ -109,6 +109,7 @@ public object FixedWidthTextMeasurer : TextMeasurer {
 }
 
 private const val PACKET_BITS_PER_ROW: Int = 32
+private const val STATE_TERMINAL_SIZE = 14.0
 
 /** Small deterministic layout with no DOM, JavaScript, ELK, or platform state. */
 public object SimpleMermaidLayout : DiagramLayout {
@@ -2054,7 +2055,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val style = TextStyle()
         val sizes = diagram.states.associate { state ->
             state.id to if (state.kind != StateNodeKind.STATE) {
-                SceneSize(24.0, 24.0)
+                SceneSize(STATE_TERMINAL_SIZE, STATE_TERMINAL_SIZE)
             } else {
                 val text = textMeasurer.measure(state.label, style)
                 SceneSize(max(88.0, text.width + 32.0), max(40.0, text.height + 20.0))
@@ -2095,8 +2096,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             val source = rects[transition.from] ?: return@forEach
             val target = rects[transition.to] ?: return@forEach
             val anchors = edgeAnchors(source, target, horizontal)
-            commands += DrawLine(anchors.first, anchors.second)
-            commands += arrowHead(anchors.first, anchors.second)
+            commands += DrawLine(anchors.first, anchors.second, stroke = SceneColor("#666666"), strokeWidth = 1.0)
+            commands += arrowHead(anchors.first, anchors.second, fill = SceneColor("#333333"))
             if (transition.label.isNotEmpty()) {
                 commands += DrawText(
                     transition.label,
@@ -2110,7 +2111,13 @@ public object SimpleMermaidLayout : DiagramLayout {
             val rect = rects.getValue(state.id)
             when (state.kind) {
                 StateNodeKind.STATE -> {
-                    commands += DrawRect(rect = rect, cornerRadius = 8.0)
+                    commands += DrawRect(
+                        rect = rect,
+                        cornerRadius = 5.0,
+                        fill = SceneColor("#eeeeee"),
+                        stroke = SceneColor("#999999"),
+                        strokeWidth = 1.0,
+                    )
                     commands += DrawText(
                         state.label,
                         ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),
@@ -2118,25 +2125,36 @@ public object SimpleMermaidLayout : DiagramLayout {
                         style,
                     )
                 }
-                StateNodeKind.START -> commands += DrawRect(
-                    rect = rect,
-                    cornerRadius = rect.width / 2,
-                    fill = SceneColor("#334155"),
-                    stroke = SceneColor("#334155"),
-                )
+                StateNodeKind.START -> {
+                    val radius = rect.width / 2.0
+                    commands += DrawEllipse(
+                        center = ScenePoint(rect.x + radius, rect.y + radius),
+                        radiusX = radius,
+                        radiusY = radius,
+                        fill = SceneColor("#222222"),
+                        stroke = SceneColor("#222222"),
+                        strokeWidth = 1.0,
+                    )
+                }
                 StateNodeKind.END -> {
-                    commands += DrawRect(rect = rect, cornerRadius = rect.width / 2)
-                    val inset = 5.0
-                    commands += DrawRect(
-                        rect = SceneRect(
-                            x = rect.x + inset,
-                            y = rect.y + inset,
-                            width = rect.width - inset * 2,
-                            height = rect.height - inset * 2,
-                        ),
-                        cornerRadius = (rect.width - inset * 2) / 2,
-                        fill = SceneColor("#334155"),
-                        stroke = SceneColor("#334155"),
+                    val radius = rect.width / 2.0
+                    val center = ScenePoint(rect.x + radius, rect.y + radius)
+                    commands += DrawEllipse(
+                        center = center,
+                        radiusX = radius,
+                        radiusY = radius,
+                        fill = SceneColor("#ffffff"),
+                        stroke = SceneColor("#222222"),
+                        strokeWidth = 1.5,
+                    )
+                    val inner = radius * 5.0 / 14.0
+                    commands += DrawEllipse(
+                        center = center,
+                        radiusX = inner,
+                        radiusY = inner,
+                        fill = SceneColor("#222222"),
+                        stroke = SceneColor("#222222"),
+                        strokeWidth = 1.0,
                     )
                 }
             }
