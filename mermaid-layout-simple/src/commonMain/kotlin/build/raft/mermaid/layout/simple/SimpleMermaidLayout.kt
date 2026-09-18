@@ -1003,11 +1003,33 @@ public object SimpleMermaidLayout : DiagramLayout {
         fun render(node: TreemapNode, rect: SceneRect, depth: Int) {
             val fill = TREEMAP_COLORS[depth % TREEMAP_COLORS.size]
             commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = SceneColor("#334155"), strokeWidth = 1.0)
-            commands += DrawText(node.label, ScenePoint(rect.x + 8.0, rect.y + 18.0).canonical(), style = labelStyle)
-            node.value?.let {
-                commands += DrawText(it.canonicalNumber(), ScenePoint(rect.x + 8.0, rect.y + 34.0).canonical(), style = valueStyle)
+            val valueText = (node.value ?: if (node.children.isNotEmpty()) node.treemapWeight() else null)?.canonicalNumber()
+            if (node.children.isEmpty()) {
+                commands += DrawText(
+                    node.label,
+                    ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 - 4.0).canonical(),
+                    TextAnchor.MIDDLE,
+                    labelStyle,
+                )
+                valueText?.let {
+                    commands += DrawText(
+                        it,
+                        ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0).canonical(),
+                        TextAnchor.MIDDLE,
+                        valueStyle,
+                    )
+                }
+                return
             }
-            if (node.children.isEmpty()) return
+            commands += DrawText(node.label, ScenePoint(rect.x + 8.0, rect.y + 18.0).canonical(), style = labelStyle)
+            valueText?.let {
+                commands += DrawText(
+                    it,
+                    ScenePoint(rect.x + rect.width - 8.0, rect.y + 18.0).canonical(),
+                    TextAnchor.END,
+                    valueStyle,
+                )
+            }
             val inner = SceneRect(
                 rect.x + 4.0,
                 rect.y + 26.0,
