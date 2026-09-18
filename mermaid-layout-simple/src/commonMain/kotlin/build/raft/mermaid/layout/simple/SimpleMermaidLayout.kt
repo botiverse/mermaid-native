@@ -100,6 +100,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.PI
 import kotlin.math.round
+import kotlin.math.ceil
 
 /** Deterministic text metrics for goldens and hosts without platform font metrics. */
 public object FixedWidthTextMeasurer : TextMeasurer {
@@ -1907,6 +1908,8 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutXyChart(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
         val bodyStyle = TextStyle(fontSize = 12.0)
+        val tickStyle = TextStyle(fontSize = 11.0)
+        val valueStyle = TextStyle(fontSize = 11.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val width = 640.0
         val height = 400.0
@@ -1925,12 +1928,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, config.padding + 18.0), TextAnchor.MIDDLE, titleStyle) }
         commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
         commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
-        commands += DrawText(diagram.yAxis.maximum.toString(), ScenePoint(left - 8.0, top + 4.0), TextAnchor.END, bodyStyle)
-        commands += DrawText(diagram.yAxis.minimum.toString(), ScenePoint(left - 8.0, bottom + 4.0), TextAnchor.END, bodyStyle)
+        numericAxisTicks(diagram.yAxis.minimum, diagram.yAxis.maximum).forEach { tick ->
+            val tickY = y(tick)
+            commands += DrawLine(ScenePoint(left - 6.0, tickY), ScenePoint(left, tickY), strokeWidth = 1.0)
+            commands += DrawText(tick.canonicalNumber(), ScenePoint(left - 8.0, tickY + 4.0), TextAnchor.END, tickStyle)
+        }
         diagram.yAxis.title?.let { commands += DrawText(it, ScenePoint(left, top - 12.0), style = bodyStyle) }
         diagram.xAxis.title?.let { commands += DrawText(it, ScenePoint(left + plotWidth / 2.0, height - config.padding), TextAnchor.MIDDLE, bodyStyle) }
         categories.forEachIndexed { index, category ->
-            commands += DrawText(category, ScenePoint(x(index), bottom + 20.0), TextAnchor.MIDDLE, bodyStyle)
+            val tickX = x(index)
+            commands += DrawLine(ScenePoint(tickX, bottom), ScenePoint(tickX, bottom + 6.0), strokeWidth = 1.0)
+            commands += DrawText(category, ScenePoint(tickX, bottom + 20.0), TextAnchor.MIDDLE, bodyStyle)
         }
 
         val barSeries = diagram.series.filter { it.kind == XySeriesKind.BAR }
@@ -1943,9 +1951,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                     series.values.forEachIndexed { index, value ->
                         val baseline = y(diagram.yAxis.minimum.coerceAtLeast(0.0).coerceAtMost(diagram.yAxis.maximum))
                         val valueY = y(value)
+                        val barX = (x(index) - barSeries.size * barWidth / 2.0 + barIndex * barWidth).xyCoordinate()
                         commands += DrawRect(
                             rect = SceneRect(
-                                x = (x(index) - barSeries.size * barWidth / 2.0 + barIndex * barWidth).xyCoordinate(),
+                                x = barX,
                                 y = minOf(baseline, valueY),
                                 width = barWidth.xyCoordinate(),
                                 height = max(1.0, kotlin.math.abs(valueY - baseline)).xyCoordinate(),
@@ -1954,19 +1963,55 @@ public object SimpleMermaidLayout : DiagramLayout {
                             stroke = color,
                             strokeWidth = 1.0,
                         )
+                        commands += DrawText(
+                            value.canonicalNumber(),
+                            ScenePoint((barX + barWidth / 2.0).xyCoordinate(), (minOf(baseline, valueY) - 6.0).xyCoordinate()),
+                            TextAnchor.MIDDLE,
+                            valueStyle.copy(color = color),
+                        )
                     }
                     barIndex += 1
                 }
                 XySeriesKind.LINE -> {
-                    commands += DrawPolyline(
-                        points = series.values.mapIndexed { index, value -> ScenePoint(x(index), y(value)) },
-                        stroke = color,
-                        strokeWidth = 2.0,
-                    )
+                    val points = series.values.mapIndexed { index, value -> ScenePoint(x(index), y(value)) }
+                    commands += DrawPolyline(points = points, stroke = color, strokeWidth = 2.0)
+                    series.values.forEachIndexed { index, value ->
+                        commands += DrawText(
+                            value.canonicalNumber(),
+                            ScenePoint(x(index), (y(value) - 10.0).xyCoordinate()),
+                            TextAnchor.MIDDLE,
+                            valueStyle.copy(color = color),
+                        )
+                    }
                 }
             }
         }
         return LayoutScene(width, height, commands)
+    }
+
+    private fun numericAxisTicks(minimum: Double, maximum: Double): List<Double> {
+        val span = maximum - minimum
+        if (span <= 0.0) return listOf(minimum.xyCoordinate())
+        val raw = span / 8.0
+        var magnitude = 1.0
+        while (magnitude * 10.0 <= raw) magnitude *= 10.0
+        while (magnitude > raw) magnitude /= 10.0
+        val residual = raw / magnitude
+        val step = when {
+            residual <= 1.5 -> magnitude
+            residual <= 3.0 -> 2.0 * magnitude
+            residual <= 7.0 -> 5.0 * magnitude
+            else -> 10.0 * magnitude
+        }
+        val ticks = mutableListOf<Double>()
+        var current = ceil(minimum / step) * step
+        if (current - minimum > step * 1e-9) ticks += minimum.xyCoordinate()
+        while (current <= maximum + step * 1e-9) {
+            ticks += current.xyCoordinate()
+            current += step
+        }
+        if (maximum - ticks.last() > step * 1e-9) ticks += maximum.xyCoordinate()
+        return ticks.distinct()
     }
 
     private fun layoutEntityRelationship(
