@@ -1222,23 +1222,35 @@ public object SimpleMermaidLayout : DiagramLayout {
         val titleStyle = TextStyle(fontSize = 14.0, fontWeight = 600)
         val cardStyle = TextStyle(fontSize = 12.0)
         val gap = 16.0
+        val headerHeight = 40.0
+        val cardHeight = 48.0
+        val cardGap = 16.0
         val widths = diagram.columns.map { column ->
             max(180.0, max(
                 textMeasurer.measure(column.title, titleStyle).width,
                 column.cards.maxOf { textMeasurer.measure(it.label, cardStyle).width },
             ) + 32.0).xyCoordinate()
         }
-        val height = config.padding * 2 + 48.0 + diagram.columns.maxOf { it.cards.size } * 64.0
+        val columnHeights = diagram.columns.map { column ->
+            headerHeight + 12.0 + column.cards.size * (cardHeight + cardGap) + 8.0
+        }
+        val height = (config.padding * 2 + (columnHeights.maxOrNull() ?: (headerHeight + 24.0))).xyCoordinate()
         val width = (config.padding * 2 + widths.sum() + gap * (widths.size - 1)).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
         var x = config.padding
         diagram.columns.forEachIndexed { index, column ->
             val columnWidth = widths[index]
-            commands += DrawRect(SceneRect(x, config.padding, columnWidth, height - config.padding * 2), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
-            commands += DrawText(column.title, ScenePoint(x + 16.0, config.padding + 28.0), style = titleStyle)
+            val columnHeight = columnHeights[index]
+            commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeight), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
+            commands += DrawText(column.title, ScenePoint(x + columnWidth / 2.0, config.padding + 26.0), TextAnchor.MIDDLE, titleStyle)
+            commands += DrawLine(
+                ScenePoint(x + 12.0, config.padding + headerHeight),
+                ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight),
+                stroke = SceneColor("#cbd5e1"),
+            )
             column.cards.forEachIndexed { cardIndex, card ->
-                val y = config.padding + 48.0 + cardIndex * 64.0
-                commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, 48.0), cornerRadius = 6.0, fill = SceneColor("#ffffff"))
+                val y = config.padding + headerHeight + 12.0 + cardIndex * (cardHeight + cardGap)
+                commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, cardHeight), cornerRadius = 6.0, fill = SceneColor("#ffffff"))
                 commands += DrawText(card.label, ScenePoint(x + 22.0, y + 29.0), style = cardStyle)
             }
             x += columnWidth + gap
