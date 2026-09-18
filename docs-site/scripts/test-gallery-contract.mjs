@@ -198,4 +198,33 @@ for (const file of sampleFiles.filter(f => f.endsWith('.svg'))) {
 }
 console.log('✓ All 34 golden sample SVGs pass the DOM-based fail-closed sanitizer and serialize cleanly via XMLSerializer')
 
+// 7. Canvas demo contract: the canvas page, component and host executor must exist so the
+//    web Canvas2D export stays documented and wired.
+const canvasPagePath = resolve(docsRoot, 'canvas.md')
+const canvasComponentPath = resolve(docsRoot, '.vitepress/theme/components/MermaidCanvasDemo.vue')
+const canvasUtilPath = resolve(docsRoot, '.vitepress/theme/utils/mermaid-canvas.ts')
+const canvasExecutorPath = resolve(repoRoot, 'acceptance/mermaid-canvas.js')
+const themeIndexPath = resolve(docsRoot, '.vitepress/theme/index.ts')
+for (const required of [canvasPagePath, canvasComponentPath, canvasUtilPath, canvasExecutorPath]) {
+  await readFile(required, 'utf8').catch(() => {
+    throw new Error(`Canvas demo contract: missing ${required}`)
+  })
+}
+const themeIndex = await readFile(themeIndexPath, 'utf8')
+if (!themeIndex.includes('MermaidCanvasDemo')) {
+  throw new Error('Canvas demo contract: theme/index.ts must register MermaidCanvasDemo')
+}
+const canvasUtil = await readFile(canvasUtilPath, 'utf8')
+if (!canvasUtil.includes('drawMermaidCanvas')) {
+  throw new Error('Canvas demo contract: mermaid-canvas.ts must export drawMermaidCanvas')
+}
+const wasmExports = await readFile(
+  resolve(repoRoot, 'mermaid-web/src/wasmJsMain/kotlin/build/raft/mermaid/web/MermaidWebWasmExports.kt'),
+  'utf8'
+)
+if (!wasmExports.includes('renderMermaidCanvasJson')) {
+  throw new Error('Canvas demo contract: wasm export renderMermaidCanvasJson is missing')
+}
+console.log('✓ Canvas demo page, component, host executor and wasm export are wired')
+
 console.log('--- ALL GALLERY CONTRACT AND SECURITY TESTS PASSED ---')
