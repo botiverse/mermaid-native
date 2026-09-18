@@ -909,8 +909,19 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(2, first.commands.filterIsInstance<DrawPolygon>().size)
-        assertEquals(5, first.commands.filterIsInstance<DrawText>().size)
+        assertEquals(6, first.commands.filterIsInstance<DrawText>().size)
         assertTrue(first.width >= 420.0 && first.height > 0.0)
+    }
+
+    @Test
+    fun timelineDrawsSeparateEventLabels() {
+        val diagram = TimelineDiagram("History", listOf(TimelineEvent("2024", listOf("Launch", "First users")), TimelineEvent("2025", listOf("Scale"))))
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue("Launch" in labels && "First users" in labels)
+        assertTrue(labels.none { " · " in it })
+        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
     }
 
     @Test
