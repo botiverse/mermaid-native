@@ -1077,6 +1077,24 @@ class SimpleMermaidLayoutTest {
         assertTrue(first.width > 0.0 && first.height > 0.0)
     }
 
+    @Test
+    fun kanbanDrawsPerColumnHeightAndCenteredTitles() {
+        val diagram = KanbanDiagram(
+            listOf(
+                KanbanColumn("todo", "Todo", listOf(KanbanCard("a", "Spec"), KanbanCard("b", "Tests"))),
+                KanbanColumn("done", "Done", listOf(KanbanCard("c", "Ship"))),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val columns = scene.commands.filterIsInstance<DrawRect>().filter { it.rect.height > 80.0 }
+        assertEquals(2, columns.size)
+        assertTrue(columns[0].rect.height > columns[1].rect.height)
+        val todo = scene.commands.filterIsInstance<DrawText>().first { it.text == "Todo" }
+        assertEquals(TextAnchor.MIDDLE, todo.anchor)
+        assertEquals(2, scene.commands.filterIsInstance<DrawLine>().size)
+    }
+
     @Test fun blockProducesMeasuredDeterministicGridSpansAndEdges() {
         val longLabel = "B".repeat(100)
         val diagram = BlockDiagram(
