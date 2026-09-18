@@ -12,13 +12,13 @@
   <polygon points="273,288 264,292.5 264,283.5" fill="#333333"/>
   <line x1="351.5" y1="256" x2="351.5" y2="148" stroke="#666666" stroke-width="1" fill="none"/>
   <polygon points="351.5,148 356,157 347,157" fill="#333333"/>
-  <rect x="76" y="84" width="157" height="64" rx="0" fill="#eeeeee" stroke="#999999" stroke-width="1"/>
+  <rect x="76" y="84" width="157" height="64" rx="0" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
   <text x="154.5" y="121" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Request service</text>
-  <ellipse cx="351.5" cy="116" rx="32" ry="32" fill="#eeeeee" fill-opacity="1" stroke="#999999" stroke-width="1"/>
+  <ellipse cx="351.5" cy="116" rx="32" ry="32" fill="#dcfce7" fill-opacity="1" stroke="#15803d" stroke-width="1.5"/>
   <text x="351.5" y="121" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Receive update</text>
-  <polygon points="154.5,256 233,288 154.5,320 76,288" fill="#eeeeee"/>
-  <polyline points="154.5,256 233,288 154.5,320 76,288 154.5,256" stroke="#999999" stroke-width="1" fill="none"/>
+  <polygon points="154.5,256 233,288 154.5,320 76,288" fill="#fef3c7"/>
+  <polyline points="154.5,256 233,288 154.5,320 76,288 154.5,256" stroke="#d97706" stroke-width="1.5" fill="none"/>
   <text x="154.5" y="293" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Known issue?</text>
-  <rect x="273" y="256" width="157" height="64" rx="0" fill="#eeeeee" stroke="#999999" stroke-width="1"/>
+  <rect x="273" y="256" width="157" height="64" rx="0" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
   <text x="351.5" y="293" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#111827">Send answer</text>
 </svg>
