@@ -648,11 +648,57 @@ class SimpleMermaidLayoutTest {
 
         assertEquals(first, second)
         val stateRects = first.commands.filterIsInstance<DrawRect>()
-        assertEquals(5, stateRects.size)
+        assertEquals(2, stateRects.size)
         assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
-        assertEquals("#334155", stateRects.first().fill.value)
-        assertEquals("#334155", stateRects.last().fill.value)
-        assertTrue(stateRects.first().cornerRadius > 0.0)
+        assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(stateRects.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 })
+        val terminals = first.commands.filterIsInstance<DrawEllipse>()
+        assertEquals("#222222", terminals.first().fill.value)
+        assertEquals("#222222", terminals.last().fill.value)
+        assertTrue(terminals.first().radiusX > 0.0)
+    }
+
+    @Test
+    fun stateDrawsStartEndBulletsAndRoundedChrome() {
+        val diagram = StateDiagram(
+            direction = FlowDirection.LR,
+            states = listOf(
+                StateNode("__start_0", "", StateNodeKind.START),
+                StateNode("Idle", "Idle"),
+                StateNode("Working", "Processing request"),
+                StateNode("__end_1", "", StateNodeKind.END),
+            ),
+            transitions = listOf(
+                StateTransition("__start_0", "Idle"),
+                StateTransition("Idle", "Working", "start"),
+                StateTransition("Working", "__end_1", "finish"),
+            ),
+        )
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, boxes.size)
+        assertTrue(boxes.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 && it.strokeWidth == 1.0 })
+        val bullets = scene.commands.filterIsInstance<DrawEllipse>()
+        assertEquals(3, bullets.size)
+        val start = bullets.first()
+        assertEquals("#222222", start.fill.value)
+        assertEquals("#222222", start.stroke.value)
+        assertEquals(7.0, start.radiusX)
+        assertEquals(7.0, start.radiusY)
+        val endOuter = bullets[1]
+        val endInner = bullets[2]
+        assertEquals("#ffffff", endOuter.fill.value)
+        assertEquals("#222222", endOuter.stroke.value)
+        assertEquals(7.0, endOuter.radiusX)
+        assertEquals("#222222", endInner.fill.value)
+        assertEquals(2.5, endInner.radiusX)
+        val lines = scene.commands.filterIsInstance<DrawLine>()
+        assertEquals(3, lines.size)
+        assertTrue(lines.all { it.stroke.value == "#666666" && it.strokeWidth == 1.0 })
+        val heads = scene.commands.filterIsInstance<DrawPolygon>()
+        assertEquals(3, heads.size)
+        assertTrue(heads.all { it.fill.value == "#333333" })
     }
 
     @Test
