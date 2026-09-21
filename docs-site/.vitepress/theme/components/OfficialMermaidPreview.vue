@@ -10,6 +10,7 @@ const host = ref<HTMLElement | null>(null)
 const status = ref<'loading' | 'ready' | 'error'>('loading')
 const errorText = ref('')
 let generation = 0
+let zenumlRegistered = false
 
 function svgId(token: number): string {
   const slug = props.renderKey.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'diagram'
@@ -27,6 +28,12 @@ async function renderOfficial(): Promise<void> {
     if (import.meta.env.SSR) return
     const mermaid = (await import('mermaid')).default
     if (token !== generation) return
+    if (!zenumlRegistered) {
+      const zenuml = (await import('@mermaid-js/mermaid-zenuml')).default
+      if (token !== generation) return
+      await mermaid.registerExternalDiagrams([zenuml])
+      zenumlRegistered = true
+    }
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'strict',

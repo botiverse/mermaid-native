@@ -148,10 +148,11 @@ function decodeSource(): string | null {
   }
 }
 
-// Dialects that are not implemented in official Mermaid.js (or exist only in a
-// Native-only experimental slice). For these the comparison preview can never
-// succeed and would only show a dead "could not render" error, so we hide it.
-const OFFICIAL_UNSUPPORTED_SLUGS = new Set(['usecase', 'zenuml'])
+// Dialects with no official Mermaid implementation at all. For these the
+// comparison preview can never succeed and would only show a dead
+// "could not render" error, so we hide it. zenuml is comparable through the
+// official @mermaid-js/mermaid-zenuml external package.
+const OFFICIAL_UNSUPPORTED_SLUGS = new Set(['usecase'])
 
 function officialComparable(card: any): boolean {
   return !OFFICIAL_UNSUPPORTED_SLUGS.has(card.slug)
