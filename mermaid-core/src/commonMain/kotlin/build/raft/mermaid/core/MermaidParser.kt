@@ -2542,7 +2542,7 @@ public object MermaidParser {
     private val SWIMLANE_RECT_NODE = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
     private val SWIMLANE_ROUNDED_NODE = Regex("^($IDENTIFIER)\\(([^()\\r\\n]+)\\)$")
     private val SWIMLANE_STADIUM_NODE = Regex("^($IDENTIFIER)\\(\\[([^]\\r\\n]+)]\\)$")
-    private val SWIMLANE_DECISION_NODE = Regex("^($IDENTIFIER)\\{([^}\\r\\n]+)}$")
+    private val SWIMLANE_DECISION_NODE = Regex("^($IDENTIFIER)[{]([^}\\r\\n]+)[}]$")
     private val SWIMLANE_CIRCLE_NODE = Regex("^($IDENTIFIER)\\(\\(([^()\\r\\n]+)\\)\\)$")
     private val SWIMLANE_EDGE_TAIL = Regex("\\s+-->\\s*(?:\\|([^|\\r\\n]+)\\|\\s*)?($IDENTIFIER)")
     private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
@@ -2567,7 +2567,7 @@ public object MermaidParser {
     private const val RADAR_AXIS_KEYWORD = "axis"
     private const val RADAR_CURVE_KEYWORD = "curve"
     private val RADAR_AXIS_ENTRY = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?$")
-    private val RADAR_CURVE = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?\\s*\\{([^{}]*)}$")
+    private val RADAR_CURVE = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?\\s*[{]([^{}]*)[}]$")
     private val RADAR_VALUE = Regex("^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$")
     private const val WARDLEY_ANCHOR_KEYWORD = "anchor "
     private const val WARDLEY_COMPONENT_KEYWORD = "component "
@@ -2580,16 +2580,16 @@ public object MermaidParser {
         "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
     )
     private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
-    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*\\{$", RegexOption.IGNORE_CASE)
+    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
     private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
     private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
-    private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*\\{$")
+    private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
     private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?$")
     private val ER_RELATIONSHIP = Regex(
-        "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)--" +
-            "(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
+        "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)--" +
+            "(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
     private val NUMBER = "-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?"
     private val XY_HEADER = Regex("^xychart-beta$", RegexOption.IGNORE_CASE)
@@ -2818,8 +2818,8 @@ private sealed interface RequirementBlock {
     ) : RequirementBlock
 }
 
-private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement|performanceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
-private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
+private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement|performanceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
+private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
 private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
 private val REQUIREMENT_RELATION = Regex(
     "^([A-Za-z_][A-Za-z0-9_-]*)\\s+-\\s+(contains|satisfies|verifies)\\s+->\\s+([A-Za-z_][A-Za-z0-9_-]*)$",
