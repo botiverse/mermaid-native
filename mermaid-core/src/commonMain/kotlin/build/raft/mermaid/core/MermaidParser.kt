@@ -975,6 +975,7 @@ public object MermaidParser {
                         type = attribute.groupValues[1],
                         name = attribute.groupValues[2],
                         key = key,
+                        comment = attribute.groupValues[4].takeIf { it.isNotEmpty() },
                     ),
                 )
                 return@forEach
@@ -2886,7 +2887,7 @@ public object MermaidParser {
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
     private val QUOTED_TOKEN = Regex("\"([^\"]*)\"")
     private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
-    private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?$")
+    private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?(?:\\s+\"([^\"]*)\")?$")
     private val ER_RELATIONSHIP = Regex(
         "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)--" +
             "(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",

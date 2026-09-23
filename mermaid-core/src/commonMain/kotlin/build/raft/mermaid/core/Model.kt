@@ -172,6 +172,7 @@ public data class EntityAttribute(
     val type: String,
     val name: String,
     val key: EntityKey = EntityKey.NONE,
+    val comment: String? = null,
 )
 
 public enum class EntityKey { NONE, PK, FK, UK }
