@@ -174,26 +174,47 @@ public object MermaidParser {
 
     /** Splits `A -->|label| B --> C` into (source, [(op,label,target),...]). */
     private fun splitFlowEdgeChain(line: String): Pair<String, List<Triple<String, String?, String>>>? {
+        val rest = line.trim()
+        val ops = listOf("-.->", "==>", "-->", "-.-", "<--", "<==")
         val hops = mutableListOf<Triple<String, String?, String>>()
-        var rest = line.trim()
-        // first token = source spec up to first arrow operator
-        val firstOp = FLOW_EDGE_OPERATOR.find(rest) ?: return null
-        val source = rest.substring(0, firstOp.range.first).trim().takeIf { it.isNotEmpty() } ?: return null
-        var index = firstOp.range.first
+        var arrowPos = -1
+        var arrowLen = 0
+        for (op in ops) {
+            val idx = rest.indexOf(op)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && op.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = op.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val source = rest.substring(0, arrowPos).trim().takeIf { it.isNotEmpty() } ?: return null
+        var index = arrowPos
         while (index < rest.length) {
-            val op = FLOW_EDGE_OPERATOR.find(rest, index) ?: break
-            val operator = op.value
-            var i = op.range.last + 1
+            var bestPos = -1
+            var bestLen = 0
+            var bestOp = ""
+            for (op in ops) {
+                val idx = rest.indexOf(op, index)
+                if (idx >= 0 && (bestPos < 0 || idx < bestPos || (idx == bestPos && op.length > bestLen))) {
+                    bestPos = idx; bestLen = op.length; bestOp = op
+                }
+            }
+            if (bestPos < 0) break
+            var i = bestPos + bestLen
             var label: String? = null
             if (i < rest.length && rest[i] == '|') {
                 val end = rest.indexOf('|', i + 1)
                 if (end > i) { label = rest.substring(i + 1, end).trim(); i = end + 1 }
             }
-            val next = FLOW_EDGE_OPERATOR.find(rest, i)
-            val toEnd = next?.range?.first ?: rest.length
+            var nextPos = -1
+            for (op in ops) {
+                val idx = rest.indexOf(op, i)
+                if (idx >= 0 && (nextPos < 0 || idx < nextPos)) nextPos = idx
+            }
+            val toEnd = if (nextPos >= 0) nextPos else rest.length
             val target = rest.substring(i, toEnd).trim()
             if (target.isEmpty()) return null
-            hops += Triple(operator, label, target)
+            hops += Triple(bestOp, label, target)
             index = toEnd
         }
         return source to hops
@@ -201,14 +222,36 @@ public object MermaidParser {
 
     private fun parseFlowNodeRef(spec: String): FlowNode? {
         val s = spec.trim()
-        FLOW_NODE_SHAPED.matchEntire(s)?.let { m ->
-            val id = m.groupValues[1]
-            val shapeToken = m.groupValues[2]
-            val label = m.groupValues[3]
+        // shape token then optional label: ID(shapes)[label] | ID{label} | ID("label") | ID(label) | ID[label]
+        val shapeEnd = findFlowShapeEnd(s)
+        if (shapeEnd != null) {
+            val (id, shapeToken, rest) = shapeEnd
+            if (!IDENTIFIER_ONLY.matches(id)) return null
+            val label = when {
+                rest.isEmpty() -> id
+                rest.startsWith("[") && rest.endsWith("]") -> rest.substring(1, rest.length - 1)
+                rest.startsWith("(\"") && rest.endsWith("\")") -> rest.substring(2, rest.length - 2)
+                rest.startsWith("(") && rest.endsWith(")") -> rest.substring(1, rest.length - 1)
+                rest.startsWith("{") && rest.endsWith("}") -> rest.substring(1, rest.length - 1)
+                else -> id
+            }
             return FlowNode(id = id, label = label, shape = flowShapeOf(shapeToken))
         }
-        FLOW_NODE_PLAIN.matchEntire(s)?.let { m ->
-            return FlowNode(id = m.groupValues[1], label = m.groupValues[2].ifEmpty { m.groupValues[1] })
+        // plain ID or ID[label]
+        val plain = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$").matchEntire(s) ?: return null
+        return FlowNode(id = plain.groupValues[1], label = plain.groupValues[2].ifEmpty { plain.groupValues[1] })
+    }
+
+    /** Finds `ID<shape-token>` and returns (id, shapeToken, remaining). */
+    private fun findFlowShapeEnd(spec: String): Triple<String, String, String>? {
+        val id = Regex("^($IDENTIFIER)").find(spec) ?: return null
+        val rest = spec.substring(id.range.last + 1)
+        val shapes = listOf("((()))", "(())", "([])", "[//]", "[\\\\]", "[/\\]", "[\\/]", "{}", "[]", "()")
+        for (shape in shapes) {
+            if (rest.startsWith(shape)) {
+                val after = rest.substring(shape.length)
+                return Triple(id.value, shape, after)
+            }
         }
         return null
     }
@@ -2698,14 +2741,7 @@ public object MermaidParser {
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
-    private val FLOW_EDGE_OPERATOR = Regex("==>|-->|-.->|-.-|<--|<==")
     private val FLOW_SUBGRAPH_OPEN = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s*\\[([^]\\r\\n]+)])?\\s*$", RegexOption.IGNORE_CASE)
-    private val FLOW_NODE_SHAPED = Regex(
-        "^($IDENTIFIER)\\s*" +
-            "(\\(\\(\\(\\)\\)|\\(\\(\\)\\)|\\(\\[\\]|\\[//]|\\[\\\\\\\\]|\\[/\\\\]|\\[\\\\/]|[{][}]|\\[\\]|\\(\\))\\s*" +
-            "(?:\\[([^]\\r\\n]+)]|\\(\"([^\"\\r\\n]+)\"\\)|\\(([^()\\r\\n]+)\\)|[{]([^}\\r\\n]+)[}])?$",
-    )
-    private val FLOW_NODE_PLAIN = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
     private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")
     private val ZENUML_BARE_DECLARATION = Regex("^($IDENTIFIER)$")
