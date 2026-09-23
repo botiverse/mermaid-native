@@ -884,7 +884,7 @@ class MermaidParserTest {
             listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
             diagram.actors,
         )
-        assertEquals(9, diagram.messages.size)
+        assertEquals(7, diagram.messages.size)
         assertEquals(SequenceArrowHead.NONE, diagram.messages[0].arrowHead)
         assertEquals(SequenceLineStyle.SOLID, diagram.messages[0].lineStyle)
         assertEquals(SequenceArrowHead.NONE, diagram.messages[1].arrowHead)

@@ -155,13 +155,12 @@ public object MermaidParser {
             }
             // Note left of A / right of A / over A[,B]
             SEQUENCE_NOTE.matchEntire(text)?.let { note ->
-                val position = when (note.groupValues[1].lowercase()) {
-                    "left" -> SequenceNotePosition.LEFT_OF
-                    "right" -> SequenceNotePosition.RIGHT_OF
+                val position = when {
+                    note.groupValues[1].isNotEmpty() -> if (note.groupValues[1].equals("left", true)) SequenceNotePosition.LEFT_OF else SequenceNotePosition.RIGHT_OF
                     else -> SequenceNotePosition.OVER
                 }
-                val ids = note.groupValues[2].split(',').map { it.trim() }
-                notes += SequenceNote(position = position, actorIds = ids, text = note.groupValues[3])
+                val ids = note.groupValues[3].split(',').map { it.trim() }
+                notes += SequenceNote(position = position, actorIds = ids, text = note.groupValues[4])
                 ids.forEach { register(it) }
                 return@forEach
             }
@@ -2619,7 +2618,7 @@ public object MermaidParser {
         RegexOption.IGNORE_CASE,
     )
     private val SEQUENCE_NOTE = Regex(
-        "^Note\\s+(left|right|over)\\s+of\\s+($IDENTIFIER(?:\\s*,\\s*$IDENTIFIER)*)\\s*:\\s*(.+)$",
+        "^Note\\s+(?:(left|right)\\s+of\\s+|(over)\\s+)($IDENTIFIER(?:\\s*,\\s*$IDENTIFIER)*)\\s*:\\s*(.+)$",
         RegexOption.IGNORE_CASE,
     )
     private val SEQUENCE_ACTIVATION = Regex(
