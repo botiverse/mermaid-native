@@ -796,23 +796,19 @@ public object MermaidParser {
                 return@forEach
             }
             // note left of / right of <target> : text
-            STATE_NOTE.matchEntire(text)?.let { note ->
-                val position = if (note.groupValues[1].equals("left", true)) StateNotePosition.LEFT_OF else StateNotePosition.RIGHT_OF
-                val target = note.groupValues[2]
+            splitStateNote(text)?.let { (position, target, noteText) ->
                 register(target)
-                notes += StateNote(targetId = target, position = position, text = note.groupValues[3])
+                notes += StateNote(targetId = target, position = position, text = noteText)
                 return@forEach
             }
             // state X : description
-            STATE_DESCRIPTION.matchEntire(text)?.let { d ->
-                val id = d.groupValues[1]
+            splitStateDescription(text)?.let { (id, desc) ->
                 register(id)
-                states[id] = states.getValue(id).copy(description = d.groupValues[2])
+                states[id] = states.getValue(id).copy(description = desc)
                 return@forEach
             }
             // state X { ... } composite (collect children)
-            STATE_COMPOSITE_OPEN.matchEntire(text)?.let { open ->
-                val id = open.groupValues[1]
+            splitStateCompositeOpen(text)?.let { id ->
                 register(id)
                 compositeStack.addLast(id to mutableListOf())
                 return@forEach
@@ -824,13 +820,13 @@ public object MermaidParser {
                 return@forEach
             }
             // <<fork>> / <<join>> / <<choice>> pseudo-states
-            STATE_PSEUDO.matchEntire(text)?.let { p ->
-                val kind = when (p.groupValues[2].lowercase()) {
+            splitStatePseudo(text)?.let { (id, kindName) ->
+                val kind = when (kindName.lowercase()) {
                     "fork" -> StateNodeKind.FORK
                     "join" -> StateNodeKind.JOIN
                     else -> StateNodeKind.CHOICE
                 }
-                register(p.groupValues[1], kind = kind)
+                register(id, kind = kind)
                 return@forEach
             }
             val alias = STATE_ALIAS.matchEntire(statement.text)
@@ -2801,13 +2797,64 @@ public object MermaidParser {
     private val SWIMLANE_EDGE_TAIL = Regex("\\s+-->\\s*(?:\\|([^|\\r\\n]+)\\|\\s*)?($IDENTIFIER)")
     private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
     private val STATE_ALIAS = Regex("^state\\s+\"([^\"]+)\"\\s+as\\s+($IDENTIFIER)$")
-    private val STATE_NOTE = Regex("^note\\s+(left|right)\\s+of\\s+($IDENTIFIER)\\s*:\\s*(.+)$", RegexOption.IGNORE_CASE)
-    private val STATE_DESCRIPTION = Regex("^state\\s+($IDENTIFIER)\\s*:\\s*(.+)$", RegexOption.IGNORE_CASE)
-    private val STATE_COMPOSITE_OPEN = Regex("^state\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
-    private val STATE_PSEUDO = Regex("^state\\s+($IDENTIFIER)\\s*<<(fork|join|choice)>>$", RegexOption.IGNORE_CASE)
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
+
+    /** Hand-split state note/description/composite/pseudo lines — engine-independent. */
+    private fun splitStateNote(line: String): Triple<StateNotePosition, String, String>? {
+        // note left of X : text  /  note right of X : text
+        val lower = line.lowercase()
+        val pos = when {
+            lower.startsWith("note left of ") -> StateNotePosition.LEFT_OF
+            lower.startsWith("note right of ") -> StateNotePosition.RIGHT_OF
+            else -> return null
+        }
+        val rest = line.substring(if (pos == StateNotePosition.LEFT_OF) 13 else 14).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val target = rest.substring(0, colon).trim()
+        val text = rest.substring(colon + 1).trim()
+        if (target.isEmpty() || text.isEmpty() || !IDENTIFIER_ONLY.matches(target)) return null
+        return Triple(pos, target, text)
+    }
+
+    private fun splitStateDescription(line: String): Pair<String, String>? {
+        // state X : description
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val id = rest.substring(0, colon).trim()
+        val desc = rest.substring(colon + 1).trim()
+        if (id.isEmpty() || desc.isEmpty() || !IDENTIFIER_ONLY.matches(id)) return null
+        return id to desc
+    }
+
+    private fun splitStateCompositeOpen(line: String): String? {
+        // state X {
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        if (!rest.endsWith("{")) return null
+        val id = rest.substring(0, rest.length - 1).trim()
+        if (!IDENTIFIER_ONLY.matches(id)) return null
+        return id
+    }
+
+    private fun splitStatePseudo(line: String): Pair<String, String>? {
+        // state c <<choice>> / <<fork>> / <<join>>
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val open = rest.indexOf("<<")
+        val close = rest.indexOf(">>", open + 2)
+        if (open < 0 || close < 0 || close <= open + 2) return null
+        val id = rest.substring(0, open).trim()
+        val kind = rest.substring(open + 2, close).trim()
+        if (!IDENTIFIER_ONLY.matches(id) || kind !in setOf("fork", "join", "choice")) return null
+        if (rest.substring(close + 2).isNotEmpty()) return null
+        return id to kind
+    }
+
     private val FLOW_SUBGRAPH_OPEN = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s*\\[([^]\\r\\n]+)])?\\s*$", RegexOption.IGNORE_CASE)
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
     private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")
