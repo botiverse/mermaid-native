@@ -1050,6 +1050,25 @@ class MermaidParserTest {
     }
 
     @Test
+    fun entityAttributesSupportQuotedComments() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                erDiagram
+                  CUSTOMER {
+                    int id PK "primary key"
+                    string name "display name"
+                  }
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<EntityRelationshipDiagram>(result.diagram)
+
+        assertEquals("primary key", diagram.entities[0].attributes[0].comment)
+        assertEquals("display name", diagram.entities[0].attributes[1].comment)
+    }
+
+    @Test
     fun malformedFlowchartHeaderHasTypedDiagnostic() {
         val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("flowchart SIDEWAYS"))
 
