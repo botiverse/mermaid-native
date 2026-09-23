@@ -15,23 +15,46 @@ public data class FlowchartDiagram(
     val direction: FlowDirection,
     val nodes: List<FlowNode>,
     val edges: List<FlowEdge>,
+    val subgraphs: List<FlowSubgraph> = emptyList(),
 ) : MermaidDiagram
 
 public data class FlowNode(
     val id: String,
     val label: String,
+    val shape: FlowNodeShape = FlowNodeShape.RECTANGLE,
+)
+
+public data class FlowSubgraph(
+    val id: String,
+    val label: String,
+    val nodeIds: List<String>,
 )
 
 public enum class FlowEdgeStyle {
     NORMAL,
     THICK,
+    DOTTED,
 }
 
 public data class FlowEdge(
     val sourceId: String,
     val targetId: String,
     val style: FlowEdgeStyle = FlowEdgeStyle.NORMAL,
+    val label: String? = null,
 )
+
+public enum class FlowNodeShape {
+    RECTANGLE,
+    ROUNDED,
+    STADIUM,
+    CIRCLE,
+    DOUBLE_CIRCLE,
+    DIAMOND,
+    PARALLELOGRAM,
+    PARALLELOGRAM_ALT,
+    TRAPEZOID,
+    TRAPEZOID_ALT,
+}
 
 public data class SequenceDiagram(
     val actors: List<SequenceActor>,

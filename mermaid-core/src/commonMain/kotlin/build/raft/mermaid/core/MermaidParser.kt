@@ -885,8 +885,8 @@ public object MermaidParser {
                 classes[id] = classes.getValue(id).copy(members = classes.getValue(id).members + member)
                 return@forEach
             }
-            CLASS_RELATION.matchEntire(statement.text)?.let {
-                val kind = when (it.groupValues[3]) {
+            splitClassRelation(statement.text)?.let { rel ->
+                val kind = when (rel.arrow) {
                     "<|--", "--|>" -> ClassRelationshipKind.INHERITANCE
                     "*--" -> ClassRelationshipKind.COMPOSITION
                     "o--" -> ClassRelationshipKind.AGGREGATION
@@ -897,14 +897,14 @@ public object MermaidParser {
                     ".." -> ClassRelationshipKind.DASHED_ASSOCIATION
                     else -> ClassRelationshipKind.ASSOCIATION
                 }
-                ensure(it.groupValues[1]); ensure(it.groupValues[5])
+                ensure(rel.fromId); ensure(rel.toId)
                 relationships += ClassRelationship(
-                    it.groupValues[1],
-                    it.groupValues[5],
+                    rel.fromId,
+                    rel.toId,
                     kind,
-                    label = it.groupValues[6].ifEmpty { null },
-                    fromCardinality = it.groupValues[2].ifEmpty { null },
-                    toCardinality = it.groupValues[4].ifEmpty { null },
+                    label = rel.label,
+                    fromCardinality = rel.fromCardinality,
+                    toCardinality = rel.toCardinality,
                 )
                 return@forEach
             }
@@ -2786,15 +2786,56 @@ public object MermaidParser {
     private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
     private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
-    private val CLASS_RELATION = Regex(
-        "^($IDENTIFIER)\\s*" +
-            "(?:\"([^\"]*)\")?\\s*" +
-            "(<\\|--|--\\|>|\\*--|o--|-->|--|\\.\\.>|\\.\\.\\|>|\\.\\.)\\s*" +
-            "(?:\"([^\"]*)\")?\\s*" +
-            "($IDENTIFIER)" +
-            "(?:\\s*:\\s*(.*))?$",
+    private val CLASS_RELATION_ARROWS = listOf(
+        "<|--", "--|>", "..|>", "..>", "*--", "o--", "-->", "--", "..",
     )
+
+    private data class ClassRelationParts(
+        val fromId: String,
+        val arrow: String,
+        val toId: String,
+        val fromCardinality: String?,
+        val toCardinality: String?,
+        val label: String?,
+    )
+
+    /** Splits `A "1" --> "many" B : label` — engine-independent string ops, no regex. */
+    private fun splitClassRelation(line: String): ClassRelationParts? {
+        var arrowPos = -1
+        var arrowLen = 0
+        for (arrow in CLASS_RELATION_ARROWS) {
+            val idx = line.indexOf(arrow)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = arrow.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
+        val left = line.substring(0, arrowPos).trim()
+        val fromCard = QUOTED_TOKEN.find(left)
+        val fromId = (if (fromCard != null) left.substring(0, fromCard.range.first) else left).trim()
+        if (!IDENTIFIER_ONLY.matches(fromId)) return null
+        var right = line.substring(arrowPos + arrowLen).trim()
+        var label: String? = null
+        val colon = right.indexOf(':')
+        if (colon >= 0) {
+            label = right.substring(colon + 1).trim().ifEmpty { null }
+            right = right.substring(0, colon).trim()
+        }
+        val toCard = QUOTED_TOKEN.find(right)
+        val toId = (if (toCard != null) right.substring(toCard.range.last + 1) else right).trim()
+        if (!IDENTIFIER_ONLY.matches(toId)) return null
+        return ClassRelationParts(
+            fromId, arrow, toId,
+            fromCard?.groupValues?.get(1),
+            toCard?.groupValues?.get(1),
+            label,
+        )
+    }
+
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
+    private val QUOTED_TOKEN = Regex("\"([^\"]*)\"")
     private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
     private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?$")
     private val ER_RELATIONSHIP = Regex(
