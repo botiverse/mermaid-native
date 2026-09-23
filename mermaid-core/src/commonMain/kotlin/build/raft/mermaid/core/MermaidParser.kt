@@ -222,53 +222,31 @@ public object MermaidParser {
 
     private fun parseFlowNodeRef(spec: String): FlowNode? {
         val s = spec.trim()
-        // shape token then optional label: ID(shapes)[label] | ID{label} | ID("label") | ID(label) | ID[label]
-        val shapeEnd = findFlowShapeEnd(s)
-        if (shapeEnd != null) {
-            val (id, shapeToken, rest) = shapeEnd
-            if (!IDENTIFIER_ONLY.matches(id)) return null
-            val label = when {
-                rest.isEmpty() -> id
-                rest.startsWith("[") && rest.endsWith("]") -> rest.substring(1, rest.length - 1)
-                rest.startsWith("(\"") && rest.endsWith("\")") -> rest.substring(2, rest.length - 2)
-                rest.startsWith("(") && rest.endsWith(")") -> rest.substring(1, rest.length - 1)
-                rest.startsWith("{") && rest.endsWith("}") -> rest.substring(1, rest.length - 1)
-                else -> id
-            }
-            return FlowNode(id = id, label = label, shape = flowShapeOf(shapeToken))
+        // id followed by a shape open token; label is whatever's inside the
+        // matching close. Shape open = (, ([, ((, (((, {, [, [//, [\\, [/\, [\/.
+        val id = Regex("^($IDENTIFIER)").find(s) ?: return null
+        val rest = s.substring(id.range.last + 1)
+        if (rest.isEmpty()) return FlowNode(id = id.value, label = id.value)
+
+        val (shape, openLen, closeToken) = when {
+            rest.startsWith("(((") -> Triple(FlowNodeShape.DOUBLE_CIRCLE, 3, ")))" as String)
+            rest.startsWith("((") -> Triple(FlowNodeShape.CIRCLE, 2, "))")
+            rest.startsWith("([") -> Triple(FlowNodeShape.STADIUM, 2, "])")
+            rest.startsWith("(") -> Triple(FlowNodeShape.ROUNDED, 1, ")")
+            rest.startsWith("{") -> Triple(FlowNodeShape.DIAMOND, 1, "}")
+            rest.startsWith("[//") -> Triple(FlowNodeShape.PARALLELOGRAM, 3, "/]")
+            rest.startsWith("[\\\\") -> Triple(FlowNodeShape.PARALLELOGRAM_ALT, 3, "\\]")
+            rest.startsWith("[/\\") -> Triple(FlowNodeShape.TRAPEZOID, 3, "\\]")
+            rest.startsWith("[\\/") -> Triple(FlowNodeShape.TRAPEZOID_ALT, 3, "/]")
+            rest.startsWith("[") -> Triple(FlowNodeShape.RECTANGLE, 1, "]")
+            else -> return null
         }
-        // plain ID or ID[label]
-        val plain = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$").matchEntire(s) ?: return null
-        return FlowNode(id = plain.groupValues[1], label = plain.groupValues[2].ifEmpty { plain.groupValues[1] })
+        val inner = rest.substring(openLen)
+        if (!inner.endsWith(closeToken)) return null
+        val label = inner.substring(0, inner.length - closeToken.length)
+        return FlowNode(id = id.value, label = label.ifEmpty { id.value }, shape = shape)
     }
 
-    /** Finds `ID<shape-token>` and returns (id, shapeToken, remaining). */
-    private fun findFlowShapeEnd(spec: String): Triple<String, String, String>? {
-        val id = Regex("^($IDENTIFIER)").find(spec) ?: return null
-        val rest = spec.substring(id.range.last + 1)
-        val shapes = listOf("((()))", "(())", "([])", "[//]", "[\\\\]", "[/\\]", "[\\/]", "{}", "[]", "()")
-        for (shape in shapes) {
-            if (rest.startsWith(shape)) {
-                val after = rest.substring(shape.length)
-                return Triple(id.value, shape, after)
-            }
-        }
-        return null
-    }
-
-    private fun flowShapeOf(token: String): FlowNodeShape = when (token) {
-        "[]" -> FlowNodeShape.RECTANGLE
-        "()" -> FlowNodeShape.ROUNDED
-        "([])" -> FlowNodeShape.STADIUM
-        "(())" -> FlowNodeShape.CIRCLE
-        "((()))" -> FlowNodeShape.DOUBLE_CIRCLE
-        "{}" -> FlowNodeShape.DIAMOND
-        "[//]" -> FlowNodeShape.PARALLELOGRAM
-        "[\\\\]" -> FlowNodeShape.PARALLELOGRAM_ALT
-        "[/\\]" -> FlowNodeShape.TRAPEZOID
-        "[\\/]" -> FlowNodeShape.TRAPEZOID_ALT
-        else -> FlowNodeShape.RECTANGLE
-    }
 
     private fun parseSequence(statements: List<SourceStatement>): MermaidParseResult {
         val actors = linkedMapOf<String, SequenceActor>()
