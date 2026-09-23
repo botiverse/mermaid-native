@@ -1219,17 +1219,50 @@ public object MermaidParser {
         var current: GanttSection? = null
         val sections = mutableListOf<GanttSection>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        val taskEndById = mutableMapOf<String, Int>()
         statements.drop(1).forEach { statement ->
             when {
                 statement.text.startsWith("title ", true) -> title = statement.text.substringAfter(' ').trim()
                 statement.text.startsWith("dateFormat ", true) -> format = statement.text.substringAfter(' ').trim()
+                statement.text.startsWith("excludes ", true) || statement.text.startsWith("inclusiveEndDates", true) ||
+                    statement.text.startsWith("todayMarker", true) || statement.text.startsWith("weekends", true) ||
+                    statement.text.startsWith("axisFormat", true) -> return@forEach
                 statement.text.startsWith("section ", true) -> { current?.let { sections += it }; current = GanttSection(statement.text.substringAfter(' ').trim(), emptyList()) }
                 else -> {
                     val match = GANTT_TASK.matchEntire(statement.text)
                     val noStatusMatch = GANTT_TASK_NO_STATUS.matchEntire(statement.text)
+                    val afterMatch = GANTT_TASK_AFTER.matchEntire(statement.text)
+                    val milestoneMatch = GANTT_TASK_MILESTONE.matchEntire(statement.text)
                     val section = current
-                    if ((match == null && noStatusMatch == null) || section == null) diagnostics += unsupported(statement, "Unsupported gantt task")
-                    else {
+                    if (afterMatch != null && section != null) {
+                        val taskName = afterMatch.groupValues[1]
+                        val dependsOn = afterMatch.groupValues[2]
+                        val durationText = afterMatch.groupValues[3]
+                        val start = taskEndById[dependsOn]
+                        val duration = if (durationText.endsWith("d", ignoreCase = true)) durationText.dropLast(1).toIntOrNull() else null
+                        if (start == null || duration == null || duration <= 0) {
+                            diagnostics += unsupported(statement, "Unsupported gantt after task")
+                        } else {
+                            current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), "task-${section.tasks.size + 1}", start, duration, GanttTaskStatus.TODO))
+                        }
+                        return@forEach
+                    }
+                    if (milestoneMatch != null && section != null) {
+                        val taskName = milestoneMatch.groupValues[1]
+                        val taskId = milestoneMatch.groupValues[2]
+                        val start = parseIsoDay(milestoneMatch.groupValues[3])
+                        if (start == null) {
+                            diagnostics += unsupported(statement, "Invalid gantt milestone date")
+                        } else {
+                            current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), taskId, start, 0, GanttTaskStatus.DONE))
+                            taskEndById[taskId] = start
+                        }
+                        return@forEach
+                    }
+                    if ((match == null && noStatusMatch == null) || section == null) {
+                        diagnostics += unsupported(statement, "Unsupported gantt task")
+                        return@forEach
+                    } else {
                         val taskName = match?.groupValues?.get(1) ?: noStatusMatch!!.groupValues[1]
                         val rawStatus = match?.groupValues?.get(2).orEmpty()
                             .split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
@@ -1248,7 +1281,9 @@ public object MermaidParser {
                             if (rawStatus.size > 1 || (rawStatus.isNotEmpty() && status == null)) {
                                 diagnostics += unsupported(statement, "Unsupported gantt task status")
                             } else {
-                                current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), taskId, start, duration, status ?: GanttTaskStatus.TODO))
+                                val task = GanttTask(taskName.trim(), taskId, start, duration, status ?: GanttTaskStatus.TODO)
+                                current = section.copy(tasks = section.tasks + task)
+                                taskEndById[taskId] = start + duration - 1
                             }
                         }
                     }
@@ -2865,6 +2900,8 @@ public object MermaidParser {
     private const val MINDMAP_INDENT = 2
     private val GANTT_TASK = Regex("^(.+?)\\s*:\\s*([^,]*),\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*((?:\\d{4}-\\d{2}-\\d{2})|(?:\\d+)d)$", RegexOption.IGNORE_CASE)
     private val GANTT_TASK_NO_STATUS = Regex("^(.+?)\\s*:\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*((?:\\d{4}-\\d{2}-\\d{2})|(?:\\d+)d)$", RegexOption.IGNORE_CASE)
+    private val GANTT_TASK_AFTER = Regex("^(.+?)\\s*:\\s*after\\s+($IDENTIFIER),\\s*((?:\\d+)d)$", RegexOption.IGNORE_CASE)
+    private val GANTT_TASK_MILESTONE = Regex("^(.+?)\\s*:\\s*milestone\\s*,\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2})$", RegexOption.IGNORE_CASE)
     private val GANTT_STATUS = mapOf("done" to GanttTaskStatus.DONE, "active" to GanttTaskStatus.ACTIVE, "crit" to GanttTaskStatus.CRITICAL)
     private val QUADRANT_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_AXIS = Regex("^(x|y)-axis\\s+(.+?)\\s*-->\\s*(.+)$", RegexOption.IGNORE_CASE)

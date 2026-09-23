@@ -1143,6 +1143,33 @@ class MermaidParserTest {
     }
 
     @Test
+    fun ganttSupportsAfterDependsMilestoneAndAxisDirectives() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                gantt
+                  title Sprint
+                  dateFormat YYYY-MM-DD
+                  axisFormat %m-%d
+                  excludes weekends
+                  section Phase 1
+                  Design :done, design, 2026-08-19, 3d
+                  Build :after design, 2d
+                  Ship :milestone, ship, 2026-08-24
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<GanttDiagram>(result.diagram)
+
+        assertEquals(3, diagram.sections.single().tasks.size)
+        // Design ends on day 21 (19 + 3 - 1), so Build starts there.
+        assertEquals(3, diagram.sections.single().tasks[0].durationDays)
+        assertEquals(2, diagram.sections.single().tasks[1].durationDays)
+        assertEquals(0, diagram.sections.single().tasks[2].durationDays)
+        assertEquals(GanttTaskStatus.DONE, diagram.sections.single().tasks[2].status)
+    }
+
+    @Test
     fun parsesTimelinePeriodsAndMultipleLabels() {
         val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             timeline
