@@ -762,8 +762,8 @@ class MermaidParserTest {
 
         assertTrue(diagram.edges.size >= 4)
         assertEquals("first", diagram.edges[0].label)
-        assertEquals("done", diagram.edges[3].label)
-        assertEquals(FlowEdgeStyle.DOTTED, diagram.edges[4].style)
+        assertEquals("done", diagram.edges[2].label)
+        assertEquals(FlowEdgeStyle.DOTTED, diagram.edges[3].style)
         assertEquals(FlowNodeShape.RECTANGLE, diagram.nodes.first { it.id == "A" }.shape)
         assertEquals(FlowNodeShape.ROUNDED, diagram.nodes.first { it.id == "B" }.shape)
         assertEquals(FlowNodeShape.DIAMOND, diagram.nodes.first { it.id == "C" }.shape)
