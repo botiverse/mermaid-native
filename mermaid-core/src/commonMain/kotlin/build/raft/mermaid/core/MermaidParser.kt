@@ -173,16 +173,15 @@ public object MermaidParser {
             }
             // autonumber — modelled as a no-op marker; numbering is applied in layout.
             if (SEQUENCE_AUTONUMBER.matches(text)) return@forEach
-            val message = SEQUENCE_MESSAGE.matchEntire(text)
+            // Hand-split `from arrow to[: label]` — regex alternation ordering is
+            // engine-dependent (JVM vs Kotlin/Native vs wasmJs), string ops are not.
+            val message = splitSequenceMessage(text)
             if (message == null) {
                 diagnostics += unsupported(statement, "Unsupported sequence syntax")
                 return@forEach
             }
 
-            val from = message.groupValues[1]
-            val arrow = message.groupValues[2]
-            val to = message.groupValues[3]
-            val label = message.groupValues[4]
+            val (from, arrow, to, label) = message
             register(from)
             register(to)
             val (lineStyle, arrowHead) = sequenceArrowOf(arrow)
@@ -2608,11 +2607,6 @@ public object MermaidParser {
     private const val WARDLEY_EVOLVE_KEYWORD = "evolve "
     private const val WARDLEY_NOTE_KEYWORD = "note \""
     private const val WARDLEY_LINK_SEPARATOR = " -> "
-    private val SEQUENCE_MESSAGE = Regex(
-        // Greedy identifiers; the arrow alternation is longest-first so every
-        // engine resolves `-->>`/`--x`/`--)` before shorter prefixes.
-        "^($IDENTIFIER)\\s*(-->>|-->|--x|--\\)|--\\(|->>|->|-x|-\\)|-\\(|--)\\s*($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
-    )
     private val SEQUENCE_DECLARATION = Regex(
         "^(participant|actor)\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$",
         RegexOption.IGNORE_CASE,
@@ -2626,6 +2620,37 @@ public object MermaidParser {
         RegexOption.IGNORE_CASE,
     )
     private val SEQUENCE_AUTONUMBER = Regex("^autonumber(?:\\s+\\d+)?$", RegexOption.IGNORE_CASE)
+    private val IDENTIFIER_ONLY = Regex("^$IDENTIFIER$")
+
+    /** Splits `A --> B: label` into (from, arrow, to, label) without regex. */
+    private fun splitSequenceMessage(line: String): SequenceMessageParts? {
+        val arrows = listOf("-->>", "-->", "--x", "--)", "--(", "->>", "->", "-x", "-)", "-(", "--")
+        var arrowPos = -1
+        var arrowLen = 0
+        for (arrow in arrows) {
+            val idx = line.indexOf(arrow)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = arrow.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val from = line.substring(0, arrowPos).trim()
+        if (from.isEmpty() || !IDENTIFIER_ONLY.matches(from)) return null
+        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
+        var rest = line.substring(arrowPos + arrowLen).trim()
+        var label = ""
+        val colon = rest.indexOf(':')
+        if (colon >= 0) {
+            label = rest.substring(colon + 1).trim()
+            rest = rest.substring(0, colon).trim()
+        }
+        val to = rest
+        if (to.isEmpty() || !IDENTIFIER_ONLY.matches(to)) return null
+        return SequenceMessageParts(from, arrow, to, label)
+    }
+
+    private data class SequenceMessageParts(val from: String, val arrow: String, val to: String, val label: String)
 
     private fun sequenceArrowOf(arrow: String): Pair<SequenceLineStyle, SequenceArrowHead> {
         val dashed = arrow.startsWith("--")
