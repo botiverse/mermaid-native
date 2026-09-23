@@ -93,15 +93,26 @@ public data class StateDiagram(
     val direction: FlowDirection = FlowDirection.TB,
     val states: List<StateNode>,
     val transitions: List<StateTransition>,
+    val notes: List<StateNote> = emptyList(),
 ) : MermaidDiagram
 
 public data class StateNode(
     val id: String,
     val label: String,
     val kind: StateNodeKind = StateNodeKind.STATE,
+    val description: String? = null,
+    val childIds: List<String> = emptyList(),
 )
 
-public enum class StateNodeKind { STATE, START, END }
+public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
+
+public data class StateNote(
+    val targetId: String,
+    val position: StateNotePosition,
+    val text: String,
+)
+
+public enum class StateNotePosition { LEFT_OF, RIGHT_OF }
 
 public data class StateTransition(
     val from: String,

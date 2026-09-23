@@ -761,9 +761,11 @@ public object MermaidParser {
     private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
         val states = linkedMapOf<String, StateNode>()
         val transitions = mutableListOf<StateTransition>()
+        val notes = mutableListOf<StateNote>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var direction = FlowDirection.TB
         var pseudoStateIndex = 0
+        val compositeStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
         fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
             val resolved = when {
@@ -772,6 +774,7 @@ public object MermaidParser {
                 else -> states[id]?.label ?: id
             }
             states[id] = StateNode(id = id, label = resolved, kind = kind)
+            compositeStack.lastOrNull()?.second?.let { if (id !in it) it += id }
         }
 
         fun endpoint(raw: String, isSource: Boolean): String {
@@ -786,9 +789,48 @@ public object MermaidParser {
         }
 
         statements.drop(1).forEach { statement ->
+            val text = statement.text.trim()
             val directionMatch = STATE_DIRECTION.matchEntire(statement.text)
             if (directionMatch != null) {
                 direction = FlowDirection.valueOf(directionMatch.groupValues[1].uppercase())
+                return@forEach
+            }
+            // note left of / right of <target> : text
+            STATE_NOTE.matchEntire(text)?.let { note ->
+                val position = if (note.groupValues[1].equals("left", true)) StateNotePosition.LEFT_OF else StateNotePosition.RIGHT_OF
+                val target = note.groupValues[2]
+                register(target)
+                notes += StateNote(targetId = target, position = position, text = note.groupValues[3])
+                return@forEach
+            }
+            // state X : description
+            STATE_DESCRIPTION.matchEntire(text)?.let { d ->
+                val id = d.groupValues[1]
+                register(id)
+                states[id] = states.getValue(id).copy(description = d.groupValues[2])
+                return@forEach
+            }
+            // state X { ... } composite (collect children)
+            STATE_COMPOSITE_OPEN.matchEntire(text)?.let { open ->
+                val id = open.groupValues[1]
+                register(id)
+                compositeStack.addLast(id to mutableListOf())
+                return@forEach
+            }
+            if (text == "}") {
+                compositeStack.removeLastOrNull()?.let { (id, members) ->
+                    states[id] = states.getValue(id).copy(childIds = members.toList())
+                }
+                return@forEach
+            }
+            // <<fork>> / <<join>> / <<choice>> pseudo-states
+            STATE_PSEUDO.matchEntire(text)?.let { p ->
+                val kind = when (p.groupValues[2].lowercase()) {
+                    "fork" -> StateNodeKind.FORK
+                    "join" -> StateNodeKind.JOIN
+                    else -> StateNodeKind.CHOICE
+                }
+                register(p.groupValues[1], kind = kind)
                 return@forEach
             }
             val alias = STATE_ALIAS.matchEntire(statement.text)
@@ -806,9 +848,16 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported state diagram syntax")
         }
 
+        // Close unterminated composites rather than fail.
+        while (compositeStack.isNotEmpty()) {
+            compositeStack.removeLastOrNull()?.let { (id, members) ->
+                states[id] = states.getValue(id).copy(childIds = members.toList())
+            }
+        }
+
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(
-                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList()),
+                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList(), notes = notes.toList()),
             )
         } else {
             MermaidParseResult.Failure(diagnostics)
@@ -2752,6 +2801,10 @@ public object MermaidParser {
     private val SWIMLANE_EDGE_TAIL = Regex("\\s+-->\\s*(?:\\|([^|\\r\\n]+)\\|\\s*)?($IDENTIFIER)")
     private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
     private val STATE_ALIAS = Regex("^state\\s+\"([^\"]+)\"\\s+as\\s+($IDENTIFIER)$")
+    private val STATE_NOTE = Regex("^note\\s+(left|right)\\s+of\\s+($IDENTIFIER)\\s*:\\s*(.+)$", RegexOption.IGNORE_CASE)
+    private val STATE_DESCRIPTION = Regex("^state\\s+($IDENTIFIER)\\s*:\\s*(.+)$", RegexOption.IGNORE_CASE)
+    private val STATE_COMPOSITE_OPEN = Regex("^state\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
+    private val STATE_PSEUDO = Regex("^state\\s+($IDENTIFIER)\\s*<<(fork|join|choice)>>$", RegexOption.IGNORE_CASE)
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )

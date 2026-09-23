@@ -687,11 +687,40 @@ class MermaidParserTest {
     @Test
     fun unsupportedStateSyntaxFailsWithoutPartialSuccess() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("stateDiagram-v2\nA --> B\nstate Composite {"),
+            MermaidParser.parse("stateDiagram-v2\nA --> B\nconcurrent regions not supported"),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
         assertEquals(SourceLocation(line = 3, column = 1), failure.diagnostics.single().location)
+    }
+
+    @Test
+    fun stateSupportsNotesDescriptionsCompositesAndPseudoStates() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                stateDiagram-v2
+                  direction LR
+                  state Working : handles requests
+                  state Block {
+                    A --> B
+                    B --> C
+                  }
+                  state c <<choice>>
+                  note left of Working : pinned note
+                  Idle --> Working
+                  Working --> c
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<StateDiagram>(result.diagram)
+
+        assertTrue(diagram.states.isNotEmpty())
+        assertEquals("handles requests", diagram.states.first { it.id == "Working" }.description)
+        assertTrue(diagram.states.any { it.childIds.isNotEmpty() })
+        assertEquals(StateNodeKind.CHOICE, diagram.states.first { it.id == "c" }.kind)
+        assertEquals(1, diagram.notes.size)
+        assertEquals(StateNotePosition.LEFT_OF, diagram.notes[0].position)
     }
 
     @Test
