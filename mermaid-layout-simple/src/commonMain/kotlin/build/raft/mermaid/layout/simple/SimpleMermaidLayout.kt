@@ -19,7 +19,9 @@ import build.raft.mermaid.core.TimelineEvent
 import build.raft.mermaid.core.UserJourneyDiagram
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.PieDiagram
+import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceLineStyle
+import build.raft.mermaid.core.SequenceNotePosition
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNodeKind
 import build.raft.mermaid.core.XyChartDiagram
@@ -2540,16 +2542,59 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val endY = messageY + 24.0
                 val points = listOf(ScenePoint(fromX, messageY), ScenePoint(loopRight, messageY), ScenePoint(loopRight, endY), ScenePoint(fromX, endY))
                 commands += DrawPolyline(points, pattern = pattern, stroke = SceneColor("#333333"))
-                commands += arrowHead(points[points.lastIndex - 1], points.last(), fill = SceneColor("#333333"))
+                commands += sequenceArrowHead(points[points.lastIndex - 1], points.last(), message.arrowHead, SceneColor("#333333"))
                 commands += DrawText(message.label, ScenePoint(fromX + 8.0, messageY - 8.0), style = style)
                 messageY += config.messageGap * 2
             } else {
                 val from = ScenePoint(fromX, messageY)
                 val to = ScenePoint(toX, messageY)
                 commands += DrawLine(from, to, pattern = pattern, stroke = SceneColor("#333333"))
-                commands += arrowHead(from, to, fill = SceneColor("#333333"))
+                commands += sequenceArrowHead(from, to, message.arrowHead, SceneColor("#333333"))
                 commands += DrawText(message.label, ScenePoint((fromX + toX) / 2, messageY - 8.0), TextAnchor.MIDDLE, style)
                 messageY += config.messageGap
+            }
+        }
+
+        // Notes rendered as boxed callouts anchored to their actor(s).
+        diagram.notes.forEach { note ->
+            val xs = note.actorIds.mapNotNull { centers[it] }
+            if (xs.isEmpty()) return@forEach
+            val center = if (note.position == SequenceNotePosition.OVER && xs.size > 1) {
+                (xs.min() + xs.max()) / 2.0
+            } else {
+                xs[0]
+            }
+            val noteWidth = textMeasurer.measure(note.text, style).width + 24.0
+            val noteHeight = 28.0
+            val noteX = when (note.position) {
+                SequenceNotePosition.LEFT_OF -> center - noteWidth - 12.0
+                SequenceNotePosition.RIGHT_OF -> center + 12.0
+                SequenceNotePosition.OVER -> center - noteWidth / 2.0
+            }
+            commands += DrawRect(
+                SceneRect(noteX, messageTop - 12.0, noteWidth, noteHeight),
+                cornerRadius = 3.0,
+                fill = SceneColor("#fff5ad"),
+                stroke = SceneColor("#aaaa33"),
+            )
+            commands += DrawText(
+                note.text,
+                ScenePoint(noteX + noteWidth / 2.0, messageTop - 12.0 + noteHeight / 2.0 + style.fontSize * 0.35),
+                TextAnchor.MIDDLE,
+                style,
+            )
+        }
+
+        // Activation bars drawn as thin filled rectangles on the lifeline.
+        diagram.activations.forEach { activation ->
+            val x = centers[activation.actorId] ?: return@forEach
+            if (activation.activate) {
+                commands += DrawRect(
+                    SceneRect(x - 4.0, messageTop, 8.0, actorBottom - messageTop),
+                    fill = SceneColor("#f4f4f4"),
+                    stroke = SceneColor("#666666"),
+                    strokeWidth = 1.0,
+                )
             }
         }
         listOf(actorTop, actorBottom).forEach { actorY ->
@@ -2948,6 +2993,64 @@ public object SimpleMermaidLayout : DiagramLayout {
         val perpendicularX = -unitY * 4.5
         val perpendicularY = unitX * 4.5
         return DrawPolygon(listOf(to, ScenePoint(baseX + perpendicularX, baseY + perpendicularY), ScenePoint(baseX - perpendicularX, baseY - perpendicularY)), fill = fill)
+    }
+
+    /** Arrowhead dispatch for the sequence family: emits nothing for NONE,
+     *  a filled triangle for FILLED, an open (hollow) chevron for OPEN, an
+     *  X for CROSS and a small open circle for CIRCLE. */
+    private fun sequenceArrowHead(from: ScenePoint, to: ScenePoint, head: SequenceArrowHead, fill: SceneColor): List<DrawCommand> {
+        if (head == SequenceArrowHead.NONE) return emptyList()
+        val dx = to.x - from.x
+        val dy = to.y - from.y
+        val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
+        val ux = dx / length
+        val uy = dy / length
+        val px = -uy
+        val py = ux
+        return when (head) {
+            SequenceArrowHead.NONE -> emptyList()
+            SequenceArrowHead.FILLED -> listOf(
+                DrawPolygon(
+                    listOf(
+                        to,
+                        ScenePoint(to.x - ux * 9.0 + px * 4.5, to.y - uy * 9.0 + py * 4.5),
+                        ScenePoint(to.x - ux * 9.0 - px * 4.5, to.y - uy * 9.0 - py * 4.5),
+                    ),
+                    fill = fill,
+                ),
+            )
+            SequenceArrowHead.OPEN -> listOf(
+                DrawPolyline(
+                    listOf(
+                        ScenePoint(to.x - ux * 9.0 + px * 4.5, to.y - uy * 9.0 + py * 4.5),
+                        to,
+                        ScenePoint(to.x - ux * 9.0 - px * 4.5, to.y - uy * 9.0 - py * 4.5),
+                    ),
+                    stroke = fill,
+                ),
+            )
+            SequenceArrowHead.CROSS -> listOf(
+                DrawLine(
+                    ScenePoint(to.x - ux * 4.5 + px * 4.5, to.y - uy * 4.5 + py * 4.5),
+                    ScenePoint(to.x + ux * 4.5 - px * 4.5, to.y + uy * 4.5 - py * 4.5),
+                    stroke = fill,
+                ),
+                DrawLine(
+                    ScenePoint(to.x - ux * 4.5 - px * 4.5, to.y - uy * 4.5 - py * 4.5),
+                    ScenePoint(to.x + ux * 4.5 + px * 4.5, to.y + uy * 4.5 + py * 4.5),
+                    stroke = fill,
+                ),
+            )
+            SequenceArrowHead.CIRCLE -> listOf(
+                DrawEllipse(
+                    center = ScenePoint(to.x - ux * 6.0, to.y - uy * 6.0),
+                    radiusX = 3.5,
+                    radiusY = 3.5,
+                    fill = SceneColor("#ffffff"),
+                    stroke = fill,
+                ),
+            )
+        }
     }
 
     private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")

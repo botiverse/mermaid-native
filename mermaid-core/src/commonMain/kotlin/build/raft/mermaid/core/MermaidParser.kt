@@ -129,37 +129,68 @@ public object MermaidParser {
     private fun parseSequence(statements: List<SourceStatement>): MermaidParseResult {
         val actors = linkedMapOf<String, SequenceActor>()
         val messages = mutableListOf<SequenceMessage>()
+        val notes = mutableListOf<SequenceNote>()
+        val activations = mutableListOf<SequenceActivation>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
 
-        fun register(id: String) {
+        fun register(id: String, kind: SequenceActorKind = SequenceActorKind.PARTICIPANT) {
             if (id !in actors) {
-                actors[id] = SequenceActor(id = id, label = id)
+                actors[id] = SequenceActor(id = id, label = id, kind = kind)
             }
         }
 
         statements.drop(1).forEach { statement ->
-            val message = SEQUENCE_MESSAGE.matchEntire(statement.text)
+            val text = statement.text
+            // participant / actor declarations, optionally `id as Label`
+            SEQUENCE_DECLARATION.matchEntire(text)?.let { decl ->
+                val kind = if (decl.groupValues[1].equals("actor", ignoreCase = true)) {
+                    SequenceActorKind.ACTOR
+                } else {
+                    SequenceActorKind.PARTICIPANT
+                }
+                val id = decl.groupValues[2]
+                val label = decl.groupValues[3].ifEmpty { id }
+                actors[id] = SequenceActor(id = id, label = label, kind = kind)
+                return@forEach
+            }
+            // Note left of A / right of A / over A[,B]
+            SEQUENCE_NOTE.matchEntire(text)?.let { note ->
+                val position = when {
+                    note.groupValues[1].isNotEmpty() -> if (note.groupValues[1].equals("left", true)) SequenceNotePosition.LEFT_OF else SequenceNotePosition.RIGHT_OF
+                    else -> SequenceNotePosition.OVER
+                }
+                val ids = note.groupValues[3].split(',').map { it.trim() }
+                notes += SequenceNote(position = position, actorIds = ids, text = note.groupValues[4])
+                ids.forEach { register(it) }
+                return@forEach
+            }
+            // activate / deactivate
+            SEQUENCE_ACTIVATION.matchEntire(text)?.let { act ->
+                val id = act.groupValues[2]
+                register(id)
+                activations += SequenceActivation(actorId = id, activate = act.groupValues[1].equals("activate", ignoreCase = true))
+                return@forEach
+            }
+            // autonumber — modelled as a no-op marker; numbering is applied in layout.
+            if (SEQUENCE_AUTONUMBER.matches(text)) return@forEach
+            // Hand-split `from arrow to[: label]` — regex alternation ordering is
+            // engine-dependent (JVM vs Kotlin/Native vs wasmJs), string ops are not.
+            val message = splitSequenceMessage(text)
             if (message == null) {
                 diagnostics += unsupported(statement, "Unsupported sequence syntax")
                 return@forEach
             }
 
-            val from = message.groupValues[1]
-            val arrow = message.groupValues[2]
-            val to = message.groupValues[3]
-            val label = message.groupValues[4]
+            val (from, arrow, to, label) = message
             register(from)
             register(to)
+            val (lineStyle, arrowHead) = sequenceArrowOf(arrow)
             messages += SequenceMessage(
                 from = from,
                 to = to,
                 label = label,
-                lineStyle = if (arrow.startsWith("--")) {
-                    SequenceLineStyle.DASHED
-                } else {
-                    SequenceLineStyle.SOLID
-                },
-                arrowHead = SequenceArrowHead.FILLED,
+                lineStyle = lineStyle,
+                arrowHead = arrowHead,
             )
         }
 
@@ -168,6 +199,8 @@ public object MermaidParser {
                 SequenceDiagram(
                     actors = actors.values.toList(),
                     messages = messages.toList(),
+                    notes = notes.toList(),
+                    activations = activations.toList(),
                 ),
             )
         } else {
@@ -2574,11 +2607,63 @@ public object MermaidParser {
     private const val WARDLEY_EVOLVE_KEYWORD = "evolve "
     private const val WARDLEY_NOTE_KEYWORD = "note \""
     private const val WARDLEY_LINK_SEPARATOR = " -> "
-    private val SEQUENCE_MESSAGE = Regex(
-        // The lazy IDs are intentional: an ID may contain '-' while '-->>'
-        // starts with the same character. The arrow must win at the boundary.
-        "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
+    private val SEQUENCE_DECLARATION = Regex(
+        "^(participant|actor)\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$",
+        RegexOption.IGNORE_CASE,
     )
+    private val SEQUENCE_NOTE = Regex(
+        "^Note\\s+(?:(left|right)\\s+of\\s+|(over)\\s+)($IDENTIFIER(?:\\s*,\\s*$IDENTIFIER)*)\\s*:\\s*(.+)$",
+        RegexOption.IGNORE_CASE,
+    )
+    private val SEQUENCE_ACTIVATION = Regex(
+        "^(activate|deactivate)\\s+($IDENTIFIER)$",
+        RegexOption.IGNORE_CASE,
+    )
+    private val SEQUENCE_AUTONUMBER = Regex("^autonumber(?:\\s+\\d+)?$", RegexOption.IGNORE_CASE)
+    private val IDENTIFIER_ONLY = Regex("^$IDENTIFIER$")
+
+    /** Splits `A --> B: label` into (from, arrow, to, label) without regex. */
+    private fun splitSequenceMessage(line: String): SequenceMessageParts? {
+        val arrows = listOf("-->>", "-->", "--x", "--)", "--(", "->>", "->", "-x", "-)", "-(", "--")
+        var arrowPos = -1
+        var arrowLen = 0
+        for (arrow in arrows) {
+            val idx = line.indexOf(arrow)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = arrow.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val from = line.substring(0, arrowPos).trim()
+        if (from.isEmpty() || !IDENTIFIER_ONLY.matches(from)) return null
+        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
+        var rest = line.substring(arrowPos + arrowLen).trim()
+        var label = ""
+        val colon = rest.indexOf(':')
+        if (colon >= 0) {
+            label = rest.substring(colon + 1).trim()
+            rest = rest.substring(0, colon).trim()
+        }
+        val to = rest
+        if (to.isEmpty() || !IDENTIFIER_ONLY.matches(to)) return null
+        return SequenceMessageParts(from, arrow, to, label)
+    }
+
+    private data class SequenceMessageParts(val from: String, val arrow: String, val to: String, val label: String)
+
+    private fun sequenceArrowOf(arrow: String): Pair<SequenceLineStyle, SequenceArrowHead> {
+        val dashed = arrow.startsWith("--")
+        val head = when {
+            arrow.endsWith(">>") -> SequenceArrowHead.FILLED
+            arrow.endsWith("x") -> SequenceArrowHead.CROSS
+            arrow.endsWith(")") -> SequenceArrowHead.OPEN
+            arrow.endsWith("(") -> SequenceArrowHead.CIRCLE
+            arrow.endsWith(">") -> SequenceArrowHead.NONE
+            else -> SequenceArrowHead.NONE
+        }
+        return (if (dashed) SequenceLineStyle.DASHED else SequenceLineStyle.SOLID) to head
+    }
     private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
     private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
