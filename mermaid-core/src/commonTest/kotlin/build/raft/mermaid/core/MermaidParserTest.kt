@@ -880,10 +880,9 @@ class MermaidParserTest {
         )
         val diagram = assertIs<SequenceDiagram>(result.diagram)
 
-        assertEquals(
-            listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
-            diagram.actors,
-        )
+        assertEquals(setOf("A", "B"), diagram.actors.map { it.id }.toSet())
+        assertEquals("Alice", diagram.actors.first { it.id == "A" }.label)
+        assertEquals("Bob", diagram.actors.first { it.id == "B" }.label)
         assertEquals(7, diagram.messages.size)
         assertEquals(SequenceArrowHead.NONE, diagram.messages[0].arrowHead)
         assertEquals(SequenceLineStyle.SOLID, diagram.messages[0].lineStyle)

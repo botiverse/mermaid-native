@@ -2609,9 +2609,9 @@ public object MermaidParser {
     private const val WARDLEY_NOTE_KEYWORD = "note \""
     private const val WARDLEY_LINK_SEPARATOR = " -> "
     private val SEQUENCE_MESSAGE = Regex(
-        // The lazy IDs are intentional: an ID may contain '-' while '-->>'
-        // starts with the same character. The arrow must win at the boundary.
-        "^($IDENTIFIER?)\\s*(->>|-->>|->|-->|--x|-x|--\\)|-\\)|--\\(|-\\()\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
+        // Greedy identifiers; the arrow alternation is longest-first so every
+        // engine resolves `-->>`/`--x`/`--)` before shorter prefixes.
+        "^($IDENTIFIER)\\s*(-->>|-->|--x|--\\)|--\\(|->>|->|-x|-\\)|-\\(|--)\\s*($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
     private val SEQUENCE_DECLARATION = Regex(
         "^(participant|actor)\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$",
@@ -2631,10 +2631,10 @@ public object MermaidParser {
         val dashed = arrow.startsWith("--")
         val head = when {
             arrow.endsWith(">>") -> SequenceArrowHead.FILLED
-            arrow.endsWith(">") -> SequenceArrowHead.FILLED
             arrow.endsWith("x") -> SequenceArrowHead.CROSS
             arrow.endsWith(")") -> SequenceArrowHead.OPEN
             arrow.endsWith("(") -> SequenceArrowHead.CIRCLE
+            arrow.endsWith(">") -> SequenceArrowHead.NONE
             else -> SequenceArrowHead.NONE
         }
         return (if (dashed) SequenceLineStyle.DASHED else SequenceLineStyle.SOLID) to head
