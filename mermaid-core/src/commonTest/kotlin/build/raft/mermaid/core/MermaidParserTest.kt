@@ -1,6 +1,7 @@
 package build.raft.mermaid.core
 
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -852,6 +853,52 @@ class MermaidParserTest {
         )
 
         assertEquals(1, assertIs<SequenceDiagram>(result.diagram).messages.size)
+    }
+
+    @Test
+    fun sequenceSupportsDeclarationsNotesActivationsAndArrowVariants() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                sequenceDiagram
+                  participant A as Alice
+                  actor B as Bob
+                  autonumber
+                  A->B: no-arrow solid
+                  B-->A: no-arrow dashed
+                  A-xB: solid cross
+                  B--xA: dashed cross
+                  A-)B: solid open
+                  B--)A: dashed open
+                  Note left of A: pinned note
+                  Note over A,B: shared note
+                  activate A
+                  A->>B: request
+                  deactivate A
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<SequenceDiagram>(result.diagram)
+
+        assertEquals(
+            listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
+            diagram.actors,
+        )
+        assertEquals(9, diagram.messages.size)
+        assertEquals(SequenceArrowHead.NONE, diagram.messages[0].arrowHead)
+        assertEquals(SequenceLineStyle.SOLID, diagram.messages[0].lineStyle)
+        assertEquals(SequenceArrowHead.NONE, diagram.messages[1].arrowHead)
+        assertEquals(SequenceLineStyle.DASHED, diagram.messages[1].lineStyle)
+        assertEquals(SequenceArrowHead.CROSS, diagram.messages[2].arrowHead)
+        assertEquals(SequenceArrowHead.CROSS, diagram.messages[3].arrowHead)
+        assertEquals(SequenceArrowHead.OPEN, diagram.messages[4].arrowHead)
+        assertEquals(SequenceArrowHead.OPEN, diagram.messages[5].arrowHead)
+        assertEquals(2, diagram.notes.size)
+        assertEquals(SequenceNotePosition.LEFT_OF, diagram.notes[0].position)
+        assertEquals(listOf("A", "B"), diagram.notes[1].actorIds)
+        assertEquals(2, diagram.activations.size)
+        assertTrue(diagram.activations[0].activate)
+        assertFalse(diagram.activations[1].activate)
     }
 
     @Test

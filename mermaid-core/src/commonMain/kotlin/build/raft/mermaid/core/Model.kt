@@ -36,11 +36,14 @@ public data class FlowEdge(
 public data class SequenceDiagram(
     val actors: List<SequenceActor>,
     val messages: List<SequenceMessage>,
+    val notes: List<SequenceNote> = emptyList(),
+    val activations: List<SequenceActivation> = emptyList(),
 ) : MermaidDiagram
 
 public data class SequenceActor(
     val id: String,
     val label: String,
+    val kind: SequenceActorKind = SequenceActorKind.PARTICIPANT,
 )
 
 public data class SequenceMessage(
@@ -49,6 +52,17 @@ public data class SequenceMessage(
     val label: String,
     val lineStyle: SequenceLineStyle,
     val arrowHead: SequenceArrowHead,
+)
+
+public data class SequenceNote(
+    val position: SequenceNotePosition,
+    val actorIds: List<String>,
+    val text: String,
+)
+
+public data class SequenceActivation(
+    val actorId: String,
+    val activate: Boolean,
 )
 
 /** State diagram model for the Mermaid stateDiagram/stateDiagram-v2 family. */
@@ -498,5 +512,20 @@ public enum class SequenceLineStyle {
 }
 
 public enum class SequenceArrowHead {
+    NONE,
     FILLED,
+    OPEN,
+    CROSS,
+    CIRCLE,
+}
+
+public enum class SequenceActorKind {
+    PARTICIPANT,
+    ACTOR,
+}
+
+public enum class SequenceNotePosition {
+    LEFT_OF,
+    RIGHT_OF,
+    OVER,
 }
