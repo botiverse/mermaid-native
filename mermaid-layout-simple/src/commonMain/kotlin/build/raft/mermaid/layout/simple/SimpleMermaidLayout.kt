@@ -3,6 +3,7 @@ package build.raft.mermaid.layout.simple
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowchartDiagram
+import build.raft.mermaid.core.FlowNodeShape
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassDefinition
 import build.raft.mermaid.core.ClassMember
@@ -2230,15 +2231,30 @@ public object SimpleMermaidLayout : DiagramLayout {
             val target = rects[relation.to] ?: return@forEach
             val sourceBottom = ScenePoint(source.x + source.width / 2, source.y + source.height)
             val targetTop = ScenePoint(target.x + target.width / 2, target.y)
+            val dashed = relation.kind == ClassRelationshipKind.DEPENDENCY ||
+                relation.kind == ClassRelationshipKind.REALIZATION ||
+                relation.kind == ClassRelationshipKind.DASHED_ASSOCIATION
             val (from, to) = when (relation.kind) {
-                ClassRelationshipKind.INHERITANCE -> targetTop to sourceBottom
-                ClassRelationshipKind.ASSOCIATION -> sourceBottom to targetTop
+                ClassRelationshipKind.INHERITANCE, ClassRelationshipKind.REALIZATION -> targetTop to sourceBottom
+                else -> sourceBottom to targetTop
             }
-            commands += DrawLine(from, to)
-            if (relation.kind == ClassRelationshipKind.INHERITANCE) {
-                commands += hollowArrowHead(from, to)
-            } else {
-                commands += arrowHead(from, to)
+            commands += DrawLine(from, to, pattern = if (dashed) StrokePattern.DASHED else StrokePattern.SOLID)
+            when (relation.kind) {
+                ClassRelationshipKind.INHERITANCE, ClassRelationshipKind.REALIZATION -> commands += hollowArrowHead(from, to)
+                ClassRelationshipKind.COMPOSITION -> commands += diamondMarker(from, to, filled = true)
+                ClassRelationshipKind.AGGREGATION -> commands += diamondMarker(from, to, filled = false)
+                ClassRelationshipKind.ASSOCIATION, ClassRelationshipKind.DEPENDENCY -> commands += arrowHead(from, to)
+                else -> {}
+            }
+            relation.label?.takeIf { it.isNotEmpty() }?.let { label ->
+                val mid = ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 6.0)
+                commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
+            }
+            relation.fromCardinality?.takeIf { it.isNotEmpty() }?.let { card ->
+                commands += DrawText(card, ScenePoint(from.x - 18.0, from.y - 6.0), TextAnchor.MIDDLE, style)
+            }
+            relation.toCardinality?.takeIf { it.isNotEmpty() }?.let { card ->
+                commands += DrawText(card, ScenePoint(to.x + 18.0, to.y - 6.0), TextAnchor.MIDDLE, style)
             }
         }
         diagram.classes.forEach { klass ->
@@ -2286,6 +2302,27 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun hollowArrowHead(from: ScenePoint, to: ScenePoint): DrawPolyline {
         val points = arrowHead(from, to).points
         return DrawPolyline(points + points.first(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+    }
+
+    private fun diamondMarker(from: ScenePoint, to: ScenePoint, filled: Boolean): DrawPolygon {
+        val dx = to.x - from.x
+        val dy = to.y - from.y
+        val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
+        val ux = dx / length
+        val uy = dy / length
+        val px = -uy
+        val py = ux
+        val cx = from.x + ux * 5.0
+        val cy = from.y + uy * 5.0
+        return DrawPolygon(
+            listOf(
+                ScenePoint(cx + ux * 4.0, cy + uy * 4.0),
+                ScenePoint(cx + px * 4.0, cy + py * 4.0),
+                ScenePoint(cx - ux * 4.0, cy - uy * 4.0),
+                ScenePoint(cx - px * 4.0, cy - py * 4.0),
+            ),
+            fill = if (filled) SceneColor("#475569") else SceneColor("#ffffff"),
+        )
     }
 
     private fun layoutState(
@@ -2447,6 +2484,25 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor("#666666")
         val arrowFill = SceneColor("#333333")
+
+        // Subgraph bounding boxes first so nodes/edges sit on top.
+        diagram.subgraphs.forEach { subgraph ->
+            val memberRects = subgraph.nodeIds.mapNotNull { rects[it] }
+            if (memberRects.isEmpty()) return@forEach
+            val minX = memberRects.minOf { it.x } - 12.0
+            val minY = memberRects.minOf { it.y } - 28.0
+            val maxX = memberRects.maxOf { it.x + it.width } + 12.0
+            val maxY = memberRects.maxOf { it.y + it.height } + 12.0
+            commands += DrawRect(
+                SceneRect(minX, minY, maxX - minX, maxY - minY),
+                cornerRadius = 4.0,
+                fill = SceneColor("#f7f7f7"),
+                stroke = SceneColor("#aaaaaa"),
+                strokeWidth = 1.0,
+            )
+            commands += DrawText(subgraph.label, ScenePoint((minX + maxX) / 2.0, minY + 16.0), TextAnchor.MIDDLE, style)
+        }
+
         diagram.edges.forEach { edge ->
             val source = rects[edge.sourceId] ?: return@forEach
             val target = rects[edge.targetId] ?: return@forEach
@@ -2456,18 +2512,40 @@ public object SimpleMermaidLayout : DiagramLayout {
                 anchors.second,
                 stroke = edgeStroke,
                 strokeWidth = if (edge.style == FlowEdgeStyle.THICK) 3.0 else 1.5,
+                pattern = if (edge.style == FlowEdgeStyle.DOTTED) StrokePattern.DASHED else StrokePattern.SOLID,
             )
             commands += arrowHead(anchors.first, anchors.second, fill = arrowFill)
+            edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
+                val mid = ScenePoint(
+                    (anchors.first.x + anchors.second.x) / 2.0,
+                    (anchors.first.y + anchors.second.y) / 2.0 - 6.0,
+                )
+                commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
+            }
         }
         diagram.nodes.forEach { node ->
             val rect = rects.getValue(node.id)
-            commands += DrawRect(
-                rect = rect,
-                cornerRadius = 5.0,
-                fill = SceneColor("#eeeeee"),
-                stroke = SceneColor("#999999"),
-                strokeWidth = 1.5,
-            )
+            when (node.shape) {
+                FlowNodeShape.RECTANGLE -> commands += DrawRect(rect, cornerRadius = 5.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
+                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
+                FlowNodeShape.CIRCLE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                FlowNodeShape.DOUBLE_CIRCLE -> {
+                    val cx = rect.x + rect.width / 2.0
+                    val cy = rect.y + rect.height / 2.0
+                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0 - 4.0, rect.height / 2.0 - 4.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                }
+                FlowNodeShape.DIAMOND -> commands += DrawPolygon(
+                    listOf(
+                        ScenePoint(rect.x + rect.width / 2.0, rect.y),
+                        ScenePoint(rect.x + rect.width, rect.y + rect.height / 2.0),
+                        ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height),
+                        ScenePoint(rect.x, rect.y + rect.height / 2.0),
+                    ),
+                    fill = SceneColor("#eeeeee"),
+                )
+                FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT -> commands += DrawRect(rect, cornerRadius = 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
+            }
             commands += DrawText(
                 text = node.label,
                 origin = ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),

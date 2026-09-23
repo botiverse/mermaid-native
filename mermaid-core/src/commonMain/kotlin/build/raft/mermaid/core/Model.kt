@@ -118,9 +118,21 @@ public data class ClassRelationship(
     val from: String,
     val to: String,
     val kind: ClassRelationshipKind,
+    val label: String? = null,
+    val fromCardinality: String? = null,
+    val toCardinality: String? = null,
 )
 
-public enum class ClassRelationshipKind { INHERITANCE, ASSOCIATION }
+public enum class ClassRelationshipKind {
+    INHERITANCE,        // <|--  or  --|>
+    COMPOSITION,        // *--
+    AGGREGATION,        // o--
+    ASSOCIATION,        // -->
+    LINK,               // --
+    DEPENDENCY,         // ..>
+    REALIZATION,        // ..|>
+    DASHED_ASSOCIATION, // .. (plain dashed link)
+}
 
 /** Minimal platform-neutral model for the entityRelationshipDiagram family. */
 public data class EntityRelationshipDiagram(

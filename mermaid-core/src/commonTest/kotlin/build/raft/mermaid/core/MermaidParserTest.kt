@@ -744,6 +744,63 @@ class MermaidParserTest {
     }
 
     @Test
+    fun flowchartChainedEdgesPipeLabelsSubgraphsAndShapes() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                flowchart LR
+                  subgraph cluster[Pipeline]
+                    A[Start] -->|first| B(Process)
+                    B --> C{Diamond}
+                  end
+                  C -->|done| D((Circle))
+                  D -.-> E[End]
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<FlowchartDiagram>(result.diagram)
+
+        assertTrue(diagram.edges.size >= 4)
+        assertEquals("first", diagram.edges[0].label)
+        assertEquals("done", diagram.edges[3].label)
+        assertEquals(FlowEdgeStyle.DOTTED, diagram.edges[4].style)
+        assertEquals(FlowNodeShape.RECTANGLE, diagram.nodes.first { it.id == "A" }.shape)
+        assertEquals(FlowNodeShape.ROUNDED, diagram.nodes.first { it.id == "B" }.shape)
+        assertEquals(FlowNodeShape.DIAMOND, diagram.nodes.first { it.id == "C" }.shape)
+        assertEquals(FlowNodeShape.CIRCLE, diagram.nodes.first { it.id == "D" }.shape)
+        assertEquals(1, diagram.subgraphs.size)
+        assertEquals(setOf("A", "B", "C"), diagram.subgraphs[0].nodeIds.toSet())
+    }
+
+    @Test
+    fun classRelationshipKindsLabelsAndCardinality() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                classDiagram
+                  Animal <|-- Dog
+                  Car *-- Wheel
+                  Bag o-- Item
+                  User --> Order : places
+                  Repo "1" --> "many" Commit
+                  Service ..> Db
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<ClassDiagram>(result.diagram)
+
+        assertEquals(6, diagram.relationships.size)
+        assertEquals(ClassRelationshipKind.INHERITANCE, diagram.relationships[0].kind)
+        assertEquals(ClassRelationshipKind.COMPOSITION, diagram.relationships[1].kind)
+        assertEquals(ClassRelationshipKind.AGGREGATION, diagram.relationships[2].kind)
+        assertEquals(ClassRelationshipKind.ASSOCIATION, diagram.relationships[3].kind)
+        assertEquals("places", diagram.relationships[3].label)
+        assertEquals("1", diagram.relationships[4].fromCardinality)
+        assertEquals("many", diagram.relationships[4].toCardinality)
+        assertEquals(ClassRelationshipKind.DEPENDENCY, diagram.relationships[5].kind)
+    }
+
+    @Test
     fun parsesMindmapHierarchyAndTypedShapes() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

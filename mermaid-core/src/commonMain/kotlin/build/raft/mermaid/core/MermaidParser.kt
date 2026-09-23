@@ -78,39 +78,84 @@ public object MermaidParser {
         val direction = FlowDirection.valueOf(header.groupValues[1].uppercase())
         val nodes = linkedMapOf<String, FlowNode>()
         val edges = mutableListOf<FlowEdge>()
+        val subgraphs = mutableListOf<FlowSubgraph>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        val subgraphStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
-        fun register(id: String, label: String?) {
+        fun register(id: String, label: String?, shape: FlowNodeShape = FlowNodeShape.RECTANGLE) {
             val existing = nodes[id]
             val resolvedLabel = label?.takeIf { it.isNotEmpty() } ?: existing?.label ?: id
-            nodes[id] = FlowNode(id = id, label = resolvedLabel)
+            val resolvedShape = if (existing == null) shape else existing.shape
+            nodes[id] = FlowNode(id = id, label = resolvedLabel, shape = resolvedShape)
         }
 
         statements.drop(1).forEach { statement ->
-            val edge = FLOW_EDGE.matchEntire(statement.text)
-            if (edge != null) {
-                val sourceId = edge.groupValues[1]
-                val sourceLabel = edge.groupValues[2].ifEmpty { null }
-                val operator = edge.groupValues[3]
-                val targetId = edge.groupValues[4]
-                val targetLabel = edge.groupValues[5].ifEmpty { null }
-                register(sourceId, sourceLabel)
-                register(targetId, targetLabel)
-                edges += FlowEdge(
-                    sourceId = sourceId,
-                    targetId = targetId,
-                    style = if (operator == "==>") FlowEdgeStyle.THICK else FlowEdgeStyle.NORMAL,
-                )
+            val text = statement.text.trim()
+            if (text.isEmpty()) return@forEach
+
+            // subgraph open / close
+            FLOW_SUBGRAPH_OPEN.matchEntire(text)?.let { open ->
+                val id = open.groupValues[1]
+                val label = open.groupValues[2].ifEmpty { id }
+                subgraphStack.addLast(id to mutableListOf())
+                return@forEach
+            }
+            if (text.equals("end", ignoreCase = true)) {
+                subgraphStack.removeLastOrNull()?.let { (id, members) ->
+                    subgraphs += FlowSubgraph(id = id, label = id, nodeIds = members.toList())
+                }
                 return@forEach
             }
 
-            val node = FLOW_NODE.matchEntire(statement.text)
+            // Chained edge line: A --> B --> C (split on the arrow operators)
+            val chain = splitFlowEdgeChain(text)
+            if (chain != null) {
+                val (fromSpec, hops) = chain
+                val firstRef = parseFlowNodeRef(fromSpec)
+                if (firstRef == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge source"); return@forEach }
+                run {
+                    var from: FlowNode = firstRef
+                    hops.forEach { (operator, label, toSpec) ->
+                        val to = parseFlowNodeRef(toSpec)
+                        if (to == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge target"); return@run }
+                        register(from.id, from.label, from.shape)
+                        register(to.id, to.label, to.shape)
+                        subgraphStack.lastOrNull()?.second?.let { members ->
+                            if (from.id !in members) members += from.id
+                            if (to.id !in members) members += to.id
+                        }
+                        edges += FlowEdge(
+                            sourceId = from.id,
+                            targetId = to.id,
+                            style = when (operator) {
+                                "==>" -> FlowEdgeStyle.THICK
+                                "-.->", "-.-" -> FlowEdgeStyle.DOTTED
+                                else -> FlowEdgeStyle.NORMAL
+                            },
+                            label = label,
+                        )
+                        from = to
+                    }
+                }
+                return@forEach
+            }
+
+            // Node declaration / shape
+            val node = parseFlowNodeRef(text)
             if (node != null) {
-                register(node.groupValues[1], node.groupValues[2].ifEmpty { null })
+                register(node.id, node.label, node.shape)
+                subgraphStack.lastOrNull()?.second?.let { if (node.id !in it) it += node.id }
                 return@forEach
             }
 
             diagnostics += unsupported(statement, "Unsupported flowchart syntax")
+        }
+
+        // Close any unterminated subgraphs rather than fail.
+        while (subgraphStack.isNotEmpty()) {
+            subgraphStack.removeLastOrNull()?.let { (id, members) ->
+                subgraphs += FlowSubgraph(id = id, label = id, nodeIds = members.toList())
+            }
         }
 
         return if (diagnostics.isEmpty()) {
@@ -119,11 +164,67 @@ public object MermaidParser {
                     direction = direction,
                     nodes = nodes.values.toList(),
                     edges = edges.toList(),
+                    subgraphs = subgraphs.toList(),
                 ),
             )
         } else {
             MermaidParseResult.Failure(diagnostics)
         }
+    }
+
+    /** Splits `A -->|label| B --> C` into (source, [(op,label,target),...]). */
+    private fun splitFlowEdgeChain(line: String): Pair<String, List<Triple<String, String?, String>>>? {
+        val hops = mutableListOf<Triple<String, String?, String>>()
+        var rest = line.trim()
+        // first token = source spec up to first arrow operator
+        val firstOp = FLOW_EDGE_OPERATOR.find(rest) ?: return null
+        val source = rest.substring(0, firstOp.range.first).trim().takeIf { it.isNotEmpty() } ?: return null
+        var index = firstOp.range.first
+        while (index < rest.length) {
+            val op = FLOW_EDGE_OPERATOR.find(rest, index) ?: break
+            val operator = op.value
+            var i = op.range.last + 1
+            var label: String? = null
+            if (i < rest.length && rest[i] == '|') {
+                val end = rest.indexOf('|', i + 1)
+                if (end > i) { label = rest.substring(i + 1, end).trim(); i = end + 1 }
+            }
+            val next = FLOW_EDGE_OPERATOR.find(rest, i)
+            val toEnd = next?.range?.first ?: rest.length
+            val target = rest.substring(i, toEnd).trim()
+            if (target.isEmpty()) return null
+            hops += Triple(operator, label, target)
+            index = toEnd
+        }
+        return source to hops
+    }
+
+    private fun parseFlowNodeRef(spec: String): FlowNode? {
+        val s = spec.trim()
+        FLOW_NODE_SHAPED.matchEntire(s)?.let { m ->
+            val id = m.groupValues[1]
+            val shapeToken = m.groupValues[2]
+            val label = m.groupValues[3]
+            return FlowNode(id = id, label = label, shape = flowShapeOf(shapeToken))
+        }
+        FLOW_NODE_PLAIN.matchEntire(s)?.let { m ->
+            return FlowNode(id = m.groupValues[1], label = m.groupValues[2].ifEmpty { m.groupValues[1] })
+        }
+        return null
+    }
+
+    private fun flowShapeOf(token: String): FlowNodeShape = when (token) {
+        "[]" -> FlowNodeShape.RECTANGLE
+        "()" -> FlowNodeShape.ROUNDED
+        "([])" -> FlowNodeShape.STADIUM
+        "(())" -> FlowNodeShape.CIRCLE
+        "((()))" -> FlowNodeShape.DOUBLE_CIRCLE
+        "{}" -> FlowNodeShape.DIAMOND
+        "[//]" -> FlowNodeShape.PARALLELOGRAM
+        "[\\\\]" -> FlowNodeShape.PARALLELOGRAM_ALT
+        "[/\\]" -> FlowNodeShape.TRAPEZOID
+        "[\\/]" -> FlowNodeShape.TRAPEZOID_ALT
+        else -> FlowNodeShape.RECTANGLE
     }
 
     private fun parseSequence(statements: List<SourceStatement>): MermaidParseResult {
@@ -785,12 +886,26 @@ public object MermaidParser {
                 return@forEach
             }
             CLASS_RELATION.matchEntire(statement.text)?.let {
-                val kind = when (it.groupValues[2]) {
-                    "<|--" -> ClassRelationshipKind.INHERITANCE
+                val kind = when (it.groupValues[3]) {
+                    "<|--", "--|>" -> ClassRelationshipKind.INHERITANCE
+                    "*--" -> ClassRelationshipKind.COMPOSITION
+                    "o--" -> ClassRelationshipKind.AGGREGATION
+                    "-->" -> ClassRelationshipKind.ASSOCIATION
+                    "--" -> ClassRelationshipKind.LINK
+                    "..>" -> ClassRelationshipKind.DEPENDENCY
+                    "..|>" -> ClassRelationshipKind.REALIZATION
+                    ".." -> ClassRelationshipKind.DASHED_ASSOCIATION
                     else -> ClassRelationshipKind.ASSOCIATION
                 }
-                ensure(it.groupValues[1]); ensure(it.groupValues[3])
-                relationships += ClassRelationship(it.groupValues[1], it.groupValues[3], kind)
+                ensure(it.groupValues[1]); ensure(it.groupValues[5])
+                relationships += ClassRelationship(
+                    it.groupValues[1],
+                    it.groupValues[5],
+                    kind,
+                    label = it.groupValues[6].ifEmpty { null },
+                    fromCardinality = it.groupValues[2].ifEmpty { null },
+                    toCardinality = it.groupValues[4].ifEmpty { null },
+                )
                 return@forEach
             }
             diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
@@ -2583,11 +2698,14 @@ public object MermaidParser {
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
-    private val FLOW_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
-    private val FLOW_EDGE = Regex(
-        "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*(-->|==>)\\s*" +
-            "($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$",
+    private val FLOW_EDGE_OPERATOR = Regex("==>|-->|-.->|-.-|<--|<==")
+    private val FLOW_SUBGRAPH_OPEN = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s*\\[([^]\\r\\n]+)])?\\s*$", RegexOption.IGNORE_CASE)
+    private val FLOW_NODE_SHAPED = Regex(
+        "^($IDENTIFIER)\\s*" +
+            "(\\(\\(\\(\\)\\)|\\(\\(\\)\\)|\\(\\[\\]|\\[//]|\\[\\\\\\\\]|\\[/\\\\]|\\[\\\\/]|[{][}]|\\[\\]|\\(\\))\\s*" +
+            "(?:\\[([^]\\r\\n]+)]|\\(\"([^\"\\r\\n]+)\"\\)|\\(([^()\\r\\n]+)\\)|[{]([^}\\r\\n]+)[}])?$",
     )
+    private val FLOW_NODE_PLAIN = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
     private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")
     private val ZENUML_BARE_DECLARATION = Regex("^($IDENTIFIER)$")
@@ -2668,7 +2786,14 @@ public object MermaidParser {
     private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
     private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
-    private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")
+    private val CLASS_RELATION = Regex(
+        "^($IDENTIFIER)\\s*" +
+            "(?:\"([^\"]*)\")?\\s*" +
+            "(<\\|--|--\\|>|\\*--|o--|-->|--|\\.\\.>|\\.\\.\\|>|\\.\\.)\\s*" +
+            "(?:\"([^\"]*)\")?\\s*" +
+            "($IDENTIFIER)" +
+            "(?:\\s*:\\s*(.*))?$",
+    )
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
     private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
     private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?$")
