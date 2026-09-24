@@ -14,6 +14,7 @@ val compileKuiklyIosTestStubs by tasks.registering(Exec::class) {
     commandLine(
         "xcrun", "--sdk", "iphonesimulator", "clang",
         "-arch", "arm64",
+        "-arch", "x86_64",
         "-c", srcFile.absolutePath,
         "-o", outFile.get().asFile.absolutePath
     )
