@@ -761,17 +761,29 @@ public object MermaidParser {
     private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
         val states = linkedMapOf<String, StateNode>()
         val transitions = mutableListOf<StateTransition>()
+        val notes = mutableListOf<StateNote>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var direction = FlowDirection.TB
         var pseudoStateIndex = 0
+        val compositeStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
         fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
+            val existing = states[id]
             val resolved = when {
                 kind != StateNodeKind.STATE -> label.orEmpty()
                 !label.isNullOrEmpty() -> label
-                else -> states[id]?.label ?: id
+                else -> existing?.label ?: id
             }
-            states[id] = StateNode(id = id, label = resolved, kind = kind)
+            // Preserve description/childIds on re-registration — registering an
+            // existing node must not clobber fields set by an earlier statement.
+            states[id] = StateNode(
+                id = id,
+                label = resolved,
+                kind = if (existing != null && existing.kind != StateNodeKind.STATE) existing.kind else kind,
+                description = existing?.description,
+                childIds = existing?.childIds ?: emptyList(),
+            )
+            compositeStack.lastOrNull()?.second?.let { if (id !in it) it += id }
         }
 
         fun endpoint(raw: String, isSource: Boolean): String {
@@ -786,9 +798,44 @@ public object MermaidParser {
         }
 
         statements.drop(1).forEach { statement ->
+            val text = statement.text.trim()
             val directionMatch = STATE_DIRECTION.matchEntire(statement.text)
             if (directionMatch != null) {
                 direction = FlowDirection.valueOf(directionMatch.groupValues[1].uppercase())
+                return@forEach
+            }
+            // note left of / right of <target> : text
+            splitStateNote(text)?.let { (position, target, noteText) ->
+                register(target)
+                notes += StateNote(targetId = target, position = position, text = noteText)
+                return@forEach
+            }
+            // state X : description
+            splitStateDescription(text)?.let { (id, desc) ->
+                register(id)
+                states[id] = states.getValue(id).copy(description = desc)
+                return@forEach
+            }
+            // state X { ... } composite (collect children)
+            splitStateCompositeOpen(text)?.let { id ->
+                register(id)
+                compositeStack.addLast(id to mutableListOf())
+                return@forEach
+            }
+            if (text == "}") {
+                compositeStack.removeLastOrNull()?.let { (id, members) ->
+                    states[id] = states.getValue(id).copy(childIds = members.toList())
+                }
+                return@forEach
+            }
+            // <<fork>> / <<join>> / <<choice>> pseudo-states
+            splitStatePseudo(text)?.let { (id, kindName) ->
+                val kind = when (kindName.lowercase()) {
+                    "fork" -> StateNodeKind.FORK
+                    "join" -> StateNodeKind.JOIN
+                    else -> StateNodeKind.CHOICE
+                }
+                register(id, kind = kind)
                 return@forEach
             }
             val alias = STATE_ALIAS.matchEntire(statement.text)
@@ -806,9 +853,16 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported state diagram syntax")
         }
 
+        // Close unterminated composites rather than fail.
+        while (compositeStack.isNotEmpty()) {
+            compositeStack.removeLastOrNull()?.let { (id, members) ->
+                states[id] = states.getValue(id).copy(childIds = members.toList())
+            }
+        }
+
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(
-                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList()),
+                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList(), notes = notes.toList()),
             )
         } else {
             MermaidParseResult.Failure(diagnostics)
@@ -2755,6 +2809,61 @@ public object MermaidParser {
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
+
+    /** Hand-split state note/description/composite/pseudo lines — engine-independent. */
+    private fun splitStateNote(line: String): Triple<StateNotePosition, String, String>? {
+        // note left of X : text  /  note right of X : text
+        val lower = line.lowercase()
+        val pos = when {
+            lower.startsWith("note left of ") -> StateNotePosition.LEFT_OF
+            lower.startsWith("note right of ") -> StateNotePosition.RIGHT_OF
+            else -> return null
+        }
+        val rest = line.substring(if (pos == StateNotePosition.LEFT_OF) 13 else 14).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val target = rest.substring(0, colon).trim()
+        val text = rest.substring(colon + 1).trim()
+        if (target.isEmpty() || text.isEmpty() || !IDENTIFIER_ONLY.matches(target)) return null
+        return Triple(pos, target, text)
+    }
+
+    private fun splitStateDescription(line: String): Pair<String, String>? {
+        // state X : description
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val id = rest.substring(0, colon).trim()
+        val desc = rest.substring(colon + 1).trim()
+        if (id.isEmpty() || desc.isEmpty() || !IDENTIFIER_ONLY.matches(id)) return null
+        return id to desc
+    }
+
+    private fun splitStateCompositeOpen(line: String): String? {
+        // state X {
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        if (!rest.endsWith("{")) return null
+        val id = rest.substring(0, rest.length - 1).trim()
+        if (!IDENTIFIER_ONLY.matches(id)) return null
+        return id
+    }
+
+    private fun splitStatePseudo(line: String): Pair<String, String>? {
+        // state c <<choice>> / <<fork>> / <<join>>
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val open = rest.indexOf("<<")
+        val close = rest.indexOf(">>", open + 2)
+        if (open < 0 || close < 0 || close <= open + 2) return null
+        val id = rest.substring(0, open).trim()
+        val kind = rest.substring(open + 2, close).trim()
+        if (!IDENTIFIER_ONLY.matches(id) || kind !in setOf("fork", "join", "choice")) return null
+        if (rest.substring(close + 2).isNotEmpty()) return null
+        return id to kind
+    }
+
     private val FLOW_SUBGRAPH_OPEN = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s*\\[([^]\\r\\n]+)])?\\s*$", RegexOption.IGNORE_CASE)
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
     private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")

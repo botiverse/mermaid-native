@@ -25,6 +25,7 @@ import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceNotePosition
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNodeKind
+import build.raft.mermaid.core.StateNotePosition
 import build.raft.mermaid.core.XyChartDiagram
 import build.raft.mermaid.core.XySeriesKind
 import build.raft.mermaid.core.GanttDiagram
@@ -2435,7 +2436,42 @@ public object SimpleMermaidLayout : DiagramLayout {
                         strokeWidth = 1.0,
                     )
                 }
+                StateNodeKind.CHOICE -> {
+                    val cx = rect.x + rect.width / 2.0
+                    val cy = rect.y + rect.height / 2.0
+                    commands += DrawPolygon(
+                        listOf(
+                            ScenePoint(cx, rect.y),
+                            ScenePoint(rect.x + rect.width, cy),
+                            ScenePoint(cx, rect.y + rect.height),
+                            ScenePoint(rect.x, cy),
+                        ),
+                        fill = SceneColor("#ffffff"),
+                    )
+                }
+                StateNodeKind.FORK, StateNodeKind.JOIN -> {
+                    commands += DrawRect(
+                        rect = SceneRect(rect.x, rect.y + rect.height / 2.0 - 3.0, rect.width, 6.0),
+                        fill = SceneColor("#333333"),
+                        stroke = SceneColor("#333333"),
+                    )
+                }
             }
+        }
+
+        // Notes as boxed callouts beside their target.
+        diagram.notes.forEach { note ->
+            val rect = rects[note.targetId] ?: return@forEach
+            val noteWidth = textMeasurer.measure(note.text, style).width + 20.0
+            val noteHeight = 26.0
+            val noteX = if (note.position == StateNotePosition.LEFT_OF) rect.x - noteWidth - 10.0 else rect.x + rect.width + 10.0
+            commands += DrawRect(
+                SceneRect(noteX, rect.y, noteWidth, noteHeight),
+                cornerRadius = 3.0,
+                fill = SceneColor("#fff5ad"),
+                stroke = SceneColor("#aaaa33"),
+            )
+            commands += DrawText(note.text, ScenePoint(noteX + noteWidth / 2.0, rect.y + noteHeight / 2.0 + style.fontSize * 0.35), TextAnchor.MIDDLE, style)
         }
         return LayoutScene(width, height, commands)
     }
