@@ -768,12 +768,21 @@ public object MermaidParser {
         val compositeStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
         fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
+            val existing = states[id]
             val resolved = when {
                 kind != StateNodeKind.STATE -> label.orEmpty()
                 !label.isNullOrEmpty() -> label
-                else -> states[id]?.label ?: id
+                else -> existing?.label ?: id
             }
-            states[id] = StateNode(id = id, label = resolved, kind = kind)
+            // Preserve description/childIds on re-registration — registering an
+            // existing node must not clobber fields set by an earlier statement.
+            states[id] = StateNode(
+                id = id,
+                label = resolved,
+                kind = if (existing != null && existing.kind != StateNodeKind.STATE) existing.kind else kind,
+                description = existing?.description,
+                childIds = existing?.childIds ?: emptyList(),
+            )
             compositeStack.lastOrNull()?.second?.let { if (id !in it) it += id }
         }
 
