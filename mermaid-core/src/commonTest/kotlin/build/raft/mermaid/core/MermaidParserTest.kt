@@ -1024,6 +1024,41 @@ class MermaidParserTest {
     }
 
     @Test
+    fun classMemberBlockCollectsVisibilityMarkedMembers() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                classDiagram
+                class Animal {
+                  +String name
+                  +speak()
+                  -int age
+                }
+                Animal <|-- Duck
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<ClassDiagram>(result.diagram)
+
+        val animal = diagram.classes.first { it.id == "Animal" }
+        assertEquals(3, animal.members.size)
+        assertEquals("String name", animal.members[0].signature)
+        assertEquals(ClassVisibility.PUBLIC, animal.members[0].visibility)
+        assertEquals("speak()", animal.members[1].signature)
+        assertEquals(ClassVisibility.PRIVATE, animal.members[2].visibility)
+        assertEquals(ClassRelationshipKind.INHERITANCE, diagram.relationships.single().kind)
+    }
+
+    @Test
+    fun classMemberBlockFailsClosedOnGarbageLine() {
+        val failure = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("classDiagram\nclass A {\nnot a member\n}"),
+        )
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
+    }
+
+    @Test
     fun parsesEntityAttributesKeysAndRelationshipCardinality() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(

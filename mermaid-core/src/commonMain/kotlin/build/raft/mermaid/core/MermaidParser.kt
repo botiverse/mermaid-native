@@ -919,11 +919,30 @@ public object MermaidParser {
         val relationships = mutableListOf<ClassRelationship>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var currentNamespace: String? = null
+        var memberBodyClassId: String? = null
 
         fun ensure(id: String) {
             if (id !in classes) classes[id] = ClassDefinition(id, namespaceName = currentNamespace)
         }
         statements.drop(1).forEach { statement ->
+            val text = statement.text.trim()
+            // class X { ... } member block — lines inside become members of X.
+            if (memberBodyClassId != null) {
+                if (text == "}") {
+                    memberBodyClassId = null
+                    return@forEach
+                }
+                val member = parseClassMemberLine(text)
+                if (member == null) {
+                    diagnostics += unsupported(statement, "Unsupported classDiagram member syntax")
+                } else {
+                    val owner = memberBodyClassId!!
+                    classes[owner] = classes.getValue(owner)
+                        .copy(members = classes.getValue(owner).members + member)
+                }
+                return@forEach
+            }
+
             CLASS_NAMESPACE.matchEntire(statement.text)?.let {
                 if (currentNamespace != null) diagnostics += unsupported(statement, "Nested class namespaces are not supported")
                 else currentNamespace = it.groupValues[1]
@@ -939,6 +958,12 @@ public object MermaidParser {
                 val label = it.groupValues[2].ifEmpty { id }
                 classes[id] = classes[id]?.copy(label = label, namespaceName = currentNamespace)
                     ?: ClassDefinition(id, label, namespaceName = currentNamespace)
+                return@forEach
+            }
+            // class X {  — open a member block whose lines belong to X
+            splitClassBlockOpen(text)?.let { id ->
+                ensure(id)
+                memberBodyClassId = id
                 return@forEach
             }
             CLASS_MEMBER.matchEntire(statement.text)?.let {
@@ -986,9 +1011,36 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
         }
         if (currentNamespace != null) diagnostics += unsupported(statements.last(), "Unclosed class namespace")
+        if (memberBodyClassId != null) diagnostics += unsupported(statements.last(), "Unclosed class member block")
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
         } else MermaidParseResult.Failure(diagnostics)
+    }
+
+    /** 'class X {' — returns the class id. */
+    private fun splitClassBlockOpen(line: String): String? {
+        if (!line.lowercase().startsWith("class ")) return null
+        val rest = line.substring(6).trim()
+        if (!rest.endsWith("{")) return null
+        val id = rest.substring(0, rest.length - 1).trim()
+        if (!IDENTIFIER_ONLY.matches(id)) return null
+        return id
+    }
+
+    /** A member line inside 'class X { ... }': '[+-#~]signature'. */
+    private fun parseClassMemberLine(line: String): ClassMember? {
+        if (line.isEmpty()) return null
+        val marker = line[0]
+        val visibility = when (marker) {
+            '+' -> ClassVisibility.PUBLIC
+            '-' -> ClassVisibility.PRIVATE
+            '#' -> ClassVisibility.PROTECTED
+            '~' -> ClassVisibility.PACKAGE
+            else -> return null
+        }
+        val signature = line.substring(1).trim()
+        if (signature.isEmpty()) return null
+        return ClassMember(signature, visibility)
     }
 
     private fun parseEntityRelationship(statements: List<SourceStatement>): MermaidParseResult {
