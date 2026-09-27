@@ -80,7 +80,17 @@ const parser={yy:null,parse(source){
  if(model.accTitle!==null)db.setAccTitle(model.accTitle);
  if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  const label=(text,wrap)=>({text,wrap:wrap??undefined});
- for(const a of model.actors)db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind.toLowerCase());
+ for(const a of model.actors){
+  db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind.toLowerCase());
+  db.addLinks(a.id,{text:JSON.stringify(a.links)});
+  db.addProperties(a.id,{text:JSON.stringify(a.properties)});
+ }
+ for(const b of model.boxes){
+  db.addBox({text:b.label,color:b.color});
+  const box=db.getBoxes().at(-1);box.actorKeys=b.actors;
+  for(const id of b.actors)db.getActors().get(id).box=box;
+  db.apply({type:'boxEnd'});
+ }
  for(const e of model.events){
   if(e.kind==='message'){
    let type=e.bidirectional?'BIDIRECTIONAL_SOLID':{FILLED:'SOLID',NONE:'SOLID_OPEN',OPEN:'SOLID_POINT',CROSS:'SOLID_CROSS',CIRCLE:'SOLID_POINT'}[e.head];
@@ -96,6 +106,7 @@ const parser={yy:null,parse(source){
    const actors=e.position==='OVER'?(e.actors.length===1?[e.actors[0],e.actors[0]]:e.actors):e.actors[0];
    db.addNote(actors,db.PLACEMENT[{LEFT_OF:'LEFTOF',RIGHT_OF:'RIGHTOF',OVER:'OVER'}[e.position]],label(e.text,e.wrap));
   } else if(e.kind==='activation')db.addSignal(e.actor,undefined,undefined,db.LINETYPE[e.activate?'ACTIVE_START':'ACTIVE_END']);
+  else if(e.kind==='lifecycle')(e.create?db.getCreatedActors():db.getDestroyedActors()).set(e.actor,db.getMessages().length);
   else if(e.kind==='numbering')db.apply({type:'sequenceIndex',sequenceIndex:e.start??undefined,sequenceIndexStep:e.step??undefined,sequenceVisible:e.visible,signalType:db.LINETYPE.AUTONUMBER});
   else {
    let key=e.fragment+'_'+(e.boundary==='BRANCH'?{ALT:'ELSE',PAR:'AND',PAR_OVER:'AND',CRITICAL:'OPTION'}[e.fragment]:e.boundary);

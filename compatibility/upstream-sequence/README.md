@@ -23,15 +23,16 @@ parser to create Native results.
 Initial result: reference **146 passed**; Native boundary **57 passed, 89 failed**.
 After the ordered-event batch: Native boundary **115 passed, 31 failed**.
 After the participant/half-arrow batch: Native boundary **137 passed, 9 failed**.
-Remaining failures are retained, covering boxes, creation/destruction and actor
-links/properties. Direct parser groups remain **71 passed, 8 failed**: the 22 newly
-passing checks exercise Native participant/arrow data through upstream database
-and renderer components, not Native visual parity.
+After the lifecycle/group/data batch: Native boundary **146 passed, 0 failed**.
+The direct parser groups now pass **79/79**. The other checks exercise Native
+model data through upstream database and renderer components, not Native visual
+parity. Actor links/properties are retained as typed data; interactive Native
+host link menus are not implemented by this batch.
 
 These 146 cases are a **mixed integration suite**, not 146 Native rendering tests:
 
 - The central-connection and parser groups contain 79 original cases (current
-  result 71 passed, 8 failed).
+  result 79 passed, 0 failed).
 - The 30 database-group cases include participant parsing and direct upstream
   database behavior; passing direct database checks does not prove a Native API.
 - The other 37 cases exercise upstream rendering/bounds or cross-diagram state.

@@ -1,16 +1,18 @@
 package build.raft.mermaid.core
 
 /** The string-valued participant type/alias subset of upstream's flow mapping. */
-internal class SequenceParticipantMetadata(private val source: String) {
+internal class SequenceParticipantMetadata(private val source: String, private val jsonStringsOnly: Boolean = false) {
     private var offset=0
     fun parse(): Map<String,String>? = try {
         val result=linkedMapOf<String,String>()
         whitespace()
         while(offset<source.length) {
+            if(jsonStringsOnly) require(source.getOrNull(offset)=='"')
             val key=token(':')
             whitespace(); require(take(':'))
-            whitespace(); val value=token(',')
-            require(key.isNotBlank() && key !in result)
+            whitespace(); if(jsonStringsOnly) require(source.getOrNull(offset)=='"')
+            val value=token(',')
+            require(jsonStringsOnly || key.isNotBlank() && key !in result)
             result[key]=value
             whitespace()
             if(offset==source.length) break
@@ -32,7 +34,7 @@ internal class SequenceParticipantMetadata(private val source: String) {
                 }
                 if(c=='\\' && quote=='"') {
                     require(offset<source.length)
-                    out.append(when(val escape=source[offset++]) { 'n'->'\n'; 'r'->'\r'; 't'->'\t'; '"'->'"'; '\\'->'\\'; '/'->'/'; else->throw IllegalArgumentException("Unsupported string escape") })
+                    out.append(when(val escape=source[offset++]) { 'n'->'\n'; 'r'->'\r'; 't'->'\t'; 'b'->'\b'; 'f'->'\u000c'; 'u'->{ require(offset+4<=source.length); val digits=source.substring(offset,offset+4); require(digits.all { it in "0123456789abcdefABCDEF" }); offset+=4; digits.toInt(16).toChar() }; '"'->'"'; '\\'->'\\'; '/'->'/'; else->throw IllegalArgumentException("Unsupported string escape") })
                 } else out.append(c)
             }
             throw IllegalArgumentException("Unclosed string")
