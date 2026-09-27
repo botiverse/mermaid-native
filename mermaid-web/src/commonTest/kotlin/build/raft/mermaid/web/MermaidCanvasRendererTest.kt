@@ -7,6 +7,21 @@ import kotlin.test.assertTrue
 
 class MermaidCanvasRendererTest {
     @Test
+    fun canvasTextUsesCanvasAlignmentAndEscapesControlCharacters() {
+        val scene = build.raft.mermaid.layout.LayoutScene(100.0, 50.0, listOf(
+            build.raft.mermaid.layout.DrawText(
+                "a\u0000\b\u000c\t\n\r\"\\z",
+                build.raft.mermaid.layout.ScenePoint(50.0, 25.0),
+                build.raft.mermaid.layout.TextAnchor.MIDDLE,
+            ),
+        ))
+        val script = MermaidCanvasRenderer.render(scene)
+        assertContains(script, "\"anchor\":\"center\"")
+        assertContains(script, "\\u0000\\u0008\\u000c")
+        assertTrue(script.none { it < ' ' })
+    }
+
+    @Test
     fun canvasScriptRendersEveryPositiveGalleryFixture() {
         MermaidExamples.all.forEach { example ->
             val result = MermaidWebAdapter.renderCanvas(MermaidWebRequest(example.source))

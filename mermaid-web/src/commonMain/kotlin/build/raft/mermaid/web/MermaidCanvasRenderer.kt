@@ -112,7 +112,7 @@ public object MermaidCanvasRenderer {
 
     private fun TextAnchor.wire(): String = when (this) {
         TextAnchor.START -> "start"
-        TextAnchor.MIDDLE -> "middle"
+        TextAnchor.MIDDLE -> "center"
         TextAnchor.END -> "end"
     }
 
@@ -131,7 +131,9 @@ public object MermaidCanvasRenderer {
                 '\n' -> append("\\n")
                 '\r' -> append("\\r")
                 '\t' -> append("\\t")
-                else -> append(c)
+                else -> if (c < ' ') {
+                    append("\\u").append(c.code.toString(16).padStart(4, '0'))
+                } else append(c)
             }
         }
         append('"')
