@@ -7,6 +7,7 @@ import kotlin.math.max
 internal class ClassPlacement(private val diagram:ClassDiagram,private val sizes:Map<String,SceneSize>,private val config:LayoutConfig,private val textMeasurer:TextMeasurer) {
     private data class Item(val id:String,val group:Boolean,val noteIndex:Int?=null)
     data class Result(val width:Double,val height:Double,val classes:Map<String,SceneRect>,val namespaces:Map<String,SceneRect>,val notes:Map<Int,SceneRect>)
+    private val namespaceIds=diagram.namespaces.map { it.id }.toSet()
     private val groupSizes=mutableMapOf<String,SceneSize>()
     private val classRects=linkedMapOf<String,SceneRect>()
     private val noteRects=linkedMapOf<Int,SceneRect>()
@@ -14,7 +15,7 @@ internal class ClassPlacement(private val diagram:ClassDiagram,private val sizes
     private val horizontal=diagram.direction==FlowDirection.LR || diagram.direction==FlowDirection.RL
     private val reverse=diagram.direction==FlowDirection.RL || diagram.direction==FlowDirection.BT
     private fun items(parent:String?):List<Item> = diagram.namespaces.filter { it.parentId==parent }.map { Item(it.id,true) } +
-        diagram.classes.filter { it.namespaceName==parent }.map { Item(it.id,false) } +
+        diagram.classes.filter { it.namespaceName?.takeIf { id -> id in namespaceIds }==parent }.map { Item(it.id,false) } +
         diagram.notes.withIndex().filter { it.value.namespaceName==parent }.map { Item("",false,it.index) }
     private fun size(item:Item):SceneSize = if(item.group) groupSizes.getOrPut(item.id) {
         val content=measure(items(item.id)); val label=diagram.namespaces.first { it.id==item.id }.label
