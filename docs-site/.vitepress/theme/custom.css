@@ -24,3 +24,23 @@
 .VPFeature {
   border-radius: 16px;
 }
+
+
+/* Gallery/playground comparison needs the full viewport, not VitePress's
+ * 752px/784px doc column. :not + :has + [class] beats the scoped VPDoc rules. */
+.VPDoc:has(.mermaid-gallery-container) {
+  overflow-x: clip;
+}
+
+.VPDoc:not(.has-sidebar):has(.mermaid-gallery-container) .container[class],
+.VPDoc:not(.has-sidebar):has(.mermaid-gallery-container) .content-container[class],
+.VPDoc:not(.has-sidebar):has(.mermaid-gallery-container) .content[class] {
+  max-width: none;
+  width: 100%;
+}
+
+.vp-doc .mermaid-gallery-container {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}

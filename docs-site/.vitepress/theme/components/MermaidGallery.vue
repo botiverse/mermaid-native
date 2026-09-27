@@ -91,6 +91,7 @@ function svgTransform(key: string) {
 }
 
 import { ALLOWED_TAGS, ALLOWED_ATTRS, sanitizeSvg } from '../utils/svg-sanitizer'
+import OfficialMermaidPreview from './OfficialMermaidPreview.vue'
 
 const filteredExamples = computed(() => {
   const q = filterQuery.value.trim().toLowerCase()
@@ -145,6 +146,15 @@ function decodeSource(): string | null {
   } catch {
     return null
   }
+}
+
+// All 32 gallery families are comparable under official Mermaid: usecase is
+// built into mermaid@12 and zenuml is loaded via the official
+// @mermaid-js/mermaid-zenuml external package, so no card is parked.
+const OFFICIAL_UNSUPPORTED_SLUGS = new Set<string>()
+
+function officialComparable(card: any): boolean {
+  return !OFFICIAL_UNSUPPORTED_SLUGS.has(card.slug)
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -424,16 +434,29 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div class="playground-compare-grid">
         <div class="preview-pane">
-          <div class="pane-label">Rendered Preview</div>
+          <div class="pane-label">Native</div>
+          <div class="zoom-toolbar" role="toolbar" aria-label="Zoom controls for playground Native">
+            <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut('playground-native')">−</button>
+            <span class="zoom-level">{{ Math.round(zoomState('playground-native').scale * 100) }}%</span>
+            <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn('playground-native')">+</button>
+            <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset('playground-native')">Reset</button>
+          </div>
           <div
             id="editor-preview"
             class="editor-preview-surface"
             aria-live="polite"
+            @wheel.prevent="zoomBy('playground-native', $event.deltaY < 0 ? 1 : -1)"
+            @pointerdown="onPanStart('playground-native', $event)"
+            @pointermove="onPanMove"
+            @pointerup="onPanEnd"
+            @pointercancel="onPanEnd"
           >
             <div
               v-if="editorPreviewHtml"
-              class="rendered-svg-wrap"
+              class="zoomable-surface"
+              :style="{ transform: svgTransform('playground-native') }"
               v-html="editorPreviewHtml"
             ></div>
             <div v-else-if="editorError" class="render-error">
@@ -444,6 +467,34 @@ onUnmounted(() => {
               Click <strong>Render</strong> to preview output.
             </div>
           </div>
+        </div>
+        <div class="preview-pane">
+          <div class="pane-label">Official Mermaid <span class="compare-hint">comparison only</span></div>
+          <div class="zoom-toolbar" role="toolbar" aria-label="Zoom controls for playground Official Mermaid">
+            <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut('playground-official')">−</button>
+            <span class="zoom-level">{{ Math.round(zoomState('playground-official').scale * 100) }}%</span>
+            <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn('playground-official')">+</button>
+            <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset('playground-official')">Reset</button>
+          </div>
+          <div
+            class="editor-preview-surface official-surface"
+            @wheel.prevent="zoomBy('playground-official', $event.deltaY < 0 ? 1 : -1)"
+            @pointerdown="onPanStart('playground-official', $event)"
+            @pointermove="onPanMove"
+            @pointerup="onPanEnd"
+            @pointercancel="onPanEnd"
+          >
+            <div
+              class="zoomable-surface"
+              :style="{ transform: svgTransform('playground-official') }"
+            >
+              <OfficialMermaidPreview
+                :source="editorSource"
+                render-key="playground"
+              />
+            </div>
+          </div>
+        </div>
         </div>
       </div>
     </section>
@@ -543,10 +594,12 @@ onUnmounted(() => {
 
           <div class="card-content-grid">
             <div class="card-code-col">
-              <div class="code-badge">Mermaid</div>
+              <div class="code-badge">Source</div>
               <pre class="card-source"><code>{{ card.source }}</code></pre>
             </div>
+            <div class="card-compare-grid">
             <div class="card-preview-col">
+              <div class="code-badge">Native</div>
               <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for ${card.family}`">
                 <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut(card.slug)">−</button>
                 <span class="zoom-level">{{ Math.round(zoomState(card.slug).scale * 100) }}%</span>
@@ -555,7 +608,7 @@ onUnmounted(() => {
               </div>
               <div
                 class="diagram-preview-canvas"
-                :aria-label="`Rendered ${card.family} diagram`"
+                :aria-label="`Native ${card.family} diagram`"
                 @wheel.prevent="zoomBy(card.slug, $event.deltaY < 0 ? 1 : -1)"
                 @pointerdown="onPanStart(card.slug, $event)"
                 @pointermove="onPanMove"
@@ -568,6 +621,41 @@ onUnmounted(() => {
                   v-html="card.svg"
                 ></div>
               </div>
+            </div>
+            <div class="card-preview-col">
+              <div class="code-badge">Official Mermaid <span class="compare-hint">comparison only</span></div>
+              <div class="zoom-toolbar" role="toolbar" :aria-label="`Zoom controls for official ${card.family}`">
+                <button type="button" class="zoom-btn" title="Zoom out" @click="zoomOut(`${card.slug}-official`)">−</button>
+                <span class="zoom-level">{{ Math.round(zoomState(`${card.slug}-official`).scale * 100) }}%</span>
+                <button type="button" class="zoom-btn" title="Zoom in" @click="zoomIn(`${card.slug}-official`)">+</button>
+                <button type="button" class="zoom-btn zoom-reset" title="Reset zoom" @click="zoomReset(`${card.slug}-official`)">Reset</button>
+              </div>
+              <div
+                class="diagram-preview-canvas official-canvas"
+                :aria-label="`Official Mermaid ${card.family} diagram`"
+                @wheel.prevent="zoomBy(`${card.slug}-official`, $event.deltaY < 0 ? 1 : -1)"
+                @pointerdown="onPanStart(`${card.slug}-official`, $event)"
+                @pointermove="onPanMove"
+                @pointerup="onPanEnd"
+                @pointercancel="onPanEnd"
+              >
+                <div
+                  class="zoomable-surface"
+                  :style="{ transform: svgTransform(`${card.slug}-official`) }"
+                >
+                  <OfficialMermaidPreview
+                    v-if="officialComparable(card)"
+                    :source="card.source"
+                    :render-key="card.slug"
+                  />
+                  <p v-else class="official-parked">
+                    Comparison preview is not available for {{ card.family }} —
+                    the dialect is Native-only and not implemented in official
+                    Mermaid. Native render on the left is the reference.
+                  </p>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
         </article>
@@ -590,6 +678,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 /* Playground Card */
@@ -676,12 +768,20 @@ onUnmounted(() => {
 
 .playground-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
+  min-width: 0;
 }
 
-@media (max-width: 860px) {
-  .playground-grid {
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .playground-compare-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -759,7 +859,7 @@ onUnmounted(() => {
 }
 
 .editor-preview-surface {
-  min-height: 215px;
+  min-height: 280px;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   background: #ffffff; /* keep diagram canvas white for sharp SVG contrast */
@@ -769,10 +869,14 @@ onUnmounted(() => {
   justify-content: center;
   overflow: auto;
   box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .rendered-svg-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   justify-content: center;
   overflow: auto;
@@ -1005,6 +1109,8 @@ onUnmounted(() => {
   padding: 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   transition: border-color 0.2s ease;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .diagram-card:hover {
@@ -1060,6 +1166,16 @@ onUnmounted(() => {
   max-width: 680px;
 }
 
+.official-parked {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-3);
+  background: var(--vp-c-bg-soft);
+  border: 1px dashed var(--vp-c-divider);
+  border-radius: 6px;
+}
+
 .card-actions {
   display: flex;
   gap: 0.5rem;
@@ -1095,20 +1211,38 @@ onUnmounted(() => {
 
 .card-content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
+  min-width: 0;
 }
 
-@media (max-width: 860px) {
-  .card-content-grid {
+.card-compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .card-compare-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.compare-hint {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--vp-c-text-3);
 }
 
 .card-code-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .code-badge {
@@ -1138,6 +1272,8 @@ onUnmounted(() => {
 .card-preview-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .diagram-preview-canvas {
@@ -1151,11 +1287,14 @@ onUnmounted(() => {
   justify-content: center;
   overflow: auto;
   box-sizing: border-box;
-  min-height: 200px;
+  min-height: 280px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 :deep(.diagram-preview-canvas svg) {
   display: block;
+  max-width: 100%;
   height: auto;
 }
 

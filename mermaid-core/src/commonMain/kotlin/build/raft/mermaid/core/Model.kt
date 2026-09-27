@@ -15,32 +15,58 @@ public data class FlowchartDiagram(
     val direction: FlowDirection,
     val nodes: List<FlowNode>,
     val edges: List<FlowEdge>,
+    val subgraphs: List<FlowSubgraph> = emptyList(),
 ) : MermaidDiagram
 
 public data class FlowNode(
     val id: String,
     val label: String,
+    val shape: FlowNodeShape = FlowNodeShape.RECTANGLE,
+)
+
+public data class FlowSubgraph(
+    val id: String,
+    val label: String,
+    val nodeIds: List<String>,
 )
 
 public enum class FlowEdgeStyle {
     NORMAL,
     THICK,
+    DOTTED,
 }
 
 public data class FlowEdge(
     val sourceId: String,
     val targetId: String,
     val style: FlowEdgeStyle = FlowEdgeStyle.NORMAL,
+    val label: String? = null,
 )
+
+public enum class FlowNodeShape {
+    RECTANGLE,
+    ROUNDED,
+    STADIUM,
+    CIRCLE,
+    DOUBLE_CIRCLE,
+    DIAMOND,
+    PARALLELOGRAM,
+    PARALLELOGRAM_ALT,
+    TRAPEZOID,
+    TRAPEZOID_ALT,
+}
 
 public data class SequenceDiagram(
     val actors: List<SequenceActor>,
     val messages: List<SequenceMessage>,
+    val notes: List<SequenceNote> = emptyList(),
+    val activations: List<SequenceActivation> = emptyList(),
 ) : MermaidDiagram
 
 public data class SequenceActor(
     val id: String,
     val label: String,
+    val kind: SequenceActorKind = SequenceActorKind.PARTICIPANT,
 )
 
 public data class SequenceMessage(
@@ -51,20 +77,42 @@ public data class SequenceMessage(
     val arrowHead: SequenceArrowHead,
 )
 
+public data class SequenceNote(
+    val position: SequenceNotePosition,
+    val actorIds: List<String>,
+    val text: String,
+)
+
+public data class SequenceActivation(
+    val actorId: String,
+    val activate: Boolean,
+)
+
 /** State diagram model for the Mermaid stateDiagram/stateDiagram-v2 family. */
 public data class StateDiagram(
     val direction: FlowDirection = FlowDirection.TB,
     val states: List<StateNode>,
     val transitions: List<StateTransition>,
+    val notes: List<StateNote> = emptyList(),
 ) : MermaidDiagram
 
 public data class StateNode(
     val id: String,
     val label: String,
     val kind: StateNodeKind = StateNodeKind.STATE,
+    val description: String? = null,
+    val childIds: List<String> = emptyList(),
 )
 
-public enum class StateNodeKind { STATE, START, END }
+public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
+
+public data class StateNote(
+    val targetId: String,
+    val position: StateNotePosition,
+    val text: String,
+)
+
+public enum class StateNotePosition { LEFT_OF, RIGHT_OF }
 
 public data class StateTransition(
     val from: String,
@@ -104,9 +152,21 @@ public data class ClassRelationship(
     val from: String,
     val to: String,
     val kind: ClassRelationshipKind,
+    val label: String? = null,
+    val fromCardinality: String? = null,
+    val toCardinality: String? = null,
 )
 
-public enum class ClassRelationshipKind { INHERITANCE, ASSOCIATION }
+public enum class ClassRelationshipKind {
+    INHERITANCE,        // <|--  or  --|>
+    COMPOSITION,        // *--
+    AGGREGATION,        // o--
+    ASSOCIATION,        // -->
+    LINK,               // --
+    DEPENDENCY,         // ..>
+    REALIZATION,        // ..|>
+    DASHED_ASSOCIATION, // .. (plain dashed link)
+}
 
 /** Minimal platform-neutral model for the entityRelationshipDiagram family. */
 public data class EntityRelationshipDiagram(
@@ -123,6 +183,7 @@ public data class EntityAttribute(
     val type: String,
     val name: String,
     val key: EntityKey = EntityKey.NONE,
+    val comment: String? = null,
 )
 
 public enum class EntityKey { NONE, PK, FK, UK }
@@ -404,16 +465,22 @@ public data class TreeViewNode(
 )
 
 /** Bounded platform-neutral model for Mermaid railroad-beta expression trees. */
-public data class RailroadDiagram(val root: RailroadNode) : MermaidDiagram
+public data class RailroadDiagram(
+    val title: String? = null,
+    val rules: List<RailroadRule>,
+) : MermaidDiagram
+
+public data class RailroadRule(
+    val name: String,
+    val definition: RailroadNode,
+)
+
 public sealed interface RailroadNode
 public data class RailroadTerminal(val label: String) : RailroadNode
 public data class RailroadNonTerminal(val label: String) : RailroadNode
-public data object RailroadSkip : RailroadNode
-public data object RailroadStart : RailroadNode
-public data object RailroadEnd : RailroadNode
+public data class RailroadSpecial(val text: String) : RailroadNode
 public data class RailroadSequence(val children: List<RailroadNode>) : RailroadNode
-public data class RailroadStack(val children: List<RailroadNode>) : RailroadNode
-public data class RailroadChoice(val priority: Int, val children: List<RailroadNode>) : RailroadNode
+public data class RailroadChoice(val children: List<RailroadNode>) : RailroadNode
 public data class RailroadOptional(val child: RailroadNode) : RailroadNode
 public data class RailroadOneOrMore(val child: RailroadNode) : RailroadNode
 public data class RailroadZeroOrMore(val child: RailroadNode) : RailroadNode
@@ -492,5 +559,20 @@ public enum class SequenceLineStyle {
 }
 
 public enum class SequenceArrowHead {
+    NONE,
     FILLED,
+    OPEN,
+    CROSS,
+    CIRCLE,
+}
+
+public enum class SequenceActorKind {
+    PARTICIPANT,
+    ACTOR,
+}
+
+public enum class SequenceNotePosition {
+    LEFT_OF,
+    RIGHT_OF,
+    OVER,
 }

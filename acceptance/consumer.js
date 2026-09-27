@@ -13,9 +13,9 @@ service server(server)[Application server] in api
 db:B --> T:server`,'Service nodes and directed edges (bounded).'],
   ['Block',`block
 columns 3
-api[Public & partner API]:2
-db[Database]
-worker[Worker]:2
+api["Public & partner API"]:2
+db["Database"]
+worker["Worker"]:2
 api --> worker
 db --> worker`,'Blocks and connections (bounded).'],
   ['C4',`C4Context
@@ -99,19 +99,17 @@ curve alice["Alice"]{85, 78, 92}
 curve bob["Bob"]{62, 84, 55}
 max 100`,'Axes and a bounded series.'],
   ['Railroad',`railroad-beta
-Diagram(
-  Sequence(
-    'token',
-    Choice(0,
-      NonTerminal('session'),
-      Optional('refresh')
-    ),
-    Stack('validate', 'store')
-  )
-)`,'A compact grammar flow.'],
+auth = sequence(
+  terminal("token"),
+  choice(
+    nonterminal("session"),
+    optional(terminal("refresh"))
+  ),
+  sequence(terminal("validate"), terminal("store"))
+);`,'A compact grammar flow.'],
   ['Requirement Diagram',`requirementDiagram
   requirement secure_login {
-    id: AUTH-1
+    id: "AUTH-1"
     text: Users authenticate securely
     risk: high
     verifymethod: test
@@ -203,7 +201,6 @@ Client->Gateway.submit()
 Gateway->Store.lookup
 Client->Gateway: cancel`,'Sequence messages (bounded).'],
   ['Event Modeling',`eventmodeling
-title Cart & inventory
 tf 01 ui CartUI
 tf 02 cmd AddItem
 tf 03 evt ItemAdded

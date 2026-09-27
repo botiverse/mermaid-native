@@ -13,6 +13,14 @@ export default defineConfig({
   ignoreDeadLinks: [
     /^\/acceptance\/?/,
   ],
+  vite: {
+    optimizeDeps: {
+      include: ['mermaid'],
+    },
+    ssr: {
+      noExternal: [],
+    },
+  },
   themeConfig: {
     logo: '/logo.svg',
     siteTitle: 'Mermaid Native',

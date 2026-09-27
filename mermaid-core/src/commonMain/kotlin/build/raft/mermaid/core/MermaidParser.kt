@@ -78,39 +78,84 @@ public object MermaidParser {
         val direction = FlowDirection.valueOf(header.groupValues[1].uppercase())
         val nodes = linkedMapOf<String, FlowNode>()
         val edges = mutableListOf<FlowEdge>()
+        val subgraphs = mutableListOf<FlowSubgraph>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        val subgraphStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
-        fun register(id: String, label: String?) {
+        fun register(id: String, label: String?, shape: FlowNodeShape = FlowNodeShape.RECTANGLE) {
             val existing = nodes[id]
             val resolvedLabel = label?.takeIf { it.isNotEmpty() } ?: existing?.label ?: id
-            nodes[id] = FlowNode(id = id, label = resolvedLabel)
+            val resolvedShape = if (existing == null) shape else existing.shape
+            nodes[id] = FlowNode(id = id, label = resolvedLabel, shape = resolvedShape)
         }
 
         statements.drop(1).forEach { statement ->
-            val edge = FLOW_EDGE.matchEntire(statement.text)
-            if (edge != null) {
-                val sourceId = edge.groupValues[1]
-                val sourceLabel = edge.groupValues[2].ifEmpty { null }
-                val operator = edge.groupValues[3]
-                val targetId = edge.groupValues[4]
-                val targetLabel = edge.groupValues[5].ifEmpty { null }
-                register(sourceId, sourceLabel)
-                register(targetId, targetLabel)
-                edges += FlowEdge(
-                    sourceId = sourceId,
-                    targetId = targetId,
-                    style = if (operator == "==>") FlowEdgeStyle.THICK else FlowEdgeStyle.NORMAL,
-                )
+            val text = statement.text.trim()
+            if (text.isEmpty()) return@forEach
+
+            // subgraph open / close
+            FLOW_SUBGRAPH_OPEN.matchEntire(text)?.let { open ->
+                val id = open.groupValues[1]
+                val label = open.groupValues[2].ifEmpty { id }
+                subgraphStack.addLast(id to mutableListOf())
+                return@forEach
+            }
+            if (text.equals("end", ignoreCase = true)) {
+                subgraphStack.removeLastOrNull()?.let { (id, members) ->
+                    subgraphs += FlowSubgraph(id = id, label = id, nodeIds = members.toList())
+                }
                 return@forEach
             }
 
-            val node = FLOW_NODE.matchEntire(statement.text)
+            // Chained edge line: A --> B --> C (split on the arrow operators)
+            val chain = splitFlowEdgeChain(text)
+            if (chain != null) {
+                val (fromSpec, hops) = chain
+                val firstRef = parseFlowNodeRef(fromSpec)
+                if (firstRef == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge source"); return@forEach }
+                run {
+                    var from: FlowNode = firstRef
+                    hops.forEach { (operator, label, toSpec) ->
+                        val to = parseFlowNodeRef(toSpec)
+                        if (to == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge target"); return@run }
+                        register(from.id, from.label, from.shape)
+                        register(to.id, to.label, to.shape)
+                        subgraphStack.lastOrNull()?.second?.let { members ->
+                            if (from.id !in members) members += from.id
+                            if (to.id !in members) members += to.id
+                        }
+                        edges += FlowEdge(
+                            sourceId = from.id,
+                            targetId = to.id,
+                            style = when (operator) {
+                                "==>" -> FlowEdgeStyle.THICK
+                                "-.->", "-.-" -> FlowEdgeStyle.DOTTED
+                                else -> FlowEdgeStyle.NORMAL
+                            },
+                            label = label,
+                        )
+                        from = to
+                    }
+                }
+                return@forEach
+            }
+
+            // Node declaration / shape
+            val node = parseFlowNodeRef(text)
             if (node != null) {
-                register(node.groupValues[1], node.groupValues[2].ifEmpty { null })
+                register(node.id, node.label, node.shape)
+                subgraphStack.lastOrNull()?.second?.let { if (node.id !in it) it += node.id }
                 return@forEach
             }
 
             diagnostics += unsupported(statement, "Unsupported flowchart syntax")
+        }
+
+        // Close any unterminated subgraphs rather than fail.
+        while (subgraphStack.isNotEmpty()) {
+            subgraphStack.removeLastOrNull()?.let { (id, members) ->
+                subgraphs += FlowSubgraph(id = id, label = id, nodeIds = members.toList())
+            }
         }
 
         return if (diagnostics.isEmpty()) {
@@ -119,6 +164,7 @@ public object MermaidParser {
                     direction = direction,
                     nodes = nodes.values.toList(),
                     edges = edges.toList(),
+                    subgraphs = subgraphs.toList(),
                 ),
             )
         } else {
@@ -126,40 +172,147 @@ public object MermaidParser {
         }
     }
 
+    /** Splits `A -->|label| B --> C` into (source, [(op,label,target),...]). */
+    private fun splitFlowEdgeChain(line: String): Pair<String, List<Triple<String, String?, String>>>? {
+        val rest = line.trim()
+        val ops = listOf("-.->", "==>", "-->", "-.-", "<--", "<==")
+        val hops = mutableListOf<Triple<String, String?, String>>()
+        var arrowPos = -1
+        var arrowLen = 0
+        for (op in ops) {
+            val idx = rest.indexOf(op)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && op.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = op.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val source = rest.substring(0, arrowPos).trim().takeIf { it.isNotEmpty() } ?: return null
+        var index = arrowPos
+        while (index < rest.length) {
+            var bestPos = -1
+            var bestLen = 0
+            var bestOp = ""
+            for (op in ops) {
+                val idx = rest.indexOf(op, index)
+                if (idx >= 0 && (bestPos < 0 || idx < bestPos || (idx == bestPos && op.length > bestLen))) {
+                    bestPos = idx; bestLen = op.length; bestOp = op
+                }
+            }
+            if (bestPos < 0) break
+            var i = bestPos + bestLen
+            var label: String? = null
+            if (i < rest.length && rest[i] == '|') {
+                val end = rest.indexOf('|', i + 1)
+                if (end > i) { label = rest.substring(i + 1, end).trim(); i = end + 1 }
+            }
+            var nextPos = -1
+            for (op in ops) {
+                val idx = rest.indexOf(op, i)
+                if (idx >= 0 && (nextPos < 0 || idx < nextPos)) nextPos = idx
+            }
+            val toEnd = if (nextPos >= 0) nextPos else rest.length
+            val target = rest.substring(i, toEnd).trim()
+            if (target.isEmpty()) return null
+            hops += Triple(bestOp, label, target)
+            index = toEnd
+        }
+        return source to hops
+    }
+
+    private fun parseFlowNodeRef(spec: String): FlowNode? {
+        val s = spec.trim()
+        // id followed by a shape open token; label is whatever's inside the
+        // matching close. Shape open = (, ([, ((, (((, {, [, [//, [\\, [/\, [\/.
+        val id = Regex("^($IDENTIFIER)").find(s) ?: return null
+        val rest = s.substring(id.range.last + 1)
+        if (rest.isEmpty()) return FlowNode(id = id.value, label = id.value)
+
+        val (shape, openLen, closeToken) = when {
+            rest.startsWith("(((") -> Triple(FlowNodeShape.DOUBLE_CIRCLE, 3, ")))" as String)
+            rest.startsWith("((") -> Triple(FlowNodeShape.CIRCLE, 2, "))")
+            rest.startsWith("([") -> Triple(FlowNodeShape.STADIUM, 2, "])")
+            rest.startsWith("(") -> Triple(FlowNodeShape.ROUNDED, 1, ")")
+            rest.startsWith("{") -> Triple(FlowNodeShape.DIAMOND, 1, "}")
+            rest.startsWith("[//") -> Triple(FlowNodeShape.PARALLELOGRAM, 3, "/]")
+            rest.startsWith("[\\\\") -> Triple(FlowNodeShape.PARALLELOGRAM_ALT, 3, "\\]")
+            rest.startsWith("[/\\") -> Triple(FlowNodeShape.TRAPEZOID, 3, "\\]")
+            rest.startsWith("[\\/") -> Triple(FlowNodeShape.TRAPEZOID_ALT, 3, "/]")
+            rest.startsWith("[") -> Triple(FlowNodeShape.RECTANGLE, 1, "]")
+            else -> return null
+        }
+        val inner = rest.substring(openLen)
+        if (!inner.endsWith(closeToken)) return null
+        val label = inner.substring(0, inner.length - closeToken.length)
+        return FlowNode(id = id.value, label = label.ifEmpty { id.value }, shape = shape)
+    }
+
+
     private fun parseSequence(statements: List<SourceStatement>): MermaidParseResult {
         val actors = linkedMapOf<String, SequenceActor>()
         val messages = mutableListOf<SequenceMessage>()
+        val notes = mutableListOf<SequenceNote>()
+        val activations = mutableListOf<SequenceActivation>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
 
-        fun register(id: String) {
+        fun register(id: String, kind: SequenceActorKind = SequenceActorKind.PARTICIPANT) {
             if (id !in actors) {
-                actors[id] = SequenceActor(id = id, label = id)
+                actors[id] = SequenceActor(id = id, label = id, kind = kind)
             }
         }
 
         statements.drop(1).forEach { statement ->
-            val message = SEQUENCE_MESSAGE.matchEntire(statement.text)
+            val text = statement.text
+            // participant / actor declarations, optionally `id as Label`
+            SEQUENCE_DECLARATION.matchEntire(text)?.let { decl ->
+                val kind = if (decl.groupValues[1].equals("actor", ignoreCase = true)) {
+                    SequenceActorKind.ACTOR
+                } else {
+                    SequenceActorKind.PARTICIPANT
+                }
+                val id = decl.groupValues[2]
+                val label = decl.groupValues[3].ifEmpty { id }
+                actors[id] = SequenceActor(id = id, label = label, kind = kind)
+                return@forEach
+            }
+            // Note left of A / right of A / over A[,B]
+            SEQUENCE_NOTE.matchEntire(text)?.let { note ->
+                val position = when {
+                    note.groupValues[1].isNotEmpty() -> if (note.groupValues[1].equals("left", true)) SequenceNotePosition.LEFT_OF else SequenceNotePosition.RIGHT_OF
+                    else -> SequenceNotePosition.OVER
+                }
+                val ids = note.groupValues[3].split(',').map { it.trim() }
+                notes += SequenceNote(position = position, actorIds = ids, text = note.groupValues[4])
+                ids.forEach { register(it) }
+                return@forEach
+            }
+            // activate / deactivate
+            SEQUENCE_ACTIVATION.matchEntire(text)?.let { act ->
+                val id = act.groupValues[2]
+                register(id)
+                activations += SequenceActivation(actorId = id, activate = act.groupValues[1].equals("activate", ignoreCase = true))
+                return@forEach
+            }
+            // autonumber — modelled as a no-op marker; numbering is applied in layout.
+            if (SEQUENCE_AUTONUMBER.matches(text)) return@forEach
+            // Hand-split `from arrow to[: label]` — regex alternation ordering is
+            // engine-dependent (JVM vs Kotlin/Native vs wasmJs), string ops are not.
+            val message = splitSequenceMessage(text)
             if (message == null) {
                 diagnostics += unsupported(statement, "Unsupported sequence syntax")
                 return@forEach
             }
 
-            val from = message.groupValues[1]
-            val arrow = message.groupValues[2]
-            val to = message.groupValues[3]
-            val label = message.groupValues[4]
+            val (from, arrow, to, label) = message
             register(from)
             register(to)
+            val (lineStyle, arrowHead) = sequenceArrowOf(arrow)
             messages += SequenceMessage(
                 from = from,
                 to = to,
                 label = label,
-                lineStyle = if (arrow.startsWith("--")) {
-                    SequenceLineStyle.DASHED
-                } else {
-                    SequenceLineStyle.SOLID
-                },
-                arrowHead = SequenceArrowHead.FILLED,
+                lineStyle = lineStyle,
+                arrowHead = arrowHead,
             )
         }
 
@@ -168,6 +321,8 @@ public object MermaidParser {
                 SequenceDiagram(
                     actors = actors.values.toList(),
                     messages = messages.toList(),
+                    notes = notes.toList(),
+                    activations = activations.toList(),
                 ),
             )
         } else {
@@ -606,17 +761,29 @@ public object MermaidParser {
     private fun parseState(statements: List<SourceStatement>): MermaidParseResult {
         val states = linkedMapOf<String, StateNode>()
         val transitions = mutableListOf<StateTransition>()
+        val notes = mutableListOf<StateNote>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var direction = FlowDirection.TB
         var pseudoStateIndex = 0
+        val compositeStack = ArrayDeque<Pair<String, MutableList<String>>>()
 
         fun register(id: String, label: String? = null, kind: StateNodeKind = StateNodeKind.STATE) {
+            val existing = states[id]
             val resolved = when {
                 kind != StateNodeKind.STATE -> label.orEmpty()
                 !label.isNullOrEmpty() -> label
-                else -> states[id]?.label ?: id
+                else -> existing?.label ?: id
             }
-            states[id] = StateNode(id = id, label = resolved, kind = kind)
+            // Preserve description/childIds on re-registration — registering an
+            // existing node must not clobber fields set by an earlier statement.
+            states[id] = StateNode(
+                id = id,
+                label = resolved,
+                kind = if (existing != null && existing.kind != StateNodeKind.STATE) existing.kind else kind,
+                description = existing?.description,
+                childIds = existing?.childIds ?: emptyList(),
+            )
+            compositeStack.lastOrNull()?.second?.let { if (id !in it) it += id }
         }
 
         fun endpoint(raw: String, isSource: Boolean): String {
@@ -631,9 +798,44 @@ public object MermaidParser {
         }
 
         statements.drop(1).forEach { statement ->
+            val text = statement.text.trim()
             val directionMatch = STATE_DIRECTION.matchEntire(statement.text)
             if (directionMatch != null) {
                 direction = FlowDirection.valueOf(directionMatch.groupValues[1].uppercase())
+                return@forEach
+            }
+            // note left of / right of <target> : text
+            splitStateNote(text)?.let { (position, target, noteText) ->
+                register(target)
+                notes += StateNote(targetId = target, position = position, text = noteText)
+                return@forEach
+            }
+            // state X : description
+            splitStateDescription(text)?.let { (id, desc) ->
+                register(id)
+                states[id] = states.getValue(id).copy(description = desc)
+                return@forEach
+            }
+            // state X { ... } composite (collect children)
+            splitStateCompositeOpen(text)?.let { id ->
+                register(id)
+                compositeStack.addLast(id to mutableListOf())
+                return@forEach
+            }
+            if (text == "}") {
+                compositeStack.removeLastOrNull()?.let { (id, members) ->
+                    states[id] = states.getValue(id).copy(childIds = members.toList())
+                }
+                return@forEach
+            }
+            // <<fork>> / <<join>> / <<choice>> pseudo-states
+            splitStatePseudo(text)?.let { (id, kindName) ->
+                val kind = when (kindName.lowercase()) {
+                    "fork" -> StateNodeKind.FORK
+                    "join" -> StateNodeKind.JOIN
+                    else -> StateNodeKind.CHOICE
+                }
+                register(id, kind = kind)
                 return@forEach
             }
             val alias = STATE_ALIAS.matchEntire(statement.text)
@@ -651,9 +853,16 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported state diagram syntax")
         }
 
+        // Close unterminated composites rather than fail.
+        while (compositeStack.isNotEmpty()) {
+            compositeStack.removeLastOrNull()?.let { (id, members) ->
+                states[id] = states.getValue(id).copy(childIds = members.toList())
+            }
+        }
+
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(
-                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList()),
+                StateDiagram(direction = direction, states = states.values.toList(), transitions = transitions.toList(), notes = notes.toList()),
             )
         } else {
             MermaidParseResult.Failure(diagnostics)
@@ -710,11 +919,30 @@ public object MermaidParser {
         val relationships = mutableListOf<ClassRelationship>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var currentNamespace: String? = null
+        var memberBodyClassId: String? = null
 
         fun ensure(id: String) {
             if (id !in classes) classes[id] = ClassDefinition(id, namespaceName = currentNamespace)
         }
         statements.drop(1).forEach { statement ->
+            val text = statement.text.trim()
+            // class X { ... } member block — lines inside become members of X.
+            if (memberBodyClassId != null) {
+                if (text == "}") {
+                    memberBodyClassId = null
+                    return@forEach
+                }
+                val member = parseClassMemberLine(text)
+                if (member == null) {
+                    diagnostics += unsupported(statement, "Unsupported classDiagram member syntax")
+                } else {
+                    val owner = memberBodyClassId!!
+                    classes[owner] = classes.getValue(owner)
+                        .copy(members = classes.getValue(owner).members + member)
+                }
+                return@forEach
+            }
+
             CLASS_NAMESPACE.matchEntire(statement.text)?.let {
                 if (currentNamespace != null) diagnostics += unsupported(statement, "Nested class namespaces are not supported")
                 else currentNamespace = it.groupValues[1]
@@ -730,6 +958,12 @@ public object MermaidParser {
                 val label = it.groupValues[2].ifEmpty { id }
                 classes[id] = classes[id]?.copy(label = label, namespaceName = currentNamespace)
                     ?: ClassDefinition(id, label, namespaceName = currentNamespace)
+                return@forEach
+            }
+            // class X {  — open a member block whose lines belong to X
+            splitClassBlockOpen(text)?.let { id ->
+                ensure(id)
+                memberBodyClassId = id
                 return@forEach
             }
             CLASS_MEMBER.matchEntire(statement.text)?.let {
@@ -751,21 +985,62 @@ public object MermaidParser {
                 classes[id] = classes.getValue(id).copy(members = classes.getValue(id).members + member)
                 return@forEach
             }
-            CLASS_RELATION.matchEntire(statement.text)?.let {
-                val kind = when (it.groupValues[2]) {
-                    "<|--" -> ClassRelationshipKind.INHERITANCE
+            splitClassRelation(statement.text)?.let { rel ->
+                val kind = when (rel.arrow) {
+                    "<|--", "--|>" -> ClassRelationshipKind.INHERITANCE
+                    "*--" -> ClassRelationshipKind.COMPOSITION
+                    "o--" -> ClassRelationshipKind.AGGREGATION
+                    "-->" -> ClassRelationshipKind.ASSOCIATION
+                    "--" -> ClassRelationshipKind.LINK
+                    "..>" -> ClassRelationshipKind.DEPENDENCY
+                    "..|>" -> ClassRelationshipKind.REALIZATION
+                    ".." -> ClassRelationshipKind.DASHED_ASSOCIATION
                     else -> ClassRelationshipKind.ASSOCIATION
                 }
-                ensure(it.groupValues[1]); ensure(it.groupValues[3])
-                relationships += ClassRelationship(it.groupValues[1], it.groupValues[3], kind)
+                ensure(rel.fromId); ensure(rel.toId)
+                relationships += ClassRelationship(
+                    rel.fromId,
+                    rel.toId,
+                    kind,
+                    label = rel.label,
+                    fromCardinality = rel.fromCardinality,
+                    toCardinality = rel.toCardinality,
+                )
                 return@forEach
             }
             diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
         }
         if (currentNamespace != null) diagnostics += unsupported(statements.last(), "Unclosed class namespace")
+        if (memberBodyClassId != null) diagnostics += unsupported(statements.last(), "Unclosed class member block")
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
         } else MermaidParseResult.Failure(diagnostics)
+    }
+
+    /** 'class X {' — returns the class id. */
+    private fun splitClassBlockOpen(line: String): String? {
+        if (!line.lowercase().startsWith("class ")) return null
+        val rest = line.substring(6).trim()
+        if (!rest.endsWith("{")) return null
+        val id = rest.substring(0, rest.length - 1).trim()
+        if (!IDENTIFIER_ONLY.matches(id)) return null
+        return id
+    }
+
+    /** A member line inside 'class X { ... }': '[+-#~]signature'. */
+    private fun parseClassMemberLine(line: String): ClassMember? {
+        if (line.isEmpty()) return null
+        val marker = line[0]
+        val visibility = when (marker) {
+            '+' -> ClassVisibility.PUBLIC
+            '-' -> ClassVisibility.PRIVATE
+            '#' -> ClassVisibility.PROTECTED
+            '~' -> ClassVisibility.PACKAGE
+            else -> return null
+        }
+        val signature = line.substring(1).trim()
+        if (signature.isEmpty()) return null
+        return ClassMember(signature, visibility)
     }
 
     private fun parseEntityRelationship(statements: List<SourceStatement>): MermaidParseResult {
@@ -806,6 +1081,7 @@ public object MermaidParser {
                         type = attribute.groupValues[1],
                         name = attribute.groupValues[2],
                         key = key,
+                        comment = attribute.groupValues[4].takeIf { it.isNotEmpty() },
                     ),
                 )
                 return@forEach
@@ -1050,17 +1326,50 @@ public object MermaidParser {
         var current: GanttSection? = null
         val sections = mutableListOf<GanttSection>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
+        val taskEndById = mutableMapOf<String, Int>()
         statements.drop(1).forEach { statement ->
             when {
                 statement.text.startsWith("title ", true) -> title = statement.text.substringAfter(' ').trim()
                 statement.text.startsWith("dateFormat ", true) -> format = statement.text.substringAfter(' ').trim()
+                statement.text.startsWith("excludes ", true) || statement.text.startsWith("inclusiveEndDates", true) ||
+                    statement.text.startsWith("todayMarker", true) || statement.text.startsWith("weekends", true) ||
+                    statement.text.startsWith("axisFormat", true) -> return@forEach
                 statement.text.startsWith("section ", true) -> { current?.let { sections += it }; current = GanttSection(statement.text.substringAfter(' ').trim(), emptyList()) }
                 else -> {
                     val match = GANTT_TASK.matchEntire(statement.text)
                     val noStatusMatch = GANTT_TASK_NO_STATUS.matchEntire(statement.text)
+                    val afterMatch = GANTT_TASK_AFTER.matchEntire(statement.text)
+                    val milestoneMatch = GANTT_TASK_MILESTONE.matchEntire(statement.text)
                     val section = current
-                    if ((match == null && noStatusMatch == null) || section == null) diagnostics += unsupported(statement, "Unsupported gantt task")
-                    else {
+                    if (afterMatch != null && section != null) {
+                        val taskName = afterMatch.groupValues[1]
+                        val dependsOn = afterMatch.groupValues[2]
+                        val durationText = afterMatch.groupValues[3]
+                        val start = taskEndById[dependsOn]
+                        val duration = if (durationText.endsWith("d", ignoreCase = true)) durationText.dropLast(1).toIntOrNull() else null
+                        if (start == null || duration == null || duration <= 0) {
+                            diagnostics += unsupported(statement, "Unsupported gantt after task")
+                        } else {
+                            current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), "task-${section.tasks.size + 1}", start, duration, GanttTaskStatus.TODO))
+                        }
+                        return@forEach
+                    }
+                    if (milestoneMatch != null && section != null) {
+                        val taskName = milestoneMatch.groupValues[1]
+                        val taskId = milestoneMatch.groupValues[2]
+                        val start = parseIsoDay(milestoneMatch.groupValues[3])
+                        if (start == null) {
+                            diagnostics += unsupported(statement, "Invalid gantt milestone date")
+                        } else {
+                            current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), taskId, start, 0, GanttTaskStatus.DONE))
+                            taskEndById[taskId] = start
+                        }
+                        return@forEach
+                    }
+                    if ((match == null && noStatusMatch == null) || section == null) {
+                        diagnostics += unsupported(statement, "Unsupported gantt task")
+                        return@forEach
+                    } else {
                         val taskName = match?.groupValues?.get(1) ?: noStatusMatch!!.groupValues[1]
                         val rawStatus = match?.groupValues?.get(2).orEmpty()
                             .split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
@@ -1079,7 +1388,9 @@ public object MermaidParser {
                             if (rawStatus.size > 1 || (rawStatus.isNotEmpty() && status == null)) {
                                 diagnostics += unsupported(statement, "Unsupported gantt task status")
                             } else {
-                                current = section.copy(tasks = section.tasks + GanttTask(taskName.trim(), taskId, start, duration, status ?: GanttTaskStatus.TODO))
+                                val task = GanttTask(taskName.trim(), taskId, start, duration, status ?: GanttTaskStatus.TODO)
+                                current = section.copy(tasks = section.tasks + task)
+                                taskEndById[taskId] = start + duration - 1
                             }
                         }
                     }
@@ -1398,7 +1709,17 @@ public object MermaidParser {
                 if (key !in allowed || key in current.fields) {
                     diagnostics += unsupported(statement, "Unknown or duplicate requirement block field")
                 } else {
-                    current.fields[key] = field.groupValues[2].trim()
+                    val raw = field.groupValues[2].trim()
+                    val value = if (raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"")) {
+                        raw.substring(1, raw.length - 1)
+                    } else {
+                        raw
+                    }
+                    if (value.isEmpty()) {
+                        diagnostics += unsupported(statement, "Requirement field values must not be empty")
+                    } else {
+                        current.fields[key] = value
+                    }
                 }
                 return@forEach
             }
@@ -2013,15 +2334,13 @@ public object MermaidParser {
         if (headerLine != "eventmodeling") {
             return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected exact eventmodeling header", SourceLocation(1, 1))
         }
-        var title: String? = null
         val frames = linkedMapOf<String, EventModelingFrame>()
         val relations = mutableListOf<EventModelingRelation>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         var inferenceSource: String? = null
         statements.drop(1).forEach { statement ->
-            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let { m ->
-                val value = m.groupValues[1].trim()
-                if (title != null || value.isEmpty()) diagnostics += unsupported(statement, "Duplicate or empty Event Modeling title") else title = value
+            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let {
+                diagnostics += unsupported(statement, "Event Modeling title is not official mermaid syntax")
                 return@forEach
             }
             EVENT_MODELING_FRAME.matchEntire(statement.text)?.let { m ->
@@ -2035,7 +2354,7 @@ public object MermaidParser {
             diagnostics += unsupported(statement, "Unsupported Event Modeling syntax")
         }
         if (frames.isEmpty()) diagnostics += unsupported(statements.first(), "Event Modeling requires at least one frame")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(EventModelingDiagram(title, frames.values.toList(), relations.toList())) else MermaidParseResult.Failure(diagnostics)
+        return if (diagnostics.isEmpty()) MermaidParseResult.Success(EventModelingDiagram(title = null, frames = frames.values.toList(), relations = relations.toList())) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseSwimlane(source: String): MermaidParseResult {
@@ -2170,9 +2489,11 @@ public object MermaidParser {
     }
 
     /**
-     * Bounded railroad-beta slice: one Diagram/ComplexDiagram root over Terminal,
-     * NonTerminal, Skip, Start, End, Sequence, Stack, Choice, Optional, OneOrMore,
-     * and ZeroOrMore with single-quoted literal labels. Anything else fails closed.
+     * Bounded official railroad-beta slice: optional line-based `title ...`
+     * plus one or more `name = expression;` rules. Expressions are the official
+     * lowercase constructors: sequence, choice, optional, oneOrMore, zeroOrMore,
+     * terminal, nonterminal, special. JS Diagram()/Stack()/Choice(0, ...) and
+     * ABNF/EBNF/PEG dialects fail closed.
      */
     private fun parseRailroad(source: String): MermaidParseResult {
         var headerEnd = -1
@@ -2234,8 +2555,32 @@ public object MermaidParser {
             return true
         }
 
+        fun parseIdentifier(): String? {
+            skipWhitespace()
+            val first = peek() ?: return null
+            if (!first.isLetter() && first != '_') {
+                return null
+            }
+            val value = StringBuilder()
+            while (true) {
+                val character = peek() ?: break
+                if (character.isLetterOrDigit() || character == '_') {
+                    value.append(character)
+                    advance()
+                } else {
+                    break
+                }
+            }
+            return value.toString().ifEmpty { null }
+        }
+
         fun parseStringLiteral(): String? {
-            advance() // opening quote
+            skipWhitespace()
+            if (peek() != '"') {
+                fail("Railroad strings must use double quotes")
+                return null
+            }
+            advance()
             val value = StringBuilder()
             while (true) {
                 when (val character = peek()) {
@@ -2243,9 +2588,27 @@ public object MermaidParser {
                         fail("Unterminated railroad string literal")
                         return null
                     }
-                    '\'' -> {
+                    '"' -> {
                         advance()
                         break
+                    }
+                    '\\' -> {
+                        advance()
+                        when (val escaped = peek()) {
+                            null -> {
+                                fail("Unterminated railroad string escape")
+                                return null
+                            }
+                            'n' -> value.append('\n')
+                            't' -> value.append('\t')
+                            '"' -> value.append('"')
+                            '\\' -> value.append('\\')
+                            else -> {
+                                fail("Unsupported railroad string escape")
+                                return null
+                            }
+                        }
+                        advance()
                     }
                     else -> {
                         value.append(character)
@@ -2260,85 +2623,56 @@ public object MermaidParser {
             return value.toString()
         }
 
-        fun parseInteger(): Int? {
-            val startLocation = location()
-            val digits = StringBuilder()
-            if (peek() == '-') {
-                digits.append('-')
-                advance()
-            }
-            while (peek()?.isDigit() == true) {
-                digits.append(peek())
-                advance()
-            }
-            val raw = digits.toString()
-            if (raw.isEmpty() || raw == "-") {
-                fail("Expected a railroad Choice priority number")
-                return null
-            }
-            val parsed = raw.toIntOrNull()
-            if (parsed == null || parsed < 0) {
-                diagnostics += MermaidDiagnostic(
-                    code = MermaidDiagnosticCode.INVALID_VALUE,
-                    message = "Railroad Choice priority must be a non-negative integer",
-                    location = startLocation,
-                )
-                return null
-            }
-            return parsed
+        fun skipSpaces() {
+            while (peek() == ' ' || peek() == '\t') advance()
         }
 
-        fun parseIdentifier(): String {
-            val name = StringBuilder()
-            while (peek()?.let { it.isLetterOrDigit() || it == '_' } == true) {
-                name.append(peek())
+        fun parseTitleLine(): String? {
+            skipSpaces()
+            if (peek() == null || peek() == '\n' || peek() == '\r') {
+                fail("railroad title must not be empty")
+                return null
+            }
+            val raw = StringBuilder()
+            while (true) {
+                val character = peek()
+                if (character == null || character == '\n' || character == '\r') break
+                raw.append(character)
                 advance()
             }
-            return name.toString()
+            var text = raw.toString().trimEnd()
+            if (text.length >= 2 &&
+                ((text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("'") && text.endsWith("'")))
+            ) {
+                text = text.substring(1, text.length - 1)
+            }
+            if (text.isEmpty()) {
+                fail("railroad title must not be empty")
+                return null
+            }
+            return text
         }
 
         fun requireExactlyOneChild(symbol: String, children: List<RailroadNode>): RailroadNode? {
-            val child = children.singleOrNull()
-            if (child == null) fail("railroad $symbol takes exactly one child")
-            return child
+            if (children.size != 1) {
+                fail("railroad $symbol takes exactly one argument")
+                return null
+            }
+            return children[0]
         }
 
         fun parseExpression(): RailroadNode? {
             skipWhitespace()
-            when (peek()) {
-                null -> {
-                    fail("Unexpected end of railroad expression")
-                    return null
-                }
-                '\'' -> return parseStringLiteral()?.let { RailroadTerminal(it) }
-                else -> if (!(peek() as Char).isLetter() && peek() != '_') {
-                    fail("Unsupported railroad syntax")
-                    return null
-                }
-            }
             val identifier = parseIdentifier()
-            skipWhitespace()
-            when (identifier) {
-                "Skip" -> {
-                    if (peek() == '(') fail("railroad Skip takes no arguments")
-                    return RailroadSkip
-                }
-                "Start" -> {
-                    if (peek() == '(') fail("railroad Start takes no arguments")
-                    return RailroadStart
-                }
-                "End" -> {
-                    if (peek() == '(') fail("railroad End takes no arguments")
-                    return RailroadEnd
-                }
-                else -> if (peek() != '(') {
-                    fail("Unsupported railroad symbol: $identifier")
-                    return null
-                }
+            if (identifier == null) {
+                fail("Expected a railroad expression")
+                return null
             }
-            advance() // opening parenthesis
+            if (!expect('(', "railroad $identifier requires parentheses")) {
+                return null
+            }
             val children = mutableListOf<RailroadNode>()
-            var priority: Int? = null
+            var stringArg: String? = null
             loop@ while (true) {
                 skipWhitespace()
                 when (peek()) {
@@ -2355,54 +2689,59 @@ public object MermaidParser {
                         continue@loop
                     }
                 }
-                if (identifier == "Choice" && priority == null && children.isEmpty() &&
-                    (peek()?.isDigit() == true || peek() == '-')
+                if ((identifier == "terminal" || identifier == "nonterminal" || identifier == "special") &&
+                    children.isEmpty() && stringArg == null
                 ) {
-                    val parsedPriority = parseInteger() ?: return null
-                    priority = parsedPriority
-                    continue@loop
-                }
-                if ((identifier == "Terminal" || identifier == "NonTerminal") && children.isEmpty()) {
-                    skipWhitespace()
-                    if (peek() != '\'') {
-                        fail("railroad $identifier takes exactly one quoted label")
-                        return null
-                    }
-                    val label = parseStringLiteral() ?: return null
-                    children += if (identifier == "Terminal") RailroadTerminal(label) else RailroadNonTerminal(label)
+                    stringArg = parseStringLiteral() ?: return null
                     continue@loop
                 }
                 val child = parseExpression() ?: return null
                 children += child
             }
             return when (identifier) {
-                "Sequence" ->
+                "sequence" ->
                     if (children.isEmpty()) {
-                        fail("railroad Sequence requires at least one child")
+                        fail("railroad sequence requires at least one child")
                         null
-                    } else RailroadSequence(children.toList())
-                "Stack" ->
-                    if (children.isEmpty()) {
-                        fail("railroad Stack requires at least one child")
-                        null
-                    } else RailroadStack(children.toList())
-                "Choice" ->
-                    when {
-                        priority == null -> {
-                            fail("railroad Choice requires a non-negative priority first argument")
-                            null
-                        }
-                        children.isEmpty() -> {
-                            fail("railroad Choice requires at least one branch")
-                            null
-                        }
-                        else -> RailroadChoice(priority ?: 0, children.toList())
+                    } else if (children.size == 1) {
+                        children[0]
+                    } else {
+                        RailroadSequence(children.toList())
                     }
-                "Optional" -> requireExactlyOneChild(identifier, children)?.let { RailroadOptional(it) }
-                "OneOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadOneOrMore(it) }
-                "ZeroOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadZeroOrMore(it) }
-                "Terminal", "NonTerminal" ->
-                    requireExactlyOneChild(identifier, children)
+                "choice" ->
+                    if (children.isEmpty()) {
+                        fail("railroad choice requires at least one branch")
+                        null
+                    } else {
+                        RailroadChoice(children.toList())
+                    }
+                "optional" -> requireExactlyOneChild(identifier, children)?.let { RailroadOptional(it) }
+                "oneOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadOneOrMore(it) }
+                "zeroOrMore" -> requireExactlyOneChild(identifier, children)?.let { RailroadZeroOrMore(it) }
+                "terminal" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad terminal takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadTerminal(stringArg)
+                    }
+                }
+                "nonterminal" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad nonterminal takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadNonTerminal(stringArg)
+                    }
+                }
+                "special" -> {
+                    if (stringArg == null || children.isNotEmpty()) {
+                        fail("railroad special takes exactly one quoted label")
+                        null
+                    } else {
+                        RailroadSpecial(stringArg)
+                    }
+                }
                 else -> {
                     fail("Unsupported railroad symbol: $identifier")
                     null
@@ -2411,25 +2750,51 @@ public object MermaidParser {
         }
 
         skipWhitespace()
-        val rootName = parseIdentifier()
-        if (rootName != "Diagram" && rootName != "ComplexDiagram") {
-            fail("railroad-beta requires a single top-level Diagram or ComplexDiagram expression")
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        if (!expect('(', "railroad $rootName requires parentheses")) {
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        val root = parseExpression() ?: return MermaidParseResult.Failure(diagnostics.toList())
-        if (!expect(')', "railroad $rootName must be closed")) {
-            return MermaidParseResult.Failure(diagnostics.toList())
-        }
-        skipWhitespace()
-        if (peek() != null) {
-            fail("Unexpected content after the railroad diagram")
-            return MermaidParseResult.Failure(diagnostics.toList())
+        var title: String? = null
+        val rules = mutableListOf<RailroadRule>()
+        while (peek() != null) {
+            skipWhitespace()
+            if (peek() == null) break
+            val name = parseIdentifier()
+            if (name == null) {
+                fail("Expected a railroad rule or title")
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            skipWhitespace()
+            if (name == "title") {
+                if (peek() == '=') {
+                    fail("railroad title must be a line, not a named rule")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                if (rules.isNotEmpty()) {
+                    fail("railroad title must appear before rules")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                if (title != null) {
+                    fail("railroad-beta accepts at most one title")
+                    return MermaidParseResult.Failure(diagnostics.toList())
+                }
+                title = parseTitleLine() ?: return MermaidParseResult.Failure(diagnostics.toList())
+                continue
+            }
+            if (!expect('=', "railroad rule '$name' requires '='")) {
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            val definition = parseExpression() ?: return MermaidParseResult.Failure(diagnostics.toList())
+            if (!expect(';', "railroad rule '$name' must end with ';'")) {
+                return MermaidParseResult.Failure(diagnostics.toList())
+            }
+            rules += RailroadRule(name, definition)
         }
         if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics.toList())
-        return MermaidParseResult.Success(RailroadDiagram(root))
+        if (rules.isEmpty()) {
+            return failure(
+                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+                "railroad-beta requires at least one named rule",
+                SourceLocation(headerLineIndex + 2, 1),
+            )
+        }
+        return MermaidParseResult.Success(RailroadDiagram(title = title, rules = rules.toList()))
     }
 
     private fun parseSwimlaneNode(line: String): SwimlaneNode? {
@@ -2488,7 +2853,7 @@ public object MermaidParser {
     private val SWIMLANE_RECT_NODE = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
     private val SWIMLANE_ROUNDED_NODE = Regex("^($IDENTIFIER)\\(([^()\\r\\n]+)\\)$")
     private val SWIMLANE_STADIUM_NODE = Regex("^($IDENTIFIER)\\(\\[([^]\\r\\n]+)]\\)$")
-    private val SWIMLANE_DECISION_NODE = Regex("^($IDENTIFIER)\\{([^}\\r\\n]+)}$")
+    private val SWIMLANE_DECISION_NODE = Regex("^($IDENTIFIER)[{]([^}\\r\\n]+)[}]$")
     private val SWIMLANE_CIRCLE_NODE = Regex("^($IDENTIFIER)\\(\\(([^()\\r\\n]+)\\)\\)$")
     private val SWIMLANE_EDGE_TAIL = Regex("\\s+-->\\s*(?:\\|([^|\\r\\n]+)\\|\\s*)?($IDENTIFIER)")
     private val STATE_DIRECTION = Regex("^direction\\s+(TB|TD|LR|BT|RL)$", RegexOption.IGNORE_CASE)
@@ -2496,11 +2861,62 @@ public object MermaidParser {
     private val STATE_TRANSITION = Regex(
         "^(\\[\\*\\]|$IDENTIFIER)\\s*-->\\s*(\\[\\*\\]|$IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
-    private val FLOW_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$")
-    private val FLOW_EDGE = Regex(
-        "^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?\\s*(-->|==>)\\s*" +
-            "($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?$",
-    )
+
+    /** Hand-split state note/description/composite/pseudo lines — engine-independent. */
+    private fun splitStateNote(line: String): Triple<StateNotePosition, String, String>? {
+        // note left of X : text  /  note right of X : text
+        val lower = line.lowercase()
+        val pos = when {
+            lower.startsWith("note left of ") -> StateNotePosition.LEFT_OF
+            lower.startsWith("note right of ") -> StateNotePosition.RIGHT_OF
+            else -> return null
+        }
+        val rest = line.substring(if (pos == StateNotePosition.LEFT_OF) 13 else 14).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val target = rest.substring(0, colon).trim()
+        val text = rest.substring(colon + 1).trim()
+        if (target.isEmpty() || text.isEmpty() || !IDENTIFIER_ONLY.matches(target)) return null
+        return Triple(pos, target, text)
+    }
+
+    private fun splitStateDescription(line: String): Pair<String, String>? {
+        // state X : description
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        val id = rest.substring(0, colon).trim()
+        val desc = rest.substring(colon + 1).trim()
+        if (id.isEmpty() || desc.isEmpty() || !IDENTIFIER_ONLY.matches(id)) return null
+        return id to desc
+    }
+
+    private fun splitStateCompositeOpen(line: String): String? {
+        // state X {
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        if (!rest.endsWith("{")) return null
+        val id = rest.substring(0, rest.length - 1).trim()
+        if (!IDENTIFIER_ONLY.matches(id)) return null
+        return id
+    }
+
+    private fun splitStatePseudo(line: String): Pair<String, String>? {
+        // state c <<choice>> / <<fork>> / <<join>>
+        if (!line.lowercase().startsWith("state ")) return null
+        val rest = line.substring(6).trim()
+        val open = rest.indexOf("<<")
+        val close = rest.indexOf(">>", open + 2)
+        if (open < 0 || close < 0 || close <= open + 2) return null
+        val id = rest.substring(0, open).trim()
+        val kind = rest.substring(open + 2, close).trim()
+        if (!IDENTIFIER_ONLY.matches(id) || kind !in setOf("fork", "join", "choice")) return null
+        if (rest.substring(close + 2).isNotEmpty()) return null
+        return id to kind
+    }
+
+    private val FLOW_SUBGRAPH_OPEN = Regex("^subgraph\\s+($IDENTIFIER)(?:\\s*\\[([^]\\r\\n]+)])?\\s*$", RegexOption.IGNORE_CASE)
     private val ZENUML_TITLE = Regex("^title\\s+(\\S.*)$")
     private val ZENUML_ALIAS_DECLARATION = Regex("^($IDENTIFIER)\\s+as\\s+(\\S.*)$")
     private val ZENUML_BARE_DECLARATION = Regex("^($IDENTIFIER)$")
@@ -2513,29 +2929,129 @@ public object MermaidParser {
     private const val RADAR_AXIS_KEYWORD = "axis"
     private const val RADAR_CURVE_KEYWORD = "curve"
     private val RADAR_AXIS_ENTRY = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?$")
-    private val RADAR_CURVE = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?\\s*\\{([^{}]*)}$")
+    private val RADAR_CURVE = Regex("^([A-Za-z_][A-Za-z0-9_]*)(?:\\[\"([^\"\\\\\\r\\n]+)\"])?\\s*[{]([^{}]*)[}]$")
     private val RADAR_VALUE = Regex("^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$")
     private const val WARDLEY_ANCHOR_KEYWORD = "anchor "
     private const val WARDLEY_COMPONENT_KEYWORD = "component "
     private const val WARDLEY_EVOLVE_KEYWORD = "evolve "
     private const val WARDLEY_NOTE_KEYWORD = "note \""
     private const val WARDLEY_LINK_SEPARATOR = " -> "
-    private val SEQUENCE_MESSAGE = Regex(
-        // The lazy IDs are intentional: an ID may contain '-' while '-->>'
-        // starts with the same character. The arrow must win at the boundary.
-        "^($IDENTIFIER?)\\s*(->>|-->>)\\s*($IDENTIFIER?)(?:\\s*:\\s*(.*))?$",
+    private val SEQUENCE_DECLARATION = Regex(
+        "^(participant|actor)\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$",
+        RegexOption.IGNORE_CASE,
     )
+    private val SEQUENCE_NOTE = Regex(
+        "^Note\\s+(?:(left|right)\\s+of\\s+|(over)\\s+)($IDENTIFIER(?:\\s*,\\s*$IDENTIFIER)*)\\s*:\\s*(.+)$",
+        RegexOption.IGNORE_CASE,
+    )
+    private val SEQUENCE_ACTIVATION = Regex(
+        "^(activate|deactivate)\\s+($IDENTIFIER)$",
+        RegexOption.IGNORE_CASE,
+    )
+    private val SEQUENCE_AUTONUMBER = Regex("^autonumber(?:\\s+\\d+)?$", RegexOption.IGNORE_CASE)
+    private val IDENTIFIER_ONLY = Regex("^$IDENTIFIER$")
+
+    /** Splits `A --> B: label` into (from, arrow, to, label) without regex. */
+    private fun splitSequenceMessage(line: String): SequenceMessageParts? {
+        val arrows = listOf("-->>", "-->", "--x", "--)", "--(", "->>", "->", "-x", "-)", "-(", "--")
+        var arrowPos = -1
+        var arrowLen = 0
+        for (arrow in arrows) {
+            val idx = line.indexOf(arrow)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = arrow.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val from = line.substring(0, arrowPos).trim()
+        if (from.isEmpty() || !IDENTIFIER_ONLY.matches(from)) return null
+        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
+        var rest = line.substring(arrowPos + arrowLen).trim()
+        var label = ""
+        val colon = rest.indexOf(':')
+        if (colon >= 0) {
+            label = rest.substring(colon + 1).trim()
+            rest = rest.substring(0, colon).trim()
+        }
+        val to = rest
+        if (to.isEmpty() || !IDENTIFIER_ONLY.matches(to)) return null
+        return SequenceMessageParts(from, arrow, to, label)
+    }
+
+    private data class SequenceMessageParts(val from: String, val arrow: String, val to: String, val label: String)
+
+    private fun sequenceArrowOf(arrow: String): Pair<SequenceLineStyle, SequenceArrowHead> {
+        val dashed = arrow.startsWith("--")
+        val head = when {
+            arrow.endsWith(">>") -> SequenceArrowHead.FILLED
+            arrow.endsWith("x") -> SequenceArrowHead.CROSS
+            arrow.endsWith(")") -> SequenceArrowHead.OPEN
+            arrow.endsWith("(") -> SequenceArrowHead.CIRCLE
+            arrow.endsWith(">") -> SequenceArrowHead.NONE
+            else -> SequenceArrowHead.NONE
+        }
+        return (if (dashed) SequenceLineStyle.DASHED else SequenceLineStyle.SOLID) to head
+    }
     private val PIE_SECTION = Regex("^([\\\"'](?:[^\\\"']|\\\\.)*[\\\"'])\\s*:\\s*(-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?)$")
-    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*\\{$", RegexOption.IGNORE_CASE)
+    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
     private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
     private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
-    private val CLASS_RELATION = Regex("^($IDENTIFIER)\\s+(<\\|--|-->)\\s+($IDENTIFIER)(?:\\s*:\\s*.*)?$")
+    private val CLASS_RELATION_ARROWS = listOf(
+        "<|--", "--|>", "..|>", "..>", "*--", "o--", "-->", "--", "..",
+    )
+
+    private data class ClassRelationParts(
+        val fromId: String,
+        val arrow: String,
+        val toId: String,
+        val fromCardinality: String?,
+        val toCardinality: String?,
+        val label: String?,
+    )
+
+    /** Splits `A "1" --> "many" B : label` — engine-independent string ops, no regex. */
+    private fun splitClassRelation(line: String): ClassRelationParts? {
+        var arrowPos = -1
+        var arrowLen = 0
+        for (arrow in CLASS_RELATION_ARROWS) {
+            val idx = line.indexOf(arrow)
+            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
+                arrowPos = idx
+                arrowLen = arrow.length
+            }
+        }
+        if (arrowPos <= 0) return null
+        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
+        val left = line.substring(0, arrowPos).trim()
+        val fromCard = QUOTED_TOKEN.find(left)
+        val fromId = (if (fromCard != null) left.substring(0, fromCard.range.first) else left).trim()
+        if (!IDENTIFIER_ONLY.matches(fromId)) return null
+        var right = line.substring(arrowPos + arrowLen).trim()
+        var label: String? = null
+        val colon = right.indexOf(':')
+        if (colon >= 0) {
+            label = right.substring(colon + 1).trim().ifEmpty { null }
+            right = right.substring(0, colon).trim()
+        }
+        val toCard = QUOTED_TOKEN.find(right)
+        val toId = (if (toCard != null) right.substring(toCard.range.last + 1) else right).trim()
+        if (!IDENTIFIER_ONLY.matches(toId)) return null
+        return ClassRelationParts(
+            fromId, arrow, toId,
+            fromCard?.groupValues?.get(1),
+            toCard?.groupValues?.get(1),
+            label,
+        )
+    }
+
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
-    private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*\\{$")
-    private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?$")
+    private val QUOTED_TOKEN = Regex("\"([^\"]*)\"")
+    private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
+    private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?(?:\\s+\"([^\"]*)\")?$")
     private val ER_RELATIONSHIP = Regex(
-        "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)--" +
-            "(\\|\\||o\\||\\|o|\\|\\{|o\\{|}\\||}o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
+        "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)--" +
+            "(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
     )
     private val NUMBER = "-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?"
     private val XY_HEADER = Regex("^xychart-beta$", RegexOption.IGNORE_CASE)
@@ -2546,6 +3062,8 @@ public object MermaidParser {
     private const val MINDMAP_INDENT = 2
     private val GANTT_TASK = Regex("^(.+?)\\s*:\\s*([^,]*),\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*((?:\\d{4}-\\d{2}-\\d{2})|(?:\\d+)d)$", RegexOption.IGNORE_CASE)
     private val GANTT_TASK_NO_STATUS = Regex("^(.+?)\\s*:\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2}),\\s*((?:\\d{4}-\\d{2}-\\d{2})|(?:\\d+)d)$", RegexOption.IGNORE_CASE)
+    private val GANTT_TASK_AFTER = Regex("^(.+?)\\s*:\\s*after\\s+($IDENTIFIER),\\s*((?:\\d+)d)$", RegexOption.IGNORE_CASE)
+    private val GANTT_TASK_MILESTONE = Regex("^(.+?)\\s*:\\s*milestone\\s*,\\s*($IDENTIFIER),\\s*(\\d{4}-\\d{2}-\\d{2})$", RegexOption.IGNORE_CASE)
     private val GANTT_STATUS = mapOf("done" to GanttTaskStatus.DONE, "active" to GanttTaskStatus.ACTIVE, "crit" to GanttTaskStatus.CRITICAL)
     private val QUADRANT_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_AXIS = Regex("^(x|y)-axis\\s+(.+?)\\s*-->\\s*(.+)$", RegexOption.IGNORE_CASE)
@@ -2564,7 +3082,7 @@ public object MermaidParser {
     )
     private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
     private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
-    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[([^]\\r\\n]+)])?(?::([1-9][0-9]*))?$")
+    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"\\])?(?::([1-9][0-9]*))?$")
     private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
     private val TREEMAP_NODE = Regex("^\"([^\"\\r\\n]+)\"(?:\\s*:\\s*(\\S+))?$")
     private val VENN_IDENTIFIER = Regex("(?:[A-Za-z_][A-Za-z0-9_-]*|\"[^\"\\r\\n]+\")")
@@ -2764,8 +3282,8 @@ private sealed interface RequirementBlock {
     ) : RequirementBlock
 }
 
-private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement|performanceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
-private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*\\{$", RegexOption.IGNORE_CASE)
+private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement|performanceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
+private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
 private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
 private val REQUIREMENT_RELATION = Regex(
     "^([A-Za-z_][A-Za-z0-9_-]*)\\s+-\\s+(contains|satisfies|verifies)\\s+->\\s+([A-Za-z_][A-Za-z0-9_-]*)$",

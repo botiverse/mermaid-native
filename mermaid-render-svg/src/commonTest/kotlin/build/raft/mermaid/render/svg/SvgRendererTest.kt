@@ -46,6 +46,8 @@ class SvgRendererTest {
         assertTrue(svg.contains("A very long &amp; measured"))
         assertTrue(svg.contains("Pattern &amp; proof"))
         assertTrue(svg.contains("+1 more"))
+        assertTrue(svg.contains("Probe → Sense → Respond"))
+        assertTrue(svg.contains("Disorder"))
         assertTrue(svg.contains("<line"))
         assertTrue(svg.contains("<polygon"))
     }

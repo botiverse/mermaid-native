@@ -1,6 +1,7 @@
 package build.raft.mermaid.core
 
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -9,7 +10,7 @@ class MermaidParserTest {
     @Test
     fun acceptsOfficialGalleryHeaderAliases() {
         val aliases = listOf(
-            "block-beta\ncolumns 2\nA[Client]\nB[Server]\nA --> B",
+            "block-beta\ncolumns 2\nA[\"Client\"]\nB[\"Server\"]\nA --> B",
             "fishbone\nEffect\n  Cause",
             "packet-beta\n0-7: \"Header\"",
             "sankey-beta\nSolar,Grid,40",
@@ -100,9 +101,9 @@ class MermaidParserTest {
 
     @Test
     fun parsesEventModelingCompactRelaxedResetAndExplicitRelations() {
-        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling\ntf 01 ui CartUI\ntimeframe 02 command AddItem\ntf 03 evt ItemAdded\nresetframe 04 event External.InventoryChanged\ntf 05 readmodel InventoryView ->> 03 ->> 04"))
         val diagram = assertIs<EventModelingDiagram>(result.diagram)
-        assertEquals("Cart & inventory", diagram.title)
+        assertEquals(null, diagram.title)
         assertEquals(listOf("01", "02", "03", "04", "05"), diagram.frames.map { it.id })
         assertEquals(EventModelingEntityKind.READ_MODEL, diagram.frames.last().kind)
         assertTrue(diagram.frames[3].reset)
@@ -125,6 +126,7 @@ class MermaidParserTest {
             "eventmodeling\ntf 01 ui Cart { value: string }",
             "eventmodeling\ndata Cart {",
             "eventmodeling\naccTitle: deferred",
+            "eventmodeling\ntitle Cart inventory\ntf 01 ui Cart",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
@@ -132,22 +134,38 @@ class MermaidParserTest {
     fun parsesRailroadExpressionTree() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(
-                "railroad-beta\nDiagram(\n  Sequence('token',\n    Choice(0, Sequence('user', Terminal('password')), NonTerminal('oauth')),\n    Stack(Skip, Optional('mfa'))\n  )\n)",
+                """
+                railroad-beta
+                title "Auth"
+                auth = sequence(
+                  terminal("token"),
+                  choice(
+                    sequence(terminal("user"), terminal("password")),
+                    nonterminal("oauth")
+                  ),
+                  optional(terminal("mfa"))
+                );
+                """.trimIndent(),
             ),
         )
         assertEquals(
             RailroadDiagram(
-                RailroadSequence(
-                    listOf(
-                        RailroadTerminal("token"),
-                        RailroadChoice(
-                            0,
+                title = "Auth",
+                rules = listOf(
+                    RailroadRule(
+                        name = "auth",
+                        definition = RailroadSequence(
                             listOf(
-                                RailroadSequence(listOf(RailroadTerminal("user"), RailroadTerminal("password"))),
-                                RailroadNonTerminal("oauth"),
+                                RailroadTerminal("token"),
+                                RailroadChoice(
+                                    listOf(
+                                        RailroadSequence(listOf(RailroadTerminal("user"), RailroadTerminal("password"))),
+                                        RailroadNonTerminal("oauth"),
+                                    ),
+                                ),
+                                RailroadOptional(RailroadTerminal("mfa")),
                             ),
                         ),
-                        RailroadStack(listOf(RailroadSkip, RailroadOptional(RailroadTerminal("mfa")))),
                     ),
                 ),
             ),
@@ -156,14 +174,31 @@ class MermaidParserTest {
     }
 
     @Test
-    fun parsesRailroadRepeatAndBoundarySymbols() {
-        val parsed = MermaidParser.parse("railroad-beta\nComplexDiagram(OneOrMore(ZeroOrMore(Sequence(Start, 'a', End))))")
+    fun parsesRailroadRepeatSymbols() {
+        val parsed = MermaidParser.parse(
+            """
+            railroad-beta
+            loop = oneOrMore(zeroOrMore(terminal("a")));
+            mark = special("EOF");
+            """.trimIndent(),
+        )
         val result = assertIs<MermaidParseResult.Success>(
             parsed,
             (parsed as? MermaidParseResult.Failure)?.diagnostics.toString(),
         )
         assertEquals(
-            RailroadDiagram(RailroadOneOrMore(RailroadZeroOrMore(RailroadSequence(listOf(RailroadStart, RailroadTerminal("a"), RailroadEnd))))),
+            RailroadDiagram(
+                rules = listOf(
+                    RailroadRule(
+                        name = "loop",
+                        definition = RailroadOneOrMore(RailroadZeroOrMore(RailroadTerminal("a"))),
+                    ),
+                    RailroadRule(
+                        name = "mark",
+                        definition = RailroadSpecial("EOF"),
+                    ),
+                ),
+            ),
             result.diagram,
         )
     }
@@ -172,22 +207,20 @@ class MermaidParserTest {
     fun malformedRailroadFailsClosed() {
         listOf(
             "railroad-beta",
-            "railroad\nDiagram('a')",
-            "railroad-beta\nDiagram()",
-            "railroad-beta\nFoo('a')",
-            "railroad-beta\nDiagram(\"double quoted\")",
-            "railroad-beta\nDiagram(Terminal(\"x\"))",
-            "railroad-beta\nDiagram('a', 'b')",
-            "railroad-beta\nDiagram(Choice('a', 'b'))",
-            "railroad-beta\nDiagram(Choice(-1, 'a'))",
-            "railroad-beta\nDiagram(Optional())",
-            "railroad-beta\nDiagram(Sequence())",
-            "railroad-beta\nDiagram(Terminal())",
-            "railroad-beta\nDiagram(Terminal(5))",
-            "railroad-beta\nDiagram('unterminated)",
-            "railroad-beta\nDiagram(Skip())",
-            "railroad-beta\nDiagram(Stack('a')) extra",
-            "railroad-beta\nDiagram(Sequence('a'))\nDiagram(Sequence('b'))",
+            "railroad\nauth = terminal(\"a\");",
+            "railroad-beta\nDiagram(sequence(terminal(\"a\")));",
+            "railroad-beta\nauth = Sequence(terminal(\"a\"));",
+            "railroad-beta\nauth = terminal('a');",
+            "railroad-beta\nauth = terminal(\"a\")",
+            "railroad-beta\nauth = choice();",
+            "railroad-beta\nauth = sequence();",
+            "railroad-beta\nauth = terminal();",
+            "railroad-beta\nauth = terminal(5);",
+            "railroad-beta\nauth = terminal(\"unterminated);",
+            "railroad-beta\nauth = Stack(terminal(\"a\"));",
+            "railroad-beta\ntitle = terminal(\"a\");",
+            "railroad-beta\nauth = special();",
+            "railroad-beta\nauth = sequence(terminal(\"a\")); extra",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
@@ -654,11 +687,40 @@ class MermaidParserTest {
     @Test
     fun unsupportedStateSyntaxFailsWithoutPartialSuccess() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("stateDiagram-v2\nA --> B\nstate Composite {"),
+            MermaidParser.parse("stateDiagram-v2\nA --> B\nconcurrent regions not supported"),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
         assertEquals(SourceLocation(line = 3, column = 1), failure.diagnostics.single().location)
+    }
+
+    @Test
+    fun stateSupportsNotesDescriptionsCompositesAndPseudoStates() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                stateDiagram-v2
+                  direction LR
+                  state Working : handles requests
+                  state Block {
+                    A --> B
+                    B --> C
+                  }
+                  state c <<choice>>
+                  note left of Working : pinned note
+                  Idle --> Working
+                  Working --> c
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<StateDiagram>(result.diagram)
+
+        assertTrue(diagram.states.isNotEmpty())
+        assertEquals("handles requests", diagram.states.first { it.id == "Working" }.description)
+        assertTrue(diagram.states.any { it.childIds.isNotEmpty() })
+        assertEquals(StateNodeKind.CHOICE, diagram.states.first { it.id == "c" }.kind)
+        assertEquals(1, diagram.notes.size)
+        assertEquals(StateNotePosition.LEFT_OF, diagram.notes[0].position)
     }
 
     @Test
@@ -708,6 +770,63 @@ class MermaidParserTest {
         assertEquals(FlowDirection.TD, diagram.direction)
         assertEquals(listOf(FlowNode("A", "A"), FlowNode("B", "B")), diagram.nodes)
         assertEquals(listOf(FlowEdge("A", "B")), diagram.edges)
+    }
+
+    @Test
+    fun flowchartChainedEdgesPipeLabelsSubgraphsAndShapes() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                flowchart LR
+                  subgraph cluster[Pipeline]
+                    A[Start] -->|first| B(Process)
+                    B --> C{Diamond}
+                  end
+                  C -->|done| D((Circle))
+                  D -.-> E[End]
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<FlowchartDiagram>(result.diagram)
+
+        assertTrue(diagram.edges.size >= 4)
+        assertEquals("first", diagram.edges[0].label)
+        assertEquals("done", diagram.edges[2].label)
+        assertEquals(FlowEdgeStyle.DOTTED, diagram.edges[3].style)
+        assertEquals(FlowNodeShape.RECTANGLE, diagram.nodes.first { it.id == "A" }.shape)
+        assertEquals(FlowNodeShape.ROUNDED, diagram.nodes.first { it.id == "B" }.shape)
+        assertEquals(FlowNodeShape.DIAMOND, diagram.nodes.first { it.id == "C" }.shape)
+        assertEquals(FlowNodeShape.CIRCLE, diagram.nodes.first { it.id == "D" }.shape)
+        assertEquals(1, diagram.subgraphs.size)
+        assertEquals(setOf("A", "B", "C"), diagram.subgraphs[0].nodeIds.toSet())
+    }
+
+    @Test
+    fun classRelationshipKindsLabelsAndCardinality() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                classDiagram
+                  Animal <|-- Dog
+                  Car *-- Wheel
+                  Bag o-- Item
+                  User --> Order : places
+                  Repo "1" --> "many" Commit
+                  Service ..> Db
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<ClassDiagram>(result.diagram)
+
+        assertEquals(6, diagram.relationships.size)
+        assertEquals(ClassRelationshipKind.INHERITANCE, diagram.relationships[0].kind)
+        assertEquals(ClassRelationshipKind.COMPOSITION, diagram.relationships[1].kind)
+        assertEquals(ClassRelationshipKind.AGGREGATION, diagram.relationships[2].kind)
+        assertEquals(ClassRelationshipKind.ASSOCIATION, diagram.relationships[3].kind)
+        assertEquals("places", diagram.relationships[3].label)
+        assertEquals("1", diagram.relationships[4].fromCardinality)
+        assertEquals("many", diagram.relationships[4].toCardinality)
+        assertEquals(ClassRelationshipKind.DEPENDENCY, diagram.relationships[5].kind)
     }
 
     @Test
@@ -823,6 +942,51 @@ class MermaidParserTest {
     }
 
     @Test
+    fun sequenceSupportsDeclarationsNotesActivationsAndArrowVariants() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                sequenceDiagram
+                  participant A as Alice
+                  actor B as Bob
+                  autonumber
+                  A->B: no-arrow solid
+                  B-->A: no-arrow dashed
+                  A-xB: solid cross
+                  B--xA: dashed cross
+                  A-)B: solid open
+                  B--)A: dashed open
+                  Note left of A: pinned note
+                  Note over A,B: shared note
+                  activate A
+                  A->>B: request
+                  deactivate A
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<SequenceDiagram>(result.diagram)
+
+        assertEquals(setOf("A", "B"), diagram.actors.map { it.id }.toSet())
+        assertEquals("Alice", diagram.actors.first { it.id == "A" }.label)
+        assertEquals("Bob", diagram.actors.first { it.id == "B" }.label)
+        assertEquals(7, diagram.messages.size)
+        assertEquals(SequenceArrowHead.NONE, diagram.messages[0].arrowHead)
+        assertEquals(SequenceLineStyle.SOLID, diagram.messages[0].lineStyle)
+        assertEquals(SequenceArrowHead.NONE, diagram.messages[1].arrowHead)
+        assertEquals(SequenceLineStyle.DASHED, diagram.messages[1].lineStyle)
+        assertEquals(SequenceArrowHead.CROSS, diagram.messages[2].arrowHead)
+        assertEquals(SequenceArrowHead.CROSS, diagram.messages[3].arrowHead)
+        assertEquals(SequenceArrowHead.OPEN, diagram.messages[4].arrowHead)
+        assertEquals(SequenceArrowHead.OPEN, diagram.messages[5].arrowHead)
+        assertEquals(2, diagram.notes.size)
+        assertEquals(SequenceNotePosition.LEFT_OF, diagram.notes[0].position)
+        assertEquals(listOf("A", "B"), diagram.notes[1].actorIds)
+        assertEquals(2, diagram.activations.size)
+        assertTrue(diagram.activations[0].activate)
+        assertFalse(diagram.activations[1].activate)
+    }
+
+    @Test
     fun emptySourceFailsClosed() {
         val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse(" \n %% only"))
 
@@ -857,6 +1021,41 @@ class MermaidParserTest {
             )
             assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code, marker)
         }
+    }
+
+    @Test
+    fun classMemberBlockCollectsVisibilityMarkedMembers() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                classDiagram
+                class Animal {
+                  +String name
+                  +speak()
+                  -int age
+                }
+                Animal <|-- Duck
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<ClassDiagram>(result.diagram)
+
+        val animal = diagram.classes.first { it.id == "Animal" }
+        assertEquals(3, animal.members.size)
+        assertEquals("String name", animal.members[0].signature)
+        assertEquals(ClassVisibility.PUBLIC, animal.members[0].visibility)
+        assertEquals("speak()", animal.members[1].signature)
+        assertEquals(ClassVisibility.PRIVATE, animal.members[2].visibility)
+        assertEquals(ClassRelationshipKind.INHERITANCE, diagram.relationships.single().kind)
+    }
+
+    @Test
+    fun classMemberBlockFailsClosedOnGarbageLine() {
+        val failure = assertIs<MermaidParseResult.Failure>(
+            MermaidParser.parse("classDiagram\nclass A {\nnot a member\n}"),
+        )
+
+        assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
     }
 
     @Test
@@ -915,6 +1114,25 @@ class MermaidParserTest {
     }
 
     @Test
+    fun entityAttributesSupportQuotedComments() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                erDiagram
+                  CUSTOMER {
+                    int id PK "primary key"
+                    string name "display name"
+                  }
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<EntityRelationshipDiagram>(result.diagram)
+
+        assertEquals("primary key", diagram.entities[0].attributes[0].comment)
+        assertEquals("display name", diagram.entities[0].attributes[1].comment)
+    }
+
+    @Test
     fun malformedFlowchartHeaderHasTypedDiagnostic() {
         val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("flowchart SIDEWAYS"))
 
@@ -924,7 +1142,7 @@ class MermaidParserTest {
     @Test
     fun unsupportedBodySyntaxFailsWithoutPartialSuccess() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("flowchart TD\nA-->B\nsubgraph unsupported"),
+            MermaidParser.parse("flowchart TD\nA-->B\nclick A callback"),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
@@ -1005,6 +1223,33 @@ class MermaidParserTest {
             "gantt\ndateFormat YYYY-MM-DD\nTask :id, 2026-08-19, 2d",
         ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\ndateFormat YYYY-MM-DD\nsection Build\nTask :blocked, id, 2026-08-19, 2d"))
+    }
+
+    @Test
+    fun ganttSupportsAfterDependsMilestoneAndAxisDirectives() {
+        val result = assertIs<MermaidParseResult.Success>(
+            MermaidParser.parse(
+                """
+                gantt
+                  title Sprint
+                  dateFormat YYYY-MM-DD
+                  axisFormat %m-%d
+                  excludes weekends
+                  section Phase 1
+                  Design :done, design, 2026-08-19, 3d
+                  Build :after design, 2d
+                  Ship :milestone, ship, 2026-08-24
+                """.trimIndent(),
+            ),
+        )
+        val diagram = assertIs<GanttDiagram>(result.diagram)
+
+        assertEquals(3, diagram.sections.single().tasks.size)
+        // Design ends on day 21 (19 + 3 - 1), so Build starts there.
+        assertEquals(3, diagram.sections.single().tasks[0].durationDays)
+        assertEquals(2, diagram.sections.single().tasks[1].durationDays)
+        assertEquals(0, diagram.sections.single().tasks[2].durationDays)
+        assertEquals(GanttTaskStatus.DONE, diagram.sections.single().tasks[2].status)
     }
 
     @Test
@@ -1089,7 +1334,7 @@ class MermaidParserTest {
                 """
                 requirementDiagram
                   requirement secure_login {
-                    id: AUTH-1
+                    id: "AUTH-1"
                     text: Users authenticate securely
                     risk: high
                     verifymethod: test
@@ -1246,7 +1491,7 @@ class MermaidParserTest {
     }
 
     @Test fun parsesBlockGridSpansAndEdges() {
-        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 3\napi[Public API]:2\ndb[Database]\napi --> db"))
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 3\napi[\"Public API\"]:2\ndb[\"Database\"]\napi --> db"))
         assertEquals(
             BlockDiagram(3, listOf(BlockNode("api", "Public API", 2), BlockNode("db", "Database")), listOf(BlockEdge("api", "db"))),
             result.diagram,
@@ -1265,6 +1510,8 @@ class MermaidParserTest {
             "block\ncolumns 2\na --> missing\na",
             "block\ncolumns 2\na --> a\na",
             "block\ncolumns 2\na b",
+            "block\ncolumns 2\napi[Public API]",
+            "block\ncolumns 2\napi['Public API']",
             "block\ncolumns 2\nblock:group\na\nend",
             "block\ncolumns 2\na\nstyle a fill:#fff",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }

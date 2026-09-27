@@ -114,7 +114,7 @@ import build.raft.mermaid.core.RailroadDiagram
 import build.raft.mermaid.core.RailroadNonTerminal
 import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
-import build.raft.mermaid.core.RailroadStack
+import build.raft.mermaid.core.RailroadRule
 import build.raft.mermaid.core.RailroadTerminal
 import build.raft.mermaid.core.ZenumlAsyncMessage
 import build.raft.mermaid.core.ZenumlDiagram
@@ -156,9 +156,9 @@ public object MermaidExamples {
 
     public val eventModelingCartFlow: MermaidExample = MermaidExample(
         path = "samples/eventmodeling-cart-flow.mmd",
-        source = "eventmodeling\ntitle Cart & inventory\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
+        source = "eventmodeling\ntf 01 ui CartUI\ntf 02 cmd AddItem\ntf 03 evt ItemAdded\nrf 04 evt External.InventoryChanged\ntf 05 pcr InventoryProcessor\ntf 06 rmo InventoryView ->> 03 ->> 04",
         expected = EventModelingDiagram(
-            title = "Cart & inventory",
+            title = null,
             frames = listOf(
                 EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
                 EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
@@ -251,7 +251,7 @@ public object MermaidExamples {
     )
     public val blockServiceMap: MermaidExample = MermaidExample(
         "samples/block-service-map.mmd",
-        "block\ncolumns 3\napi[Public & partner API]:2\ndb[Database]\nworker[Worker]:2\napi --> worker\ndb --> worker",
+        "block\ncolumns 3\napi[\"Public & partner API\"]:2\ndb[\"Database\"]\nworker[\"Worker\"]:2\napi --> worker\ndb --> worker",
         BlockDiagram(
             3,
             listOf(BlockNode("api", "Public & partner API", 2), BlockNode("db", "Database"), BlockNode("worker", "Worker", 2)),
@@ -293,7 +293,7 @@ public object MermaidExamples {
         source = """
             requirementDiagram
               requirement secure_login {
-                id: AUTH-1
+                id: "AUTH-1"
                 text: Users authenticate securely
                 risk: high
                 verifymethod: test
@@ -722,26 +722,28 @@ public object MermaidExamples {
         path = "samples/railroad-auth-flow.mmd",
         source = """
             railroad-beta
-            Diagram(
-              Sequence(
-                'token',
-                Choice(0,
-                  NonTerminal('session'),
-                  Optional('refresh')
-                ),
-                Stack('validate', 'store')
-              )
-            )
+            auth = sequence(
+              terminal("token"),
+              choice(
+                nonterminal("session"),
+                optional(terminal("refresh"))
+              ),
+              sequence(terminal("validate"), terminal("store"))
+            );
         """.trimIndent(),
         expected = RailroadDiagram(
-            RailroadSequence(
-                listOf(
-                    RailroadTerminal("token"),
-                    RailroadChoice(
-                        0,
-                        listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+            rules = listOf(
+                RailroadRule(
+                    name = "auth",
+                    definition = RailroadSequence(
+                        listOf(
+                            RailroadTerminal("token"),
+                            RailroadChoice(
+                                listOf(RailroadNonTerminal("session"), RailroadOptional(RailroadTerminal("refresh"))),
+                            ),
+                            RailroadSequence(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
+                        ),
                     ),
-                    RailroadStack(listOf(RailroadTerminal("validate"), RailroadTerminal("store"))),
                 ),
             ),
         ),

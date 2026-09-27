@@ -1,11 +1,9 @@
 railroad-beta
-Diagram(
-  Sequence(
-    'token',
-    Choice(0,
-      NonTerminal('session'),
-      Optional('refresh')
-    ),
-    Stack('validate', 'store')
-  )
-)
+auth = sequence(
+  terminal("token"),
+  choice(
+    nonterminal("session"),
+    optional(terminal("refresh"))
+  ),
+  sequence(terminal("validate"), terminal("store"))
+);

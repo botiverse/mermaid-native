@@ -12,14 +12,23 @@
   <polygon points="164,292 168.5,301 159.5,301" fill="#475569"/>
   <text x="164" y="304" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#111827">Stabilized</text>
   <text x="164" y="102" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Complex</text>
-  <text x="164" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Investigate &amp; learn</text>
-  <text x="164" y="166" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Run chaos experiment</text>
+  <text x="164" y="122" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Probe → Sense → Respond</text>
+  <text x="164" y="138" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Emergent Practices</text>
+  <text x="164" y="160" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Investigate &amp; learn</text>
+  <text x="164" y="190" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Run chaos experiment</text>
   <text x="484" y="102" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Complicated</text>
-  <text x="484" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Expert analysis</text>
+  <text x="484" y="122" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Sense → Analyse → Respond</text>
+  <text x="484" y="138" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Good Practices</text>
+  <text x="484" y="160" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Expert analysis</text>
   <text x="484" y="362" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Clear</text>
-  <text x="484" y="396" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Apply known fix</text>
+  <text x="484" y="382" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Sense → Categorise → Respond</text>
+  <text x="484" y="398" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Best Practices</text>
+  <text x="484" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Apply known fix</text>
   <text x="164" y="362" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Chaotic</text>
-  <text x="164" y="396" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Page on-call</text>
+  <text x="164" y="382" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Act → Sense → Respond</text>
+  <text x="164" y="398" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Novel Practices</text>
+  <text x="164" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Page on-call</text>
   <text x="324" y="284" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#111827">Confusion</text>
-  <text x="324" y="309" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Unknown failure</text>
+  <text x="324" y="304" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#64748b">Disorder</text>
+  <text x="324" y="324" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Unknown failure</text>
 </svg>

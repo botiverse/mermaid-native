@@ -18,49 +18,133 @@ permissions:
   contents: read
 
 jobs:
+  # Normal and OHOS planes used to run serially inside one job (~118min + ~33min
+  # on the 0.1.3 tag). They are now parallel jobs: same runner image, same
+  # secrets scope, independent caches (cache-readonly avoids the two jobs
+  # clobbering each other's dependency cache on save).
   publish:
     runs-on: macos-14
     environment: raft-artifacts
+    if: ${{ github.event_name == 'push' || inputs.plane == 'normal' || inputs.plane == 'both' }}
+    env:
+      MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
+      MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
+      MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          [[ -n "$version" ]] || { echo "::error::version is empty"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        id: version
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+      # ~/.konan holds the Kotlin/Native compiler distributions (the dominant
+      # cold-start cost: ~2.1.21 + KBA toolchains, several GB of downloads).
+      # Keyed on the build scripts so a Kotlin/KBA bump invalidates it.
+      - name: Cache Kotlin/Native toolchain (~/.konan)
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'build.ohos.gradle.kts', 'settings.gradle.kts', 'settings.ohos.gradle.kts') }}
+          restore-keys: konan-${{ runner.os }}-
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-readonly: true
       - name: Publish normal plane (android/ios)
-        if: ${{ github.event_name == 'push' || inputs.plane == 'normal' || inputs.plane == 'both' }}
         shell: bash
-        env:
-          MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
-          MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
-          MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="${{ inputs.version }}"
-          fi
-          ./gradlew -Pversion="$version" verifyThirdPartyNotices cyclonedxBom publishAllPublicationsToMermaidRegistryRepository
-      - name: Publish OHOS plane (ohosArm64)
-        if: ${{ github.event_name == 'push' || inputs.plane == 'ohos' || inputs.plane == 'both' }}
-        shell: bash
-        env:
-          MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
-          MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
-          MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="${{ inputs.version }}"
-          fi
-          # OHOS plane publishes under an independent `-ohos` version coordinate
-          # (matching the Kuikly `-2.0.21-ohos` vs `-2.1.21` plane-split convention),
-          # so normal and OHOS root kotlinMultiplatform publications never collide.
-          ./gradlew -c settings.ohos.gradle.kts -Pversion="$version-ohos" publishAllPublicationsToMermaidRegistryRepository
+          # Transient registry flakes have killed single-attempt publishes
+          # before; retry with exponential backoff (30s, 60s, 120s).
+          publish_retry() {
+            local attempt=1
+            while true; do
+              if "$@"; then
+                return 0
+              fi
+              if (( attempt >= 3 )); then
+                echo "::error::publish failed after ${attempt} attempts"
+                return 1
+              fi
+              local delay=$(( 30 * (2 ** (attempt - 1)) ))
+              echo "::warning::attempt ${attempt} failed, retrying in ${delay}s"
+              sleep "$delay"
+              (( attempt++ ))
+            done
+          }
+          publish_retry ./gradlew -Pversion="${{ steps.version.outputs.version }}" \
+            verifyThirdPartyNotices cyclonedxBom \
+            publishAllPublicationsToMermaidRegistryRepository
       - uses: actions/upload-artifact@v4
         if: ${{ github.event_name == 'push' }}
         with:
           name: mermaid-native-sbom
           path: build/reports/cyclonedx-direct/bom.*
+
+  publish-ohos:
+    runs-on: macos-14
+    environment: raft-artifacts
+    if: ${{ github.event_name == 'push' || inputs.plane == 'ohos' || inputs.plane == 'both' }}
+    env:
+      MERMAID_MAVEN_URL: ${{ secrets.MERMAID_MAVEN_URL }}
+      MERMAID_MAVEN_USER: ${{ secrets.MERMAID_MAVEN_USER }}
+      MERMAID_MAVEN_TOKEN: ${{ secrets.MERMAID_MAVEN_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          [[ -n "$version" ]] || { echo "::error::version is empty"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        id: version
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Kotlin/Native toolchain (~/.konan)
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'build.ohos.gradle.kts', 'settings.gradle.kts', 'settings.ohos.gradle.kts') }}
+          restore-keys: konan-${{ runner.os }}-
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-readonly: true
+      - name: Publish OHOS plane (ohosArm64)
+        shell: bash
+        run: |
+          publish_retry() {
+            local attempt=1
+            while true; do
+              if "$@"; then
+                return 0
+              fi
+              if (( attempt >= 3 )); then
+                echo "::error::publish failed after ${attempt} attempts"
+                return 1
+              fi
+              local delay=$(( 30 * (2 ** (attempt - 1)) ))
+              echo "::warning::attempt ${attempt} failed, retrying in ${delay}s"
+              sleep "$delay"
+              (( attempt++ ))
+            done
+          }
+          # OHOS plane publishes under an independent `-ohos` version coordinate
+          # (matching the Kuikly `-2.0.21-ohos` vs `-2.1.21` plane-split convention),
+          # so normal and OHOS root kotlinMultiplatform publications never collide.
+          publish_retry ./gradlew -c settings.ohos.gradle.kts \
+            -Pversion="${{ steps.version.outputs.version }}-ohos" \
+            publishAllPublicationsToMermaidRegistryRepository
