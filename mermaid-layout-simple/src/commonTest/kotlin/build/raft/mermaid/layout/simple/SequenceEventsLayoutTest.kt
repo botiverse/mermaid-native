@@ -18,6 +18,10 @@ class SequenceEventsLayoutTest {
         val bar=s.commands.filterIsInstance<DrawRect>().single { it.rect.width==8.0 }
         assertEquals(texts.getValue("first")+8,bar.rect.y)
         assertEquals(texts.getValue("reply")+8,bar.rect.y+bar.rect.height)
+        val request=s.commands.filterIsInstance<DrawLine>().single { it.from.y==texts.getValue("first")+8 && it.from.y==it.to.y }
+        assertEquals(bar.rect.x,request.to.x)
+        val response=s.commands.filterIsInstance<DrawLine>().single { it.from.y==texts.getValue("reply")+8 && it.from.y==it.to.y }
+        assertEquals(bar.rect.x,response.from.x)
     }
     @Test fun rendersNumberingFragmentsAndMetadata() {
         val s=scene("sequenceDiagram\ntitle Request\naccTitle: Flow\nautonumber 10.01 .01\nloop retry\nA->>B: first\nB-->>A: second\nend\nautonumber off\nA->>B: third")

@@ -28,7 +28,7 @@ internal fun sequenceLayout(
     fun textWidth(text: String, wrap: Boolean? = null) = lines(text, wrap).maxOfOrNull { measurer.measure(it, style).width } ?: 0.0
     val actorLines = diagram.actors.associate { it.id to lines(it.label, it.wrap) }
     val actorWidths = diagram.actors.associate { it.id to max(88.0, textWidth(it.label, it.wrap) + 32.0) }
-    val actorHeight = max(40.0, (actorLines.values.maxOfOrNull { it.size } ?: 1) * lineHeight + 16.0 + if (diagram.actors.any { it.kind == SequenceActorKind.ACTOR }) 44.0 else 0.0)
+    val actorHeight = max(40.0, (actorLines.values.maxOfOrNull { it.size } ?: 1) * lineHeight + 16.0 + if (diagram.actors.any { it.kind != SequenceActorKind.PARTICIPANT }) 44.0 else 0.0)
     val centers = linkedMapOf<String, Double>()
     var cursor = config.padding
     diagram.actors.forEach { actor ->
@@ -104,19 +104,25 @@ internal fun sequenceLayout(
                 val text = lines(label,event.wrap)
                 val signalY=eventY+(text.size-1)*lineHeight
                 lastSignalY=signalY+if(event.from==event.to) 24.0 else 0.0
-                val fromX=centers.getValue(event.from); val toX=centers.getValue(event.to)
+                val sourceCenter=centers.getValue(event.from); val targetCenter=centers.getValue(event.to)
+                val nextActivation=diagram.events.getOrNull(index+1) as? SequenceActivation
+                val fromDepth=starts[event.from]?.size ?: 0
+                val toDepth=(starts[event.to]?.size ?: 0)+if(nextActivation?.activate==true && nextActivation.actorId==event.to) 1 else 0
+                val forward=targetCenter>=sourceCenter
+                val fromX=sourceCenter+if(fromDepth>0) (fromDepth-1)*4.0+if(forward) 4.0 else -4.0 else 0.0
+                val toX=targetCenter+if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
                 val pattern=if(event.lineStyle==SequenceLineStyle.DASHED) StrokePattern.DASHED else StrokePattern.SOLID
                 val from=ScenePoint(fromX,signalY); val to=ScenePoint(toX,signalY)
-                if(fromX==toX){
+                if(event.from==event.to){
                     val right=fromX+max(48.0,textWidth(event.label,event.wrap)+16.0)
-                    val end=ScenePoint(fromX,signalY+24)
+                    val end=ScenePoint(toX,signalY+24)
                     foreground += DrawPolyline(listOf(from,ScenePoint(right,signalY),ScenePoint(right,end.y),end),stroke=ink,pattern=pattern)
-                    foreground += arrow(ScenePoint(right,end.y),end,event.arrowHead,ink)
+                    foreground += if(event.headAtSource) arrow(ScenePoint(right,signalY),from,event.arrowHead,ink) else arrow(ScenePoint(right,end.y),end,event.arrowHead,ink)
                     if(event.bidirectional) foreground += arrow(ScenePoint(right,signalY),from,event.arrowHead,ink)
                     drawLines(foreground,text,fromX+8,eventY-8,TextAnchor.START)
                 } else {
                     foreground += DrawLine(from,to,stroke=ink,pattern=pattern)
-                    foreground += arrow(from,to,event.arrowHead,ink)
+                    foreground += if(event.headAtSource) arrow(to,from,event.arrowHead,ink) else arrow(from,to,event.arrowHead,ink)
                     if(event.bidirectional) foreground += arrow(to,from,event.arrowHead,ink)
                     drawLines(foreground,text,(fromX+toX)/2,eventY-8,TextAnchor.MIDDLE)
                 }
@@ -153,17 +159,8 @@ internal fun sequenceLayout(
     starts.forEach { (id,stack) -> stack.forEachIndexed { depth,start -> activationBar(id,start,actorBottom,depth) } }
     listOf(actorTop,actorBottom).forEach { actorY -> diagram.actors.forEach { actor ->
         val center=centers.getValue(actor.id); val actorWidth=actorWidths.getValue(actor.id)
-        if(actor.kind==SequenceActorKind.ACTOR){
-            foreground += DrawEllipse(ScenePoint(center,actorY+9),8.0,8.0,fill=SceneColor("#eaeaea"),stroke=SceneColor("#666666"))
-            foreground += DrawLine(ScenePoint(center,actorY+17),ScenePoint(center,actorY+34),stroke=SceneColor("#666666"))
-            foreground += DrawLine(ScenePoint(center-14,actorY+23),ScenePoint(center+14,actorY+23),stroke=SceneColor("#666666"))
-            foreground += DrawPolyline(listOf(ScenePoint(center-12,actorY+45),ScenePoint(center,actorY+34),ScenePoint(center+12,actorY+45)),stroke=SceneColor("#666666"))
-            drawLines(foreground,actorLines.getValue(actor.id),center,actorY+60,TextAnchor.MIDDLE)
-        } else {
-            foreground += DrawRect(SceneRect(center-actorWidth/2,actorY,actorWidth,actorHeight),3.0,SceneColor("#eaeaea"),SceneColor("#666666"))
-            val text=actorLines.getValue(actor.id)
-            drawLines(foreground,text,center,actorY+(actorHeight-(text.size-1)*lineHeight)/2+style.fontSize*.35,TextAnchor.MIDDLE)
-        }
+        foreground += sequenceParticipant(actor,center,actorY,actorWidth,actorHeight,actorLines.getValue(actor.id),style,lineHeight)
+
     } }
     diagram.title?.let { foreground += DrawText(it,ScenePoint(config.padding,config.padding+18),style=TextStyle(fontSize=18.0,fontWeight=600)) }
     return LayoutScene(width,actorBottom+actorHeight+config.padding,backgrounds+lifelines+bars+foreground,diagram.accessibilityTitle,diagram.accessibilityDescription)

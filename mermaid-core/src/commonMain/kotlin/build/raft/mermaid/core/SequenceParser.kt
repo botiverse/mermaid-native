@@ -51,14 +51,7 @@ internal class SequenceParser(private val source: String) {
         val command = text.takeWhile { !it.isWhitespace() }.lowercase()
         val rest = text.drop(command.length).trim()
         when (command) {
-            "participant", "actor" -> {
-                val parts = ALIAS.split(rest, limit = 2)
-                val id = parts[0].trim()
-                check(validId(id) && '@' !in id, "Invalid participant declaration")
-                val label = messageText(parts.getOrElse(1) { id })
-                val kind = if (command == "actor") SequenceActorKind.ACTOR else SequenceActorKind.PARTICIPANT
-                actors[id] = SequenceActor(id, label.first, kind, label.second)
-            }
+            "participant", "actor" -> participant(rest, command == "actor")
             "title", "title:" -> title = rest
             "acctitle:" -> accTitle = rest
             "accdescr:" -> accDescription = rest
@@ -108,6 +101,38 @@ internal class SequenceParser(private val source: String) {
         }
     }
 
+    private fun participant(raw: String, actor: Boolean) {
+        val marker = raw.indexOf("@{")
+        val metadata: Map<String,String>
+        val declaration: String
+        if (marker >= 0) {
+            var at=marker+2; var quote: Char?=null; var escaped=false
+            while(at<raw.length) {
+                val c=raw[at]
+                if(escaped) escaped=false
+                else if(c=='\\' && quote!=null) escaped=true
+                else if(quote!=null) { if(c==quote) quote=null }
+                else if(c=='\'' || c=='"') quote=c
+                else if(c=='}') break
+                at++
+            }
+            check(at<raw.length, "Unclosed participant metadata")
+            metadata=SequenceParticipantMetadata(raw.substring(marker+2,at)).parse() ?: fail("Invalid participant metadata")
+            declaration=raw.take(marker).trim()+raw.substring(at+1)
+        } else { metadata=emptyMap(); declaration=raw }
+        val parts=ALIAS.split(declaration,limit=2)
+        val id=parts[0].trim()
+        check(validId(id) && '@' !in id,"Invalid participant declaration")
+        check(metadata.keys.all { it=="type" || it=="alias" }, "Unsupported participant metadata field")
+        val kind=metadata["type"]?.let { type -> SequenceActorKind.entries.firstOrNull { it.name.equals(type,true) } ?: fail("Unsupported participant type: $type") }
+            ?: if(actor) SequenceActorKind.ACTOR else SequenceActorKind.PARTICIPANT
+        val external=parts.getOrNull(1)
+        val rawLabel=if(external==null || external==id) metadata["alias"] ?: external else external
+        if(rawLabel==null && id in actors) return
+        val label=messageText(rawLabel ?: id)
+        actors[id]=SequenceActor(id,label.first,kind,label.second)
+    }
+
     private fun signal(text: String) {
         val colon = text.indexOf(':')
         check(colon >= 0, "Expected : after sequence message")
@@ -125,10 +150,11 @@ internal class SequenceParser(private val source: String) {
         register(from); register(to)
         val symbol = arrow.first
         val style = if ("--" in symbol) SequenceLineStyle.DASHED else SequenceLineStyle.SOLID
-        val head = when { symbol.endsWith(">>") -> SequenceArrowHead.FILLED; symbol.endsWith('x') -> SequenceArrowHead.CROSS; symbol.endsWith(')') -> SequenceArrowHead.OPEN; else -> SequenceArrowHead.NONE }
+        val half = HALF_ARROWS[symbol]
+        val head = half?.first ?: when { symbol.endsWith(">>") -> SequenceArrowHead.FILLED; symbol.endsWith('x') -> SequenceArrowHead.CROSS; symbol.endsWith(')') -> SequenceArrowHead.OPEN; else -> SequenceArrowHead.NONE }
         val central = when { centralFrom && centralTo -> SequenceCentralConnection.BOTH; centralFrom -> SequenceCentralConnection.FROM; centralTo -> SequenceCentralConnection.TO; else -> SequenceCentralConnection.NONE }
         val label = messageText(text.substring(colon + 1))
-        events += SequenceMessage(from, to, label.first, style, head, label.second, symbol.startsWith("<<"), central, activation == '+' || centralTo)
+        events += SequenceMessage(from, to, label.first, style, head, label.second, symbol.startsWith("<<"), central, activation == '+' || centralTo, half?.second ?: false)
         if (activation != null) activation(if (activation == '+') to else from, activation == '+')
     }
 
@@ -159,7 +185,21 @@ internal class SequenceParser(private val source: String) {
     private fun readStatement(): String {
         val start = offset
         statementOffset = start
-        while (offset < source.length && source[offset] !in "\r\n;#" && !source.startsWith("%%", offset)) offset++
+        var inMetadata=false; var quote: Char?=null; var escaped=false
+        while(offset<source.length) {
+            val c=source[offset]
+            if(inMetadata) {
+                if(escaped) escaped=false
+                else if(c=='\\' && quote!=null) escaped=true
+                else if(quote!=null) { if(c==quote) quote=null }
+                else if(c=='\'' || c=='"') quote=c
+                else if(c=='}') inMetadata=false
+            } else {
+                if(c in "\r\n;#" || source.startsWith("%%",offset)) break
+                if(source.startsWith("@{",offset)) { offset+=2; inMetadata=true; continue }
+            }
+            offset++
+        }
         return source.substring(start, offset).trim()
     }
     private fun check(condition: Boolean, message: String) { if (!condition) fail(message) }
@@ -170,6 +210,24 @@ internal class SequenceParser(private val source: String) {
         val ALIAS = Regex("\\s+[aA][sS]\\s+")
         val NUMBER = Regex("(?:[0-9]+(?:\\.[0-9]{1,2})?|\\.[0-9]{1,2})")
         val WRAP = Regex("^:?(?:no)?wrap:")
-        val ARROWS = listOf("<<-->>", "<<->>", "-->>", "->>", "-->", "->", "--x", "-x", "--)", "-)")
+        val HALF_ARROWS = mapOf(
+            "-|\\" to (SequenceArrowHead.HALF_FILLED_TOP to false),
+            "--|\\" to (SequenceArrowHead.HALF_FILLED_TOP to false),
+            "-|/" to (SequenceArrowHead.HALF_FILLED_BOTTOM to false),
+            "--|/" to (SequenceArrowHead.HALF_FILLED_BOTTOM to false),
+            "-\\\\" to (SequenceArrowHead.HALF_OPEN_TOP to false),
+            "--\\\\" to (SequenceArrowHead.HALF_OPEN_TOP to false),
+            "-//" to (SequenceArrowHead.HALF_OPEN_BOTTOM to false),
+            "--//" to (SequenceArrowHead.HALF_OPEN_BOTTOM to false),
+            "/|-" to (SequenceArrowHead.HALF_FILLED_TOP to true),
+            "/|--" to (SequenceArrowHead.HALF_FILLED_TOP to true),
+            "\\|-" to (SequenceArrowHead.HALF_FILLED_BOTTOM to true),
+            "\\|--" to (SequenceArrowHead.HALF_FILLED_BOTTOM to true),
+            "//-" to (SequenceArrowHead.HALF_OPEN_TOP to true),
+            "//--" to (SequenceArrowHead.HALF_OPEN_TOP to true),
+            "\\\\-" to (SequenceArrowHead.HALF_OPEN_BOTTOM to true),
+            "\\\\--" to (SequenceArrowHead.HALF_OPEN_BOTTOM to true)
+        )
+        val ARROWS = listOf("<<-->>", "<<->>", "-->>", "->>", "-->", "->", "--x", "-x", "--)", "-)") + HALF_ARROWS.keys
     }
 }

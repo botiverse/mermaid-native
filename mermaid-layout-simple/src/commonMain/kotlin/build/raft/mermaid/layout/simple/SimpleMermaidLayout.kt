@@ -3069,6 +3069,15 @@ public object SimpleMermaidLayout : DiagramLayout {
         val px = -uy
         val py = ux
         return when (head) {
+            SequenceArrowHead.HALF_FILLED_TOP, SequenceArrowHead.HALF_FILLED_BOTTOM,
+            SequenceArrowHead.HALF_OPEN_TOP, SequenceArrowHead.HALF_OPEN_BOTTOM -> {
+                val sign = if (head == SequenceArrowHead.HALF_FILLED_TOP || head == SequenceArrowHead.HALF_OPEN_TOP) -1.0 else 1.0
+                val base = ScenePoint(to.x - ux * 9.0, to.y - uy * 9.0)
+                val side = if (ux < 0.0) -sign else sign
+                val wing = ScenePoint(base.x + px * 4.5 * side, base.y + py * 4.5 * side)
+                if (head == SequenceArrowHead.HALF_FILLED_TOP || head == SequenceArrowHead.HALF_FILLED_BOTTOM) listOf(DrawPolygon(listOf(to,base,wing),fill))
+                else listOf(DrawPolyline(listOf(wing,to),stroke=fill))
+            }
             SequenceArrowHead.NONE -> emptyList()
             SequenceArrowHead.FILLED -> listOf(
                 DrawPolygon(
