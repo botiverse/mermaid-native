@@ -104,12 +104,18 @@ internal fun sequenceLayout(
                 val text = lines(label,event.wrap)
                 val signalY=eventY+(text.size-1)*lineHeight
                 lastSignalY=signalY+if(event.from==event.to) 24.0 else 0.0
-                val fromX=centers.getValue(event.from); val toX=centers.getValue(event.to)
+                val sourceCenter=centers.getValue(event.from); val targetCenter=centers.getValue(event.to)
+                val nextActivation=diagram.events.getOrNull(index+1) as? SequenceActivation
+                val fromDepth=starts[event.from]?.size ?: 0
+                val toDepth=(starts[event.to]?.size ?: 0)+if(nextActivation?.activate==true && nextActivation.actorId==event.to) 1 else 0
+                val forward=targetCenter>=sourceCenter
+                val fromX=sourceCenter+if(fromDepth>0) (fromDepth-1)*4.0+if(forward) 4.0 else -4.0 else 0.0
+                val toX=targetCenter+if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
                 val pattern=if(event.lineStyle==SequenceLineStyle.DASHED) StrokePattern.DASHED else StrokePattern.SOLID
                 val from=ScenePoint(fromX,signalY); val to=ScenePoint(toX,signalY)
-                if(fromX==toX){
+                if(event.from==event.to){
                     val right=fromX+max(48.0,textWidth(event.label,event.wrap)+16.0)
-                    val end=ScenePoint(fromX,signalY+24)
+                    val end=ScenePoint(toX,signalY+24)
                     foreground += DrawPolyline(listOf(from,ScenePoint(right,signalY),ScenePoint(right,end.y),end),stroke=ink,pattern=pattern)
                     foreground += arrow(ScenePoint(right,end.y),end,event.arrowHead,ink)
                     if(event.bidirectional) foreground += arrow(ScenePoint(right,signalY),from,event.arrowHead,ink)
