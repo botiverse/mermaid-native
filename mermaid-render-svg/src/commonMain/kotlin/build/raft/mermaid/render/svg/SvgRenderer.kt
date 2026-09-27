@@ -23,6 +23,8 @@ public object SvgRenderer {
         append(' ')
         append(scene.height.svgNumber())
         append("\" role=\"img\">\n")
+        scene.accessibilityTitle?.let { append("  <title>").append(it.escapeXml()).append("</title>\n") }
+        scene.accessibilityDescription?.let { append("  <desc>").append(it.escapeXml()).append("</desc>\n") }
         scene.commands.forEach { command ->
             append("  ")
             append(command.toSvg())

@@ -74,7 +74,10 @@ const parser={yy:null,parse(source){
  const model=models.get(source);
  if(!model)throw new Error('Native result missing; regenerate the capture');
  if(model.error)throw new Error(model.error);
- for(const e of model.entities){this.yy.addEntity(e.id,e.alias);this.yy.addAttributes(e.id,[...e.attributes].reverse());}
+ if(model.accessibilityTitle!==null)this.yy.setAccTitle(model.accessibilityTitle);
+ if(model.accessibilityDescription!==null)this.yy.setAccDescription(model.accessibilityDescription);
+ for(const [id,styles] of model.classDefinitions)this.yy.addClass([id],styles);
+ for(const e of model.entities){this.yy.addEntity(e.id,e.alias);this.yy.addAttributes(e.id,[...e.attributes].reverse());this.yy.addCssStyles([e.id],e.styles);this.yy.setClass([e.id],e.classes);}
  for(const r of model.relationships)this.yy.addRelationship(r.from,r.label,r.to,{cardA:r.cardA,cardB:r.cardB,relType:r.relType});
  return true;
 }};

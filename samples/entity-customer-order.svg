@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="215.6" height="280" viewBox="0 0 215.6 280" role="img">
   <line x1="107.11491458572502" y1="127.98532633308271" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="107.8" y1="112" x2="107.11491458572502" y2="127.98532633308271" stroke="#475569" stroke-width="1.5" fill="none"/>
   <line x1="101.63423127152524" y1="115.73942455291755" x2="113.62322602133727" y2="116.2532386136238" stroke="#475569" stroke-width="1.5" fill="none"/>
   <line x1="101.4629599179565" y1="119.73575613618824" x2="113.45195466776853" y2="120.24957019689448" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <ellipse cx="105.65690703035311" cy="162.00550262509398" rx="4" ry="4" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
-  <line x1="106.51326379819683" y1="142.02384470874057" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="112.50776117310285" y1="142.2807517390937" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="100.51876642329081" y1="141.76693767838745" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="105.39999999999999" y1="168" x2="106.08508541427497" y2="152.01467366691728" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="105.82817838392185" y1="158.0091710418233" x2="105.39999999999999" y2="168" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="105.82817838392185" y1="158.0091710418233" x2="111.39449737490601" y2="168.25690703035312" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <line x1="105.82817838392185" y1="158.0091710418233" x2="99.40550262509397" y2="167.74309296964688" stroke="#475569" stroke-width="1.5" fill="none"/>
+  <ellipse cx="105.9994497374906" cy="154.01283945855263" rx="4" ry="4" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
   <text x="118.6" y="140" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">places</text>
   <rect x="24" y="24" width="167.6" height="88" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
   <text x="36" y="42" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">CUSTOMER</text>

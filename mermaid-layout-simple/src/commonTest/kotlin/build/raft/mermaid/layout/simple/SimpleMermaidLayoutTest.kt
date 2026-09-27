@@ -668,6 +668,34 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun erStylesChangeActualDrawingAndTextMeasurement() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "erDiagram\nA:::large { int id PK }\nclassDef default fill:#f9f\nclassDef large color:red,font-size:24px,font-weight:bold\nstyle A stroke:blue",
+        ))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val box = scene.commands.filterIsInstance<DrawRect>().single()
+        assertEquals("#f9f", box.fill.value)
+        assertEquals("#0000ff", box.stroke.value)
+        scene.commands.filterIsInstance<DrawText>().forEach {
+            assertEquals("#ff0000", it.style.color.value)
+            assertEquals(24.0, it.style.fontSize)
+            assertEquals(700, it.style.fontWeight)
+        }
+        assertTrue(box.rect.height > 58.0)
+    }
+
+    @Test
+    fun erManyMarkerBranchesMeetEntityAndParentUsesDiamond() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("erDiagram\nA u--o{ B : has"))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolygon>().size)
+        val target = scene.commands.filterIsInstance<DrawRect>()[1].rect
+        val endpointLines = scene.commands.filterIsInstance<DrawLine>().filter { it.to.y == target.y }
+        assertEquals(3, endpointLines.size)
+        assertEquals(3, endpointLines.map { it.to.x }.distinct().size)
+    }
+
+    @Test
     fun parsedEntityAliasesMultipleKeysAndDashedRelationshipsReachDrawing() {
         val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
             "erDiagram\nA[\"Customer accounts\"] { int id PK, FK }\nA ||..o{ B : has",
