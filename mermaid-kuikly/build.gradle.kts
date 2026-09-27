@@ -3,22 +3,6 @@ plugins {
     kotlin("multiplatform")
 }
 
-val compileKuiklyIosTestStubs by tasks.registering(Exec::class) {
-    val srcFile = file("src/iosTest/c/kuikly_stubs.c")
-    val outFile = layout.buildDirectory.file("intermediates/c/kuikly_stubs.o")
-    inputs.file(srcFile)
-    outputs.file(outFile)
-    doFirst {
-        outFile.get().asFile.parentFile.mkdirs()
-    }
-    commandLine(
-        "xcrun", "--sdk", "iphonesimulator", "clang",
-        "-arch", "arm64",
-        "-c", srcFile.absolutePath,
-        "-o", outFile.get().asFile.absolutePath
-    )
-}
-
 kotlin {
     sourceSets {
         commonMain.dependencies {
@@ -32,12 +16,23 @@ kotlin {
     }
 
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget> {
+        val nativeTarget = this
+        val sdk = if (nativeTarget.name == "iosArm64") "iphoneos" else "iphonesimulator"
+        val arch = if (nativeTarget.name == "iosX64") "x86_64" else "arm64"
+        val stubObj = layout.buildDirectory.file("intermediates/c/${nativeTarget.name}/kuikly_stubs.o")
+        val compileStubs = tasks.register<Exec>("compileKuikly${nativeTarget.name.replaceFirstChar { it.uppercase() }}TestStubs") {
+            val srcFile = file("src/iosTest/c/kuikly_stubs.c")
+            inputs.file(srcFile)
+            inputs.property("sdk", sdk)
+            inputs.property("arch", arch)
+            outputs.file(stubObj)
+            doFirst { stubObj.get().asFile.parentFile.mkdirs() }
+            commandLine("xcrun", "--sdk", sdk, "clang", "-arch", arch,
+                "-c", srcFile.absolutePath, "-o", stubObj.get().asFile.absolutePath)
+        }
         binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable> {
-            val stubObj = layout.buildDirectory.file("intermediates/c/kuikly_stubs.o").get().asFile
-            linkerOpts(stubObj.absolutePath)
-            linkTaskProvider.configure {
-                dependsOn(compileKuiklyIosTestStubs)
-            }
+            linkerOpts(stubObj.get().asFile.absolutePath)
+            linkTaskProvider.configure { dependsOn(compileStubs) }
         }
     }
 }
