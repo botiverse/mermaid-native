@@ -174,6 +174,8 @@ public data class ClassDiagram(
     val direction: FlowDirection = FlowDirection.TB,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val classDefinitions: Map<String,List<String>> = emptyMap(),
+    val interactions: List<ClassInteraction> = emptyList(),
 ) : MermaidDiagram
 
 public data class ClassDefinition(
@@ -183,6 +185,8 @@ public data class ClassDefinition(
     val namespaceName: String? = null,
     val genericType: String? = null,
     val annotations: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
+    val styles: List<String> = emptyList(),
 )
 
 public data class ClassMember(
@@ -190,6 +194,10 @@ public data class ClassMember(
     val visibility: ClassVisibility = ClassVisibility.PUBLIC,
     val hasVisibility: Boolean = true,
 )
+
+/** Host-facing interaction metadata. Callback names are data, never evaluated by the parser. */
+public data class ClassInteraction(val classId:String, val value:String, val callback:Boolean = false,
+    val arguments:String? = null, val tooltip:String? = null, val target:String? = null)
 
 public data class ClassNote(val text:String, val classId:String? = null, val namespaceName:String? = null)
 

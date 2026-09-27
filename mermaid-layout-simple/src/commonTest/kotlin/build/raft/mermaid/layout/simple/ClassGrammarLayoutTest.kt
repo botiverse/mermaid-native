@@ -35,6 +35,17 @@ class ClassGrammarLayoutTest {
         assertEquals("A",scene.commands.filterIsInstance<DrawText>().single().text)
         assertEquals(1,scene.commands.filterIsInstance<DrawRect>().size)
     }
+    @Test fun orphanManualNotesAndNamespaceParentsFallBackToRoot() {
+        val diagram=ClassDiagram(
+            listOf(ClassDefinition("A",namespaceName="Child")),emptyList(),
+            notes=listOf(ClassNote("Orphan note",namespaceName="Missing")),
+            namespaces=listOf(ClassNamespace("Child",parentId="Missing")),
+        )
+        val scene=SimpleMermaidLayout.layout(diagram,FixedWidthTextMeasurer,LayoutConfig())
+        val labels=scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("A","Child","Orphan note")))
+        assertEquals(3,scene.commands.filterIsInstance<DrawRect>().size)
+    }
     @Test fun rightHandInheritanceMarkerIsAtTheTarget() {
         val scene=layout("class A\nclass B\nA --|> B")
         val boxes=scene.commands.filterIsInstance<DrawRect>()
