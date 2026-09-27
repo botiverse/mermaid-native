@@ -272,6 +272,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                     strokeWidth = 1.5,
                 )
             }
+        }
+        // Paint every connector before node bodies, including later siblings' trunks.
+        nodes.forEachIndexed { index, node ->
+            val point = points[index]
             commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
             commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
@@ -1327,6 +1331,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             commit.parentIds.forEach { parentId ->
                 commands += DrawLine(centerById.getValue(parentId), center, stroke = color, strokeWidth = 2.0)
             }
+        }
+        // Later commits can connect back through earlier commit markers and labels.
+        // Finish all edges before painting any commit body or decoration.
+        diagram.commits.forEach { commit ->
+            val center = centerById.getValue(commit.id)
+            val color = SceneColor(colors[laneByName.getValue(commit.branch) % colors.size])
             when {
                 commit.type == GitGraphCommitType.HIGHLIGHT -> {
                     commands += DrawRect(SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0), cornerRadius = 2.0, fill = color, stroke = color)

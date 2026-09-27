@@ -1045,6 +1045,38 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun gitGraphConnectorsStayBehindEarlierCommitBodiesAndLabels() {
+        val diagram = GitGraphDiagram(
+            listOf(GitGraphBranch("main", null), GitGraphBranch("feature", "base")),
+            listOf(
+                GitGraphCommit("base", "main", emptyList()),
+                GitGraphCommit("work", "feature", listOf("base"), GitGraphCommitType.HIGHLIGHT),
+                GitGraphCommit("merge", "main", listOf("base", "work"), isMerge = true),
+                GitGraphCommit("revert", "main", listOf("merge"), GitGraphCommitType.REVERSE),
+            ),
+        )
+        val commands = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()).commands
+        val lastConnector = commands.indexOfLast { it is DrawLine && it.stroke.value != "#ffffff" }
+        val firstMarker = commands.indexOfFirst { it is DrawEllipse }
+        assertTrue(lastConnector < firstMarker, "A later edge must not paint over an earlier commit")
+        assertTrue(commands.indexOfFirst { it is DrawText && it.text == "base" } > lastConnector)
+        // Revert's white cross belongs to the node decoration and must remain on top.
+        assertTrue(commands.indexOfFirst { it is DrawLine && it.stroke.value == "#ffffff" } > firstMarker)
+    }
+
+    @Test
+    fun treeViewSiblingTrunksStayBehindAllNodeDots() {
+        val diagram = TreeViewDiagram(listOf(
+            TreeViewNode("root", 0, null, true),
+            TreeViewNode("first", 1, 0, true),
+            TreeViewNode("leaf", 2, 1, false),
+            TreeViewNode("second", 1, 0, false),
+        ))
+        val commands = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()).commands
+        assertTrue(commands.indexOfLast { it is DrawPolyline } < commands.indexOfFirst { it is DrawEllipse })
+    }
+
+    @Test
     fun gitGraphDrawsCommitCirclesAndTagFlags() {
         val diagram = GitGraphDiagram(
             listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
