@@ -17,8 +17,8 @@ must be installed from its lockfile and built with `pnpm exec tsx .esbuild/build
 Native models and exact JAR SHA-256 are written to `.native-class-audit/`.
 
 The original parser reference passes 383 cases with one skip. The previous
-Native implementation passed 23, failed 360 and skipped one. This branch's final
-result is pending its frozen build. These numbers describe the adapter boundary,
+Native implementation passed 23, failed 360 and skipped one. The styles/metadata batch passes all 383 cases with one skip (JAR SHA-256
+`40f8a4c82b17a7c19a61547d3492819ad4186c2d569d0e6fd01179527d42ba00`). These numbers describe the adapter boundary,
 not Native rendering equivalence. One case tests the upstream database directly
 without invoking the parser and must not be counted as Native coverage.
 
