@@ -2568,64 +2568,34 @@ public object SimpleMermaidLayout : DiagramLayout {
         val style = TextStyle()
         val sizes = diagram.nodes.associate { node ->
             val text = textMeasurer.measure(node.label, style)
-            node.id to SceneSize(max(80.0, text.width + 32.0), max(40.0, text.height + 20.0))
+            val width=max(80.0,text.width+32.0)
+            val height=max(40.0,text.height+20.0)
+            node.id to if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else SceneSize(width,height)
         }
         val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
-        val contentWidth = if (horizontal) {
-            sizes.values.sumOf { it.width } + config.nodeGap * max(0, sizes.size - 1)
-        } else {
-            sizes.values.maxOfOrNull { it.width } ?: 0.0
-        }
-        val contentHeight = if (horizontal) {
-            sizes.values.maxOfOrNull { it.height } ?: 0.0
-        } else {
-            sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1)
-        }
-        val width = contentWidth + config.padding * 2
-        val height = contentHeight + config.padding * 2
-        val rects = linkedMapOf<String, SceneRect>()
-        var cursor = config.padding
-        diagram.nodes.forEach { node ->
-            val size = sizes.getValue(node.id)
-            val forward = if (horizontal) {
-                SceneRect(cursor, config.padding + (contentHeight - size.height) / 2, size.width, size.height)
-            } else {
-                SceneRect(config.padding + (contentWidth - size.width) / 2, cursor, size.width, size.height)
-            }
-            val rect = when (diagram.direction) {
-                FlowDirection.RL -> forward.copy(x = width - config.padding - (forward.x - config.padding) - size.width)
-                FlowDirection.BT -> forward.copy(y = height - config.padding - (forward.y - config.padding) - size.height)
-                else -> forward
-            }
-            rects[node.id] = rect
-            cursor += (if (horizontal) size.width else size.height) + config.nodeGap
-        }
+        val placement=FlowPlacement(diagram,sizes,config,textMeasurer).place()
+        val width=placement.width
+        val height=placement.height
+        val rects=placement.nodes
 
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor("#666666")
         val arrowFill = SceneColor("#333333")
 
         // Subgraph bounding boxes first so nodes/edges sit on top.
-        diagram.subgraphs.forEach { subgraph ->
-            val memberRects = subgraph.nodeIds.mapNotNull { rects[it] }
-            if (memberRects.isEmpty()) return@forEach
-            val minX = memberRects.minOf { it.x } - 12.0
-            val minY = memberRects.minOf { it.y } - 28.0
-            val maxX = memberRects.maxOf { it.x + it.width } + 12.0
-            val maxY = memberRects.maxOf { it.y + it.height } + 12.0
-            commands += DrawRect(
-                SceneRect(minX, minY, maxX - minX, maxY - minY),
-                cornerRadius = 4.0,
-                fill = SceneColor("#f7f7f7"),
-                stroke = SceneColor("#aaaaaa"),
-                strokeWidth = 1.0,
-            )
-            commands += DrawText(subgraph.label, ScenePoint((minX + maxX) / 2.0, minY + 16.0), TextAnchor.MIDDLE, style)
+        diagram.subgraphs.sortedBy { group ->
+            var depth=0;var parent=group.parentId;val seen=mutableSetOf<String>()
+            while(parent!=null && seen.add(parent)){depth++;parent=diagram.subgraphs.firstOrNull { it.id==parent }?.parentId};depth
+        }.forEach { subgraph ->
+            val rect=placement.groups[subgraph.id] ?: return@forEach
+            commands += DrawRect(rect,cornerRadius=4.0,fill=SceneColor("#f7f7f7"),stroke=SceneColor("#aaaaaa"),strokeWidth=1.0)
+            commands += DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+20),TextAnchor.MIDDLE,style)
         }
 
         diagram.edges.forEach { edge ->
-            val source = rects[edge.sourceId] ?: return@forEach
-            val target = rects[edge.targetId] ?: return@forEach
+            if (edge.style == FlowEdgeStyle.INVISIBLE) return@forEach
+            val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEach
+            val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEach
             val anchors = edgeAnchors(source, target, horizontal)
             commands += DrawLine(
                 anchors.first,
@@ -2634,7 +2604,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                 strokeWidth = if (edge.style == FlowEdgeStyle.THICK) 3.0 else 1.5,
                 pattern = if (edge.style == FlowEdgeStyle.DOTTED) StrokePattern.DASHED else StrokePattern.SOLID,
             )
-            commands += arrowHead(anchors.first, anchors.second, fill = arrowFill)
+            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = arrowFill)
+            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second)
+            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
                 val mid = ScenePoint(
                     (anchors.first.x + anchors.second.x) / 2.0,
@@ -2646,9 +2618,15 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.nodes.forEach { node ->
             val rect = rects.getValue(node.id)
             when (node.shape) {
-                FlowNodeShape.RECTANGLE -> commands += DrawRect(rect, cornerRadius = 5.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
+                FlowNodeShape.RECTANGLE -> {
+                    commands += DrawRect(rect,cornerRadius=if(node.borders==null)5.0 else 0.0,fill=SceneColor("#eeeeee"),stroke=SceneColor(if(node.borders==null)"#999999"else"none"),strokeWidth=1.5)
+                    node.borders?.let { borders ->
+                        val tl=ScenePoint(rect.x,rect.y);val tr=ScenePoint(rect.x+rect.width,rect.y);val bl=ScenePoint(rect.x,rect.y+rect.height);val br=ScenePoint(rect.x+rect.width,rect.y+rect.height)
+                        listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor("#999999"),strokeWidth=1.5) }
+                    }
+                }
                 FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
-                FlowNodeShape.CIRCLE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                FlowNodeShape.CIRCLE, FlowNodeShape.ELLIPSE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
                 FlowNodeShape.DOUBLE_CIRCLE -> {
                     val cx = rect.x + rect.width / 2.0
                     val cy = rect.y + rect.height / 2.0
@@ -2664,7 +2642,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     ),
                     fill = SceneColor("#eeeeee"),
                 )
-                FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT -> commands += DrawRect(rect, cornerRadius = 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
+                FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT, FlowNodeShape.SUBROUTINE, FlowNodeShape.CYLINDER, FlowNodeShape.HEXAGON, FlowNodeShape.ASYMMETRIC -> commands += flowSpecialShape(node.shape, rect)
             }
             commands += DrawText(
                 text = node.label,

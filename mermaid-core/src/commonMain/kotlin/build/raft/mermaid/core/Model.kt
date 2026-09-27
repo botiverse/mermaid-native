@@ -16,24 +16,34 @@ public data class FlowchartDiagram(
     val nodes: List<FlowNode>,
     val edges: List<FlowEdge>,
     val subgraphs: List<FlowSubgraph> = emptyList(),
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class FlowNode(
     val id: String,
     val label: String,
     val shape: FlowNodeShape = FlowNodeShape.RECTANGLE,
+    val labelType: String = "text",
+    val borders: String? = null,
 )
 
 public data class FlowSubgraph(
     val id: String,
     val label: String,
     val nodeIds: List<String>,
+    val direction: FlowDirection? = null,
+    val parentId: String? = null,
+    val labelType: String = "text",
 )
+
+public enum class FlowMarker { NONE, POINT, CROSS, CIRCLE }
 
 public enum class FlowEdgeStyle {
     NORMAL,
     THICK,
     DOTTED,
+    INVISIBLE,
 }
 
 public data class FlowEdge(
@@ -41,6 +51,11 @@ public data class FlowEdge(
     val targetId: String,
     val style: FlowEdgeStyle = FlowEdgeStyle.NORMAL,
     val label: String? = null,
+    val fromMarker: FlowMarker = FlowMarker.NONE,
+    val toMarker: FlowMarker = FlowMarker.POINT,
+    val length: Int = 1,
+    val id: String? = null,
+    val labelType: String = "text",
 )
 
 public enum class FlowNodeShape {
@@ -54,6 +69,7 @@ public enum class FlowNodeShape {
     PARALLELOGRAM_ALT,
     TRAPEZOID,
     TRAPEZOID_ALT,
+    SUBROUTINE, CYLINDER, HEXAGON, ASYMMETRIC, ELLIPSE,
 }
 
 /** Ordered sequence events are the source of truth for vertical placement. */
