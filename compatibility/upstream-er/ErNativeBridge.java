@@ -24,6 +24,7 @@ public class ErNativeBridge {
   }
   for(EntityRelationship a:d.getRelationships()) rs.add("{\"from\":"+q(a.getFrom())+",\"to\":"+q(a.getTo())+",\"label\":"+q(a.getLabel())+",\"cardB\":"+q(a.getFromCardinality().name())+",\"cardA\":"+q(a.getToCardinality().name())+",\"relType\":"+q(a.getIdentifying()?"IDENTIFYING":"NON_IDENTIFYING")+"}");
   List<String> classes=new ArrayList<>();for(Map.Entry<String,List<String>> c:d.getClassDefinitions().entrySet())classes.add("["+q(c.getKey())+","+strings(c.getValue())+"]");
-  System.out.println("{\"accessibilityTitle\":"+q(d.getAccessibilityTitle())+",\"accessibilityDescription\":"+q(d.getAccessibilityDescription())+",\"classDefinitions\":["+String.join(",",classes)+"],\"entities\":["+String.join(",",es)+"],\"relationships\":["+String.join(",",rs)+"]}");
+  List<String> groups=new ArrayList<>();for(EntitySubgraph g:d.getSubgraphs())groups.add("{\"id\":"+q(g.getId())+",\"title\":"+q(g.getTitle())+",\"nodeIds\":"+strings(g.getNodeIds())+",\"direction\":"+q(g.getDirection()==null?null:g.getDirection().name())+",\"styles\":"+strings(g.getStyles())+",\"classes\":"+strings(g.getClasses())+"}");
+  System.out.println("{\"direction\":"+q(d.getDirection().name())+",\"subgraphs\":["+String.join(",",groups)+"],\"accessibilityTitle\":"+q(d.getAccessibilityTitle())+",\"accessibilityDescription\":"+q(d.getAccessibilityDescription())+",\"classDefinitions\":["+String.join(",",classes)+"],\"entities\":["+String.join(",",es)+"],\"relationships\":["+String.join(",",rs)+"]}");
  }
 }

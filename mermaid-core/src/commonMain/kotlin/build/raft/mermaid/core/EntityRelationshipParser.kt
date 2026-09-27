@@ -7,6 +7,14 @@ internal class EntityRelationshipParser(private val source: String) {
     private val relationships = mutableListOf<EntityRelationship>()
 
     private val classDefinitions = linkedMapOf<String, List<String>>()
+    private var direction = FlowDirection.TB
+    private val subgraphs = linkedMapOf<String, EntitySubgraph>()
+    private val groups = mutableListOf<Group>()
+    private val roots = linkedSetOf<String>()
+    private class Group(val id: String, val title: String) {
+        val nodes = linkedSetOf<String>()
+        var direction: FlowDirection? = null
+    }
     private var accessibilityTitle: String? = null
     private var accessibilityDescription: String? = null
 
@@ -21,6 +29,7 @@ internal class EntityRelationshipParser(private val source: String) {
             ensure(from)
             whitespace()
             if (take("[")) {
+                requireSyntax(from in entities, "An entity alias cannot replace an ER subgraph title")
                 val alias = entityName()
                 whitespace()
                 requireSyntax(take("]"), "Expected ] after entity alias")
@@ -54,7 +63,23 @@ internal class EntityRelationshipParser(private val source: String) {
                 }
             }
         }
-        MermaidParseResult.Success(EntityRelationshipDiagram(entities.values.toList(), relationships, classDefinitions, accessibilityTitle, accessibilityDescription))
+        requireSyntax(groups.isEmpty(), "Unclosed ER subgraph")
+        val visiting = mutableSetOf<String>()
+        val visited = mutableSetOf<String>()
+        fun visit(id: String) {
+            if (id in visited || id !in subgraphs) return
+            requireSyntax(visiting.add(id), "Cyclic ER subgraph membership")
+            subgraphs.getValue(id).nodeIds.forEach { visit(it) }
+            visiting.remove(id)
+            visited.add(id)
+        }
+        subgraphs.keys.forEach { visit(it) }
+        val groupedIds = subgraphs.values.flatMap { it.nodeIds }.toSet()
+        MermaidParseResult.Success(EntityRelationshipDiagram(
+            entities.values.filter { it.id !in subgraphs }, relationships, classDefinitions,
+            accessibilityTitle, accessibilityDescription, direction, subgraphs.values.toList(),
+            roots.filter { it !in groupedIds },
+        ))
     } catch (error: SyntaxError) {
         val prefix = source.take(error.offset)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(
@@ -66,6 +91,36 @@ internal class EntityRelationshipParser(private val source: String) {
 
     private fun directive(): Boolean {
         when {
+            takeWord("subgraph") -> {
+                val id = entityName()
+                whitespace()
+                val title = if (take("[")) {
+                    whitespace()
+                    val text = if (peek() == '"') quoted('"', entity = false) else {
+                        val start = offset
+                        while (peek() != null && peek() != ']' && peek() != '\n') offset++
+                        source.substring(start, offset).trim()
+                    }
+                    whitespace()
+                    requireSyntax(take("]"), "Expected ] after subgraph title")
+                    text
+                } else id
+                requireSyntax(groups.none { it.id == id } && id !in subgraphs, "Duplicate ER subgraph: $id")
+                groups += Group(id, title)
+            }
+            takeWord("end") -> {
+                requireSyntax(groups.isNotEmpty(), "Unexpected ER subgraph end")
+                val group = groups.removeAt(groups.lastIndex)
+                val alreadyGrouped = subgraphs.values.flatMap { it.nodeIds }.toSet()
+                subgraphs[group.id] = EntitySubgraph(group.id, group.title, group.nodes.filter { it !in alreadyGrouped }, group.direction)
+                register(group.id)
+            }
+            takeWord("direction") -> {
+                val value = entityName().uppercase()
+                requireSyntax(value in setOf("TB", "BT", "LR", "RL"), "Expected TB, BT, LR or RL direction")
+                val parsed = FlowDirection.valueOf(value)
+                if (groups.isEmpty()) direction = parsed else groups.last().direction = parsed
+            }
             takeWord("accTitle") -> {
                 whitespace()
                 requireSyntax(take(":"), "Expected : after accTitle")
@@ -91,7 +146,10 @@ internal class EntityRelationshipParser(private val source: String) {
             takeWord("style") -> {
                 val ids = idList()
                 val styles = styleList()
-                ids.forEach { id -> entities[id]?.let { entities[id] = it.copy(styles = it.styles + styles) } }
+                ids.forEach { id ->
+                    entities[id]?.let { entities[id] = it.copy(styles = it.styles + styles) }
+                    subgraphs[id]?.let { subgraphs[id] = it.copy(styles = it.styles + styles) }
+                }
             }
             takeWord("class") -> {
                 val ids = idList()
@@ -137,6 +195,7 @@ internal class EntityRelationshipParser(private val source: String) {
 
     private fun addClasses(id: String, classes: List<String>) {
         entities[id]?.let { entities[id] = it.copy(classes = it.classes + classes) }
+        subgraphs[id]?.let { subgraphs[id] = it.copy(classes = it.classes + classes) }
     }
 
     private fun shorthandClasses(id: String) {
@@ -146,10 +205,17 @@ internal class EntityRelationshipParser(private val source: String) {
     }
 
     private fun ensure(id: String) {
-        if (id !in entities) entities[id] = EntityDefinition(id)
+        requireSyntax(groups.none { it.id == id }, "Cannot reference an open ER subgraph: $id")
+        if (id !in entities && id !in subgraphs) entities[id] = EntityDefinition(id)
+        register(id)
+    }
+
+    private fun register(id: String) {
+        if (groups.isEmpty()) roots += id else groups.last().nodes += id
     }
 
     private fun attributes(id: String) {
+        requireSyntax(id in entities, "Entity attributes cannot be assigned to an ER subgraph")
         val attributes = mutableListOf<EntityAttribute>()
         while (true) {
             whitespace()

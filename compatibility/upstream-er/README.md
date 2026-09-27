@@ -1,10 +1,10 @@
 # ER upstream assertion runner
 
-This runner executes the unchanged upstream `erDiagram.spec.js` twice: first
+This runner executes the unchanged upstream `erDiagram.spec.js` and `subgraph.spec.js` twice: first
 with its Jison parser, then with `MermaidParser` from the compiled Kotlin core.
 The upstream ER database remains the assertion adapter. The Native adapter only
 copies parsed entities, ordered attributes, aliases, labels, identification and
-endpoint cardinalities into that database; it never invokes the upstream parser
+endpoint cardinalities, subgraph membership and local directions into that database; it never invokes the upstream parser
 to produce Native results.
 
 Reference files are SHA-256 checked against `sources.json`, from Mermaid revision
@@ -28,14 +28,12 @@ bridge, raw JSON reports, logs and `summary.json` under the upstream checkout's
 Results are recalculated on every run. The command exits nonzero if any Native
 assertion fails. Known gaps are not converted into expected successes or skips.
 
-Current result: reference **633 passed, 1 skipped**; Native **633 passed,
+Current result: reference **651 passed, 1 skipped**; Native **651 passed,
 0 failed, 1 skipped**. Styles/classes, accessibility metadata and the parent
 marker now round-trip through the Native model. Rendering regression tests also
 verify the emitted styles, title/description and endpoint markers. Supported
 style properties are fill, stroke, color, stroke-width, font-size and font-weight;
-font sizes and stroke widths support numeric/px values. Direction and subgraph
-assertions live in other suites and are not included in these counts. The full
-upstream campaign remains incomplete.
+font sizes and stroke widths support numeric/px values. The 18 original subgraph assertions are included; common tests also verify root/local directions, nested bounds and real group/self-relation drawing. Direct ER database and renderer tests, other diagram families and Cypress visual parity remain outside this Native assertion coverage. The full upstream campaign remains incomplete.
 
 These are parser/database assertions, not visual parity or full upstream
 coverage. Some upstream negative cases wrap both parsing and a failing `expect`

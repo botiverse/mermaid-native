@@ -2165,30 +2165,64 @@ public object SimpleMermaidLayout : DiagramLayout {
                 headerHeight + if (entity.attributes.isEmpty()) 8.0 else 8.0 + entity.attributes.size * rowHeight + 8.0,
             )
         }
-        val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
-        val height = sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1) + config.padding * 2
-        val rects = linkedMapOf<String, SceneRect>()
-        var y = config.padding
-        diagram.entities.forEach { entity ->
-            val size = sizes.getValue(entity.id)
-            rects[entity.id] = SceneRect(config.padding, y, size.width, size.height)
-            y += size.height + config.nodeGap
+        val groupPresentations = diagram.subgraphs.associate { group ->
+            group.id to EntityRelationshipStyle(build.raft.mermaid.core.EntityDefinition(group.id, styles = group.styles, classes = group.classes), diagram)
         }
+        val placement = EntityRelationshipPlacement(diagram, sizes, diagram.subgraphs.associate { group ->
+            group.id to textMeasurer.measure(group.title, groupPresentations.getValue(group.id).title)
+        }, diagram.relationships.filter { it.from == it.to }.groupBy { it.from }.mapValues { (_, relations) ->
+            56.0 + relations.maxOf { textMeasurer.measure(it.label, nameStyle).width }
+        }, config.padding, config.nodeGap, maxOf(config.nodeGap,
+            (diagram.relationships.maxOfOrNull { textMeasurer.measure(it.label, nameStyle).width } ?: 0.0) + 24.0))
+        val rects = placement.rects
         val commands = mutableListOf<DrawCommand>()
+        val groups = diagram.subgraphs.associateBy { it.id }
+        placement.groupOrder.forEach { id ->
+            val group = groups.getValue(id)
+            val rect = rects.getValue(id)
+            val presentation = groupPresentations.getValue(id)
+            commands += DrawRect(rect, cornerRadius = 6.0, fill = presentation.fill, stroke = presentation.stroke, strokeWidth = presentation.strokeWidth)
+            commands += DrawText(group.title, ScenePoint(rect.x + 24.0, rect.y + 10.0 + presentation.title.fontSize), style = presentation.title)
+        }
+        var width = placement.width
+        val height = placement.height
         diagram.relationships.forEach { relationship ->
             val source = rects[relationship.from] ?: return@forEach
             val target = rects[relationship.to] ?: return@forEach
-            val from = ScenePoint(source.x + source.width / 2, source.y + source.height)
-            val to = ScenePoint(target.x + target.width / 2, target.y)
-            val insetFrom = erInset(from, to, 16.0)
-            val insetTo = erInset(to, from, 16.0)
-            commands += DrawLine(insetFrom, insetTo, pattern = if (relationship.identifying) StrokePattern.SOLID else StrokePattern.DASHED)
-            commands += erCardinalityMarks(from, to, relationship.fromCardinality)
-            commands += erCardinalityMarks(to, from, relationship.toCardinality)
+            val pattern = if (relationship.identifying) StrokePattern.SOLID else StrokePattern.DASHED
+            val horizontal = source.x + source.width <= target.x || target.x + target.width <= source.x
+            val forward = if (horizontal) source.x < target.x else source.y < target.y
+            val from = if (horizontal) ScenePoint(source.x + if (forward) source.width else 0.0, source.y + source.height / 2)
+                else ScenePoint(source.x + source.width / 2, source.y + if (forward) source.height else 0.0)
+            val to = if (horizontal) ScenePoint(target.x + if (forward) 0.0 else target.width, target.y + target.height / 2)
+                else ScenePoint(target.x + target.width / 2, target.y + if (forward) 0.0 else target.height)
+            if (relationship.from == relationship.to) {
+                val first = ScenePoint(source.x + source.width, source.y + source.height / 3)
+                val last = ScenePoint(source.x + source.width, source.y + source.height * 2 / 3)
+                val bendX = source.x + source.width + 48.0
+                commands += DrawPolyline(listOf(ScenePoint(first.x + 16.0, first.y), ScenePoint(bendX, first.y), ScenePoint(bendX, last.y), ScenePoint(last.x + 16.0, last.y)), pattern = pattern)
+                commands += erCardinalityMarks(first, ScenePoint(bendX, first.y), relationship.fromCardinality)
+                commands += erCardinalityMarks(last, ScenePoint(bendX, last.y), relationship.toCardinality)
+                if (relationship.label.isNotEmpty()) commands += DrawText(relationship.label, ScenePoint(bendX + 8.0, (first.y + last.y) / 2), style = nameStyle)
+                width = maxOf(width, bendX + 8.0 + textMeasurer.measure(relationship.label, nameStyle).width + config.padding)
+                return@forEach
+            }
+            val fromDirection = if (horizontal) ScenePoint(from.x + if (forward) 32.0 else -32.0, from.y) else to
+            val toDirection = if (horizontal) ScenePoint(to.x + if (forward) -32.0 else 32.0, to.y) else from
+            val insetFrom = erInset(from, fromDirection, 16.0)
+            val insetTo = erInset(to, toDirection, 16.0)
+            if (horizontal && from.y != to.y) {
+                val midX = (from.x + to.x) / 2
+                commands += DrawPolyline(listOf(insetFrom, ScenePoint(midX, from.y), ScenePoint(midX, to.y), insetTo), pattern = pattern)
+            } else commands += DrawLine(insetFrom, insetTo, pattern = pattern)
+            commands += erCardinalityMarks(from, fromDirection, relationship.fromCardinality)
+            commands += erCardinalityMarks(to, toDirection, relationship.toCardinality)
             if (relationship.label.isNotEmpty()) {
                 commands += DrawText(
                     relationship.label,
-                    ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
+                    if (horizontal) ScenePoint((from.x + to.x) / 2, minOf(from.y, to.y) - 12.0)
+                    else ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
+                    anchor = if (horizontal) TextAnchor.MIDDLE else TextAnchor.START,
                     style = nameStyle,
                 )
             }

@@ -4,7 +4,7 @@ block,block,in_progress,partial,partial,partial,partial,Bounded block/block-beta
 c4,c4,in_progress,partial,partial,partial,partial,Vertical slice supports C4Context person/system elements with person heads stereotypes and Rel/BiRel protocol labels.
 class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members compartment separators and hollow UML inheritance.
 cynefin,cynefin,in_progress,partial,partial,partial,partial,Bounded cynefin-beta domains/items/transitions with official domain descriptions and deterministic measured quadrant/ellipse layout.
-entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports entity declarations typed attribute columns PK/FK keys and crow's-foot cardinality.
+entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Supports aliases and attribute keys; ER classes/styles and accessibility; nested groups and local directions; identifying relations and cardinality markers. Original ER parser and subgraph suites pass; full upstream visual coverage remains incomplete.
 eventmodeling,eventmodeling,in_progress,partial,partial,partial,partial,Bounded eventmodeling frames with five entity kinds, inferred flow, explicit multi-source relations, deterministic measured SVG.
 flowchart,flowchart,in_progress,partial,partial,partial,partial,Vertical slice supports the declared flowchart subset with official-neutral node fill/border and arrow markers.
 gantt,gantt,in_progress,partial,partial,partial,partial,Vertical slice supports title ISO dateFormat sections fixed-date tasks durations basic statuses and YYYY-MM-DD date-axis ticks.

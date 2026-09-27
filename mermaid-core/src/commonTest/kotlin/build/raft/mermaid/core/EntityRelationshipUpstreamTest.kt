@@ -152,7 +152,7 @@ class EntityRelationshipUpstreamTest {
     }
 
     @Test fun malformedSyntaxFailsWithoutPartialModel() {
-        for (body in listOf("A { string }", "A { string id PK, }", "A { string id", "A ||--|| B", "A ||--|| B :", "A[\"alias\"", "A ||XX|| B : has", "A :::", "direction LR\nA", "A { string id UK\"unterminated }")) {
+        for (body in listOf("A { string }", "A { string id PK, }", "A { string id", "A ||--|| B", "A ||--|| B :", "A[\"alias\"", "A ||XX|| B : has", "A :::", "direction XX\nA", "A { string id UK\"unterminated }")) {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("erDiagram\n$body"), body)
         }
     }
