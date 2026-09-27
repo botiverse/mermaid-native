@@ -6,26 +6,29 @@ internal class EntityRelationshipParser(private val source: String) {
     private val entities = linkedMapOf<String, EntityDefinition>()
     private val relationships = mutableListOf<EntityRelationship>()
 
+    private val classDefinitions = linkedMapOf<String, List<String>>()
+    private var accessibilityTitle: String? = null
+    private var accessibilityDescription: String? = null
+
     fun parse(): MermaidParseResult = try {
         whitespace()
         requireSyntax(take("erDiagram"), "Expected erDiagram")
         while (true) {
             whitespace()
             if (offset == source.length) break
+            if (directive()) continue
             val from = entityName()
             ensure(from)
             whitespace()
+            if (take("[")) {
+                val alias = entityName()
+                whitespace()
+                requireSyntax(take("]"), "Expected ] after entity alias")
+                if (entities.getValue(from).alias == null) entities[from] = entities.getValue(from).copy(alias = alias)
+                whitespace()
+            }
+            shorthandClasses(from)
             when {
-                take("[") -> {
-                    val alias = entityName()
-                    whitespace()
-                    requireSyntax(take("]"), "Expected ] after entity alias")
-                    if (entities.getValue(from).alias == null) {
-                        entities[from] = entities.getValue(from).copy(alias = alias)
-                    }
-                    whitespace()
-                    if (take("{")) attributes(from)
-                }
                 take("{") -> attributes(from)
                 else -> {
                     val left = relationshipCardinality()
@@ -39,6 +42,8 @@ internal class EntityRelationshipParser(private val source: String) {
                         whitespace()
                         val right = cardinality() ?: fail("Expected relationship cardinality")
                         val to = entityName()
+                        ensure(to)
+                        shorthandClasses(to)
                         whitespace()
                         requireSyntax(take(":"), "Expected : and relationship label")
                         whitespace()
@@ -49,7 +54,7 @@ internal class EntityRelationshipParser(private val source: String) {
                 }
             }
         }
-        MermaidParseResult.Success(EntityRelationshipDiagram(entities.values.toList(), relationships))
+        MermaidParseResult.Success(EntityRelationshipDiagram(entities.values.toList(), relationships, classDefinitions, accessibilityTitle, accessibilityDescription))
     } catch (error: SyntaxError) {
         val prefix = source.take(error.offset)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(
@@ -57,6 +62,87 @@ internal class EntityRelationshipParser(private val source: String) {
             error.message ?: "Unsupported entity relationship syntax",
             SourceLocation(prefix.count { it == '\n' } + 1, error.offset - prefix.lastIndexOf('\n')),
         )))
+    }
+
+    private fun directive(): Boolean {
+        when {
+            takeWord("accTitle") -> {
+                whitespace()
+                requireSyntax(take(":"), "Expected : after accTitle")
+                accessibilityTitle = restOfLine().trim()
+            }
+            takeWord("accDescr") -> {
+                whitespace()
+                accessibilityDescription = if (take("{")) {
+                    val start = offset
+                    while (peek() != '}' && peek() != null) offset++
+                    requireSyntax(peek() == '}', "Unclosed accessibility description")
+                    source.substring(start, offset++).lineSequence().map { it.trim() }.joinToString("\n").trim()
+                } else {
+                    requireSyntax(take(":"), "Expected : or { after accDescr")
+                    restOfLine().trim()
+                }
+            }
+            takeWord("classDef") -> {
+                val ids = idList()
+                val styles = styleList()
+                ids.forEach { classDefinitions[it] = classDefinitions[it].orEmpty() + styles }
+            }
+            takeWord("style") -> {
+                val ids = idList()
+                val styles = styleList()
+                ids.forEach { id -> entities[id]?.let { entities[id] = it.copy(styles = it.styles + styles) } }
+            }
+            takeWord("class") -> {
+                val ids = idList()
+                val classes = idList()
+                ids.forEach { addClasses(it, classes) }
+            }
+            else -> return false
+        }
+        return true
+    }
+
+    private fun restOfLine(): String {
+        val start = offset
+        while (peek() != null && peek() != '\n' && peek() != '\r') offset++
+        return source.substring(start, offset)
+    }
+
+    private fun idList(): List<String> {
+        val ids = mutableListOf(entityName())
+        whitespace()
+        while (take(",")) { ids += entityName(); whitespace() }
+        return ids
+    }
+
+    private fun styleList(): List<String> {
+        val start = offset
+        while (peek() != null && peek() !in listOf('\n', '\r', ';')) offset++
+        val text = source.substring(start, offset)
+        take(";")
+        val styles = text.trim().split(',').map { style ->
+            val parts = style.split(':', limit = 2)
+            requireSyntax(parts.size == 2 && parts.all { it.isNotBlank() }, "Expected CSS property:value")
+            requireSyntax(parts[0].trim().lowercase() in setOf("fill", "stroke", "color", "stroke-width", "font-size", "font-weight"), "Unsupported entity style property")
+            val property = parts[0].trim().lowercase()
+            val value = parts[1].trim()
+            if (property == "font-size" || property == "stroke-width") {
+                requireSyntax(value.lowercase().removeSuffix("px").toDoubleOrNull()?.isFinite() == true, "Expected numeric or px entity style size")
+            }
+            parts[0].trim() + ":" + value
+        }
+        return styles
+    }
+
+    private fun addClasses(id: String, classes: List<String>) {
+        entities[id]?.let { entities[id] = it.copy(classes = it.classes + classes) }
+    }
+
+    private fun shorthandClasses(id: String) {
+        whitespace()
+        if (take(":::")) addClasses(id, idList())
+        whitespace()
     }
 
     private fun ensure(id: String) {
@@ -131,6 +217,10 @@ internal class EntityRelationshipParser(private val source: String) {
 
     private fun cardinality(): EntityCardinality? {
         whitespace()
+        if (peek() == 'u' && source.getOrNull(offset + 1)?.let { it in ".-|" } == true) {
+            offset++
+            return EntityCardinality.MD_PARENT
+        }
         return CARDINALITIES.firstOrNull { (token, _) ->
             if (token[0].isLetterOrDigit()) takeWord(token) else take(token)
         }?.second

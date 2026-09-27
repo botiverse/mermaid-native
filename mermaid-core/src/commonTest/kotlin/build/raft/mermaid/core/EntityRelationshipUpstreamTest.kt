@@ -122,8 +122,37 @@ class EntityRelationshipUpstreamTest {
         assertEquals("a;b", parse("A ||--|| B : \"a;b\"").relationships.single().label)
     }
 
+    @Test fun styleSeparatorsDoNotConsumeFollowingStatements() {
+        val diagram = parse("A\nstyle A fill:red; B")
+        assertEquals(listOf("A", "B"), diagram.entities.map { it.id })
+        assertEquals(listOf("fill:red"), diagram.entities[0].styles)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("erDiagram\nA\nstyle A font-size:2em"))
+    }
+
+    @Test fun stylesClassesAccessibilityAndParentMarker() {
+        val diagram = parse("""
+            accTitle: graph title
+            accDescr { this graph is
+                about
+                stuff }
+            A[Accounts]:::first,second { int id PK }
+            A u--o{ B:::second : parent
+            style A color:red, stroke: blue
+            style A fill:#f9f
+            class B first
+            classDef first,second fill:#eee, color: pink
+        """.trimIndent())
+        assertEquals("graph title", diagram.accessibilityTitle)
+        assertEquals("this graph is\nabout\nstuff", diagram.accessibilityDescription)
+        assertEquals(listOf("color:red", "stroke:blue", "fill:#f9f"), diagram.entities[0].styles)
+        assertEquals(listOf("first", "second"), diagram.entities[0].classes)
+        assertEquals(listOf("second", "first"), diagram.entities[1].classes)
+        assertEquals(mapOf("first" to listOf("fill:#eee", "color:pink"), "second" to listOf("fill:#eee", "color:pink")), diagram.classDefinitions)
+        assertEquals(EntityCardinality.MD_PARENT, diagram.relationships.single().fromCardinality)
+    }
+
     @Test fun malformedSyntaxFailsWithoutPartialModel() {
-        for (body in listOf("A { string }", "A { string id PK, }", "A { string id", "A ||--|| B", "A ||--|| B :", "A[\"alias\"", "A ||XX|| B : has", "A ::: foo", "direction LR\nA", "A { string id UK\"unterminated }")) {
+        for (body in listOf("A { string }", "A { string id PK, }", "A { string id", "A ||--|| B", "A ||--|| B :", "A[\"alias\"", "A ||XX|| B : has", "A :::", "direction LR\nA", "A { string id UK\"unterminated }")) {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("erDiagram\n$body"), body)
         }
     }

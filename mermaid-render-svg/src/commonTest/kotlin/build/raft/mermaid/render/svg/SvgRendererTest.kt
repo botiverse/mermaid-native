@@ -22,12 +22,27 @@ import build.raft.mermaid.layout.TextAnchor
 import build.raft.mermaid.layout.TextStyle
 import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
 import build.raft.mermaid.layout.simple.SimpleMermaidLayout
+import build.raft.mermaid.core.MermaidParser
+import build.raft.mermaid.core.MermaidParseResult
+import kotlin.test.assertIs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SvgRendererTest {
+    @Test
+    fun erAccessibilityFlowsThroughLayoutAndEscapesSvgMarkup() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "erDiagram\naccTitle: Accounts <&>\naccDescr { Entity <relations> & keys }\nA",
+        ))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val svg = SvgRenderer.render(scene)
+        assertTrue("<title>Accounts &lt;&amp;&gt;</title>" in svg)
+        assertTrue("<desc>Entity &lt;relations&gt; &amp; keys</desc>" in svg)
+        assertTrue("<relations>" !in svg)
+    }
+
     @Test
     fun cynefinSvgMeasuresItemsEscapesTextAndKeepsTransitionVisible() {
         val longItem = "A very long & measured item label that expands the quadrant"

@@ -8,7 +8,7 @@
  */
 
 export const ALLOWED_TAGS = new Set([
-  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan'
+  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan', 'title', 'desc'
 ])
 
 export const ALLOWED_ATTRS = new Set([
@@ -80,9 +80,9 @@ export function validateAttributeValue(attrName, attrVal) {
     return /^([0-9]+(\.[0-9]+)?\s*)+$/.test(attrVal.trim())
   }
 
-  // font-weight: normal, bold, bolder, lighter, or 100-900
+  // font-weight: CSS keywords or numeric weights 1-1000
   if (attrName === 'font-weight') {
-    return /^(normal|bold|bolder|lighter|[1-9]00)$/.test(attrVal.trim())
+    return /^(normal|bold|bolder|lighter|[1-9][0-9]{0,2}|1000)$/.test(attrVal.trim())
   }
 
   // text-anchor: start, middle, end
@@ -192,6 +192,16 @@ export function validateSvgDomTree(docOrElement) {
     const tagName = (el.localName || el.nodeName || '').toLowerCase()
     if (!ALLOWED_TAGS.has(tagName)) {
       return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
+    }
+
+    // SVG metadata is text-only. Do not admit HTML/SVG descendants through
+    // title/desc integration points when the serialized result is inserted.
+    if (tagName === 'title' || tagName === 'desc') {
+      for (let child = el.firstChild; child; child = child.nextSibling) {
+        if (child.nodeType !== 3) {
+          return { ok: false, error: `Only text is allowed inside <${tagName}>` }
+        }
+      }
     }
 
     const attrs = el.attributes || []

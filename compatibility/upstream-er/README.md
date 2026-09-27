@@ -28,9 +28,12 @@ bridge, raw JSON reports, logs and `summary.json` under the upstream checkout's
 Results are recalculated on every run. The command exits nonzero if any Native
 assertion fails. Known gaps are not converted into expected successes or skips.
 
-Initial result: reference **633 passed, 1 skipped**; Native **615 passed,
-18 failed, 1 skipped**. The 18 failures cover accessibility metadata, entity
-styles/classes, and the parent relationship marker. Direction and subgraph
+Current result: reference **633 passed, 1 skipped**; Native **633 passed,
+0 failed, 1 skipped**. Styles/classes, accessibility metadata and the parent
+marker now round-trip through the Native model. Rendering regression tests also
+verify the emitted styles, title/description and endpoint markers. Supported
+style properties are fill, stroke, color, stroke-width, font-size and font-weight;
+font sizes and stroke widths support numeric/px values. Direction and subgraph
 assertions live in other suites and are not included in these counts. The full
 upstream campaign remains incomplete.
 

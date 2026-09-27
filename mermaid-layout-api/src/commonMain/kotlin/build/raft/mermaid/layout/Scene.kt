@@ -77,6 +77,8 @@ public data class LayoutScene(
     val width: Double,
     val height: Double,
     val commands: List<DrawCommand>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 )
 
 public fun interface TextMeasurer {

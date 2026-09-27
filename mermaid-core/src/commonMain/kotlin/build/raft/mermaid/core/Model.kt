@@ -172,12 +172,17 @@ public enum class ClassRelationshipKind {
 public data class EntityRelationshipDiagram(
     val entities: List<EntityDefinition>,
     val relationships: List<EntityRelationship>,
+    val classDefinitions: Map<String, List<String>> = emptyMap(),
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class EntityDefinition(
     val id: String,
     val attributes: List<EntityAttribute> = emptyList(),
     val alias: String? = null,
+    val styles: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
 )
 
 public data class EntityAttribute(
@@ -199,7 +204,7 @@ public data class EntityRelationship(
     val identifying: Boolean = true,
 )
 
-public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE }
+public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE, MD_PARENT }
 
 /** Minimal platform-neutral model for the Mermaid xychart family. */
 public data class XyChartDiagram(
