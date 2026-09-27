@@ -21,7 +21,7 @@ public object MermaidParser {
             STATE_HEADER.matches(header.text) -> parseState(statements)
             header.text.startsWith("pie", ignoreCase = true) -> parsePie(statements)
             header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
-            header.text.equals("erDiagram", ignoreCase = true) -> parseEntityRelationship(statements)
+            header.text.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> EntityRelationshipParser(source).parse()
             XY_HEADER.matches(header.text) -> parseXyChart(statements)
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             header.text.equals("gantt", ignoreCase = true) -> parseGantt(statements)
@@ -1051,85 +1051,6 @@ public object MermaidParser {
         val signature = line.substring(1).trim()
         if (signature.isEmpty()) return null
         return ClassMember(signature, visibility)
-    }
-
-    private fun parseEntityRelationship(statements: List<SourceStatement>): MermaidParseResult {
-        val entities = linkedMapOf<String, EntityDefinition>()
-        val relationships = mutableListOf<EntityRelationship>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var currentEntity: String? = null
-
-        fun ensure(id: String) {
-            if (id !in entities) entities[id] = EntityDefinition(id)
-        }
-
-        fun cardinality(token: String): EntityCardinality = when (token) {
-            "||" -> EntityCardinality.ONLY_ONE
-            "o|", "|o" -> EntityCardinality.ZERO_OR_ONE
-            "|{", "}|" -> EntityCardinality.ONE_OR_MORE
-            "o{", "}o" -> EntityCardinality.ZERO_OR_MORE
-            else -> error("Cardinality token must be admitted by the relationship regex")
-        }
-
-        statements.drop(1).forEach { statement ->
-            val owner = currentEntity
-            if (owner != null) {
-                if (statement.text == "}") {
-                    currentEntity = null
-                    return@forEach
-                }
-                val attribute = ER_ATTRIBUTE.matchEntire(statement.text)
-                if (attribute == null) {
-                    diagnostics += unsupported(statement, "Unsupported entity attribute syntax")
-                    return@forEach
-                }
-                val key = attribute.groupValues[3].takeIf { it.isNotEmpty() }
-                    ?.let(EntityKey::valueOf) ?: EntityKey.NONE
-                val entity = entities.getValue(owner)
-                entities[owner] = entity.copy(
-                    attributes = entity.attributes + EntityAttribute(
-                        type = attribute.groupValues[1],
-                        name = attribute.groupValues[2],
-                        key = key,
-                        comment = attribute.groupValues[4].takeIf { it.isNotEmpty() },
-                    ),
-                )
-                return@forEach
-            }
-
-            ER_ENTITY_START.matchEntire(statement.text)?.let {
-                val id = it.groupValues[1]
-                ensure(id)
-                currentEntity = id
-                return@forEach
-            }
-            ER_RELATIONSHIP.matchEntire(statement.text)?.let {
-                val from = it.groupValues[1]
-                val to = it.groupValues[4]
-                ensure(from)
-                ensure(to)
-                relationships += EntityRelationship(
-                    from = from,
-                    to = to,
-                    fromCardinality = cardinality(it.groupValues[2]),
-                    toCardinality = cardinality(it.groupValues[3]),
-                    label = it.groupValues[5],
-                )
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported entity relationship syntax")
-        }
-
-        if (currentEntity != null) {
-            diagnostics += MermaidDiagnostic(
-                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-                "Unclosed entity declaration: $currentEntity",
-                statements.last().location,
-            )
-        }
-        return if (diagnostics.isEmpty()) {
-            MermaidParseResult.Success(EntityRelationshipDiagram(entities.values.toList(), relationships.toList()))
-        } else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseXyChart(statements: List<SourceStatement>): MermaidParseResult {
@@ -3055,12 +2976,6 @@ public object MermaidParser {
 
     private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
     private val QUOTED_TOKEN = Regex("\"([^\"]*)\"")
-    private val ER_ENTITY_START = Regex("^($IDENTIFIER)\\s*[{]$")
-    private val ER_ATTRIBUTE = Regex("^([A-Za-z_][A-Za-z0-9_<>\\[\\]-]*)\\s+($IDENTIFIER)(?:\\s+(PK|FK|UK))?(?:\\s+\"([^\"]*)\")?$")
-    private val ER_RELATIONSHIP = Regex(
-        "^($IDENTIFIER)\\s+(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)--" +
-            "(\\|\\||o\\||\\|o|\\|[{]|o[{]|[}]\\||[}]o)\\s+($IDENTIFIER)(?:\\s*:\\s*(.*))?$",
-    )
     private val NUMBER = "-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?"
     private val XY_HEADER = Regex("^xychart-beta$", RegexOption.IGNORE_CASE)
     private val XY_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)

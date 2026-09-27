@@ -177,6 +177,7 @@ public data class EntityRelationshipDiagram(
 public data class EntityDefinition(
     val id: String,
     val attributes: List<EntityAttribute> = emptyList(),
+    val alias: String? = null,
 )
 
 public data class EntityAttribute(
@@ -184,6 +185,7 @@ public data class EntityAttribute(
     val name: String,
     val key: EntityKey = EntityKey.NONE,
     val comment: String? = null,
+    val additionalKeys: List<EntityKey> = emptyList(),
 )
 
 public enum class EntityKey { NONE, PK, FK, UK }
@@ -194,6 +196,7 @@ public data class EntityRelationship(
     val fromCardinality: EntityCardinality,
     val toCardinality: EntityCardinality,
     val label: String = "",
+    val identifying: Boolean = true,
 )
 
 public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE }
