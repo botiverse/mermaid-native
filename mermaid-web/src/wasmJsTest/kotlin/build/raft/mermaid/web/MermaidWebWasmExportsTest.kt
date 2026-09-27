@@ -25,4 +25,21 @@ class MermaidWebWasmExportsTest {
         assertContains(failure, "\"line\":1")
         assertContains(failure, "\"column\":1")
     }
+
+    @Test
+    fun exportedCanvasJsonRendersEveryPositiveGalleryFixture() {
+        MermaidExamples.all.forEach { example ->
+            val result = renderMermaidCanvasJson(example.source)
+            assertContains(result, "\"ops\":[", message = example.path)
+            assertContains(result, "\"width\":", message = example.path)
+        }
+    }
+
+    @Test
+    fun exportedCanvasJsonPreservesTypedFailureShape() {
+        val failure = renderMermaidCanvasJson("not-a-diagram")
+        assertContains(failure, "\"ok\":false")
+        assertContains(failure, "\"line\":1")
+        assertContains(failure, "\"column\":1")
+    }
 }
