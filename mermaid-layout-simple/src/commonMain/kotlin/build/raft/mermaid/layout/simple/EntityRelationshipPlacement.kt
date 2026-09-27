@@ -13,6 +13,7 @@ internal class EntityRelationshipPlacement(
     rightMargins: Map<String, Double>,
     padding: Double,
     gap: Double,
+    horizontalGap: Double,
 ) {
     val rects = linkedMapOf<String, SceneRect>()
     val groupOrder = mutableListOf<String>()
@@ -32,7 +33,7 @@ internal class EntityRelationshipPlacement(
         fun contentSize(ids: List<String>, direction: FlowDirection): SceneSize {
             val horizontal = direction == FlowDirection.LR || direction == FlowDirection.RL
             val values = ids.mapNotNull { id -> sizes[id]?.let { SceneSize(it.width + (rightMargins[id] ?: 0.0), it.height) } }
-            val gaps = gap * maxOf(0, values.size - 1)
+            val gaps = (if (horizontal) horizontalGap else gap) * maxOf(0, values.size - 1)
             return if (horizontal) SceneSize(values.sumOf { it.width } + gaps, values.maxOfOrNull { it.height } ?: 0.0)
             else SceneSize(values.maxOfOrNull { it.width } ?: 0.0, values.sumOf { it.height } + gaps)
         }
@@ -59,7 +60,7 @@ internal class EntityRelationshipPlacement(
                     groupOrder += id
                     place(children(id), directions.getValue(id), rect.x + groupPadding, rect.y + groupPadding + header(id))
                 }
-                cursor += (if (horizontal) size.width + (rightMargins[id] ?: 0.0) else size.height) + gap
+                cursor += (if (horizontal) size.width + (rightMargins[id] ?: 0.0) else size.height) + (if (horizontal) horizontalGap else gap)
             }
         }
         val content = contentSize(rootIds, diagram.direction)

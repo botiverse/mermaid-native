@@ -71,6 +71,19 @@ class EntityRelationshipGroupingLayoutTest {
         assertTrue(label.origin.x + FixedWidthTextMeasurer.measure(label.text, label.style).width < b.x)
     }
 
+    @Test fun horizontalRelationReservesLabelSpaceAndFacesTableEdges() {
+        val scene = scene("direction LR\nA { int id PK string name }\nA ||--o{ B : \"a longer relation label\"")
+        val a = box(scene, "A"); val b = box(scene, "B")
+        val label = scene.commands.filterIsInstance<DrawText>().single { it.text == "a longer relation label" }
+        val halfWidth = FixedWidthTextMeasurer.measure(label.text, label.style).width / 2
+        assertEquals(TextAnchor.MIDDLE, label.anchor)
+        assertTrue(label.origin.x - halfWidth > a.x + a.width)
+        assertTrue(label.origin.x + halfWidth < b.x)
+        val edge = scene.commands.filterIsInstance<DrawPolyline>().single()
+        assertEquals(a.y + a.height / 2, edge.points.first().y)
+        assertEquals(b.y + b.height / 2, edge.points.last().y)
+    }
+
     @Test fun emptyGroupIsVisibleAndItsTitleFits() {
         val scene = scene("subgraph Empty [A long empty group title]\nend")
         val rect = box(scene, "A long empty group title")

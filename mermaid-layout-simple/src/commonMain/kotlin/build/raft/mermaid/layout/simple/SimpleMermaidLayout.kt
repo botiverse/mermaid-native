@@ -2172,7 +2172,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             group.id to textMeasurer.measure(group.title, groupPresentations.getValue(group.id).title)
         }, diagram.relationships.filter { it.from == it.to }.groupBy { it.from }.mapValues { (_, relations) ->
             56.0 + relations.maxOf { textMeasurer.measure(it.label, nameStyle).width }
-        }, config.padding, config.nodeGap)
+        }, config.padding, config.nodeGap, maxOf(config.nodeGap,
+            (diagram.relationships.maxOfOrNull { textMeasurer.measure(it.label, nameStyle).width } ?: 0.0) + 24.0))
         val rects = placement.rects
         val commands = mutableListOf<DrawCommand>()
         val groups = diagram.subgraphs.associateBy { it.id }
@@ -2206,15 +2207,22 @@ public object SimpleMermaidLayout : DiagramLayout {
                 width = maxOf(width, bendX + 8.0 + textMeasurer.measure(relationship.label, nameStyle).width + config.padding)
                 return@forEach
             }
-            val insetFrom = erInset(from, to, 16.0)
-            val insetTo = erInset(to, from, 16.0)
-            commands += DrawLine(insetFrom, insetTo, pattern = pattern)
-            commands += erCardinalityMarks(from, to, relationship.fromCardinality)
-            commands += erCardinalityMarks(to, from, relationship.toCardinality)
+            val fromDirection = if (horizontal) ScenePoint(from.x + if (forward) 32.0 else -32.0, from.y) else to
+            val toDirection = if (horizontal) ScenePoint(to.x + if (forward) -32.0 else 32.0, to.y) else from
+            val insetFrom = erInset(from, fromDirection, 16.0)
+            val insetTo = erInset(to, toDirection, 16.0)
+            if (horizontal && from.y != to.y) {
+                val midX = (from.x + to.x) / 2
+                commands += DrawPolyline(listOf(insetFrom, ScenePoint(midX, from.y), ScenePoint(midX, to.y), insetTo), pattern = pattern)
+            } else commands += DrawLine(insetFrom, insetTo, pattern = pattern)
+            commands += erCardinalityMarks(from, fromDirection, relationship.fromCardinality)
+            commands += erCardinalityMarks(to, toDirection, relationship.toCardinality)
             if (relationship.label.isNotEmpty()) {
                 commands += DrawText(
                     relationship.label,
-                    ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
+                    if (horizontal) ScenePoint((from.x + to.x) / 2, minOf(from.y, to.y) - 12.0)
+                    else ScenePoint((from.x + to.x) / 2 + 12.0, (from.y + to.y) / 2),
+                    anchor = if (horizontal) TextAnchor.MIDDLE else TextAnchor.START,
                     style = nameStyle,
                 )
             }
