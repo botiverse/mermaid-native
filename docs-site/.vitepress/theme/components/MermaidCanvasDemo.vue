@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useData } from 'vitepress'
-import { drawMermaidCanvas } from '../utils/mermaid-canvas'
+import { drawMermaidCanvas, type MermaidCanvasScript } from '../utils/mermaid-canvas'
 
 const { site } = useData()
 const base = site.value.base || '/'
@@ -15,8 +15,10 @@ const wasmStatus = ref<'loading' | 'ready' | 'offline'>('loading')
 const status = ref('')
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-// Zoom / pan state, applied as a CSS transform on the canvas element so the
-// drawing itself stays crisp at device pixel ratio.
+const canvasDescription = ref('')
+let lastScript: MermaidCanvasScript | null = null
+
+// CSS positions the canvas; each zoom redraws its backing store at the new scale.
 const scale = ref(1)
 const offsetX = ref(0)
 const offsetY = ref(0)
@@ -53,6 +55,23 @@ function onPointerUp() {
   dragging = false
 }
 
+function clearCanvas() {
+  lastScript = null
+  canvasDescription.value = ''
+  const canvas = canvasRef.value
+  const ctx = canvas?.getContext('2d')
+  if (ctx && canvas) {
+    ctx.save()
+    ctx.resetTransform()
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.restore()
+  }
+}
+
+watch(scale, () => {
+  if (lastScript && canvasRef.value) drawMermaidCanvas(canvasRef.value, lastScript, scale.value)
+})
+
 function render() {
   if (typeof window === 'undefined') return
   const rt = (window as any).mermaidNative
@@ -65,20 +84,22 @@ function render() {
   try {
     const script = JSON.parse(rt.renderMermaidCanvasJson(source.value))
     if (script.ops) {
-      drawMermaidCanvas(canvas, script)
+      lastScript = script
+      drawMermaidCanvas(canvas, script, scale.value)
+      canvasDescription.value = script.ops.filter((op: any) => op.op === 'text').map((op: any) => op.text).join('; ')
       status.value = 'Rendered on Canvas2D'
     } else {
       const details = (script.diagnostics || [])
         .map((d: any) => `${d.code}: ${d.message} (line ${d.line}, column ${d.column})`)
         .join('\n')
-      const ctx = canvas.getContext('2d')
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
+      clearCanvas()
       status.value = 'Render failed'
       renderError.value = details || 'Render rejected'
       return
     }
     renderError.value = ''
   } catch (err: any) {
+    clearCanvas()
     renderError.value = String(err?.message || err)
     status.value = 'Render exception'
   }
@@ -183,6 +204,8 @@ onUnmounted(() => {
           >
             <canvas
               ref="canvasRef"
+              role="img"
+              :aria-label="canvasDescription"
               class="mermaid-canvas"
               :style="{
                 transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale})`,

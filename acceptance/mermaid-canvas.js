@@ -10,8 +10,8 @@
  *   const script = JSON.parse(runtime().renderMermaidCanvasJson(source));
  *   if (script.ops) drawMermaidCanvas(canvas, script);
  */
-export function drawMermaidCanvas(canvas, script) {
-  const dpr = window.devicePixelRatio || 1;
+export function drawMermaidCanvas(canvas, script, resolutionScale = 1) {
+  const dpr = (window.devicePixelRatio || 1) * resolutionScale;
   const width = script.width || canvas.clientWidth || 360;
   const height = script.height || canvas.clientHeight || 180;
   canvas.width = Math.ceil(width * dpr);
@@ -38,8 +38,10 @@ export function drawMermaidCanvas(canvas, script) {
         ctx.beginPath();
         ctx.ellipse(op.cx, op.cy, op.rx, op.ry, 0, 0, Math.PI * 2);
         ctx.globalAlpha = op.fo ?? 1;
-        ctx.fillStyle = op.fill;
-        ctx.fill();
+        if (op.fill && op.fill !== 'none') {
+          ctx.fillStyle = op.fill;
+          ctx.fill();
+        }
         ctx.globalAlpha = 1;
         strokePath(ctx, op.stroke, op.sw);
         break;
@@ -55,10 +57,13 @@ export function drawMermaidCanvas(canvas, script) {
         break;
       case 'polygon':
         tracePath(ctx, op.pts, true);
-        ctx.fillStyle = op.fill;
-        ctx.fill();
+        if (op.fill && op.fill !== 'none') {
+          ctx.fillStyle = op.fill;
+          ctx.fill();
+        }
         break;
       case 'text':
+        if (!op.fill || op.fill === 'none') break;
         ctx.font = `${op.weight} ${op.size}px ${op.family}`;
         ctx.fillStyle = op.fill;
         ctx.textAlign = op.anchor;
@@ -81,7 +86,7 @@ function tracePath(ctx, pts, close) {
 }
 
 function fillStroke(ctx, fill, stroke, sw) {
-  if (fill) {
+  if (fill && fill !== 'none') {
     ctx.fillStyle = fill;
     ctx.fill();
   }
@@ -89,7 +94,7 @@ function fillStroke(ctx, fill, stroke, sw) {
 }
 
 function strokePath(ctx, stroke, sw, dash) {
-  if (!stroke || !sw) return;
+  if (!stroke || stroke === 'none' || !sw) return;
   ctx.strokeStyle = stroke;
   ctx.lineWidth = sw;
   ctx.setLineDash(dash ? [6, 4] : []);

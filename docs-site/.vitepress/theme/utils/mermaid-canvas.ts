@@ -17,8 +17,8 @@ export type MermaidCanvasOp =
   | { op: 'polygon'; pts: number[]; fill: string }
   | { op: 'text'; text: string; x: number; y: number; anchor: CanvasTextAlign; size: number; family: string; weight: number; fill: string }
 
-export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanvasScript): void {
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanvasScript, resolutionScale = 1): void {
+  const dpr = (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * resolutionScale
   const width = script.width || canvas.clientWidth || 360
   const height = script.height || canvas.clientHeight || 180
   canvas.width = Math.ceil(width * dpr)
@@ -39,7 +39,7 @@ export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanv
         } else {
           ctx.rect(op.x, op.y, op.w, op.h)
         }
-        if (op.fill) {
+        if (op.fill && op.fill !== 'none') {
           ctx.fillStyle = op.fill
           ctx.fill()
         }
@@ -49,8 +49,10 @@ export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanv
         ctx.beginPath()
         ctx.ellipse(op.cx, op.cy, op.rx, op.ry, 0, 0, Math.PI * 2)
         ctx.globalAlpha = op.fo ?? 1
-        ctx.fillStyle = op.fill
-        ctx.fill()
+        if (op.fill && op.fill !== 'none') {
+          ctx.fillStyle = op.fill
+          ctx.fill()
+        }
         ctx.globalAlpha = 1
         strokePath(ctx, op.stroke, op.sw, false)
         break
@@ -66,10 +68,13 @@ export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanv
         break
       case 'polygon':
         tracePath(ctx, op.pts, true)
-        ctx.fillStyle = op.fill
-        ctx.fill()
+        if (op.fill && op.fill !== 'none') {
+          ctx.fillStyle = op.fill
+          ctx.fill()
+        }
         break
       case 'text':
+        if (!op.fill || op.fill === 'none') break
         ctx.font = `${op.weight} ${op.size}px ${op.family}`
         ctx.fillStyle = op.fill
         ctx.textAlign = op.anchor
@@ -92,7 +97,7 @@ function tracePath(ctx: CanvasRenderingContext2D, pts: number[], close: boolean)
 }
 
 function strokePath(ctx: CanvasRenderingContext2D, stroke: string, sw: number, dash: boolean): void {
-  if (!stroke || !sw) return
+  if (!stroke || stroke === 'none' || !sw) return
   ctx.strokeStyle = stroke
   ctx.lineWidth = sw
   ctx.setLineDash(dash ? [6, 4] : [])
