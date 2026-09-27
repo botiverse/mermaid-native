@@ -169,6 +169,11 @@ public data class PieSection(val label: String, val value: Double)
 public data class ClassDiagram(
     val classes: List<ClassDefinition>,
     val relationships: List<ClassRelationship>,
+    val notes: List<ClassNote> = emptyList(),
+    val namespaces: List<ClassNamespace> = emptyList(),
+    val direction: FlowDirection = FlowDirection.TB,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class ClassDefinition(
@@ -176,12 +181,26 @@ public data class ClassDefinition(
     val label: String = id,
     val members: List<ClassMember> = emptyList(),
     val namespaceName: String? = null,
+    val genericType: String? = null,
+    val annotations: List<String> = emptyList(),
 )
 
 public data class ClassMember(
     val signature: String,
     val visibility: ClassVisibility = ClassVisibility.PUBLIC,
+    val hasVisibility: Boolean = true,
 )
+
+public data class ClassNote(val text:String, val classId:String? = null, val namespaceName:String? = null)
+
+public data class ClassNamespace(
+    val id: String,
+    val label: String = id.substringAfterLast('.'),
+    val parentId: String? = null,
+    val explicit: Boolean = true,
+)
+
+public enum class ClassMarker { NONE, INHERITANCE, COMPOSITION, AGGREGATION, ARROW, LOLLIPOP }
 
 public enum class ClassVisibility { PUBLIC, PRIVATE, PROTECTED, PACKAGE }
 
@@ -192,6 +211,14 @@ public data class ClassRelationship(
     val label: String? = null,
     val fromCardinality: String? = null,
     val toCardinality: String? = null,
+    val fromMarker: ClassMarker = when(kind) {
+        ClassRelationshipKind.INHERITANCE,ClassRelationshipKind.REALIZATION -> ClassMarker.INHERITANCE
+        ClassRelationshipKind.COMPOSITION -> ClassMarker.COMPOSITION
+        ClassRelationshipKind.AGGREGATION -> ClassMarker.AGGREGATION
+        else -> ClassMarker.NONE
+    },
+    val toMarker: ClassMarker = if(kind in listOf(ClassRelationshipKind.ASSOCIATION,ClassRelationshipKind.DEPENDENCY)) ClassMarker.ARROW else ClassMarker.NONE,
+    val dashed: Boolean = kind in listOf(ClassRelationshipKind.REALIZATION,ClassRelationshipKind.DEPENDENCY,ClassRelationshipKind.DASHED_ASSOCIATION),
 )
 
 public enum class ClassRelationshipKind {

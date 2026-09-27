@@ -1077,9 +1077,9 @@ class MermaidParserTest {
     }
 
     @Test
-    fun classMemberBlockFailsClosedOnGarbageLine() {
+    fun classMemberBlockFailsClosedOnNestedBody() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("classDiagram\nclass A {\nnot a member\n}"),
+            MermaidParser.parse("classDiagram\nclass A {\nclass B {\n}\n}"),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)

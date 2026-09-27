@@ -6,6 +6,7 @@ import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.FlowNodeShape
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassDefinition
+import build.raft.mermaid.core.ClassMarker
 import build.raft.mermaid.core.ClassMember
 import build.raft.mermaid.core.ClassVisibility
 import build.raft.mermaid.core.ClassRelationshipKind
@@ -2271,36 +2272,42 @@ public object SimpleMermaidLayout : DiagramLayout {
             val lines = classCompartmentLines(klass)
             klass.id to SceneSize(max(120.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0), max(48.0, lines.size * 22.0 + 16.0))
         }
-        val width = (sizes.values.maxOfOrNull { it.width } ?: 0.0) + config.padding * 2
-        val height = sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1) + config.padding * 2
-        val rects = linkedMapOf<String, SceneRect>()
-        var y = config.padding
-        diagram.classes.forEach { klass ->
-            val size = sizes.getValue(klass.id)
-            rects[klass.id] = SceneRect(config.padding, y, size.width, size.height)
-            y += size.height + config.nodeGap
-        }
+        val placement = ClassPlacement(diagram, sizes, config, textMeasurer).place()
+        val width = placement.width
+        val height = placement.height
+        val rects = placement.classes
         val commands = mutableListOf<DrawCommand>()
+        diagram.namespaces.forEach { ns ->
+            val rect=placement.namespaces.getValue(ns.id)
+            commands += DrawRect(rect,cornerRadius=4.0,fill=SceneColor("#f1f5f9"),stroke=SceneColor("#94a3b8"))
+            commands += DrawText(ns.label,ScenePoint(rect.x+12,rect.y+19),style=TextStyle(fontWeight=600))
+        }
         diagram.relationships.forEach { relation ->
             val source = rects[relation.from] ?: return@forEach
             val target = rects[relation.to] ?: return@forEach
-            val sourceBottom = ScenePoint(source.x + source.width / 2, source.y + source.height)
-            val targetTop = ScenePoint(target.x + target.width / 2, target.y)
-            val dashed = relation.kind == ClassRelationshipKind.DEPENDENCY ||
-                relation.kind == ClassRelationshipKind.REALIZATION ||
-                relation.kind == ClassRelationshipKind.DASHED_ASSOCIATION
-            val (from, to) = when (relation.kind) {
-                ClassRelationshipKind.INHERITANCE, ClassRelationshipKind.REALIZATION -> targetTop to sourceBottom
-                else -> sourceBottom to targetTop
+            val horizontal=diagram.direction==FlowDirection.LR || diagram.direction==FlowDirection.RL
+            val forward=if(horizontal) target.x>source.x else target.y>source.y
+            val from=if(horizontal) ScenePoint(if(forward)source.x+source.width else source.x,source.y+source.height/2)
+                else ScenePoint(source.x+source.width/2,if(forward)source.y+source.height else source.y)
+            val to=if(horizontal) ScenePoint(if(forward)target.x else target.x+target.width,target.y+target.height/2)
+                else ScenePoint(target.x+target.width/2,if(forward)target.y else target.y+target.height)
+            val dashed=relation.dashed
+            val startMarker=relation.fromMarker
+            val endMarker=relation.toMarker
+            // Retain the legacy direction of unmarked lines for stable checked-in SVGs.
+            if(startMarker==ClassMarker.INHERITANCE && endMarker==ClassMarker.NONE) commands += DrawLine(to,from,pattern=if(dashed)StrokePattern.DASHED else StrokePattern.SOLID)
+            else commands += DrawLine(from,to,pattern=if(dashed)StrokePattern.DASHED else StrokePattern.SOLID)
+            fun marker(kind:ClassMarker, tip:ScenePoint, other:ScenePoint) {
+                when(kind) {
+                    ClassMarker.INHERITANCE -> commands += hollowArrowHead(other,tip)
+                    ClassMarker.COMPOSITION -> commands += diamondMarker(tip,other,true)
+                    ClassMarker.AGGREGATION -> commands += diamondMarker(tip,other,false)
+                    ClassMarker.ARROW -> commands += arrowHead(other,tip)
+                    ClassMarker.LOLLIPOP -> commands += DrawEllipse(tip,5.0,5.0,fill=SceneColor("#ffffff"),stroke=SceneColor("#475569"))
+                    ClassMarker.NONE -> Unit
+                }
             }
-            commands += DrawLine(from, to, pattern = if (dashed) StrokePattern.DASHED else StrokePattern.SOLID)
-            when (relation.kind) {
-                ClassRelationshipKind.INHERITANCE, ClassRelationshipKind.REALIZATION -> commands += hollowArrowHead(from, to)
-                ClassRelationshipKind.COMPOSITION -> commands += diamondMarker(from, to, filled = true)
-                ClassRelationshipKind.AGGREGATION -> commands += diamondMarker(from, to, filled = false)
-                ClassRelationshipKind.ASSOCIATION, ClassRelationshipKind.DEPENDENCY -> commands += arrowHead(from, to)
-                else -> {}
-            }
+            marker(startMarker,from,to); marker(endMarker,to,from)
             relation.label?.takeIf { it.isNotEmpty() }?.let { label ->
                 val mid = ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 6.0)
                 commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
@@ -2312,23 +2319,31 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawText(card, ScenePoint(to.x + 18.0, to.y - 6.0), TextAnchor.MIDDLE, style)
             }
         }
+        diagram.notes.forEachIndexed { index,note ->
+            val rect=placement.notes.getValue(index)
+            note.classId?.let { id -> rects[id.substringBefore('~')] }?.let { owner ->
+                commands += DrawLine(ScenePoint(owner.x+owner.width/2,owner.y+owner.height),ScenePoint(rect.x+rect.width/2,rect.y),pattern=StrokePattern.DASHED)
+            }
+            commands += DrawRect(rect,fill=SceneColor("#fff7d6"),stroke=SceneColor("#c5a84c"))
+            classNoteLines(note.text).forEachIndexed { lineIndex,line -> commands += DrawText(line,ScenePoint(rect.x+12,rect.y+20+lineIndex*22),style=style) }
+        }
         diagram.classes.forEach { klass ->
             val rect = rects.getValue(klass.id)
             commands += DrawRect(rect, cornerRadius = 4.0)
             val attributes = klass.members.filterNot { classMemberIsMethod(it) }
             val methods = klass.members.filter { classMemberIsMethod(it) }
-            val lines = listOf(klass.label) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
+            val lines = classHeaderLines(klass) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
             lines.forEachIndexed { index, line ->
                 commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
             }
             if (attributes.isNotEmpty() || methods.isNotEmpty()) {
-                commands += classCompartmentRule(rect, 0)
+                commands += classCompartmentRule(rect, classHeaderLines(klass).size - 1)
             }
             if (attributes.isNotEmpty() && methods.isNotEmpty()) {
-                commands += classCompartmentRule(rect, attributes.size)
+                commands += classCompartmentRule(rect, classHeaderLines(klass).size + attributes.size - 1)
             }
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun classMemberIsMethod(member: ClassMember): Boolean = member.signature.contains("(")
@@ -2340,13 +2355,25 @@ public object SimpleMermaidLayout : DiagramLayout {
             ClassVisibility.PROTECTED -> "#"
             ClassVisibility.PACKAGE -> "~"
         }
-        return "$prefix${member.signature}"
+        return "${if(member.hasVisibility) prefix else ""}${classSignatureLabel(member.signature)}"
+    }
+
+    private fun classHeaderLines(klass:ClassDefinition):List<String> = klass.annotations.map { "«$it»" } +
+        (klass.label + (klass.genericType?.let { "<$it>" } ?: ""))
+
+    private fun classSignatureLabel(signature:String):String {
+        var genericOpen=false
+        val generic=signature.map { if(it=='~') {genericOpen=!genericOpen;if(genericOpen)'<' else '>'} else it }.joinToString("")
+        val end=generic.lastIndexOf(')')
+        if(end<0) return generic
+        val suffix=generic.drop(end+1).trim()
+        return generic.take(end+1) + if(suffix.isEmpty() || suffix=="$" || suffix=="*") suffix else " : $suffix"
     }
 
     private fun classCompartmentLines(klass: ClassDefinition): List<String> {
         val attributes = klass.members.filterNot { classMemberIsMethod(it) }
         val methods = klass.members.filter { classMemberIsMethod(it) }
-        return listOf(klass.label) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
+        return classHeaderLines(klass) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
     }
 
     private fun classCompartmentRule(rect: SceneRect, afterLineIndex: Int): DrawLine {
