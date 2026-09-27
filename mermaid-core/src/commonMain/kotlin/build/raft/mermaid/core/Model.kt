@@ -68,6 +68,7 @@ public data class SequenceDiagram(
     val title: String? = null,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val boxes: List<SequenceBox> = emptyList(),
 ) : MermaidDiagram
 
 public data class SequenceActor(
@@ -75,7 +76,13 @@ public data class SequenceActor(
     val label: String,
     val kind: SequenceActorKind = SequenceActorKind.PARTICIPANT,
     val wrap: Boolean? = null,
+    val links: Map<String, String> = emptyMap(),
+    val properties: Map<String, String> = emptyMap(),
 )
+
+/** Participant grouping is independent of temporal control fragments. */
+public data class SequenceBox(val label: String, val color: String, val actorIds: List<String>)
+public data class SequenceLifecycle(val actorId: String, val create: Boolean) : SequenceEvent
 
 public data class SequenceMessage(
     val from: String,
