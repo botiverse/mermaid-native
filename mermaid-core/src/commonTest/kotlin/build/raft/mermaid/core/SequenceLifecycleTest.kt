@@ -35,6 +35,11 @@ properties A: {"class": "internal-service", "icon": "@clock"}
         assertEquals("description#2; stays",d.accessibilityDescription)
         assertEquals(listOf("{text}","next"),d.messages.map { it.label })
     }
+    @Test fun actorDataRequiresStringValuesAndDecodesJsonEscapes() {
+        val d=parse("participant A\nproperties A: {\"icon\": \"\\u0041\", \"icon\": \"\\u0042\"}")
+        assertEquals("B",d.actors.single().properties["icon"])
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("sequenceDiagram\nparticipant A\nproperties A: {\"count\": 12}"))
+    }
     @Test fun invalidGroupsAndLifetimesFailClosed() {
         listOf("box A\nparticipant X", "box A\nX->>Y: invalid\nend", "box A\nparticipant X\nend\nbox B\nparticipant X\nend",
             "participant A\ncreate participant A\nB->>A: again", "create participant A", "create participant A\nB->>C: wrong",

@@ -181,7 +181,7 @@ internal class SequenceParser(private val source: String) {
             mapOf(data.take(at).trim() to data.drop(at + 1).trim())
         } else {
             check(data.startsWith('{') && data.endsWith('}'), "Expected participant data object")
-            SequenceParticipantMetadata(data.drop(1).dropLast(1)).parse() ?: fail("Invalid participant data object")
+            SequenceParticipantMetadata(data.drop(1).dropLast(1), jsonStringsOnly = true).parse() ?: fail("Invalid participant data object")
         }
         actors[id] = if (command == "properties") actor.copy(properties = actor.properties + entries)
             else actor.copy(links = actor.links + entries)
