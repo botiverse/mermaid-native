@@ -2146,11 +2146,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val sizes = diagram.entities.associate { entity ->
             val typeCol = entity.attributes.maxOfOrNull { textMeasurer.measure(it.type, typeStyle).width } ?: 0.0
             val nameCol = max(
-                textMeasurer.measure(entity.id, titleStyle).width,
+                textMeasurer.measure(entity.alias ?: entity.id, titleStyle).width,
                 entity.attributes.maxOfOrNull { textMeasurer.measure(it.name, nameStyle).width } ?: 0.0,
             )
             val keyCol = entity.attributes.maxOfOrNull { attribute ->
-                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure(attribute.key.name, keyStyle).width
+                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure((listOf(attribute.key) + attribute.additionalKeys).filter { it != EntityKey.NONE }.joinToString(", ") { it.name }, keyStyle).width
             } ?: 0.0
             val contentWidth = if (entity.attributes.isEmpty()) {
                 nameCol
@@ -2179,7 +2179,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val to = ScenePoint(target.x + target.width / 2, target.y)
             val insetFrom = erInset(from, to, 16.0)
             val insetTo = erInset(to, from, 16.0)
-            commands += DrawLine(insetFrom, insetTo)
+            commands += DrawLine(insetFrom, insetTo, pattern = if (relationship.identifying) StrokePattern.SOLID else StrokePattern.DASHED)
             commands += erCardinalityMarks(from, to, relationship.fromCardinality)
             commands += erCardinalityMarks(to, from, relationship.toCardinality)
             if (relationship.label.isNotEmpty()) {
@@ -2194,10 +2194,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             val rect = rects.getValue(entity.id)
             val typeCol = entity.attributes.maxOfOrNull { textMeasurer.measure(it.type, typeStyle).width } ?: 0.0
             val keyCol = entity.attributes.maxOfOrNull { attribute ->
-                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure(attribute.key.name, keyStyle).width
+                if (attribute.key == EntityKey.NONE) 0.0 else textMeasurer.measure((listOf(attribute.key) + attribute.additionalKeys).filter { it != EntityKey.NONE }.joinToString(", ") { it.name }, keyStyle).width
             } ?: 0.0
             commands += DrawRect(rect, cornerRadius = 4.0)
-            commands += DrawText(entity.id, ScenePoint(rect.x + pad, rect.y + 18.0), style = titleStyle)
+            commands += DrawText(entity.alias ?: entity.id, ScenePoint(rect.x + pad, rect.y + 18.0), style = titleStyle)
             if (entity.attributes.isNotEmpty()) {
                 val ruleY = rect.y + headerHeight
                 commands += DrawLine(ScenePoint(rect.x, ruleY), ScenePoint(rect.x + rect.width, ruleY), stroke = SceneColor("#334155"), strokeWidth = 1.0)
@@ -2213,7 +2213,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawText(attribute.type, ScenePoint(typeX, rowY), style = typeStyle)
                     commands += DrawText(attribute.name, ScenePoint(nameX, rowY), style = nameStyle)
                     if (attribute.key != EntityKey.NONE) {
-                        commands += DrawText(attribute.key.name, ScenePoint(keyX, rowY), style = keyStyle)
+                        commands += DrawText((listOf(attribute.key) + attribute.additionalKeys).filter { it != EntityKey.NONE }.joinToString(", ") { it.name }, ScenePoint(keyX, rowY), style = keyStyle)
                     }
                 }
             }

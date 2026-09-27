@@ -132,6 +132,9 @@ import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
 import build.raft.mermaid.layout.TextAnchor
 import kotlin.test.Test
+import build.raft.mermaid.core.MermaidParser
+import build.raft.mermaid.core.MermaidParseResult
+import kotlin.test.assertIs
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -662,6 +665,19 @@ class SimpleMermaidLayoutTest {
         assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
         assertEquals("#2563eb", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
         assertEquals("#16a34a", scene.commands.filterIsInstance<DrawPolyline>().first().stroke.value)
+    }
+
+    @Test
+    fun parsedEntityAliasesMultipleKeysAndDashedRelationshipsReachDrawing() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "erDiagram\nA[\"Customer accounts\"] { int id PK, FK }\nA ||..o{ B : has",
+        ))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue("Customer accounts" in labels)
+        assertTrue("A" !in labels)
+        assertTrue("PK, FK" in labels)
+        assertEquals(1, scene.commands.filterIsInstance<DrawLine>().count { it.pattern == StrokePattern.DASHED })
     }
 
     @Test

@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/er/parser/erDiagram.spec.js": "447e509b42cfa52373858903bd66826497a37113b7f51f22121c0da167d62983",
+    "packages/mermaid/src/diagrams/er/parser/erDiagram.jison": "4f7c96b05d15bcc9c0e753bb106a5b8a67cfa4c8b2e13faab1d7098b92f9e5be",
+    "packages/mermaid/src/diagrams/er/erDb.ts": "c048254a2fe1f3a294f41b901d8b9f73d0f6bbb1b999e8c9f82f7ba5b736aa69"
+  }
+}
