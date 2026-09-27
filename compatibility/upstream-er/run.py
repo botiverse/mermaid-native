@@ -26,7 +26,7 @@ run([str(repo / 'gradlew'), ':mermaid-core:bundleLibRuntimeToJarDebug'], repo, w
 jar = repo / 'mermaid-core/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar'
 cp = os.pathsep.join(map(str, [work, jar, opt.stdlib.resolve()]))
 run(['javac', '-cp', cp, '-d', str(work), str(here / 'ErNativeBridge.java')])
-fixture = 'packages/mermaid/src/diagrams/er/parser/erDiagram.spec.js'
+fixtures = ['packages/mermaid/src/diagrams/er/parser/erDiagram.spec.js', 'packages/mermaid/src/diagrams/er/parser/subgraph.spec.js']
 captured = work / 'official-calls.jsonl'
 captured.write_text('')
 (work / 'capture.ts').write_text('''
@@ -47,10 +47,10 @@ import jsonSchemaPlugin from '../.vite/jsonSchemaPlugin.js';
 import {resolve} from 'node:path';
 export default defineConfig({
  plugins:[PARSER_PLUGIN,jsonSchemaPlugin()],
- test:{environment:'jsdom',globals:true,maxWorkers:1,include:[FIXTURE],SETUP},
+ test:{environment:'jsdom',globals:true,maxWorkers:1,include:FIXTURE,SETUP},
  define:{'injected.includeLargeFeatures':'true','injected.profiling':'false',packageVersion:"'0.0.0'"}
 });
-'''.replace('FIXTURE', json.dumps(fixture))
+'''.replace('FIXTURE', json.dumps(fixtures))
 (work / 'official.config.ts').write_text(config.replace('PARSER_PLUGIN','jison()').replace('SETUP',"setupFiles:['.native-er-audit/capture.ts']"))
 (work / 'native.config.ts').write_text(config.replace('PARSER_PLUGIN',"{name:'native-er',enforce:'pre',resolveId(id){if(id.endsWith('erDiagram.jison'))return resolve('.native-er-audit/adapter.ts');}}").replace('SETUP',''))
 for mode in ['official','native']:
@@ -74,10 +74,12 @@ const parser={yy:null,parse(source){
  const model=models.get(source);
  if(!model)throw new Error('Native result missing; regenerate the capture');
  if(model.error)throw new Error(model.error);
+ this.yy.setDirection(model.direction);
  if(model.accessibilityTitle!==null)this.yy.setAccTitle(model.accessibilityTitle);
  if(model.accessibilityDescription!==null)this.yy.setAccDescription(model.accessibilityDescription);
  for(const [id,styles] of model.classDefinitions)this.yy.addClass([id],styles);
  for(const e of model.entities){this.yy.addEntity(e.id,e.alias);this.yy.addAttributes(e.id,[...e.attributes].reverse());this.yy.addCssStyles([e.id],e.styles);this.yy.setClass([e.id],e.classes);}
+ for(const g of model.subgraphs){this.yy.addSubGraph({text:g.id},[...g.nodeIds,...(g.direction?[{stmt:'dir',value:g.direction}]:[])],{text:g.title});this.yy.addCssStyles([g.id],g.styles);this.yy.setClass([g.id],g.classes);}
  for(const r of model.relationships)this.yy.addRelationship(r.from,r.label,r.to,{cardA:r.cardA,cardB:r.cardB,relType:r.relType});
  return true;
 }};

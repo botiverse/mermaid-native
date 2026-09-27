@@ -175,7 +175,19 @@ public data class EntityRelationshipDiagram(
     val classDefinitions: Map<String, List<String>> = emptyMap(),
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val direction: FlowDirection = FlowDirection.TB,
+    val subgraphs: List<EntitySubgraph> = emptyList(),
+    val rootNodeIds: List<String> = entities.map { it.id },
 ) : MermaidDiagram
+
+public data class EntitySubgraph(
+    val id: String,
+    val title: String,
+    val nodeIds: List<String>,
+    val direction: FlowDirection? = null,
+    val styles: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
+)
 
 public data class EntityDefinition(
     val id: String,
