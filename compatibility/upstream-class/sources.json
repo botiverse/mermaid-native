@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/class/classDiagram.spec.ts": "3683c23821e7494d9e8ff3dcd9aca60f99ddf9de161e52b3f2dde24088feeda6",
+    "packages/mermaid/src/diagrams/class/classDb.ts": "09d09f0b5f0bac34e8a640a8e7e9657b3ef57cfc6f6411fae0b7b90f690fc95e",
+    "packages/mermaid/src/diagrams/class/classTypes.ts": "647859e7d44385ebb73a6689360ca6f9e4091faf7ae0b412735472d2e2106efc",
+    "packages/mermaid/src/diagrams/class/parser/classDiagram.jison": "c2ea20022e4adf501dbbcda909a1bdb74e05a2ac53ff5276d09d00fd54a3e21e"
+  }
+}

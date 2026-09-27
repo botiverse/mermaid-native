@@ -20,7 +20,7 @@ public object MermaidParser {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> SequenceParser(source).parse()
             STATE_HEADER.matches(header.text) -> parseState(statements)
             header.text.startsWith("pie", ignoreCase = true) -> PieParser(source).parse()
-            header.text.equals("classDiagram", ignoreCase = true) -> parseClass(statements)
+            (header.text.equals("classDiagram", ignoreCase = true) || header.text.equals("classDiagram-v2", ignoreCase = true)) -> ClassParser(source).parse()
             header.text.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> EntityRelationshipParser(source).parse()
             XY_HEADER.matches(header.text) -> parseXyChart(statements)
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
@@ -795,135 +795,6 @@ public object MermaidParser {
         } else {
             MermaidParseResult.Failure(diagnostics)
         }
-    }
-
-    private fun parseClass(statements: List<SourceStatement>): MermaidParseResult {
-        val classes = linkedMapOf<String, ClassDefinition>()
-        val relationships = mutableListOf<ClassRelationship>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var currentNamespace: String? = null
-        var memberBodyClassId: String? = null
-
-        fun ensure(id: String) {
-            if (id !in classes) classes[id] = ClassDefinition(id, namespaceName = currentNamespace)
-        }
-        statements.drop(1).forEach { statement ->
-            val text = statement.text.trim()
-            // class X { ... } member block — lines inside become members of X.
-            if (memberBodyClassId != null) {
-                if (text == "}") {
-                    memberBodyClassId = null
-                    return@forEach
-                }
-                val member = parseClassMemberLine(text)
-                if (member == null) {
-                    diagnostics += unsupported(statement, "Unsupported classDiagram member syntax")
-                } else {
-                    val owner = memberBodyClassId!!
-                    classes[owner] = classes.getValue(owner)
-                        .copy(members = classes.getValue(owner).members + member)
-                }
-                return@forEach
-            }
-
-            CLASS_NAMESPACE.matchEntire(statement.text)?.let {
-                if (currentNamespace != null) diagnostics += unsupported(statement, "Nested class namespaces are not supported")
-                else currentNamespace = it.groupValues[1]
-                return@forEach
-            }
-            if (statement.text == "}") {
-                if (currentNamespace == null) diagnostics += unsupported(statement, "Unexpected class namespace terminator")
-                else currentNamespace = null
-                return@forEach
-            }
-            CLASS_DECLARATION.matchEntire(statement.text)?.let {
-                val id = it.groupValues[1]
-                val label = it.groupValues[2].ifEmpty { id }
-                classes[id] = classes[id]?.copy(label = label, namespaceName = currentNamespace)
-                    ?: ClassDefinition(id, label, namespaceName = currentNamespace)
-                return@forEach
-            }
-            // class X {  — open a member block whose lines belong to X
-            splitClassBlockOpen(text)?.let { id ->
-                ensure(id)
-                memberBodyClassId = id
-                return@forEach
-            }
-            CLASS_MEMBER.matchEntire(statement.text)?.let {
-                val id = it.groupValues[1]
-                val marker = it.groupValues[2]
-                val signature = it.groupValues[3].trim()
-                if (marker.isEmpty() && signature in CLASS_VISIBILITY_MARKERS) {
-                    diagnostics += unsupported(statement, "Class member visibility requires a signature")
-                    return@forEach
-                }
-                ensure(id)
-                val visibility = when (marker) {
-                    "-" -> ClassVisibility.PRIVATE
-                    "#" -> ClassVisibility.PROTECTED
-                    "~" -> ClassVisibility.PACKAGE
-                    else -> ClassVisibility.PUBLIC
-                }
-                val member = ClassMember(signature, visibility)
-                classes[id] = classes.getValue(id).copy(members = classes.getValue(id).members + member)
-                return@forEach
-            }
-            splitClassRelation(statement.text)?.let { rel ->
-                val kind = when (rel.arrow) {
-                    "<|--", "--|>" -> ClassRelationshipKind.INHERITANCE
-                    "*--" -> ClassRelationshipKind.COMPOSITION
-                    "o--" -> ClassRelationshipKind.AGGREGATION
-                    "-->" -> ClassRelationshipKind.ASSOCIATION
-                    "--" -> ClassRelationshipKind.LINK
-                    "..>" -> ClassRelationshipKind.DEPENDENCY
-                    "..|>" -> ClassRelationshipKind.REALIZATION
-                    ".." -> ClassRelationshipKind.DASHED_ASSOCIATION
-                    else -> ClassRelationshipKind.ASSOCIATION
-                }
-                ensure(rel.fromId); ensure(rel.toId)
-                relationships += ClassRelationship(
-                    rel.fromId,
-                    rel.toId,
-                    kind,
-                    label = rel.label,
-                    fromCardinality = rel.fromCardinality,
-                    toCardinality = rel.toCardinality,
-                )
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported classDiagram syntax")
-        }
-        if (currentNamespace != null) diagnostics += unsupported(statements.last(), "Unclosed class namespace")
-        if (memberBodyClassId != null) diagnostics += unsupported(statements.last(), "Unclosed class member block")
-        return if (diagnostics.isEmpty()) {
-            MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList()))
-        } else MermaidParseResult.Failure(diagnostics)
-    }
-
-    /** 'class X {' — returns the class id. */
-    private fun splitClassBlockOpen(line: String): String? {
-        if (!line.lowercase().startsWith("class ")) return null
-        val rest = line.substring(6).trim()
-        if (!rest.endsWith("{")) return null
-        val id = rest.substring(0, rest.length - 1).trim()
-        if (!IDENTIFIER_ONLY.matches(id)) return null
-        return id
-    }
-
-    /** A member line inside 'class X { ... }': '[+-#~]signature'. */
-    private fun parseClassMemberLine(line: String): ClassMember? {
-        if (line.isEmpty()) return null
-        val marker = line[0]
-        val visibility = when (marker) {
-            '+' -> ClassVisibility.PUBLIC
-            '-' -> ClassVisibility.PRIVATE
-            '#' -> ClassVisibility.PROTECTED
-            '~' -> ClassVisibility.PACKAGE
-            else -> return null
-        }
-        val signature = line.substring(1).trim()
-        if (signature.isEmpty()) return null
-        return ClassMember(signature, visibility)
     }
 
     private fun parseXyChart(statements: List<SourceStatement>): MermaidParseResult {
@@ -2741,58 +2612,6 @@ public object MermaidParser {
     private const val WARDLEY_NOTE_KEYWORD = "note \""
     private const val WARDLEY_LINK_SEPARATOR = " -> "
     private val IDENTIFIER_ONLY = Regex("^$IDENTIFIER$")
-    private val CLASS_NAMESPACE = Regex("^namespace\\s+($IDENTIFIER)\\s*[{]$", RegexOption.IGNORE_CASE)
-    private val CLASS_DECLARATION = Regex("^class\\s+($IDENTIFIER)(?:\\s+as\\s+(.+))?$", RegexOption.IGNORE_CASE)
-    private val CLASS_MEMBER = Regex("^($IDENTIFIER)\\s*:\\s*([+\\-#~]?)(.+)$")
-    private val CLASS_RELATION_ARROWS = listOf(
-        "<|--", "--|>", "..|>", "..>", "*--", "o--", "-->", "--", "..",
-    )
-
-    private data class ClassRelationParts(
-        val fromId: String,
-        val arrow: String,
-        val toId: String,
-        val fromCardinality: String?,
-        val toCardinality: String?,
-        val label: String?,
-    )
-
-    /** Splits `A "1" --> "many" B : label` — engine-independent string ops, no regex. */
-    private fun splitClassRelation(line: String): ClassRelationParts? {
-        var arrowPos = -1
-        var arrowLen = 0
-        for (arrow in CLASS_RELATION_ARROWS) {
-            val idx = line.indexOf(arrow)
-            if (idx >= 0 && (arrowPos < 0 || idx < arrowPos || (idx == arrowPos && arrow.length > arrowLen))) {
-                arrowPos = idx
-                arrowLen = arrow.length
-            }
-        }
-        if (arrowPos <= 0) return null
-        val arrow = line.substring(arrowPos, arrowPos + arrowLen)
-        val left = line.substring(0, arrowPos).trim()
-        val fromCard = QUOTED_TOKEN.find(left)
-        val fromId = (if (fromCard != null) left.substring(0, fromCard.range.first) else left).trim()
-        if (!IDENTIFIER_ONLY.matches(fromId)) return null
-        var right = line.substring(arrowPos + arrowLen).trim()
-        var label: String? = null
-        val colon = right.indexOf(':')
-        if (colon >= 0) {
-            label = right.substring(colon + 1).trim().ifEmpty { null }
-            right = right.substring(0, colon).trim()
-        }
-        val toCard = QUOTED_TOKEN.find(right)
-        val toId = (if (toCard != null) right.substring(toCard.range.last + 1) else right).trim()
-        if (!IDENTIFIER_ONLY.matches(toId)) return null
-        return ClassRelationParts(
-            fromId, arrow, toId,
-            fromCard?.groupValues?.get(1),
-            toCard?.groupValues?.get(1),
-            label,
-        )
-    }
-
-    private val CLASS_VISIBILITY_MARKERS = setOf("+", "-", "#", "~")
     private val QUOTED_TOKEN = Regex("\"([^\"]*)\"")
     private val NUMBER = "-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?"
     private val XY_HEADER = Regex("^xychart-beta$", RegexOption.IGNORE_CASE)
