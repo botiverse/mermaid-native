@@ -38,6 +38,8 @@ async function renderOfficial(): Promise<void> {
       startOnLoad: false,
       securityLevel: 'strict',
       theme: 'neutral',
+      // This component owns the error UI; Mermaid's fallback would leak into document.body.
+      suppressErrorRendering: true,
     })
     const { svg, bindFunctions } = await mermaid.render(svgId(token), props.source)
     if (token !== generation || !host.value) return
