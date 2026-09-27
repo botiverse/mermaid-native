@@ -37,7 +37,7 @@ class ClassGrammarTest {
         assertEquals("two\nlines",d.notes.last().text)
     }
     @Test fun malformedBodiesAndUnsupportedDirectivesFail() {
-        listOf("class A {", "namespace A { class B", "class A { member { nested } }", "style A fill:red").forEach {
+        listOf("class A {", "namespace A { class B", "class A { member { nested } }", "style A unsupported:value").forEach {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("classDiagram\n$it"),it)
         }
     }

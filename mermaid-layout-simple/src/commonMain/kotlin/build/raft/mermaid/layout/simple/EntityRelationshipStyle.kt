@@ -43,7 +43,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 */
-private val NAMED_COLORS = mapOf(
+internal val NAMED_COLORS = mapOf(
     "aliceblue" to "#f0f8ff",
     "antiquewhite" to "#faebd7",
     "aqua" to "#00ffff",

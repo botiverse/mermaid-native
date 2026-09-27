@@ -79,12 +79,20 @@ export const parser={yy:null,parse(source){
  if(model.accTitle!==null)db.setAccTitle(model.accTitle);
  if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  for(const n of model.namespaces)if(n.explicit){db.addNamespace(n.id,n.label);db.popNamespace();}
+ for(const [id,styles] of Object.entries(model.definitions))db.defineClass([id],styles);
  for(const c of model.classes){
   db.addClass(c.id+(c.generic?'~'+c.generic+'~':''));
   if(c.label!==c.id)db.setClassLabel(c.id,c.label);
   if(c.namespace)db.addClassesToNamespace(c.namespace,[c.id],[]);
+  for(const css of c.cssClasses)db.setCssClass(c.id,css);
+  db.setCssStyle(c.id,c.styles);
   for(const a of c.annotations)db.addAnnotation(c.id,a);
   for(const m of c.members)db.addMember(c.id,(m.hasVisibility?{PUBLIC:'+',PRIVATE:'-',PROTECTED:'#',PACKAGE:'~'}[m.visibility]:'')+m.signature);
+ }
+ for(const i of model.interactions){
+  if(i.callback){if(i.arguments===null)db.setClickEvent(i.classId,i.value);else db.setClickEvent(i.classId,i.value,i.arguments);}
+  else {if(i.target===null)db.setLink(i.classId,i.value);else db.setLink(i.classId,i.value,i.target);}
+  if(i.tooltip!==null)db.setTooltip(i.classId,i.tooltip);
  }
  for(const n of model.notes){const id=db.addNote(n.text,n.classId??undefined);if(n.namespace)db.addClassesToNamespace(n.namespace,[],[id]);}
  for(const r of model.relationships){

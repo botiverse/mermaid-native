@@ -7,6 +7,8 @@ internal class ClassParser(private val source: String) {
     private val classes = linkedMapOf<String, ClassDefinition>()
     private val namespaces = linkedMapOf<String, ClassNamespace>()
     private val namespaceStack = mutableListOf<String>()
+    private val classDefinitions=linkedMapOf<String,List<String>>()
+    private val interactions=mutableListOf<ClassInteraction>()
     private val notes = mutableListOf<ClassNote>()
     private val relationships = mutableListOf<ClassRelationship>()
     private var direction = FlowDirection.TB
@@ -27,6 +29,10 @@ internal class ClassParser(private val source: String) {
             }
             val text = readOuter()
             when {
+                text.startsWith("classDef ") -> styleDefinition(text.drop(9).trim())
+                text.startsWith("style ") -> inlineStyle(text.drop(6).trim())
+                text.startsWith("cssClass ") -> cssClass(text.drop(9).trim())
+                text.startsWith("click ") || text.startsWith("callback ") || text.startsWith("link ") -> interaction(text)
                 text == "note" || text.startsWith("note ") -> note(text.drop(4).trim())
                 text.startsWith("namespace ") -> namespace(text.drop(10).trim())
                 text.startsWith("class ") -> declaration(text.drop(6).trim())
@@ -50,11 +56,74 @@ internal class ClassParser(private val source: String) {
             }
         }
         requireSyntax(namespaceStack.isEmpty(), "Unclosed class namespace")
-        MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList(), notes.toList(), namespaces.values.toList(), direction, accTitle, accDescription))
+        MermaidParseResult.Success(ClassDiagram(classes.values.toList(), relationships.toList(), notes.toList(), namespaces.values.toList(), direction, accTitle, accDescription, classDefinitions.toMap(), interactions.toList()))
     } catch(error: ClassSyntaxError) {
         val prefix=source.take(statementAt)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,error.message ?: "Unsupported class syntax",
             SourceLocation(prefix.count { it=='\n' }+1,statementAt-prefix.lastIndexOf('\n')))))
+    }
+
+    private fun styleDefinition(text:String) {
+        val ids=text.substringBefore(' ').split(',')
+        requireSyntax(ids.all { it.isNotBlank() },"Expected style class identifiers")
+        val styles=styles(text.substringAfter(' ',""))
+        ids.forEach { classDefinitions[it]=classDefinitions[it].orEmpty()+styles }
+    }
+    private fun inlineStyle(text:String) {
+        val ids=text.substringBefore(' ').split(',')
+        val styles=styles(text.substringAfter(' ',""))
+        ids.forEach { raw -> val id=raw.substringBefore('~');classes[id]?.let { classes[id]=it.copy(styles=it.styles+styles) } }
+    }
+    private fun cssClass(text:String) {
+        val (ids,next)=quoted(text)
+        val css=text.drop(next).trim()
+        requireSyntax(css.isNotEmpty() && css.none { it.isWhitespace() },"Expected CSS class name")
+        ids.split(',').forEach { raw -> val id=raw.substringBefore('~'); classes[id]?.let { classes[id]=it.copy(classes=it.classes+css) } }
+    }
+    private fun styles(text:String):List<String> {
+        val values=mutableListOf<String>();var level=0;var start=0
+        text.forEachIndexed { index,c ->
+            if(c=='(')level++ else if(c==')')level--
+            requireSyntax(level>=0,"Unbalanced style value")
+            if(c==',' && level==0) { values+=text.substring(start,index);start=index+1 }
+        }
+        values+=text.drop(start)
+        requireSyntax(level==0,"Unbalanced style value")
+        return values.map { raw ->
+            val parts=raw.split(':',limit=2);requireSyntax(parts.size==2 && parts[1].isNotBlank(),"Expected style property and value")
+            val key=parts[0].trim().lowercase();val value=parts[1].trim()
+            requireSyntax(key in setOf("fill","stroke","color","stroke-width","font-size","font-weight"),"Unsupported class style property")
+            if(key=="font-size" || key=="stroke-width") requireSyntax(value.lowercase().removeSuffix("px").toDoubleOrNull()?.isFinite()==true,"Expected numeric or px class style size")
+            "$key:$value"
+        }
+    }
+    private fun quoted(text:String):Pair<String,Int> {
+        requireSyntax(text.startsWith('"'),"Expected quoted value")
+        val end=text.indexOf('"',1);requireSyntax(end>0,"Unclosed quoted value")
+        return text.substring(1,end) to end+1
+    }
+    private fun interaction(text:String) {
+        val command=text.substringBefore(' ')
+        var rest=text.substringAfter(' ').trim()
+        val name=readName(rest);val id=name.first.substringBefore('~');rest=rest.drop(name.second).trim()
+        val callback=command=="callback" || (command=="click" && rest.startsWith("call "))
+        var args:String?=null
+        val value:String
+        if(command=="click") {
+            requireSyntax(rest.startsWith("call ") || rest.startsWith("href "),"Expected call or href")
+            rest=rest.substringAfter(' ').trim()
+        }
+        if(callback && command=="click") {
+            val open=rest.indexOf('(');requireSyntax(open>0,"Expected callback arguments")
+            value=rest.take(open).trim();var end=open+1;var quote=false
+            while(end<rest.length) { if(rest[end]=='"')quote=!quote; if(rest[end]==')' && !quote)break;end++ }
+            requireSyntax(end<rest.length,"Unclosed callback arguments")
+            args=rest.substring(open+1,end).takeIf { it.isNotBlank() };rest=rest.drop(end+1).trim()
+        } else { val item=quoted(rest);value=item.first;rest=rest.drop(item.second).trim() }
+        var tooltip:String?=null
+        if(rest.startsWith('"')) { val item=quoted(rest);tooltip=item.first;rest=rest.drop(item.second).trim() }
+        requireSyntax(rest.isEmpty() || (!callback && rest in setOf("_self","_blank","_parent","_top")),"Unsupported interaction suffix")
+        interactions+=ClassInteraction(id,value,callback,args,tooltip,rest.takeIf { it.isNotEmpty() })
     }
 
     private fun note(text:String) {
@@ -95,6 +164,11 @@ internal class ClassParser(private val source: String) {
             requireSyntax(end>=0,"Unclosed class label")
             classes[id]=classes.getValue(id).copy(label=quotedLabel(suffix.take(end+1)))
             suffix=suffix.drop(end+1).trim()
+        }
+        if(suffix.startsWith(":::")) {
+            val css=suffix.drop(3).trim()
+            requireSyntax(css.isNotEmpty() && css.all { it.isLetterOrDigit() || it in "_-" },"Invalid class style name")
+            classes[id]=classes.getValue(id).copy(classes=classes.getValue(id).classes+css);suffix=""
         }
         if(suffix.startsWith("<<") && suffix.endsWith(">>")) {
             addMember(id,suffix); suffix=""

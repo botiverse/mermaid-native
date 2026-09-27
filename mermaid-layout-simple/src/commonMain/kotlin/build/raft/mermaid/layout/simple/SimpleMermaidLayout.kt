@@ -2268,9 +2268,11 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutClass(diagram: ClassDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val style = TextStyle()
+        val styles=diagram.classes.associate { it.id to ClassStyle(it,diagram) }
         val sizes = diagram.classes.associate { klass ->
             val lines = classCompartmentLines(klass)
-            klass.id to SceneSize(max(120.0, lines.maxOf { textMeasurer.measure(it, style).width } + 24.0), max(48.0, lines.size * 22.0 + 16.0))
+            val css=styles.getValue(klass.id)
+            klass.id to SceneSize(max(120.0, lines.maxOf { textMeasurer.measure(it, css.text).width } + 24.0), max(48.0, lines.size * css.lineHeight + 16.0))
         }
         val placement = ClassPlacement(diagram, sizes, config, textMeasurer).place()
         val width = placement.width
@@ -2329,18 +2331,19 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.classes.forEach { klass ->
             val rect = rects.getValue(klass.id)
-            commands += DrawRect(rect, cornerRadius = 4.0)
+            val css=styles.getValue(klass.id)
+            commands += DrawRect(rect, cornerRadius = 4.0,fill=css.fill,stroke=css.stroke,strokeWidth=css.strokeWidth)
             val attributes = klass.members.filterNot { classMemberIsMethod(it) }
             val methods = klass.members.filter { classMemberIsMethod(it) }
             val lines = classHeaderLines(klass) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
             lines.forEachIndexed { index, line ->
-                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 18.0 + index * 22.0), style = style)
+                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + css.text.fontSize + 4.0 + index * css.lineHeight), style = css.text)
             }
             if (attributes.isNotEmpty() || methods.isNotEmpty()) {
-                commands += classCompartmentRule(rect, classHeaderLines(klass).size - 1)
+                commands += classCompartmentRule(rect, classHeaderLines(klass).size - 1,css)
             }
             if (attributes.isNotEmpty() && methods.isNotEmpty()) {
-                commands += classCompartmentRule(rect, classHeaderLines(klass).size + attributes.size - 1)
+                commands += classCompartmentRule(rect, classHeaderLines(klass).size + attributes.size - 1,css)
             }
         }
         return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
@@ -2376,9 +2379,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         return classHeaderLines(klass) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
     }
 
-    private fun classCompartmentRule(rect: SceneRect, afterLineIndex: Int): DrawLine {
-        val y = rect.y + 29.0 + afterLineIndex * 22.0
-        return DrawLine(ScenePoint(rect.x, y), ScenePoint(rect.x + rect.width, y), stroke = SceneColor("#334155"), strokeWidth = 1.0)
+    private fun classCompartmentRule(rect: SceneRect, afterLineIndex: Int,css:ClassStyle): DrawLine {
+        val y = rect.y + css.lineHeight + 7.0 + afterLineIndex * css.lineHeight
+        return DrawLine(ScenePoint(rect.x, y), ScenePoint(rect.x + rect.width, y), stroke = css.stroke, strokeWidth = minOf(1.0,css.strokeWidth))
     }
 
     private fun hollowArrowHead(from: ScenePoint, to: ScenePoint): DrawPolyline {

@@ -31,6 +31,7 @@ notes, visible generic/annotation headers and relationship marker endpoints.
 
 Current implementation covers declarations, generics, quoted labels/identifiers,
 unmarked members, annotations, namespace hierarchy, notes, direction, accessibility
-and both relationship endpoints. CSS classes/styles, callbacks and links remain
-explicit failures. Static/abstract member typography, lollipop interface semantics,
+and both relationship endpoints. CSS classes/styles now reach the Native layout. Callback/link declarations are
+retained as typed host-facing interaction metadata; Native interactive host
+bindings are not implemented in this batch. Static/abstract member typography, lollipop interface semantics,
 advanced graph routing and rendering equivalence remain open work.
