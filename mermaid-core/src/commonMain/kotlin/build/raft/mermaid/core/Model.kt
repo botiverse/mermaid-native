@@ -56,17 +56,25 @@ public enum class FlowNodeShape {
     TRAPEZOID_ALT,
 }
 
+/** Ordered sequence events are the source of truth for vertical placement. */
+public sealed interface SequenceEvent
+
 public data class SequenceDiagram(
     val actors: List<SequenceActor>,
     val messages: List<SequenceMessage>,
     val notes: List<SequenceNote> = emptyList(),
     val activations: List<SequenceActivation> = emptyList(),
+    val events: List<SequenceEvent> = messages + notes + activations,
+    val title: String? = null,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class SequenceActor(
     val id: String,
     val label: String,
     val kind: SequenceActorKind = SequenceActorKind.PARTICIPANT,
+    val wrap: Boolean? = null,
 )
 
 public data class SequenceMessage(
@@ -75,18 +83,39 @@ public data class SequenceMessage(
     val label: String,
     val lineStyle: SequenceLineStyle,
     val arrowHead: SequenceArrowHead,
-)
+    val wrap: Boolean? = null,
+    val bidirectional: Boolean = false,
+    val centralConnection: SequenceCentralConnection = SequenceCentralConnection.NONE,
+    val activate: Boolean = false,
+) : SequenceEvent
 
 public data class SequenceNote(
     val position: SequenceNotePosition,
     val actorIds: List<String>,
     val text: String,
-)
+    val wrap: Boolean? = null,
+) : SequenceEvent
 
 public data class SequenceActivation(
     val actorId: String,
     val activate: Boolean,
-)
+) : SequenceEvent
+
+public data class SequenceNumbering(
+    val visible: Boolean,
+    val start: Double? = null,
+    val step: Double? = null,
+) : SequenceEvent
+
+public enum class SequenceCentralConnection { NONE, TO, FROM, BOTH }
+public enum class SequenceFragmentKind { LOOP, OPT, ALT, PAR, PAR_OVER, CRITICAL, BREAK, RECT }
+public enum class SequenceFragmentBoundary { START, BRANCH, END }
+public data class SequenceFragment(
+    val kind: SequenceFragmentKind,
+    val boundary: SequenceFragmentBoundary,
+    val label: String = "",
+    val wrap: Boolean? = null,
+) : SequenceEvent
 
 /** State diagram model for the Mermaid stateDiagram/stateDiagram-v2 family. */
 public data class StateDiagram(

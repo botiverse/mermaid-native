@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/sequence/sequenceDiagram.spec.js": "a80968dbedb5004178a466d3d9db16781da6f0f9cd5004250109161251fba4b5",
+    "packages/mermaid/src/diagrams/sequence/parser/sequenceDiagram.jison": "8771148ef56c2b98b021597a53585e45acc088cb321a3d457d265eca352fb40f",
+    "packages/mermaid/src/diagrams/sequence/sequenceDb.ts": "55b87176caa3e548be11a1582bd1c30317014f7d135ad34deff66a725b40b8e1"
+  }
+}
