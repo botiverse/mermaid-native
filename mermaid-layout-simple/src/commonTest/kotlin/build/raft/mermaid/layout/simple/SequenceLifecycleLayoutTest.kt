@@ -10,7 +10,7 @@ class SequenceLifecycleLayoutTest {
         return SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
     }
     @Test fun createdParticipantStartsAtItsIncomingMessageAndDestroyedParticipantHasNoFooter() {
-        val s=layout("A->>B: start\ncreate participant C\nB->>C: create\ndestroy C\nB->>C: finish")
+        val s=layout("A->>B: start\ncreate participant C\nautonumber\nB->>C: create\ndestroy C\nB->>C: finish")
         val cText=s.commands.filterIsInstance<DrawText>().single { it.text=="C" }
         val aText=s.commands.filterIsInstance<DrawText>().first { it.text=="A" }
         assertTrue(cText.origin.y>aText.origin.y+50)

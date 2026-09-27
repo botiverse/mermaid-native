@@ -86,6 +86,7 @@ internal fun sequenceLayout(
     }
     val actorBottom = max(messageTop+config.messageGap, y)
     val createdAt = mutableMapOf<String, Double>()
+    val creationMessages = mutableSetOf<Int>()
     val destroyedAt = mutableMapOf<String, Double>()
     diagram.events.forEachIndexed { index, event ->
         if(event is SequenceLifecycle) {
@@ -93,7 +94,10 @@ internal fun sequenceLayout(
             if(next != null) {
                 val message = diagram.events[next] as SequenceMessage
                 val at = positions[next] + (lines(message.label,message.wrap).size-1)*lineHeight
-                if(event.create) createdAt[event.actorId] = at - actorHeight / 2 else destroyedAt[event.actorId] = at
+                if(event.create) {
+                    createdAt[event.actorId] = at - actorHeight / 2
+                    creationMessages += next
+                } else destroyedAt[event.actorId] = at
             }
         }
     }
@@ -143,8 +147,7 @@ internal fun sequenceLayout(
                 val toDepth=(starts[event.to]?.size ?: 0)+if(nextActivation?.activate==true && nextActivation.actorId==event.to) 1 else 0
                 val forward=targetCenter>=sourceCenter
                 val fromX=sourceCenter+if(fromDepth>0) (fromDepth-1)*4.0+if(forward) 4.0 else -4.0 else 0.0
-                val creating = (diagram.events.getOrNull(index-1) as? SequenceLifecycle)?.takeIf { it.create && it.actorId==event.to }
-                val toX=targetCenter+if(creating!=null) (if(forward) -1 else 1)*actorWidths.getValue(event.to)/2 else if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
+                val toX=targetCenter+if(index in creationMessages) (if(forward) -1 else 1)*actorWidths.getValue(event.to)/2 else if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
                 val pattern=if(event.lineStyle==SequenceLineStyle.DASHED) StrokePattern.DASHED else StrokePattern.SOLID
                 val from=ScenePoint(fromX,signalY); val to=ScenePoint(toX,signalY)
                 if(event.from==event.to){
@@ -194,6 +197,9 @@ internal fun sequenceLayout(
     diagram.actors.forEach { actor ->
         val center=centers.getValue(actor.id); val actorWidth=actorWidths.getValue(actor.id)
         foreground += sequenceParticipant(actor,center,createdAt[actor.id] ?: actorTop,actorWidth,actorHeight,actorLines.getValue(actor.id),style,lineHeight)
+    }
+    diagram.actors.forEach { actor ->
+        val center=centers.getValue(actor.id); val actorWidth=actorWidths.getValue(actor.id)
         val destroyed = destroyedAt[actor.id]
         if(destroyed == null) foreground += sequenceParticipant(actor,center,actorBottom,actorWidth,actorHeight,actorLines.getValue(actor.id),style,lineHeight)
         else {
