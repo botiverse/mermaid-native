@@ -8,6 +8,24 @@ import kotlin.test.assertTrue
 
 class MermaidParserTest {
     @Test
+    fun bareFlowchartReferencesPreserveLabelsAndShapes() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "flowchart TD\nA[Start] --> B(Process)\nB --> C[End]\nB\nC[Renamed]",
+        ))
+        val diagram = assertIs<FlowchartDiagram>(parsed.diagram)
+        assertEquals(FlowNode("B", "Process", FlowNodeShape.ROUNDED), diagram.nodes.first { it.id == "B" })
+        assertEquals("Renamed", diagram.nodes.first { it.id == "C" }.label)
+        val redeclared = assertIs<MermaidParseResult.Success>(MermaidParser.parse("flowchart TD\nA --> B\nB{Decision}"))
+        assertEquals(FlowNodeShape.DIAMOND, assertIs<FlowchartDiagram>(redeclared.diagram).nodes.first { it.id == "B" }.shape)
+    }
+
+    @Test
+    fun sequenceMessagesRequireAColonEvenForAnEmptyLabel() {
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("sequenceDiagram; A-->B"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("sequenceDiagram; A-->B:"))
+    }
+
+    @Test
     fun acceptsOfficialGalleryHeaderAliases() {
         val aliases = listOf(
             "block-beta\ncolumns 2\nA[\"Client\"]\nB[\"Server\"]\nA --> B",
@@ -230,7 +248,7 @@ class MermaidParserTest {
             "zenuml\n" +
                 "    title Token handshake\n" +
                 "    Client\n" +
-                "    Store as Token store\n" +
+                "    Store as \"Token store\"\n" +
                 "    Client->Gateway.submit()\n" +
                 "    Gateway->Store.lookup\n" +
                 "    Client->Gateway: cancel",
@@ -255,6 +273,15 @@ class MermaidParserTest {
             ),
             result.diagram,
         )
+    }
+
+    @Test
+    fun zenumlAliasesRequireQuotesForMultipleWords() {
+        listOf("Token store", "\"Token store", "Token store\"").forEach { alias ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("zenuml\nStore as $alias\nClient->Store.lookup()"))
+        }
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("zenuml\nStore as TokenStore\nClient->Store.lookup()"))
+        assertEquals("TokenStore", assertIs<ZenumlDiagram>(parsed.diagram).participants.first().label)
     }
 
     @Test
@@ -911,9 +938,9 @@ class MermaidParserTest {
     }
 
     @Test
-    fun acceptsLabelLessPhaseZeroSequenceMessage() {
+    fun acceptsEmptySequenceMessageWithRequiredColon() {
         val result = assertIs<MermaidParseResult.Success>(
-            MermaidParser.parse("sequenceDiagram; A->>B"),
+            MermaidParser.parse("sequenceDiagram; A->>B:"),
         )
         val diagram = assertIs<SequenceDiagram>(result.diagram)
 

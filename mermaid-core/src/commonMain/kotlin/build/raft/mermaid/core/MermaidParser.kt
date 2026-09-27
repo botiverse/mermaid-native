@@ -85,7 +85,7 @@ public object MermaidParser {
         fun register(id: String, label: String?, shape: FlowNodeShape = FlowNodeShape.RECTANGLE) {
             val existing = nodes[id]
             val resolvedLabel = label?.takeIf { it.isNotEmpty() } ?: existing?.label ?: id
-            val resolvedShape = if (existing == null) shape else existing.shape
+            val resolvedShape = if (existing == null || label != null) shape else existing.shape
             nodes[id] = FlowNode(id = id, label = resolvedLabel, shape = resolvedShape)
         }
 
@@ -113,13 +113,13 @@ public object MermaidParser {
                 val (fromSpec, hops) = chain
                 val firstRef = parseFlowNodeRef(fromSpec)
                 if (firstRef == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge source"); return@forEach }
+                register(firstRef.id, firstRef.label.takeIf { fromSpec != firstRef.id }, firstRef.shape)
                 run {
                     var from: FlowNode = firstRef
                     hops.forEach { (operator, label, toSpec) ->
                         val to = parseFlowNodeRef(toSpec)
                         if (to == null) { diagnostics += unsupported(statement, "Unsupported flowchart edge target"); return@run }
-                        register(from.id, from.label, from.shape)
-                        register(to.id, to.label, to.shape)
+                        register(to.id, to.label.takeIf { toSpec != to.id }, to.shape)
                         subgraphStack.lastOrNull()?.second?.let { members ->
                             if (from.id !in members) members += from.id
                             if (to.id !in members) members += to.id
@@ -143,7 +143,7 @@ public object MermaidParser {
             // Node declaration / shape
             val node = parseFlowNodeRef(text)
             if (node != null) {
-                register(node.id, node.label, node.shape)
+                register(node.id, node.label.takeIf { text != node.id }, node.shape)
                 subgraphStack.lastOrNull()?.second?.let { if (node.id !in it) it += node.id }
                 return@forEach
             }
@@ -376,7 +376,17 @@ public object MermaidParser {
             }
             val alias = ZENUML_ALIAS_DECLARATION.matchEntire(text)
             if (alias != null) {
-                register(alias.groupValues[1], alias.groupValues[2].trim(), statement.location)
+                val rawLabel = alias.groupValues[2].trim()
+                val label = if (rawLabel.startsWith('"') && rawLabel.endsWith('"') && rawLabel.length > 2) {
+                    rawLabel.substring(1, rawLabel.lastIndex).takeIf { '"' !in it && '\\' !in it }
+                } else {
+                    rawLabel.takeIf { value -> value.none { it.isWhitespace() || it == '"' || it == '\\' } }
+                }
+                if (label == null) {
+                    diagnostics += unsupported(statement, "zenuml multi-word aliases require double quotes; escaped aliases are not supported")
+                } else {
+                    register(alias.groupValues[1], label, statement.location)
+                }
                 continue@loop
             }
             val bareDeclaration = ZENUML_BARE_DECLARATION.matchEntire(text)
@@ -2968,12 +2978,10 @@ public object MermaidParser {
         if (from.isEmpty() || !IDENTIFIER_ONLY.matches(from)) return null
         val arrow = line.substring(arrowPos, arrowPos + arrowLen)
         var rest = line.substring(arrowPos + arrowLen).trim()
-        var label = ""
         val colon = rest.indexOf(':')
-        if (colon >= 0) {
-            label = rest.substring(colon + 1).trim()
-            rest = rest.substring(0, colon).trim()
-        }
+        if (colon < 0) return null
+        val label = rest.substring(colon + 1).trim()
+        rest = rest.substring(0, colon).trim()
         val to = rest
         if (to.isEmpty() || !IDENTIFIER_ONLY.matches(to)) return null
         return SequenceMessageParts(from, arrow, to, label)

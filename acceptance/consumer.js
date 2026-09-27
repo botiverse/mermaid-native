@@ -196,7 +196,7 @@ note "Standardising power allows Kettles to evolve faster" [0.30, 0.49]`,'Anchor
   ['ZenUML',`zenuml
 title Token handshake
 Client
-Store as Token store
+Store as "Token store"
 Client->Gateway.submit()
 Gateway->Store.lookup
 Client->Gateway: cancel`,'Sequence messages (bounded).'],
