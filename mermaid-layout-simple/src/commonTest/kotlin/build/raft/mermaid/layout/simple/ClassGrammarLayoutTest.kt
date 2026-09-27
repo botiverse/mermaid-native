@@ -29,6 +29,12 @@ class ClassGrammarLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text=="second line" })
         assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.pattern==StrokePattern.DASHED })
     }
+    @Test fun legacyManualNamespaceNameWithoutGroupMetadataStillRenders() {
+        val diagram=ClassDiagram(listOf(ClassDefinition("A",namespaceName="Legacy")),emptyList())
+        val scene=SimpleMermaidLayout.layout(diagram,FixedWidthTextMeasurer,LayoutConfig())
+        assertEquals("A",scene.commands.filterIsInstance<DrawText>().single().text)
+        assertEquals(1,scene.commands.filterIsInstance<DrawRect>().size)
+    }
     @Test fun rightHandInheritanceMarkerIsAtTheTarget() {
         val scene=layout("class A\nclass B\nA --|> B")
         val boxes=scene.commands.filterIsInstance<DrawRect>()
