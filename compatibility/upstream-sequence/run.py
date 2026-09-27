@@ -80,11 +80,15 @@ const parser={yy:null,parse(source){
  if(model.accTitle!==null)db.setAccTitle(model.accTitle);
  if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  const label=(text,wrap)=>({text,wrap:wrap??undefined});
- for(const a of model.actors)db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind==='ACTOR'?'actor':'participant');
+ for(const a of model.actors)db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind.toLowerCase());
  for(const e of model.events){
   if(e.kind==='message'){
    let type=e.bidirectional?'BIDIRECTIONAL_SOLID':{FILLED:'SOLID',NONE:'SOLID_OPEN',OPEN:'SOLID_POINT',CROSS:'SOLID_CROSS',CIRCLE:'SOLID_POINT'}[e.head];
-   if(e.style==='DASHED')type=type.replace('SOLID','DOTTED');
+   if(e.head.startsWith('HALF_')){
+    const filled=e.head.includes('FILLED'),side=e.head.endsWith('TOP')?'TOP':'BOTTOM';
+    type=(filled?'SOLID':'STICK')+(e.headAtSource?'_ARROW':'')+'_'+side+(e.headAtSource?'_REVERSE':'');
+    if(e.style==='DASHED')type+='_DOTTED';
+   } else if(e.style==='DASHED')type=type.replace('SOLID','DOTTED');
    db.addSignal(e.from,e.to,label(e.label,e.wrap),db.LINETYPE[type],e.activate,{NONE:0,TO:59,FROM:60,BOTH:61}[e.central]);
    if(e.central==='TO'||e.central==='BOTH')db.addSignal(e.to,undefined,undefined,db.LINETYPE.CENTRAL_CONNECTION);
    if(e.central==='FROM'||e.central==='BOTH')db.addSignal(e.from,undefined,undefined,db.LINETYPE.CENTRAL_CONNECTION_REVERSE);

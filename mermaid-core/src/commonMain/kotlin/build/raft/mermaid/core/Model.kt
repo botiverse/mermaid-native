@@ -87,6 +87,7 @@ public data class SequenceMessage(
     val bidirectional: Boolean = false,
     val centralConnection: SequenceCentralConnection = SequenceCentralConnection.NONE,
     val activate: Boolean = false,
+    val headAtSource: Boolean = false,
 ) : SequenceEvent
 
 public data class SequenceNote(
@@ -608,6 +609,7 @@ public enum class SequenceLineStyle {
 }
 
 public enum class SequenceArrowHead {
+    HALF_FILLED_TOP, HALF_FILLED_BOTTOM, HALF_OPEN_TOP, HALF_OPEN_BOTTOM,
     NONE,
     FILLED,
     OPEN,
@@ -616,8 +618,7 @@ public enum class SequenceArrowHead {
 }
 
 public enum class SequenceActorKind {
-    PARTICIPANT,
-    ACTOR,
+    PARTICIPANT, ACTOR, BOUNDARY, CONTROL, ENTITY, DATABASE, COLLECTIONS, QUEUE,
 }
 
 public enum class SequenceNotePosition {
