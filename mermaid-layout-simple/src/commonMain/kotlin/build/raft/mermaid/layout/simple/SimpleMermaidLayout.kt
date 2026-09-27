@@ -2832,11 +2832,15 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(legendLabel, ScenePoint(legendX + 22.0, legendY), style = bodyStyle)
             angle = end
         }
-        val legendWidth = diagram.sections.maxOfOrNull { textMeasurer.measure(it.label, bodyStyle).width } ?: 0.0
+        val legendWidth = diagram.sections.maxOfOrNull {
+            textMeasurer.measure(if (diagram.showData) "${it.label} [${pieShowDataValue(it.value)}]" else it.label, bodyStyle).width
+        } ?: 0.0
         return LayoutScene(
-            width = maxOf(config.padding * 2 + 480.0, legendX + 24.0 + legendWidth + config.padding),
+            width = maxOf(config.padding * 2 + 480.0, legendX + 24.0 + legendWidth + config.padding, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2),
             height = maxOf(config.padding * 2 + 2.0 * radius + 30.0, legendStartY + diagram.sections.size * 28.0 + config.padding),
             commands = commands,
+            accessibilityTitle = diagram.accessibilityTitle,
+            accessibilityDescription = diagram.accessibilityDescription,
         )
     }
 
