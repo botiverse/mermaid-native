@@ -2209,6 +2209,8 @@ class MermaidParserTest {
             combined = "prefix" ? character class ? ;
         """.trimIndent()))
         val diagram = assertIs<RailroadDiagram>(result.diagram)
+        val metadataIds = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-ebnf-beta\naccTitle = \"x\";\naccDescr = \"y\";"))
+        assertEquals(listOf("accTitle", "accDescr"), assertIs<RailroadDiagram>(metadataIds.diagram).rules.map { it.name })
         assertEquals("Expressions", diagram.title)
         assertEquals("Grammar", diagram.accTitle)
         assertEquals(5, diagram.rules.size)

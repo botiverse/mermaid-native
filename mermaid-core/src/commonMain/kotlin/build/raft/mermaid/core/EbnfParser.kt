@@ -54,6 +54,11 @@ internal class EbnfParser(private val source: String) {
         while (pos < source.length && source[pos] !in "\r\n" && !source.startsWith("%%", pos)) pos++
         return source.substring(start, pos).trim()
     }
+    private fun metadataAhead(name: String): Boolean {
+        var at = pos
+        while (source.getOrNull(at) == ' ' || source.getOrNull(at) == '\t') at++
+        return source.getOrNull(at) == ':' || name == "accDescr" && source.getOrNull(at) == '{'
+    }
     private fun primary(): RailroadNode {
         skip()
         return when (source.getOrNull(pos)) {
@@ -116,7 +121,7 @@ internal class EbnfParser(private val source: String) {
             if (rules.isEmpty() && name == "title" && (pos == source.length || source.getOrNull(pos)?.let { it.isWhitespace() } == true)) {
                 while (source.getOrNull(pos) == ' ' || source.getOrNull(pos) == '\t') pos++
                 title = if (source.getOrNull(pos) in listOf('\'', '"')) string() else lineText()
-            } else if (rules.isEmpty() && name in listOf("accTitle", "accDescr")) {
+            } else if (rules.isEmpty() && name in listOf("accTitle", "accDescr") && metadataAhead(name)) {
                 if (take(":")) { if (name == "accTitle") accTitle = lineText() else accDescr = lineText() }
                 else if (name == "accDescr" && take("{")) {
                     val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description")
