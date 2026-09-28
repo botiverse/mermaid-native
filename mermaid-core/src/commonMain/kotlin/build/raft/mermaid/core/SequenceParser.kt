@@ -7,6 +7,10 @@ internal class SequenceParser(private val source: String) {
     private val actors = linkedMapOf<String, SequenceActor>()
     private val events = mutableListOf<SequenceEvent>()
     private val fragments = mutableListOf<SequenceFragmentKind>()
+    private val boxes = mutableListOf<SequenceBox>()
+    private var box: SequenceBox? = null
+    private var pendingLifecycle: SequenceLifecycle? = null
+    private val destroyed = mutableSetOf<String>()
     private val activeDepth = mutableMapOf<String, Int>()
     private var title: String? = null
     private var accTitle: String? = null
@@ -34,8 +38,10 @@ internal class SequenceParser(private val source: String) {
             statement(readStatement())
         }
         check(fragments.isEmpty(), "Unclosed sequence fragment")
+        check(box == null, "Unclosed participant box")
+        check(pendingLifecycle == null, "Lifecycle directive must be followed by a message")
         MermaidParseResult.Success(SequenceDiagram(actors.values.toList(), events.filterIsInstance<SequenceMessage>(),
-            events.filterIsInstance<SequenceNote>(), events.filterIsInstance<SequenceActivation>(), events.toList(), title, accTitle, accDescription))
+            events.filterIsInstance<SequenceNote>(), events.filterIsInstance<SequenceActivation>(), events.toList(), title, accTitle, accDescription, boxes.toList()))
     } catch (error: SyntaxError) {
         val prefix = source.take(statementOffset)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
@@ -50,15 +56,33 @@ internal class SequenceParser(private val source: String) {
         }
         val command = text.takeWhile { !it.isWhitespace() }.lowercase()
         val rest = text.drop(command.length).trim()
+        check(box == null || command in listOf("participant", "actor", "end"), "Participant boxes only contain declarations")
         when (command) {
-            "participant", "actor" -> {
-                val parts = ALIAS.split(rest, limit = 2)
-                val id = parts[0].trim()
-                check(validId(id) && '@' !in id, "Invalid participant declaration")
-                val label = messageText(parts.getOrElse(1) { id })
-                val kind = if (command == "actor") SequenceActorKind.ACTOR else SequenceActorKind.PARTICIPANT
-                actors[id] = SequenceActor(id, label.first, kind, label.second)
+            "box" -> {
+                check(box == null && fragments.isEmpty(), "Invalid nested participant box")
+                val match = BOX_COLOR.find(rest)
+                val token = match?.value ?: rest.substringBefore(' ')
+                val hasColor = token.lowercase() in SEQUENCE_COLOR_NAMES || token.startsWith("rgb") || token.startsWith('#')
+                box = SequenceBox(if (hasColor) rest.drop(token.length).trim() else rest, if (hasColor) token else "transparent", emptyList())
             }
+            "links", "link", "properties" -> actorData(command, rest)
+            "create" -> {
+                check(pendingLifecycle == null, "Lifecycle directive must be followed by a message")
+                val kind = rest.substringBefore(' ').lowercase()
+                check(kind == "participant" || kind == "actor", "Expected create participant or actor")
+                val before = actors.keys.toSet()
+                participant(rest.substringAfter(' '), kind == "actor")
+                val created = actors.keys - before
+                check(created.size == 1, "Cannot create an existing participant")
+                val event = SequenceLifecycle(created.single(), true)
+                events += event; pendingLifecycle = event
+            }
+            "destroy" -> {
+                check(pendingLifecycle == null && rest in actors && rest !in destroyed, "Invalid participant destruction")
+                val event = SequenceLifecycle(rest, false)
+                events += event; pendingLifecycle = event
+            }
+            "participant", "actor" -> participant(rest, command == "actor")
             "title", "title:" -> title = rest
             "acctitle:" -> accTitle = rest
             "accdescr:" -> accDescription = rest
@@ -101,11 +125,66 @@ internal class SequenceParser(private val source: String) {
                 events += SequenceFragment(kind, SequenceFragmentBoundary.BRANCH, label.first, label.second)
             }
             "end" -> {
+                box?.let { boxes += it; box = null; return }
                 check(rest.isEmpty() && fragments.isNotEmpty(), "Unexpected end")
                 events += SequenceFragment(fragments.removeAt(fragments.lastIndex), SequenceFragmentBoundary.END)
             }
             else -> signal(text)
         }
+    }
+
+    private fun participant(raw: String, actor: Boolean) {
+        val marker = raw.indexOf("@{")
+        val metadata: Map<String,String>
+        val declaration: String
+        if (marker >= 0) {
+            var at=marker+2; var quote: Char?=null; var escaped=false
+            while(at<raw.length) {
+                val c=raw[at]
+                if(escaped) escaped=false
+                else if(c=='\\' && quote!=null) escaped=true
+                else if(quote!=null) { if(c==quote) quote=null }
+                else if(c=='\'' || c=='"') quote=c
+                else if(c=='}') break
+                at++
+            }
+            check(at<raw.length, "Unclosed participant metadata")
+            metadata=SequenceParticipantMetadata(raw.substring(marker+2,at)).parse() ?: fail("Invalid participant metadata")
+            declaration=raw.take(marker).trim()+raw.substring(at+1)
+        } else { metadata=emptyMap(); declaration=raw }
+        val parts=ALIAS.split(declaration,limit=2)
+        val id=parts[0].trim()
+        check(validId(id) && '@' !in id,"Invalid participant declaration")
+        check(metadata.keys.all { it=="type" || it=="alias" }, "Unsupported participant metadata field")
+        val kind=metadata["type"]?.let { type -> SequenceActorKind.entries.firstOrNull { it.name.equals(type,true) } ?: fail("Unsupported participant type: $type") }
+            ?: if(actor) SequenceActorKind.ACTOR else SequenceActorKind.PARTICIPANT
+        val external=parts.getOrNull(1)
+        val rawLabel=if(external==null || external==id) metadata["alias"] ?: external else external
+        box?.let { current ->
+            check(boxes.none { id in it.actorIds }, "Participant cannot belong to multiple boxes")
+            box = current.copy(actorIds = (current.actorIds + id).distinct())
+        }
+        if(rawLabel==null && id in actors) return
+        val label=messageText(rawLabel ?: id)
+        actors[id]=SequenceActor(id,label.first,kind,label.second,actors[id]?.links.orEmpty(),actors[id]?.properties.orEmpty())
+    }
+
+    private fun actorData(command: String, rest: String) {
+        val colon = rest.indexOf(':')
+        check(colon > 0, "Expected participant data")
+        val id = rest.take(colon).trim()
+        val actor = actors[id] ?: fail("Unknown participant: $id")
+        val data = rest.drop(colon + 1).trim()
+        val entries = if (command == "link") {
+            val at = data.indexOf('@')
+            check(at > 0 && at < data.lastIndex, "Expected link label @ URL")
+            mapOf(data.take(at).trim() to data.drop(at + 1).trim())
+        } else {
+            check(data.startsWith('{') && data.endsWith('}'), "Expected participant data object")
+            SequenceParticipantMetadata(data.drop(1).dropLast(1), jsonStringsOnly = true).parse() ?: fail("Invalid participant data object")
+        }
+        actors[id] = if (command == "properties") actor.copy(properties = actor.properties + entries)
+            else actor.copy(links = actor.links + entries)
     }
 
     private fun signal(text: String) {
@@ -122,13 +201,21 @@ internal class SequenceParser(private val source: String) {
         if (centralTo) to = to.drop(2).trim()
         val activation = to.firstOrNull()?.takeIf { it == '+' || it == '-' }
         if (activation != null) to = to.drop(1).trim()
+        check(from !in destroyed && to !in destroyed, "Message references a destroyed participant")
+        pendingLifecycle?.let { lifecycle ->
+            check(if (lifecycle.create) to == lifecycle.actorId else from == lifecycle.actorId || to == lifecycle.actorId,
+                "Lifecycle directive must target the next message")
+            if (!lifecycle.create) destroyed += lifecycle.actorId
+            pendingLifecycle = null
+        }
         register(from); register(to)
         val symbol = arrow.first
         val style = if ("--" in symbol) SequenceLineStyle.DASHED else SequenceLineStyle.SOLID
-        val head = when { symbol.endsWith(">>") -> SequenceArrowHead.FILLED; symbol.endsWith('x') -> SequenceArrowHead.CROSS; symbol.endsWith(')') -> SequenceArrowHead.OPEN; else -> SequenceArrowHead.NONE }
+        val half = HALF_ARROWS[symbol]
+        val head = half?.first ?: when { symbol.endsWith(">>") -> SequenceArrowHead.FILLED; symbol.endsWith('x') -> SequenceArrowHead.CROSS; symbol.endsWith(')') -> SequenceArrowHead.OPEN; else -> SequenceArrowHead.NONE }
         val central = when { centralFrom && centralTo -> SequenceCentralConnection.BOTH; centralFrom -> SequenceCentralConnection.FROM; centralTo -> SequenceCentralConnection.TO; else -> SequenceCentralConnection.NONE }
         val label = messageText(text.substring(colon + 1))
-        events += SequenceMessage(from, to, label.first, style, head, label.second, symbol.startsWith("<<"), central, activation == '+' || centralTo)
+        events += SequenceMessage(from, to, label.first, style, head, label.second, symbol.startsWith("<<"), central, activation == '+' || centralTo, half?.second ?: false)
         if (activation != null) activation(if (activation == '+') to else from, activation == '+')
     }
 
@@ -159,17 +246,55 @@ internal class SequenceParser(private val source: String) {
     private fun readStatement(): String {
         val start = offset
         statementOffset = start
-        while (offset < source.length && source[offset] !in "\r\n;#" && !source.startsWith("%%", offset)) offset++
+        val remaining = source.substring(start)
+        val metadataLine = Regex("^acc(?:Title|Descr)\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(remaining)
+        val dataObject = remaining.startsWith("links ",true) || remaining.startsWith("properties ",true)
+        val preserveHash = metadataLine || remaining.startsWith("box ",true) || remaining.startsWith("link ",true)
+        var inMetadata=false; var quote: Char?=null; var escaped=false
+        while(offset<source.length) {
+            val c=source[offset]
+            if(inMetadata) {
+                if(escaped) escaped=false
+                else if(c=='\\' && quote!=null) escaped=true
+                else if(quote!=null) { if(c==quote) quote=null }
+                else if(c=='\'' || c=='"') quote=c
+                else if(c=='}') inMetadata=false
+            } else {
+                if(c in "\r\n" || !metadataLine && (c==';' || c=='#' && !preserveHash || source.startsWith("%%",offset))) break
+                if(source.startsWith("@{",offset)) { offset+=2; inMetadata=true; continue }
+                if(c=='{' && dataObject) { offset++; inMetadata=true; continue }
+            }
+            offset++
+        }
         return source.substring(start, offset).trim()
     }
     private fun check(condition: Boolean, message: String) { if (!condition) fail(message) }
     private fun fail(message: String): Nothing = throw SyntaxError(message)
     private class SyntaxError(message: String) : Exception(message)
     private companion object {
+        val BOX_COLOR = Regex("^(?:rgba?\\([^)]*\\)|#[0-9a-fA-F]+)")
         val METADATA = Regex("(accTitle|accDescr)\\s*:\\s*(.*)", RegexOption.IGNORE_CASE)
         val ALIAS = Regex("\\s+[aA][sS]\\s+")
         val NUMBER = Regex("(?:[0-9]+(?:\\.[0-9]{1,2})?|\\.[0-9]{1,2})")
         val WRAP = Regex("^:?(?:no)?wrap:")
-        val ARROWS = listOf("<<-->>", "<<->>", "-->>", "->>", "-->", "->", "--x", "-x", "--)", "-)")
+        val HALF_ARROWS = mapOf(
+            "-|\\" to (SequenceArrowHead.HALF_FILLED_TOP to false),
+            "--|\\" to (SequenceArrowHead.HALF_FILLED_TOP to false),
+            "-|/" to (SequenceArrowHead.HALF_FILLED_BOTTOM to false),
+            "--|/" to (SequenceArrowHead.HALF_FILLED_BOTTOM to false),
+            "-\\\\" to (SequenceArrowHead.HALF_OPEN_TOP to false),
+            "--\\\\" to (SequenceArrowHead.HALF_OPEN_TOP to false),
+            "-//" to (SequenceArrowHead.HALF_OPEN_BOTTOM to false),
+            "--//" to (SequenceArrowHead.HALF_OPEN_BOTTOM to false),
+            "/|-" to (SequenceArrowHead.HALF_FILLED_TOP to true),
+            "/|--" to (SequenceArrowHead.HALF_FILLED_TOP to true),
+            "\\|-" to (SequenceArrowHead.HALF_FILLED_BOTTOM to true),
+            "\\|--" to (SequenceArrowHead.HALF_FILLED_BOTTOM to true),
+            "//-" to (SequenceArrowHead.HALF_OPEN_TOP to true),
+            "//--" to (SequenceArrowHead.HALF_OPEN_TOP to true),
+            "\\\\-" to (SequenceArrowHead.HALF_OPEN_BOTTOM to true),
+            "\\\\--" to (SequenceArrowHead.HALF_OPEN_BOTTOM to true)
+        )
+        val ARROWS = listOf("<<-->>", "<<->>", "-->>", "->>", "-->", "->", "--x", "-x", "--)", "-)") + HALF_ARROWS.keys
     }
 }

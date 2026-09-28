@@ -27,8 +27,12 @@ internal fun sequenceLayout(
         }
     fun textWidth(text: String, wrap: Boolean? = null) = lines(text, wrap).maxOfOrNull { measurer.measure(it, style).width } ?: 0.0
     val actorLines = diagram.actors.associate { it.id to lines(it.label, it.wrap) }
-    val actorWidths = diagram.actors.associate { it.id to max(88.0, textWidth(it.label, it.wrap) + 32.0) }
-    val actorHeight = max(40.0, (actorLines.values.maxOfOrNull { it.size } ?: 1) * lineHeight + 16.0 + if (diagram.actors.any { it.kind == SequenceActorKind.ACTOR }) 44.0 else 0.0)
+    val actorWidths = diagram.actors.associate { it.id to max(88.0, textWidth(it.label, it.wrap) + 32.0) }.toMutableMap()
+    diagram.boxes.filter { it.actorIds.size == 1 }.forEach { box ->
+        val id=box.actorIds.single()
+        actorWidths[id]=max(actorWidths.getValue(id),textWidth(box.label)+24.0)
+    }
+    val actorHeight = max(40.0, (actorLines.values.maxOfOrNull { it.size } ?: 1) * lineHeight + 16.0 + if (diagram.actors.any { it.kind != SequenceActorKind.PARTICIPANT }) 44.0 else 0.0)
     val centers = linkedMapOf<String, Double>()
     var cursor = config.padding
     diagram.actors.forEach { actor ->
@@ -43,6 +47,13 @@ internal fun sequenceLayout(
         val required = textWidth(message.label, message.wrap) + 24.0 + if (diagram.events.any { it is SequenceNumbering }) 40.0 else 0.0
         val extra = required - abs(centers.getValue(message.to) - centers.getValue(message.from))
         if (extra > 0) ids.drop(right).forEach { centers[it] = centers.getValue(it) + extra }
+    }
+    diagram.boxes.filter { it.actorIds.isNotEmpty() }.forEach { box ->
+        val left = box.actorIds.minOf { centers.getValue(it)-actorWidths.getValue(it)/2 }
+        val rightId = box.actorIds.maxBy { centers.getValue(it) }
+        val right = centers.getValue(rightId)+actorWidths.getValue(rightId)/2
+        val extra = textWidth(box.label)+24-(right-left)
+        if(extra>0) ids.drop(ids.indexOf(rightId)).forEach { centers[it]=centers.getValue(it)+extra }
     }
     fun noteBounds(note: SequenceNote): Pair<Double, Double> {
         val xs = note.actorIds.map { centers.getValue(it) }
@@ -59,7 +70,7 @@ internal fun sequenceLayout(
     diagram.events.filterIsInstance<SequenceFragment>().filter { it.boundary != SequenceFragmentBoundary.END }.forEach { width = max(width,textWidth(it.label,it.wrap)+104+config.padding*2) }
     diagram.title?.let { width = max(width, measurer.measure(it, TextStyle(fontSize=18.0,fontWeight=600)).width + config.padding*2) }
     val titleOffset = if (diagram.title.isNullOrEmpty()) 0.0 else 34.0
-    val actorTop = config.padding + titleOffset
+    val actorTop = config.padding + titleOffset + if(diagram.boxes.any { it.label.isNotEmpty() }) 28.0 else 0.0
     val messageTop = actorTop + actorHeight + 40.0
     val positions = mutableListOf<Double>()
     var y = messageTop
@@ -67,12 +78,30 @@ internal fun sequenceLayout(
         positions += y
         y += when (event) {
             is SequenceMessage -> config.messageGap * (if (event.from == event.to) 2 else 1) + (lines(event.label,event.wrap).size-1)*lineHeight
+            is SequenceLifecycle -> if(event.create) actorHeight / 2 + 24.0 else 0.0
             is SequenceNote -> max(28.0, lines(event.text,event.wrap).size*lineHeight+10.0)+20.0
             is SequenceFragment -> if (event.boundary == SequenceFragmentBoundary.END) 20.0 else 32.0 + (lines(event.label,event.wrap).size-1)*lineHeight
             else -> 0.0
         }
     }
     val actorBottom = max(messageTop+config.messageGap, y)
+    val createdAt = mutableMapOf<String, Double>()
+    val creationMessages = mutableSetOf<Int>()
+    val destroyedAt = mutableMapOf<String, Double>()
+    diagram.events.forEachIndexed { index, event ->
+        if(event is SequenceLifecycle) {
+            val next = (index + 1 until diagram.events.size).firstOrNull { diagram.events[it] is SequenceMessage }
+            if(next != null) {
+                val message = diagram.events[next] as SequenceMessage
+                val at = positions[next] + (lines(message.label,message.wrap).size-1)*lineHeight
+                if(event.create) {
+                    createdAt[event.actorId] = at - actorHeight / 2
+                    creationMessages += next
+                } else destroyedAt[event.actorId] = at
+            }
+        }
+    }
+    val boxBackgrounds = mutableListOf<DrawCommand>()
     val backgrounds = mutableListOf<DrawCommand>()
     val lifelines = mutableListOf<DrawCommand>()
     val bars = mutableListOf<DrawCommand>()
@@ -81,7 +110,14 @@ internal fun sequenceLayout(
     fun drawLines(target: MutableList<DrawCommand>, text: List<String>, x: Double, baseline: Double, anchor: TextAnchor) {
         text.forEachIndexed { i,line -> target += DrawText(line,ScenePoint(x,baseline+i*lineHeight),anchor,style) }
     }
-    diagram.actors.forEach { actor -> lifelines += DrawLine(ScenePoint(centers.getValue(actor.id),actorTop+actorHeight), ScenePoint(centers.getValue(actor.id),actorBottom), SceneColor("#999999"),1.0) }
+    diagram.boxes.filter { it.actorIds.isNotEmpty() }.forEach { box ->
+        val left = box.actorIds.minOf { centers.getValue(it)-actorWidths.getValue(it)/2 } - 12
+        val right = box.actorIds.maxOf { centers.getValue(it)+actorWidths.getValue(it)/2 } + 12
+        val top = config.padding + titleOffset
+        boxBackgrounds += DrawRect(SceneRect(left,top,right-left,actorBottom+actorHeight-top+12),fill=sequenceRegionColor(box.color),stroke=SceneColor("none"))
+        drawLines(foreground,lines(box.label),(left+right)/2,top+18,TextAnchor.MIDDLE)
+    }
+    diagram.actors.forEach { actor -> lifelines += DrawLine(ScenePoint(centers.getValue(actor.id),(createdAt[actor.id] ?: actorTop)+actorHeight), ScenePoint(centers.getValue(actor.id),destroyedAt[actor.id] ?: actorBottom), SceneColor("#999999"),1.0) }
     val starts = mutableMapOf<String, MutableList<Double>>()
     val frames = mutableListOf<Pair<Int,SequenceFragment>>()
     var sequence = 1.0; var step = 1.0; var numbered = false
@@ -92,6 +128,7 @@ internal fun sequenceLayout(
     diagram.events.forEachIndexed { index,event ->
         val eventY = positions[index]
         when(event) {
+            is SequenceLifecycle -> Unit
             is SequenceNumbering -> { numbered=event.visible; event.start?.takeIf { it != 0.0 }?.let { sequence=it }; event.step?.takeIf { it != 0.0 }?.let { step=it } }
             is SequenceActivation -> {
                 val stack = starts.getOrPut(event.actorId) { mutableListOf() }
@@ -110,19 +147,19 @@ internal fun sequenceLayout(
                 val toDepth=(starts[event.to]?.size ?: 0)+if(nextActivation?.activate==true && nextActivation.actorId==event.to) 1 else 0
                 val forward=targetCenter>=sourceCenter
                 val fromX=sourceCenter+if(fromDepth>0) (fromDepth-1)*4.0+if(forward) 4.0 else -4.0 else 0.0
-                val toX=targetCenter+if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
+                val toX=targetCenter+if(index in creationMessages) (if(forward) -1 else 1)*actorWidths.getValue(event.to)/2 else if(toDepth>0) (toDepth-1)*4.0+if(forward && event.from!=event.to) -4.0 else 4.0 else 0.0
                 val pattern=if(event.lineStyle==SequenceLineStyle.DASHED) StrokePattern.DASHED else StrokePattern.SOLID
                 val from=ScenePoint(fromX,signalY); val to=ScenePoint(toX,signalY)
                 if(event.from==event.to){
                     val right=fromX+max(48.0,textWidth(event.label,event.wrap)+16.0)
                     val end=ScenePoint(toX,signalY+24)
                     foreground += DrawPolyline(listOf(from,ScenePoint(right,signalY),ScenePoint(right,end.y),end),stroke=ink,pattern=pattern)
-                    foreground += arrow(ScenePoint(right,end.y),end,event.arrowHead,ink)
+                    foreground += if(event.headAtSource) arrow(ScenePoint(right,signalY),from,event.arrowHead,ink) else arrow(ScenePoint(right,end.y),end,event.arrowHead,ink)
                     if(event.bidirectional) foreground += arrow(ScenePoint(right,signalY),from,event.arrowHead,ink)
                     drawLines(foreground,text,fromX+8,eventY-8,TextAnchor.START)
                 } else {
                     foreground += DrawLine(from,to,stroke=ink,pattern=pattern)
-                    foreground += arrow(from,to,event.arrowHead,ink)
+                    foreground += if(event.headAtSource) arrow(to,from,event.arrowHead,ink) else arrow(from,to,event.arrowHead,ink)
                     if(event.bidirectional) foreground += arrow(to,from,event.arrowHead,ink)
                     drawLines(foreground,text,(fromX+toX)/2,eventY-8,TextAnchor.MIDDLE)
                 }
@@ -156,23 +193,22 @@ internal fun sequenceLayout(
             }
         }
     }
-    starts.forEach { (id,stack) -> stack.forEachIndexed { depth,start -> activationBar(id,start,actorBottom,depth) } }
-    listOf(actorTop,actorBottom).forEach { actorY -> diagram.actors.forEach { actor ->
+    starts.forEach { (id,stack) -> stack.forEachIndexed { depth,start -> activationBar(id,start,destroyedAt[id] ?: actorBottom,depth) } }
+    diagram.actors.forEach { actor ->
         val center=centers.getValue(actor.id); val actorWidth=actorWidths.getValue(actor.id)
-        if(actor.kind==SequenceActorKind.ACTOR){
-            foreground += DrawEllipse(ScenePoint(center,actorY+9),8.0,8.0,fill=SceneColor("#eaeaea"),stroke=SceneColor("#666666"))
-            foreground += DrawLine(ScenePoint(center,actorY+17),ScenePoint(center,actorY+34),stroke=SceneColor("#666666"))
-            foreground += DrawLine(ScenePoint(center-14,actorY+23),ScenePoint(center+14,actorY+23),stroke=SceneColor("#666666"))
-            foreground += DrawPolyline(listOf(ScenePoint(center-12,actorY+45),ScenePoint(center,actorY+34),ScenePoint(center+12,actorY+45)),stroke=SceneColor("#666666"))
-            drawLines(foreground,actorLines.getValue(actor.id),center,actorY+60,TextAnchor.MIDDLE)
-        } else {
-            foreground += DrawRect(SceneRect(center-actorWidth/2,actorY,actorWidth,actorHeight),3.0,SceneColor("#eaeaea"),SceneColor("#666666"))
-            val text=actorLines.getValue(actor.id)
-            drawLines(foreground,text,center,actorY+(actorHeight-(text.size-1)*lineHeight)/2+style.fontSize*.35,TextAnchor.MIDDLE)
+        foreground += sequenceParticipant(actor,center,createdAt[actor.id] ?: actorTop,actorWidth,actorHeight,actorLines.getValue(actor.id),style,lineHeight)
+    }
+    diagram.actors.forEach { actor ->
+        val center=centers.getValue(actor.id); val actorWidth=actorWidths.getValue(actor.id)
+        val destroyed = destroyedAt[actor.id]
+        if(destroyed == null) foreground += sequenceParticipant(actor,center,actorBottom,actorWidth,actorHeight,actorLines.getValue(actor.id),style,lineHeight)
+        else {
+            foreground += DrawLine(ScenePoint(center-8,destroyed-8),ScenePoint(center+8,destroyed+8),ink,2.0)
+            foreground += DrawLine(ScenePoint(center-8,destroyed+8),ScenePoint(center+8,destroyed-8),ink,2.0)
         }
-    } }
+    }
     diagram.title?.let { foreground += DrawText(it,ScenePoint(config.padding,config.padding+18),style=TextStyle(fontSize=18.0,fontWeight=600)) }
-    return LayoutScene(width,actorBottom+actorHeight+config.padding,backgrounds+lifelines+bars+foreground,diagram.accessibilityTitle,diagram.accessibilityDescription)
+    return LayoutScene(width,actorBottom+actorHeight+config.padding,boxBackgrounds+backgrounds+lifelines+bars+foreground,diagram.accessibilityTitle,diagram.accessibilityDescription)
 }
 
 private fun sequenceRegionColor(text: String): SceneColor {
@@ -183,5 +219,5 @@ private fun sequenceRegionColor(text: String): SceneColor {
         val alpha=rgb.groupValues[4].toDoubleOrNull()?.coerceIn(0.0,1.0)
         return SceneColor("#"+parts.joinToString(""){it.toString(16).padStart(2,'0')}+(alpha?.let { (it*255).toInt().toString(16).padStart(2,'0') } ?: ""))
     }
-    return SceneColor(when(value){"red"->"#ff0000";"green"->"#008000";"blue"->"#0000ff";"yellow"->"#ffff00";"transparent"->"none";else->"#f1f5f9"})
+    return SceneColor(NAMED_COLORS[value] ?: if(value=="transparent") "none" else if(value.startsWith('#') && value.length in listOf(4,5,7,9) && value.drop(1).all { it in "0123456789abcdef" }) value else "#f1f5f9")
 }

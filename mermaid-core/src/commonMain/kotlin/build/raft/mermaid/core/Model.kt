@@ -101,6 +101,7 @@ public data class SequenceDiagram(
     val title: String? = null,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val boxes: List<SequenceBox> = emptyList(),
 ) : MermaidDiagram
 
 public data class SequenceActor(
@@ -108,7 +109,13 @@ public data class SequenceActor(
     val label: String,
     val kind: SequenceActorKind = SequenceActorKind.PARTICIPANT,
     val wrap: Boolean? = null,
+    val links: Map<String, String> = emptyMap(),
+    val properties: Map<String, String> = emptyMap(),
 )
+
+/** Participant grouping is independent of temporal control fragments. */
+public data class SequenceBox(val label: String, val color: String, val actorIds: List<String>)
+public data class SequenceLifecycle(val actorId: String, val create: Boolean) : SequenceEvent
 
 public data class SequenceMessage(
     val from: String,
@@ -120,6 +127,7 @@ public data class SequenceMessage(
     val bidirectional: Boolean = false,
     val centralConnection: SequenceCentralConnection = SequenceCentralConnection.NONE,
     val activate: Boolean = false,
+    val headAtSource: Boolean = false,
 ) : SequenceEvent
 
 public data class SequenceNote(
@@ -156,6 +164,8 @@ public data class StateDiagram(
     val states: List<StateNode>,
     val transitions: List<StateTransition>,
     val notes: List<StateNote> = emptyList(),
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class StateNode(
@@ -164,6 +174,9 @@ public data class StateNode(
     val kind: StateNodeKind = StateNodeKind.STATE,
     val description: String? = null,
     val childIds: List<String> = emptyList(),
+    val direction: FlowDirection? = null,
+    val explicitLabel: Boolean = kind == StateNodeKind.STATE && label != id,
+    val declared: Boolean = explicitLabel,
 )
 
 public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
@@ -677,6 +690,7 @@ public enum class SequenceLineStyle {
 }
 
 public enum class SequenceArrowHead {
+    HALF_FILLED_TOP, HALF_FILLED_BOTTOM, HALF_OPEN_TOP, HALF_OPEN_BOTTOM,
     NONE,
     FILLED,
     OPEN,
@@ -685,8 +699,7 @@ public enum class SequenceArrowHead {
 }
 
 public enum class SequenceActorKind {
-    PARTICIPANT,
-    ACTOR,
+    PARTICIPANT, ACTOR, BOUNDARY, CONTROL, ENTITY, DATABASE, COLLECTIONS, QUEUE,
 }
 
 public enum class SequenceNotePosition {

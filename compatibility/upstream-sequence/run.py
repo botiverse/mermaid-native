@@ -80,11 +80,25 @@ const parser={yy:null,parse(source){
  if(model.accTitle!==null)db.setAccTitle(model.accTitle);
  if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  const label=(text,wrap)=>({text,wrap:wrap??undefined});
- for(const a of model.actors)db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind==='ACTOR'?'actor':'participant');
+ for(const a of model.actors){
+  db.addActor(a.id,a.id,label(a.label,a.wrap),a.kind.toLowerCase());
+  db.addLinks(a.id,{text:JSON.stringify(a.links)});
+  db.addProperties(a.id,{text:JSON.stringify(a.properties)});
+ }
+ for(const b of model.boxes){
+  db.addBox({text:b.label,color:b.color});
+  const box=db.getBoxes().at(-1);box.actorKeys=b.actors;
+  for(const id of b.actors)db.getActors().get(id).box=box;
+  db.apply({type:'boxEnd'});
+ }
  for(const e of model.events){
   if(e.kind==='message'){
    let type=e.bidirectional?'BIDIRECTIONAL_SOLID':{FILLED:'SOLID',NONE:'SOLID_OPEN',OPEN:'SOLID_POINT',CROSS:'SOLID_CROSS',CIRCLE:'SOLID_POINT'}[e.head];
-   if(e.style==='DASHED')type=type.replace('SOLID','DOTTED');
+   if(e.head.startsWith('HALF_')){
+    const filled=e.head.includes('FILLED'),side=e.head.endsWith('TOP')?'TOP':'BOTTOM';
+    type=(filled?'SOLID':'STICK')+(e.headAtSource?'_ARROW':'')+'_'+side+(e.headAtSource?'_REVERSE':'');
+    if(e.style==='DASHED')type+='_DOTTED';
+   } else if(e.style==='DASHED')type=type.replace('SOLID','DOTTED');
    db.addSignal(e.from,e.to,label(e.label,e.wrap),db.LINETYPE[type],e.activate,{NONE:0,TO:59,FROM:60,BOTH:61}[e.central]);
    if(e.central==='TO'||e.central==='BOTH')db.addSignal(e.to,undefined,undefined,db.LINETYPE.CENTRAL_CONNECTION);
    if(e.central==='FROM'||e.central==='BOTH')db.addSignal(e.from,undefined,undefined,db.LINETYPE.CENTRAL_CONNECTION_REVERSE);
@@ -92,6 +106,7 @@ const parser={yy:null,parse(source){
    const actors=e.position==='OVER'?(e.actors.length===1?[e.actors[0],e.actors[0]]:e.actors):e.actors[0];
    db.addNote(actors,db.PLACEMENT[{LEFT_OF:'LEFTOF',RIGHT_OF:'RIGHTOF',OVER:'OVER'}[e.position]],label(e.text,e.wrap));
   } else if(e.kind==='activation')db.addSignal(e.actor,undefined,undefined,db.LINETYPE[e.activate?'ACTIVE_START':'ACTIVE_END']);
+  else if(e.kind==='lifecycle')(e.create?db.getCreatedActors():db.getDestroyedActors()).set(e.actor,db.getMessages().length);
   else if(e.kind==='numbering')db.apply({type:'sequenceIndex',sequenceIndex:e.start??undefined,sequenceIndexStep:e.step??undefined,sequenceVisible:e.visible,signalType:db.LINETYPE.AUTONUMBER});
   else {
    let key=e.fragment+'_'+(e.boundary==='BRANCH'?{ALT:'ELSE',PAR:'AND',PAR_OVER:'AND',CRITICAL:'OPTION'}[e.fragment]:e.boundary);

@@ -76,4 +76,8 @@ and a fixture or differential vector before it is considered complete. See
 
 `swimlane-beta` consumes the same typed flow grammar as upstream, including implicit nodes and labeled or nested subgraphs. The model retains the full `FlowchartDiagram` alongside the legacy lanes. Plain lane diagrams preserve the existing lane renderer; diagrams using richer shapes, styles, nested or collapsed groups use the actual Flow renderer so these features are not silently discarded. Complex graph routing remains bounded by the deterministic layout.
 
+### State grammar and rendering
+
+State diagrams support bare identifiers, aliases, repeated descriptions, nested and inline composite states, local directions, accessibility metadata, and single/multiline attached notes. Composite members render inside their containers and multiline description/note geometry is measured. Unterminated and cyclic composites fail explicitly. State CSS/classes, concurrent regions and floating notes remain unsupported in this slice. Original upstream assertions are being integrated separately from actual Native render validation.
+
 Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
