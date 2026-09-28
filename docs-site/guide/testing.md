@@ -47,7 +47,8 @@ Reproducible runners and precise limitations are in
 [`compatibility/upstream-er`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-er),
 [`upstream-pie`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-pie),
 [`upstream-sequence`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-sequence)
-and [`upstream-class`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-class).
+[`upstream-class`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-class)
+and [`upstream-flow`](https://github.com/botiverse/mermaid-native/tree/main/compatibility/upstream-flow).
 Use each README's environment setup; the upstream checkout must have its pinned
 lockfile dependencies installed and built.
 
@@ -58,3 +59,12 @@ those assertions have not yet been integrated with Native. Original Cypress
 runs are also being audited; newly generated screenshots are first captures,
 not independently reviewed visual baselines. Full upstream parity is still
 in progress.
+
+The first Flowchart batch executes 951 unchanged original cases: the reference
+passes 948 with 3 skips; Native passes 865 and reports 83 failures with the same
+3 skips. The frozen core JAR SHA-256 is
+`a300ac89f4b487d9f4128809d941eb0f92f0e7f057c8d4e4b7338a01c851355f`.
+Its eight new parser and six layout regressions cover token boundaries, marker
+endpoints, shapes, group containment and directions. Later style and metadata
+results must be recorded separately once frozen; these counts do not imply
+Native callbacks, animated edges, rich text or full graph-routing equivalence.
