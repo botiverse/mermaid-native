@@ -164,11 +164,11 @@ public object MermaidExamples {
             title = null,
             frames = listOf(
                 EventModelingFrame("01", "CartUI", EventModelingEntityKind.UI),
-                EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND),
-                EventModelingFrame("03", "ItemAdded", EventModelingEntityKind.EVENT),
-                EventModelingFrame("04", "External.InventoryChanged", EventModelingEntityKind.EVENT, reset = true),
-                EventModelingFrame("05", "InventoryProcessor", EventModelingEntityKind.PROCESSOR),
-                EventModelingFrame("06", "InventoryView", EventModelingEntityKind.READ_MODEL),
+                EventModelingFrame("02", "AddItem", EventModelingEntityKind.COMMAND, sourceType = "cmd"),
+                EventModelingFrame("03", "ItemAdded", EventModelingEntityKind.EVENT, sourceType = "evt"),
+                EventModelingFrame("04", "External.InventoryChanged", EventModelingEntityKind.EVENT, reset = true, sourceType = "evt"),
+                EventModelingFrame("05", "InventoryProcessor", EventModelingEntityKind.PROCESSOR, sourceType = "pcr"),
+                EventModelingFrame("06", "InventoryView", EventModelingEntityKind.READ_MODEL, sourceType = "rmo"),
             ),
             relations = listOf(
                 EventModelingRelation("01", "02"),
