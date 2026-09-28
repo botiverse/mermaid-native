@@ -136,7 +136,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
-        is QuadrantChartDiagram -> layoutQuadrantChart(diagram, config)
+        is QuadrantChartDiagram -> layoutQuadrantChart(diagram, textMeasurer, config)
         is RadarChartDiagram -> layoutRadar(diagram, textMeasurer, config)
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
@@ -1526,16 +1526,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
-    private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, config: LayoutConfig): LayoutScene {
-        val width = 640.0
+    private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val left = maxOf(92.0, maxOf(textMeasurer.measure(diagram.yAxis.lowLabel.trim(), body).width, textMeasurer.measure(diagram.yAxis.highLabel.trim(), body).width) + config.padding + 10.0)
+        val width = maxOf(640.0 + left - 92.0, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2)
         val height = 460.0
-        val left = 92.0
         val top = 58.0
         val right = width - config.padding
         val bottom = height - 52.0
         val midX = (left + right) / 2.0
         val midY = (top + bottom) / 2.0
-        val body = TextStyle(fontSize = 12.0)
         val quadrantTitle = TextStyle(fontSize = 12.0, fontWeight = 600)
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, 26.0), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
@@ -1566,10 +1567,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             ),
             stroke = SceneColor("#334155"),
         )
-        commands += DrawText(diagram.xAxis.lowLabel, ScenePoint(left, bottom + 22.0), style = body)
-        commands += DrawText(diagram.xAxis.highLabel, ScenePoint(right, bottom + 22.0), TextAnchor.END, body)
-        commands += DrawText(diagram.yAxis.lowLabel, ScenePoint(left - 10.0, bottom), TextAnchor.END, body)
-        commands += DrawText(diagram.yAxis.highLabel, ScenePoint(left - 10.0, top + 10.0), TextAnchor.END, body)
+        commands += DrawText(diagram.xAxis.lowLabel.trim(), ScenePoint(left, bottom + 22.0), style = body)
+        commands += DrawText(diagram.xAxis.highLabel.trim(), ScenePoint(right, bottom + 22.0), TextAnchor.END, body)
+        commands += DrawText(diagram.yAxis.lowLabel.trim(), ScenePoint(left - 10.0, bottom), TextAnchor.END, body)
+        commands += DrawText(diagram.yAxis.highLabel.trim(), ScenePoint(left - 10.0, top + 10.0), TextAnchor.END, body)
         val quadrantPositions = listOf(
             ScenePoint((midX + right) / 2.0, top + 20.0) to TextAnchor.MIDDLE,
             ScenePoint((left + midX) / 2.0, top + 20.0) to TextAnchor.MIDDLE,
@@ -1577,15 +1578,30 @@ public object SimpleMermaidLayout : DiagramLayout {
             ScenePoint((midX + right) / 2.0, midY + 20.0) to TextAnchor.MIDDLE,
         )
         diagram.quadrantLabels.forEachIndexed { index, label ->
-            label?.let { commands += DrawText(it, quadrantPositions[index].first, quadrantPositions[index].second, quadrantTitle) }
+            label?.let { commands += DrawText(it.trim(), quadrantPositions[index].first, quadrantPositions[index].second, quadrantTitle) }
         }
         diagram.points.forEach { point ->
             val x = (left + point.x * (right - left)).xyCoordinate()
             val y = (bottom - point.y * (bottom - top)).xyCoordinate()
-            commands += DrawPolygon(listOf(ScenePoint(x, y - 5.0), ScenePoint(x + 5.0, y), ScenePoint(x, y + 5.0), ScenePoint(x - 5.0, y)), fill = SceneColor("#2563eb"))
-            commands += DrawText(point.label, ScenePoint(x + 8.0, y - 7.0), style = body)
+            val properties = (diagram.classes[point.className].orEmpty() + point.styles).associate {
+                it.substringBefore(':').trim().lowercase() to it.substringAfter(':', "").trim()
+            }
+            fun number(key: String, fallback: Double): Double = properties[key]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(100.0) ?: fallback
+            fun color(key: String, fallback: String): SceneColor = SceneColor(properties[key]?.takeIf {
+                it.matches(Regex("#[0-9a-fA-F]{3,8}|[a-zA-Z]+"))
+            } ?: fallback)
+            val radius = number("radius", 5.0)
+            val vertices = listOf(ScenePoint(x, y - radius), ScenePoint(x + radius, y), ScenePoint(x, y + radius), ScenePoint(x - radius, y))
+            commands += DrawPolygon(vertices, fill = color("color", properties["fill"]?.takeIf { it.matches(Regex("#[0-9a-fA-F]{3,8}|[a-zA-Z]+")) } ?: "#2563eb"))
+            if ("stroke-color" in properties || "stroke-width" in properties) {
+                commands += DrawPolyline(vertices + vertices.first(), stroke = color("stroke-color", "#334155"), strokeWidth = number("stroke-width", 1.0))
+            }
+            val labelWidth = textMeasurer.measure(point.label.trim(), body).width
+            val anchor = if (x + radius + 3.0 + labelWidth <= width - config.padding) TextAnchor.START else TextAnchor.END
+            val labelX = if (anchor == TextAnchor.START) x + radius + 3.0 else x - radius - 3.0
+            commands += DrawText(point.label.trim(), ScenePoint(labelX, y - radius - 2.0), anchor, body)
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     /** Deterministic polar-grid layout for the bounded radar-beta slice. */
