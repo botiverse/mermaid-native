@@ -2237,4 +2237,14 @@ class SimpleMermaidLayoutTest {
         assertTrue(loopScene.commands.filterIsInstance<DrawPolyline>().any { it.points.distinct().size >= 4 })
     }
 
+    @Test fun usecaseDefaultClassReachesTheProductionLayoutWithoutExplicitAssignments() {
+        val source = "usecase-beta\nA(Action)\nclassDef default fill:#dcfce7,stroke:#16a34a,color:#14532d"
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val node = scene.commands.filterIsInstance<DrawEllipse>().single()
+        assertEquals(SceneColor("#dcfce7"), node.fill)
+        assertEquals(SceneColor("#16a34a"), node.stroke)
+        assertEquals(SceneColor("#14532d"), scene.commands.filterIsInstance<DrawText>().single().style.color)
+    }
+
 }
