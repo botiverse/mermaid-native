@@ -2092,7 +2092,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val plotHeight = height - top - config.padding - 52.0
         val bottom = top + plotHeight
         val categories = diagram.xAxis.categories
-        val count = maxOf(1, categories.size, diagram.series.maxOfOrNull { it.values.size } ?: 0)
+        val count = if(categories.isNotEmpty()) categories.size else maxOf(1, diagram.series.maxOfOrNull { it.values.size } ?: 0)
         val step = plotWidth / count
         val range = (diagram.yAxis.maximum - diagram.yAxis.minimum).takeIf { it != 0.0 } ?: 1.0
         fun x(index: Int, size: Int = count): Double = (if(categories.isNotEmpty()) left + step * (index + 0.5)
@@ -2184,7 +2184,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val plotHeight = height - top - config.padding - 52.0; val bottom = top + plotHeight
         val style = TextStyle(fontSize = 12.0)
         val categories = diagram.xAxis.categories
-        val count = maxOf(1, categories.size, diagram.series.maxOfOrNull { it.values.size } ?: 0)
+        val count = if(categories.isNotEmpty()) categories.size else maxOf(1, diagram.series.maxOfOrNull { it.values.size } ?: 0)
         val step = plotHeight / count
         val range = (diagram.yAxis.maximum - diagram.yAxis.minimum).takeIf { it != 0.0 } ?: 1.0
         fun x(value: Double) = (left + (value - diagram.yAxis.minimum) / range * plotWidth).xyCoordinate()
