@@ -99,7 +99,10 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
         messages.joinToString(",") { "${it.from}>${it.to}:${it.lineStyle.name}:${it.arrowHead.name}:${it.label}" }
     is EventModelingDiagram -> "eventmodeling|" +
         frames.joinToString(",") { "${it.id}:${it.kind.name}:${it.entityId}" } + "|" +
-        relations.joinToString(",") { "${it.sourceFrameId}>${it.targetFrameId}" }
+        relations.joinToString(",") { "${it.sourceFrameId}>${it.targetFrameId}" } +
+        (frames.mapNotNull { frame -> frame.inlineData?.let { "inline:${frame.id}:${it.type}:${it.value.trim()}" } } +
+            data.map { (id, value) -> "ref:$id:${value.type}:${value.value.trim().replace(Regex("\\s+"), " ")}" })
+            .takeIf { it.isNotEmpty() }?.joinToString(";", prefix = "|data=").orEmpty()
     is PieDiagram -> "pie|${showData}|${title.orEmpty()}|" +
         sections.joinToString(",") { "${it.label}:${it.value}" }
     is ClassDiagram -> "class|" +
@@ -123,7 +126,7 @@ private fun MermaidDiagram.semanticProjection(): String = when (this) {
 private fun MermaidDiagram.expectedVisibleLabels(): List<String> = when (this) {
     is FlowchartDiagram -> nodes.map { it.label }
     is SequenceDiagram -> actors.map { it.label } + messages.map { it.label }
-    is EventModelingDiagram -> frames.map { it.entityId }
+    is EventModelingDiagram -> frames.map { it.entityId } + frames.mapNotNull { it.inlineData?.value?.trim() } + data.values.flatMap { it.value.lines().map(String::trim).filter(String::isNotEmpty) }
     is TimelineDiagram -> events.flatMap { event ->
         listOfNotNull(event.section, event.period.trim()) + event.labels.flatMap { label ->
             listOf(label.substringBefore('<').trim().takeIf { it.isNotEmpty() } ?: label)
