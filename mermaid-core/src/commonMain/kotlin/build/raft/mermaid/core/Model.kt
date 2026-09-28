@@ -709,11 +709,24 @@ public data class RadarChartDiagram(
     val axes: List<RadarAxis>,
     val curves: List<RadarCurve>,
     val maximum: Double,
+    val minimum: Double = 0.0,
+    val options: List<RadarOption> = emptyList(),
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class RadarAxis(val id: String, val label: String)
 
-public data class RadarCurve(val id: String, val label: String, val values: List<Double>)
+public data class RadarCurve(
+    val id: String,
+    val label: String,
+    val values: List<Double>,
+    val entries: List<RadarEntry> = values.map { RadarEntry(it) },
+)
+
+public data class RadarEntry(val value: Double, val axis: String? = null)
+
+public data class RadarOption(val name: String, val number: Double? = null, val flag: Boolean? = null, val text: String? = null)
 
 /** Bounded platform-neutral model for Mermaid wardley-beta maps. */
 public data class WardleyMapDiagram(
