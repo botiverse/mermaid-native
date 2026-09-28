@@ -88,6 +88,7 @@ export const parser={yy:null,parse(source){
      const note=model.notes.find(x=>x.target===n.id);if(note)item.note={position:note.position==='LEFT_OF'?'left of':'right of',text:note.text};if(n.declared||note||n.children.length||(!model.edges.some(e=>e.from===n.id||e.to===n.id)&&(n.classes.length||n.styles.length)))doc.push(item);if(n.styles.length)doc.push({stmt:"style",id:n.id,styleClass:n.styles.join(",")});
    }
    for(const e of model.edges){if(parents.get(e.from)!==parent)continue;doc.push({stmt:'relation',state1:state(e.from),state2:state(e.to),...(e.label?{description:e.label}:{})});}
+   for(const n of model.nodes){if(parents.get(n.id)!==parent || model.edges.some(e=>e.from===n.id||e.to===n.id))continue;for(const css of n.classes)doc.push({stmt:'applyClass',id:n.id,styleClass:css});}
    return doc;
  };
  const doc=document(undefined);db.setRootDoc(doc);
