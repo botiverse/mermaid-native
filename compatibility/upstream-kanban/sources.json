@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/kanban/kanban.spec.ts": "35c62e3fcbf381cc69451d7f2bbc8afb8e71de1fa28f9ff9ab5afb5c3d94dbac",
+    "packages/mermaid/src/diagrams/kanban/parser/kanban.jison": "e9e8bb8c6938e9abf7f47b496f57cafa6b6c5f1288e1aeeae2951e9efb096b81",
+    "packages/mermaid/src/diagrams/kanban/kanbanDb.ts": "d26473103e8b12917944a97f47f86b7e3785b22784224c66ab0ef1a3a926742b"
+  }
+}

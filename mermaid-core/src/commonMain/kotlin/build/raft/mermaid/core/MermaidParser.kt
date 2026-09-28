@@ -456,41 +456,7 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
-    private fun parseKanban(source: String): MermaidParseResult {
-        val lines = source.toMindmapLines()
-        val columns = mutableListOf<KanbanColumn>()
-        val ids = mutableSetOf<String>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var current: KanbanColumn? = null
-        fun finish(line: MindmapSourceLine) {
-            current?.let {
-                if (it.cards.isEmpty()) diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban columns require at least one card")
-                columns += it
-            }
-        }
-        lines.drop(1).forEach { line ->
-            val match = KANBAN_ITEM.matchEntire(line.text)
-            if (line.hasTab || match == null || line.indent !in setOf(0, 2)) {
-                diagnostics += unsupported(SourceStatement(line.text, line.location), "Unsupported kanban syntax or indentation")
-                return@forEach
-            }
-            val id = match.groupValues[1]
-            val label = match.groupValues[2].trim()
-            if (label.isEmpty() || !ids.add(id)) {
-                diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban IDs and labels must be unique and non-empty")
-            } else if (line.indent == 0) {
-                finish(line)
-                current = KanbanColumn(id, label, emptyList())
-            } else {
-                val column = current
-                if (column == null) diagnostics += unsupported(SourceStatement(line.text, line.location), "Kanban cards require a parent column")
-                else current = column.copy(cards = column.cards + KanbanCard(id, label))
-            }
-        }
-        lines.lastOrNull()?.let(::finish)
-        if (columns.isEmpty()) diagnostics += unsupported(SourceStatement("kanban", SourceLocation(1, 1)), "Kanban requires at least one column")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(KanbanDiagram(columns)) else MermaidParseResult.Failure(diagnostics)
-    }
+    private fun parseKanban(source: String): MermaidParseResult = KanbanParser(source).parse()
 
     private fun parseBlock(statements: List<SourceStatement>): MermaidParseResult {
         var columns: Int? = null

@@ -1665,8 +1665,27 @@ class MermaidParserTest {
         assertEquals(KanbanDiagram(listOf(KanbanColumn("todo", "Todo", listOf(KanbanCard("spec", "Write spec"))), KanbanColumn("done", "Done", listOf(KanbanCard("ship", "Ship release"))))), result.diagram)
     }
 
+    @Test fun kanbanFlattensNestedCardsAndPreservesMetadataAndDecorations() {
+        val diagram = assertIs<KanbanDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            kanban
+              todo[Todo]
+                task["Keep [] labels"]@{priority: high, assigned: Ada, ticket: K-4}
+                :::hot card
+                ::icon(star)
+                  leaf(Deeper item)
+              done@{
+                label: 'Ready'
+                icon: star
+              }
+        """.trimIndent())).diagram)
+        assertEquals(listOf("Todo", "Ready"), diagram.columns.map { it.title })
+        assertEquals(listOf("Keep [] labels", "Deeper item"), diagram.columns[0].cards.map { it.label })
+        assertEquals(KanbanMetadata("star", "hot card", "Ada", "K-4", "high"), diagram.columns[0].cards[0].metadata)
+        assertTrue(diagram.columns[1].cards.isEmpty())
+    }
+
     @Test fun malformedKanbanFailsClosed() {
-        listOf("kanban", "kanban\ntodo[Todo]", "kanban\n  task[Orphan]", "kanban\ntodo[Todo]\n task[Bad indent]", "kanban\ntodo[Todo]\n  todo[Duplicate]", "kanban\ntodo[Todo]\n  task[Card]@{ priority: 'High' }").forEach {
+        listOf("kanban", "kanban\ntodo[Unclosed", "kanban\n::icon(star)", "kanban\nroot@{ assigned: ").forEach {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it)
         }
     }

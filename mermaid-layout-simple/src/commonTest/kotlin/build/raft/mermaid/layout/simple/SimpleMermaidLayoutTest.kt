@@ -1362,6 +1362,21 @@ class SimpleMermaidLayoutTest {
         assertEquals("beta", scene.commands.filterIsInstance<DrawText>().first { it.style.color.value == "#7c3aed" }.text)
     }
 
+    @Test fun kanbanEmptyColumnsAndMetadataUseActualMeasuredGeometry() {
+        val source = "kanban\ntodo[Todo]\n  work[Implement]@{priority: high, assigned: Ada, ticket: K-10}\ndone[Done]"
+        val diagram = (MermaidParser.parse(source) as MermaidParseResult.Success).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+        val texts = scene.commands.filterIsInstance<DrawText>()
+        val detail = texts.single { it.text == "high · @Ada · K-10" }
+        val label = texts.single { it.text == "Implement" }
+        assertTrue(detail.origin.y > label.origin.y)
+        val card = scene.commands.filterIsInstance<DrawRect>().single { it.fill == build.raft.mermaid.layout.SceneColor("#ffffff") }
+        assertTrue(detail.origin.y < card.rect.y + card.rect.height)
+        assertTrue(detail.origin.x + FixedWidthTextMeasurer.measure(detail.text, detail.style).width < card.rect.x + card.rect.width)
+        assertTrue(texts.any { it.text == "Done" })
+    }
+
     @Test fun kanbanProducesMeasuredDeterministicColumnsAndCards() {
         val longLabel = "A".repeat(100)
         val diagram = KanbanDiagram(listOf(KanbanColumn("todo", "Todo", listOf(KanbanCard("a", longLabel))), KanbanColumn("done", "Done", listOf(KanbanCard("b", "Ship")))))
