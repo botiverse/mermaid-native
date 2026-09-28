@@ -623,6 +623,9 @@ public data class ArchitectureDiagram(
     val groups: List<ArchitectureGroup>,
     val services: List<ArchitectureService>,
     val edges: List<ArchitectureEdge>,
+    val title: String? = null,
+    val accTitle: String? = null,
+    val accDescription: String? = null,
 ) : MermaidDiagram
 public data class ArchitectureGroup(val id: String, val icon: String, val label: String)
 public data class ArchitectureService(val id: String, val icon: String, val label: String, val groupId: String? = null)

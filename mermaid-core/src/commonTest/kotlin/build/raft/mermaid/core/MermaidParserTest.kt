@@ -1912,6 +1912,16 @@ class MermaidParserTest {
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
+    @Test fun architectureMetadataQuotesAndEmptyGrammarReachProduct() {
+        val source = "architecture-beta title Sample\naccTitle: Accessible\naccDescr {\nDescription\n}\nservice db(database)[\"John's Database\"] in api\ngroup api(cloud)[API]"
+        val diagram = assertIs<ArchitectureDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Sample", diagram.title); assertEquals("Accessible", diagram.accTitle); assertEquals("Description", diagram.accDescription)
+        assertEquals("John's Database", diagram.services.single().label)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("architecture-beta"))
+        assertIs<MermaidParseResult.Success>(ArchitectureParser("architecture-beta\nservice a in missing").parse())
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("architecture-beta\nservice a in missing"))
+    }
+
     @Test fun parsesArchitectureGroupsServicesAndPorts() {
         val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in api\nservice app(server)[Server] in api\ndb:R --> L:app\napp:T -- B:db"))
         assertEquals(
@@ -1929,7 +1939,6 @@ class MermaidParserTest {
 
     @Test fun malformedArchitectureFailsClosed() {
         listOf(
-            "architecture-beta",
             "architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in missing",
             "architecture-beta\nservice db(database)[Database]\nservice db(server)[Duplicate]",
             "architecture-beta\ngroup api(cloud)[API]\nservice api(server)[Duplicate namespace]",

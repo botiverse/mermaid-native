@@ -844,6 +844,8 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
         val textStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val groupStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
         val iconStyle = TextStyle(fontSize = 10.0, color = SceneColor("#475569"))
@@ -859,16 +861,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         val servicePoints = diagram.services.map { service ->
             val localIndex = diagram.services.filter { it.groupId == service.groupId }.indexOf(service)
             val index = columnIndex.getValue(service.groupId)
-            service.id to ScenePoint(config.padding + index * (columnWidth + 40.0) + columnWidth / 2.0, config.padding + 80.0 + localIndex * 120.0)
+            service.id to ScenePoint(config.padding + index * (columnWidth + 40.0) + columnWidth / 2.0, config.padding + titleOffset + 80.0 + localIndex * 120.0)
         }.toMap()
         val groupRects = diagram.groups.mapIndexed { index, group ->
             val members = diagram.services.filter { it.groupId == group.id }
-            group.id to SceneRect(config.padding + index * (columnWidth + 40.0), config.padding, columnWidth, max(140.0, members.size * 120.0 + 56.0))
+            group.id to SceneRect(config.padding + index * (columnWidth + 40.0), config.padding + titleOffset, columnWidth, max(140.0, members.size * 120.0 + 56.0))
         }.toMap()
-        val maxRows = columns.maxOf { column -> diagram.services.count { it.groupId == column } }
-        val width = max(720.0, config.padding * 2 + columns.size * columnWidth + (columns.size - 1) * 40.0)
-        val height = max(420.0, config.padding * 2 + maxRows * 120.0 + 56.0)
+        val maxRows = columns.maxOfOrNull { column -> diagram.services.count { it.groupId == column } } ?: 0
+        val width = maxOf(720.0, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2, config.padding * 2 + columns.size * columnWidth + (columns.size - 1) * 40.0)
+        val height = max(420.0, config.padding * 2 + maxRows * 120.0 + 56.0) + titleOffset
         val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
         diagram.groups.forEach { group ->
             val rect = groupRects.getValue(group.id)
             commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
@@ -910,7 +913,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             )
             commands += DrawText(service.label, point.copy(y = point.y + 13.0).canonical(), anchor = TextAnchor.MIDDLE, style = textStyle)
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
 
     private fun architecturePortPoint(center: ScenePoint, port: ArchitecturePort, halfWidth: Double, halfHeight: Double): ScenePoint = when (port) {
@@ -945,6 +948,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val fill = SceneColor("#ffffff")
         val stroke = SceneColor("#475569")
         return when (icon.lowercase()) {
+            "" -> emptyList()
             "cloud" -> architectureCloudIcon(origin, fill, stroke)
             "database" -> architectureDatabaseIcon(origin, fill, stroke)
             "server" -> architectureServerIcon(origin, fill, stroke)
