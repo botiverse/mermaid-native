@@ -21,4 +21,13 @@ class StateRegionsLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#fff5ad" })
         assertEquals(listOf("First","Second"),scene.commands.filterIsInstance<DrawText>().map { it.text })
     }
+    @Test fun compositeAndLeafSelfLoopsHaveVisiblePathsWithinScene() {
+        val scene=layout("state Active { Idle }\nActive --> Active\nIdle --> Idle")
+        val loops=scene.commands.filterIsInstance<DrawPolyline>()
+        assertEquals(2,loops.size)
+        loops.forEach { path ->
+            assertEquals(4,path.points.distinct().size)
+            assertTrue(path.points.all { it.x in 0.0..scene.width && it.y in 0.0..scene.height })
+        }
+    }
 }

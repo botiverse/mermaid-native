@@ -2470,13 +2470,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         val placement=FlowPlacement(flow,sizes.filterKeys { it !in groupIds && it !in dividerIds },config,textMeasurer,regionChildren.keys).place()
 
         val initialRects=placement.nodes+placement.groups
+        val selfLoops=diagram.transitions.filter { it.from==it.to }.groupBy { it.from }
+        val selfLoopIds=selfLoops.keys
+        val loopWidths=selfLoops.mapValues { (_,edges)->max(24.0,edges.maxOf { textMeasurer.measure(it.label,style).width }+28) }
         val noteRects=diagram.notes.mapNotNull { note->initialRects[note.targetId]?.let { target->
             val lines=classNoteLines(note.text);val w=lines.maxOf { textMeasurer.measure(it,style).width }+20;val h=lines.size*22.0+12
-            note to SceneRect(if(note.position==StateNotePosition.LEFT_OF)target.x-w-10 else target.x+target.width+10,target.y,w,h)
+            note to SceneRect(if(note.position==StateNotePosition.LEFT_OF)target.x-w-10 else target.x+target.width+(loopWidths[note.targetId] ?: 0.0)+10,target.y,w,h)
         }}
         val dx=max(0.0,config.padding-(noteRects.minOfOrNull { it.second.x } ?: config.padding))
         val rects=initialRects.mapValues { (_,r)->r.copy(x=r.x+dx) }
-        val width=max(placement.width,noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
+        val selfLoopWidth=selfLoopIds.maxOfOrNull { id -> initialRects[id]?.let { it.x+it.width+loopWidths.getValue(id)+config.padding } ?: 0.0 } ?: 0.0
+        val width=max(max(placement.width,selfLoopWidth),noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
         val height=max(placement.height,noteRects.maxOfOrNull { it.second.y+it.second.height+config.padding } ?: 0.0)
         val statesById = diagram.states.associateBy { it.id }
         val parents = diagram.states.flatMap { state -> state.childIds.map { it to state.id } }.groupBy({ it.first }, { it.second }).mapValues { it.value.first() }
@@ -2517,6 +2521,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.transitions.forEach { transition ->
             val source = rects[transition.from] ?: return@forEach
             val target = rects[transition.to] ?: return@forEach
+            if(transition.from==transition.to) {
+                val from=ScenePoint(source.x+source.width,source.y+source.height*0.35)
+                val to=ScenePoint(source.x+source.width,source.y+source.height*0.75)
+                val right=source.x+source.width+24
+                val points=listOf(from,ScenePoint(right,from.y),ScenePoint(right,to.y),to)
+                commands+=DrawPolyline(points,stroke=SceneColor("#666666"),strokeWidth=1.0)
+                commands+=arrowHead(points[points.lastIndex-1],to,fill=SceneColor("#333333"))
+                if(transition.label.isNotEmpty())commands+=DrawText(transition.label,ScenePoint(right+4,(from.y+to.y)/2),style=style)
+                return@forEach
+            }
             val targetAncestors = ancestors(transition.to).toSet()
             val commonParent = ancestors(transition.from).firstOrNull { it in targetAncestors }
             val direction = statesById[commonParent]?.direction ?: diagram.direction
