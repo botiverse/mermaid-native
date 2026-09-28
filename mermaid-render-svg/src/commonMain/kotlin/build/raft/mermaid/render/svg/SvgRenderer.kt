@@ -69,6 +69,7 @@ private fun DrawCommand.toSvg(): String = when (this) {
         append("<text x=\"${origin.x.svgNumber()}\" y=\"${origin.y.svgNumber()}\"")
         append(" text-anchor=\"${anchor.svgName()}\" font-family=\"${style.fontFamily.escapeXml()}\"")
         append(" font-size=\"${style.fontSize.svgNumber()}\" font-weight=\"${style.fontWeight}\"")
+        if (style.italic) append(" font-style=\"italic\"")
         append(" fill=\"${style.color.value.escapeXml()}\">${text.escapeXml()}</text>")
     }
 }

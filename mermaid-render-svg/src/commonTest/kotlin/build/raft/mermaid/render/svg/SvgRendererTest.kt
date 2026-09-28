@@ -31,6 +31,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SvgRendererTest {
+    @Test fun classAbstractMemberUsesSvgItalicWithNoClassifierText() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\nclass Clock {\n+read()*\n}")).diagram
+        val svg = SvgRenderer.render(SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
+        assertTrue(svg.contains("font-style=\"italic\""))
+        assertTrue(svg.contains(">+read()</text>"))
+        assertFalse(svg.contains("read()*"))
+    }
+
     @Test
     fun erAccessibilityFlowsThroughLayoutAndEscapesSvgMarkup() {
         val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(

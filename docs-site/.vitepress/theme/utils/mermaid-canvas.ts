@@ -15,7 +15,7 @@ export type MermaidCanvasOp =
   | { op: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; sw: number; dash: boolean }
   | { op: 'polyline'; pts: number[]; stroke: string; sw: number; dash: boolean }
   | { op: 'polygon'; pts: number[]; fill: string }
-  | { op: 'text'; text: string; x: number; y: number; anchor: CanvasTextAlign; size: number; family: string; weight: number; fill: string }
+  | { op: 'text'; text: string; x: number; y: number; anchor: CanvasTextAlign; size: number; family: string; weight: number; italic?: boolean; fill: string }
 
 export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanvasScript, resolutionScale = 1): void {
   const dpr = (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * resolutionScale
@@ -75,7 +75,7 @@ export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanv
         break
       case 'text':
         if (!op.fill || op.fill === 'none') break
-        ctx.font = `${op.weight} ${op.size}px ${op.family}`
+        ctx.font = `${op.italic ? "italic " : ""}${op.weight} ${op.size}px ${op.family}`
         ctx.fillStyle = op.fill
         ctx.textAlign = op.anchor
         ctx.textBaseline = 'alphabetic'

@@ -64,7 +64,7 @@ export function drawMermaidCanvas(canvas, script, resolutionScale = 1) {
         break;
       case 'text':
         if (!op.fill || op.fill === 'none') break;
-        ctx.font = `${op.weight} ${op.size}px ${op.family}`;
+        ctx.font = `${op.italic ? "italic " : ""}${op.weight} ${op.size}px ${op.family}`;
         ctx.fillStyle = op.fill;
         ctx.textAlign = op.anchor;
         ctx.textBaseline = 'alphabetic';

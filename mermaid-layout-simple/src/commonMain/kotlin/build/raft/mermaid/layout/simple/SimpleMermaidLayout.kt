@@ -8,6 +8,8 @@ import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassDefinition
 import build.raft.mermaid.core.ClassMarker
 import build.raft.mermaid.core.ClassMember
+import build.raft.mermaid.core.ClassMemberDisplay
+import build.raft.mermaid.core.ClassMemberFormatter
 import build.raft.mermaid.core.ClassVisibility
 import build.raft.mermaid.core.ClassRelationshipKind
 import build.raft.mermaid.core.EntityCardinality
@@ -2753,9 +2755,14 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawRect(rect, cornerRadius = 4.0,fill=css.fill,stroke=css.stroke,strokeWidth=css.strokeWidth)
             val attributes = klass.members.filterNot { classMemberIsMethod(it) }
             val methods = klass.members.filter { classMemberIsMethod(it) }
-            val lines = classHeaderLines(klass) + attributes.map { classMemberLabel(it) } + methods.map { classMemberLabel(it) }
+            val lines = classHeaderLines(klass).map { ClassMemberDisplay(it) } + (attributes + methods).map { classMemberDisplay(it) }
             lines.forEachIndexed { index, line ->
-                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + css.text.fontSize + 4.0 + index * css.lineHeight), style = css.text)
+                val textStyle = css.text.copy(italic = line.italic)
+                val origin = ScenePoint(rect.x + 12.0, rect.y + css.text.fontSize + 4.0 + index * css.lineHeight)
+                commands += DrawText(line.text, origin, style = textStyle)
+                if (line.underline) {
+                    commands += DrawLine(ScenePoint(origin.x, origin.y + 2.0), ScenePoint(origin.x + textMeasurer.measure(line.text, textStyle).width, origin.y + 2.0), stroke = textStyle.color, strokeWidth = 1.0)
+                }
             }
             if (attributes.isNotEmpty() || methods.isNotEmpty()) {
                 commands += classCompartmentRule(rect, classHeaderLines(klass).size - 1,css)
@@ -2769,27 +2776,20 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun classMemberIsMethod(member: ClassMember): Boolean = member.signature.contains("(")
 
-    private fun classMemberLabel(member: ClassMember): String {
+    private fun classMemberLabel(member: ClassMember): String = classMemberDisplay(member).text
+
+    private fun classMemberDisplay(member: ClassMember): ClassMemberDisplay {
         val prefix = when (member.visibility) {
             ClassVisibility.PUBLIC -> "+"
             ClassVisibility.PRIVATE -> "-"
             ClassVisibility.PROTECTED -> "#"
             ClassVisibility.PACKAGE -> "~"
         }
-        return "${if(member.hasVisibility) prefix else ""}${classSignatureLabel(member.signature)}"
+        return ClassMemberFormatter.format("${if(member.hasVisibility) prefix else ""}${member.signature}", classMemberIsMethod(member))
     }
 
     private fun classHeaderLines(klass:ClassDefinition):List<String> = klass.annotations.map { "«$it»" } +
         (klass.label + (klass.genericType?.let { "<$it>" } ?: ""))
-
-    private fun classSignatureLabel(signature:String):String {
-        var genericOpen=false
-        val generic=signature.map { if(it=='~') {genericOpen=!genericOpen;if(genericOpen)'<' else '>'} else it }.joinToString("")
-        val end=generic.lastIndexOf(')')
-        if(end<0) return generic
-        val suffix=generic.drop(end+1).trim()
-        return generic.take(end+1) + if(suffix.isEmpty() || suffix=="$" || suffix=="*") suffix else " : $suffix"
-    }
 
     private fun classCompartmentLines(klass: ClassDefinition): List<String> {
         val attributes = klass.members.filterNot { classMemberIsMethod(it) }

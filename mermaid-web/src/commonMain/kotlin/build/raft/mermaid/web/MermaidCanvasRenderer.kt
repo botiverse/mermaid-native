@@ -102,6 +102,7 @@ public object MermaidCanvasRenderer {
             append(",\"size\":").append(number(command.style.fontSize))
             append(",\"family\":").append(jsonString(command.style.fontFamily))
             append(",\"weight\":").append(command.style.fontWeight)
+            if (command.style.italic) append(",\"italic\":true")
             append(",\"fill\":").append(jsonString(command.style.color.value))
             append('}')
         }
