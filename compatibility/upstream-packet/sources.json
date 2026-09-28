@@ -1,0 +1,11 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/parser/tests/packet.test.ts": "d1bfb4922ceddeb013c0053d5f64d0664a89c3b3b1c82169f34c49401f367670",
+    "packages/mermaid/src/diagrams/packet/packet.spec.ts": "d4de32b8360687fc4ac6a13903df905ade46982281432b21e5f2dc05a7bcafb2",
+    "packages/mermaid/src/diagrams/packet/parser.ts": "eca493c104ec640920666ec593a7259919cc83d556cc112142d8a1545dbbc366",
+    "packages/mermaid/src/diagrams/packet/db.ts": "24b41ca02d7fde498e3f25231dc2643ae86351f7fbff3c7cbcf4e3f8b6646262",
+    "packages/parser/src/language/packet/packet.langium": "05e4541d176be506b9e0b373f6d86ee3b0d3489650a3d027aaf3319dba4c3176",
+    "packages/parser/tests/test-util.ts": "f3cb87c7dfa5842ec36a224d083e23ecc9772273ae460cb50ac48774374d54bd"
+  }
+}

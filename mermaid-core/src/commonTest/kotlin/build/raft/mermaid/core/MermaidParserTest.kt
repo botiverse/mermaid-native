@@ -1526,6 +1526,19 @@ class MermaidParserTest {
     }
 
     @Test
+    fun packetAcceptsEmptyAndRelativeContiguousFieldsWithAccessibility() {
+        assertTrue(assertIs<PacketDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("packet-beta")).diagram).fields.isEmpty())
+        val source = "packet\ntitle First\ntitle Second\naccTitle: Frame\naccDescr {\nHeader and payload\n}\n+8: \"byte\"\n+16: \"word\""
+        val d = assertIs<PacketDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Second", d.title)
+        assertEquals("Frame", d.accessibilityTitle)
+        assertEquals("Header and payload", d.accessibilityDescription)
+        assertEquals(listOf(PacketField(0, 7, "byte"), PacketField(8, 23, "word")), d.fields)
+        val gap = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("packet\n+16: \"test\"\n18: \"error\""))
+        assertEquals("Packet block 18 - 18 is not contiguous. It should start from 16.", gap.diagnostics.single().message)
+    }
+
+    @Test
     fun parsesPacketTitleSingleBitsAndRanges() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse(
@@ -1661,14 +1674,11 @@ class MermaidParserTest {
     @Test
     fun malformedPacketFailsClosed() {
         listOf(
-            "packet",
             "packet\n  8-4: \"Reverse\"",
             "packet\n  0-7: \"A\"\n  7-15: \"Overlap\"",
             "packet\n  0-7: Missing quotes",
-            "packet\n  +8: \"Relative is deferred\"",
             "packet\n  4096: \"Beyond bounded layout\"",
             "packet\n  999999999999999999999: \"Overflow\"",
-            "packet\n  title First\n  title Second\n  0: \"Flag\"",
         ).forEach { source ->
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }

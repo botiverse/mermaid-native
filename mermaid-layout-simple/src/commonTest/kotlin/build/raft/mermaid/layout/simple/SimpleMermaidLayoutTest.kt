@@ -140,6 +140,31 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun packetAdjacentBitIndicesHaveAReadableGapAndSingleBitsAreNotDuplicated() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""packet
++8: "Version"
++8: "Flags"
++1: "Flag"
+""")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val indices = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 9.0 }
+        assertEquals(8.0, indices.single { it.text == "8" }.origin.x - indices.single { it.text == "7" }.origin.x)
+        assertEquals(1, indices.count { it.text == "16" })
+        assertEquals(TextAnchor.MIDDLE, indices.single { it.text == "16" }.anchor)
+    }
+
+    @Test
+    fun emptyPacketAndRelativeMultirowFieldsUseActualPacketRenderer() {
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("packet")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.width.isFinite() && empty.height.isFinite())
+        assertTrue(empty.commands.isEmpty())
+        val source = "packet\naccTitle: Frame\n+8: \"Header\"\n+64: \"Payload\""
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Frame", scene.accessibilityTitle)
+        assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(3, scene.commands.filterIsInstance<DrawText>().count { it.text == "Payload" })
+    }
+
     @Test
     fun railroadProducesDeterministicMeasuredTracks() {
         val long = "step-".repeat(20)
