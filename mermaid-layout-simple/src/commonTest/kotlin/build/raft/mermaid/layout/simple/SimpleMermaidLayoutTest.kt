@@ -1719,6 +1719,14 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "mystery", "Server", "custom")))
     }
 
+    @Test fun cynefinAccessibilitySurvivesProductionLayout() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("cynefin-beta\ntitle Display title\naccTitle: Accessible title\naccDescr: Five domains\ncomplex\n\"Learn\"")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Accessible title", scene.accessibilityTitle)
+        assertEquals("Five domains", scene.accessibilityDescription)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Display title" })
+    }
+
     @Test fun cynefinDrawsOfficialDomainDescriptionsOnEveryQuadrant() {
         val diagram = CynefinDiagram(
             title = "Incident response",

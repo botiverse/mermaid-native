@@ -479,15 +479,45 @@ class MermaidParserTest {
     }
 
     @Test
+    fun cynefinCanonicalMetadataAndReplacementReachPublicModel() {
+        val source = """
+            cynefin-beta:
+            title First
+            title Final map
+            accTitle: Accessible  map %% comment
+            accDescr {
+              First   line
+
+              Second line
+            }
+            complex
+              "Discarded"
+            complex 'Kept' "" "escaped \"quote\""
+            clear
+            complex-->clear: "Move"
+            clear --> clear
+        """.trimIndent()
+        val diagram = assertIs<CynefinDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Final map", diagram.title)
+        assertEquals("Accessible map", diagram.accTitle)
+        assertEquals("First line\nSecond line", diagram.accDescription)
+        assertEquals(listOf("Kept", "", "escaped \"quote\""), diagram.domains.first().items)
+        assertEquals(listOf(CynefinTransition(CynefinDomain.COMPLEX, CynefinDomain.CLEAR, "Move")), diagram.transitions)
+        val empty = assertIs<CynefinDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("cynefin-beta")).diagram)
+        assertTrue(empty.domains.isEmpty())
+        assertEquals(null, empty.accTitle)
+    }
+
+    @Test
     fun malformedCynefinFailsClosed() {
         listOf(
             "cynefin-beta; complex",
-            "cynefin-beta\ntitle One\ntitle Two\ncomplex",
-            "cynefin-beta\ncomplex\ncomplex",
             "cynefin-beta\n\"orphan item\"",
             "cynefin-beta\ncomplex\nitem without quotes",
             "cynefin-beta\ncomplex -> clear",
-            "cynefin-beta\naccTitle: unsupported",
+            "cynefin-beta\naccDescr { unclosed",
+            "cynefin-beta\ncomplex --> clear \"label without colon\"",
+            "cynefin-beta\ncomplex\naccTitle: Title\n\"orphan after metadata\"",
             "cynefin-beta\ncomplex\nstyle complex fill:red",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }

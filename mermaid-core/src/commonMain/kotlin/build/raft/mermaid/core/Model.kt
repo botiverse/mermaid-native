@@ -698,6 +698,8 @@ public data class CynefinDiagram(
     val title: String? = null,
     val domains: List<CynefinDomainBlock>,
     val transitions: List<CynefinTransition>,
+    val accTitle: String? = null,
+    val accDescription: String? = null,
 ) : MermaidDiagram
 
 public enum class CynefinDomain { COMPLEX, COMPLICATED, CLEAR, CHAOTIC, CONFUSION }
