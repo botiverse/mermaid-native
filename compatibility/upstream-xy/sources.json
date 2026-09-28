@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/xychart/parser/xychart.jison.spec.ts": "c221e2e672d4f932df6ea22d254b236b0bb451ea1baf7f2cf8e19d0396cca3c5",
+    "packages/mermaid/src/diagrams/xychart/parser/xychart.jison": "ce1e4904b3c2036ac29cc62b6e6561058b00e4bc9c9bbf661873451bb55bf0fc",
+    "packages/mermaid/src/diagrams/xychart/xychartDb.ts": "2025f06822a83157bdaca0ca9d8f6a9f44e6b885a42501c72c6cc68d09da08c9"
+  }
+}
