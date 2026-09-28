@@ -2,6 +2,7 @@
 import argparse,base64,hashlib,json,os,shutil,subprocess
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--upstream',type=Path,required=True);p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--stdlib',type=Path,required=True);o=p.parse_args()
+assert o.stdlib.is_file(), 'Kotlin stdlib JAR does not exist'
 u=o.upstream.resolve();r=o.repo.resolve();h=Path(__file__).resolve().parent;w=u/'.native-venn-audit';w.mkdir(exist_ok=True)
 m=json.loads((h/'sources.json').read_text())
 for f,sha in m['files'].items():assert hashlib.sha256((u/f).read_bytes()).hexdigest()==sha,f
@@ -23,7 +24,7 @@ def test(mode):
  with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-venn-audit/{mode}.config.ts','--workspace',f'.native-venn-audit/{mode}.workspace.ts','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
 if test('official').returncode:raise SystemExit('Original Venn suite failed')
 sources=list(dict.fromkeys(json.loads(x)['source'] for x in calls.read_text().splitlines()))
-result=subprocess.run(['java','-cp',cp,'VennNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True)
+result=subprocess.run(['java','-cp',cp,'VennNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True,timeout=60)
 models=[json.loads(x) for x in result.stdout.splitlines()];assert len(models)==len(sources)
 cache=w/'native-models.json';cache.write_text(json.dumps(list(zip(sources,models))))
 (w/'adapter.ts').write_text("""import {readFileSync} from 'node:fs';const models=new Map(JSON.parse(readFileSync(CACHE,'utf8')));

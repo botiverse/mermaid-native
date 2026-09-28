@@ -9,8 +9,8 @@ public class VennNativeBridge {
  static String arr(List<String>a){List<String>b=new ArrayList<>(a);Collections.sort(b);return "["+String.join(",",b.stream().map(VennNativeBridge::q).toList())+"]";}
  static Object get(Object o,String field){try{return o.getClass().getMethod(field).invoke(o);}catch(Exception e){return null;}}
  static List<?> list(Object o,String field){Object a=get(o,field);return a==null?List.of():(List<?>)a;}
- public static void main(String[] args){Scanner input=new Scanner(System.in,StandardCharsets.UTF_8);while(input.hasNextLine()){try{
- var result=MermaidParser.INSTANCE.parse(decode(input.nextLine()));if(result instanceof MermaidParseResult.Failure){System.out.println("{\"error\":"+q(((MermaidParseResult.Failure)result).getDiagnostics().get(0).getMessage())+"}");continue;}
+ public static void main(String[] args){Scanner input=new Scanner(System.in,StandardCharsets.UTF_8);while(input.hasNextLine()){String source=decode(input.nextLine());try{
+ var result=MermaidParser.INSTANCE.parse(source);if(result instanceof MermaidParseResult.Failure){System.out.println("{\"error\":"+q(((MermaidParseResult.Failure)result).getDiagnostics().get(0).getMessage())+"}");continue;}
  var d=(VennDiagram)((MermaidParseResult.Success)result).getDiagram();List<String> subsets=new ArrayList<>(),texts=new ArrayList<>(),styles=new ArrayList<>();
  for(var s:d.getSets())subsets.add("{\"sets\":"+arr(List.of(s.getId()))+",\"size\":"+(s.getSize()==null?10:s.getSize())+",\"label\":"+q(s.getLabel())+"}");
  for(var s:d.getUnions())subsets.add("{\"sets\":"+arr(s.getSetIds())+",\"size\":"+(s.getSize()==null?10.0/(s.getSetIds().size()*s.getSetIds().size()):s.getSize())+(s.getLabel()==null?"":",\"label\":"+q(s.getLabel()))+"}");
