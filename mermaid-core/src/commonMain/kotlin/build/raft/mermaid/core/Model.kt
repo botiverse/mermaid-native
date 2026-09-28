@@ -563,6 +563,7 @@ public data class SwimlaneDiagram(
     val direction: FlowDirection = FlowDirection.TB,
     val lanes: List<Swimlane>,
     val edges: List<SwimlaneEdge>,
+    val flowchart: FlowchartDiagram? = null,
 ) : MermaidDiagram
 
 public data class Swimlane(

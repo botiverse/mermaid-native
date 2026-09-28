@@ -4,6 +4,8 @@ import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowNode
+import build.raft.mermaid.core.FlowNodeShape
+import build.raft.mermaid.core.FlowSubgraph
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassDefinition
@@ -694,6 +696,14 @@ public object MermaidExamples {
                 Swimlane("support", "Support team", listOf(SwimlaneNode("triage", "Known issue?", SwimlaneNodeShape.DECISION), SwimlaneNode("answer", "Send answer", SwimlaneNodeShape.RECTANGLE))),
             ),
             listOf(SwimlaneEdge("request", "triage", "handoff & review"), SwimlaneEdge("triage", "answer"), SwimlaneEdge("answer", "receive")),
+            flowchart = FlowchartDiagram(
+                FlowDirection.LR,
+                listOf(FlowNode("request", "Request service"), FlowNode("receive", "Receive update", FlowNodeShape.CIRCLE),
+                    FlowNode("triage", "Known issue?", FlowNodeShape.DIAMOND), FlowNode("answer", "Send answer")),
+                listOf(FlowEdge("request", "triage", label = "handoff & review"), FlowEdge("triage", "answer"), FlowEdge("answer", "receive")),
+                listOf(FlowSubgraph("customer", "Customer & partner", listOf("request", "receive")),
+                    FlowSubgraph("support", "Support team", listOf("triage", "answer"))),
+            ),
         ),
     )
 

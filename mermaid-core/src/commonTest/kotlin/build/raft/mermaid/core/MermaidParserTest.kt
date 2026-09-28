@@ -456,7 +456,7 @@ class MermaidParserTest {
                 ),
                 listOf(SwimlaneEdge("start", "request"), SwimlaneEdge("request", "triage", "handoff"), SwimlaneEdge("triage", "answer")),
             ),
-            result.diagram,
+            assertIs<SwimlaneDiagram>(result.diagram).copy(flowchart = null),
         )
     }
 
@@ -468,13 +468,8 @@ class MermaidParserTest {
             "swimlane-beta\nend",
             "swimlane-beta\nsubgraph A\nend",
             "swimlane-beta\nsubgraph A\na[One]",
-            "swimlane-beta\nsubgraph A\nsubgraph B\nb[Two]\nend",
-            "swimlane-beta\nsubgraph A\na[One]\nend\nsubgraph A\nb[Two]\nend",
-            "swimlane-beta\nsubgraph A\na[One]\nend\nsubgraph B\na[Duplicate]\nend",
-            "swimlane-beta\nsubgraph A\na[One]\nend\na --> missing",
-            "swimlane-beta\nsubgraph A\na[One]\nend\na --> a",
-            "swimlane-beta\nsubgraph A\na[One]\nend\nstyle a fill:red",
-            "swimlane-beta\naccTitle: unsupported\nsubgraph A\na[One]\nend",
+            "swimlane-beta\nsubgraph A\nsubgraph A\na[One]\nend\nend",
+            "swimlane-beta\nA-->B\nclick A call broken(",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
