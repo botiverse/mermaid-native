@@ -71,3 +71,7 @@ This is an independent, non-official Mermaid-compatible implementation. New
 syntax needs a support-matrix entry, parser tests, a negative/unsupported case,
 and a fixture or differential vector before it is considered complete. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### State grammar and rendering
+
+State diagrams support bare identifiers, aliases, repeated descriptions, nested and inline composite states, local directions, accessibility metadata, and single/multiline attached notes. Composite members render inside their containers and multiline description/note geometry is measured. Unterminated and cyclic composites fail explicitly. State CSS/classes, concurrent regions and floating notes remain unsupported in this slice. Original upstream assertions are being integrated separately from actual Native render validation.
