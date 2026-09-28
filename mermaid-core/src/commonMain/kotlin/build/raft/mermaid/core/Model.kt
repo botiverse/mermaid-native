@@ -809,6 +809,13 @@ public data class WardleyMapDiagram(
     val links: List<WardleyLink>,
     val evolutions: List<WardleyEvolution>,
     val notes: List<WardleyNote>,
+    val stages: List<String> = listOf("Genesis", "Custom Built", "Product", "Commodity"),
+    val stageBoundaries: List<Double> = emptyList(),
+    val annotations: List<WardleyAnnotation> = emptyList(),
+    val annotationsBox: WardleyNote? = null,
+    val accelerators: List<WardleyNote> = emptyList(),
+    val deaccelerators: List<WardleyNote> = emptyList(),
+    val width: Double? = null, val height: Double? = null,
 ) : MermaidDiagram
 
 public data class WardleyNode(
@@ -816,9 +823,13 @@ public data class WardleyNode(
     val visibility: Double,
     val evolution: Double,
     val anchor: Boolean,
+    val pipeline: String? = null,
+    val labelOffsetX: Double? = null, val labelOffsetY: Double? = null,
+    val sourceStrategy: String? = null, val inertia: Boolean = false,
 )
 
-public data class WardleyLink(val from: String, val to: String)
+public data class WardleyLink(val from: String, val to: String, val flow: String = "forward", val label: String? = null)
+public data class WardleyAnnotation(val id: String, val text: String, val visibility: Double, val evolution: Double)
 
 public data class WardleyEvolution(val component: String, val evolution: Double)
 

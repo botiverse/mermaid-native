@@ -1,0 +1,5 @@
+# Original Wardley consumer assertions
+
+Pinned revision `04ee3364045d6573f84034d3c9368cc50233a92f`. Run `run.py --upstream PATH --stdlib PATH` against a built Native JAR. All20 original consumer assertions run unchanged. The actual Native parser/model supplies nodes, links, pipelines, stages, sizes, decorators, label offsets, notes, annotation positions and forces; the bridge only converts unit coordinates to the percentage-based upstream database shape. The original parser is not a fallback.
+
+This is parser/model boundary coverage, not complete Langium CST, builder-internal or pixel compatibility. The existing Native axis/point styling remains. Source strategy and force markers use a bounded Native representation. Additional link operators, percentage coordinate input, arbitrary metadata, duplicate component refinement and the complete upstream language remain unclaimed. Native keeps strict decimal coordinates in [0,1], known references, unique components and finite canvas sizes 200..10000.

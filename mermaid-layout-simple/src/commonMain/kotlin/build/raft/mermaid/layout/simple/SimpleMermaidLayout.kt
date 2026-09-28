@@ -3412,10 +3412,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(title, ScenePoint(config.padding, cursorY + titleStyle.fontSize), style = titleStyle)
             cursorY += 30.0
         }
-        val width = 720.0
-        val stageNames = listOf("Genesis", "Custom Built", "Product", "Commodity")
+        val width = diagram.width ?: 720.0
+        val stageNames = diagram.stages.ifEmpty { listOf("Genesis", "Custom Built", "Product", "Commodity") }
         val axisBand = 44.0
-        val height = cursorY + 480.0 + axisBand
+        val height = diagram.height ?: (cursorY + 480.0 + axisBand)
         val plotLeft = config.padding + 40.0
         val plotRight = width - config.padding
         val plotTop = cursorY + 20.0
@@ -3425,9 +3425,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         fun y(visibility: Double): Double = plotBottom - visibility * (plotBottom - plotTop)
         commands += DrawLine(ScenePoint(plotLeft, plotTop), ScenePoint(plotLeft, plotBottom), stroke = axisColor)
         commands += DrawLine(ScenePoint(plotLeft, plotBottom), ScenePoint(plotRight, plotBottom), stroke = axisColor)
+        val boundaries = diagram.stageBoundaries.takeIf { it.size == stageNames.size } ?: stageNames.indices.map { (it + 1.0) / stageNames.size }
         stageNames.forEachIndexed { index, name ->
             if (index > 0) {
-                val dividerX = x(index / stageNames.size.toDouble())
+                val dividerX = x(boundaries[index - 1])
                 commands += DrawLine(
                     ScenePoint(dividerX, plotTop),
                     ScenePoint(dividerX, plotBottom),
@@ -3438,7 +3439,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             commands += DrawText(
                 name,
-                ScenePoint(x((index + 0.5) / stageNames.size), plotBottom + 16.0),
+                ScenePoint(x(((if (index == 0) 0.0 else boundaries[index - 1]) + boundaries[index]) / 2), plotBottom + 16.0),
                 TextAnchor.MIDDLE,
                 stageStyle,
             )
@@ -3451,11 +3452,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         )
         commands += DrawText("Visibility", ScenePoint(plotLeft, plotTop - 8.0), TextAnchor.START, axisStyle)
         val centers = diagram.nodes.associateWith { node -> ScenePoint(x(node.evolution), y(node.visibility)) }
+        diagram.nodes.filter { it.pipeline != null }.groupBy { it.pipeline }.forEach { (_, children) ->
+            val first = children.minOf { x(it.evolution) }; val last = children.maxOf { x(it.evolution) }; val cy = y(children.first().visibility)
+            commands += DrawRect(SceneRect(first - 12.0, cy - 10.0, last - first + 24.0, 20.0), fill = SceneColor("#f8fafc"), stroke = stageLineColor)
+        }
         diagram.links.forEach { link: WardleyLink ->
             val from = centers.getValue(diagram.nodes.first { it.name == link.from })
             val to = centers.getValue(diagram.nodes.first { it.name == link.to })
             commands += DrawLine(from, to)
             commands += arrowHead(from, to)
+            if (link.flow == "bidirectional") commands += arrowHead(to, from)
+            link.label?.let { commands += DrawText(it, ScenePoint((from.x + to.x) / 2, (from.y + to.y) / 2 - 6.0), TextAnchor.MIDDLE, noteStyle) }
         }
         diagram.evolutions.forEach { evolution: WardleyEvolution ->
             val node = diagram.nodes.first { it.name == evolution.component }
@@ -3469,11 +3476,28 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (!node.anchor) {
                 commands += DrawEllipse(center, radiusX = 7.0, radiusY = 7.0)
             }
-            commands += DrawText(node.name, ScenePoint(center.x, center.y - 12.0), TextAnchor.MIDDLE, if (node.anchor) anchorStyle else labelStyle)
+            if (node.inertia) commands += DrawLine(ScenePoint(center.x - 11.0, center.y - 11.0), ScenePoint(center.x - 11.0, center.y + 11.0), strokeWidth = 3.0)
+            commands += DrawText(node.name, ScenePoint(center.x + (node.labelOffsetX ?: 0.0), center.y + (node.labelOffsetY ?: -12.0)), TextAnchor.MIDDLE, if (node.anchor) anchorStyle else labelStyle)
+            node.sourceStrategy?.let { commands += DrawText(it, ScenePoint(center.x, center.y + 22.0), TextAnchor.MIDDLE, stageStyle) }
         }
         diagram.notes.forEach { note ->
             commands += DrawText(note.text, ScenePoint(x(note.evolution), y(note.visibility)), TextAnchor.START, noteStyle)
         }
+        diagram.annotations.forEachIndexed { index, annotation ->
+            val center = ScenePoint(x(annotation.evolution), y(annotation.visibility))
+            commands += DrawEllipse(center, 10.0, 10.0, fill = SceneColor("#fef3c7"))
+            commands += DrawText(annotation.id, ScenePoint(center.x, center.y + 4.0), TextAnchor.MIDDLE, stageStyle)
+            val box = diagram.annotationsBox
+            commands += DrawText("${annotation.id}. ${annotation.text}", ScenePoint(if (box != null) x(box.evolution) else plotLeft, (if (box != null) y(box.visibility) else plotTop) + index * 18.0), style = noteStyle)
+        }
+        fun force(notes: List<build.raft.mermaid.core.WardleyNote>, up: Boolean) {
+            notes.forEach { note ->
+                val cx = x(note.evolution); val cy = y(note.visibility); val sign = if (up) -1.0 else 1.0
+                commands += DrawPolygon(listOf(ScenePoint(cx, cy + sign * 8), ScenePoint(cx - 6, cy - sign * 5), ScenePoint(cx + 6, cy - sign * 5)), SceneColor(if (up) "#16a34a" else "#dc2626"))
+                commands += DrawText(note.text, ScenePoint(cx + 10, cy + 4), style = noteStyle)
+            }
+        }
+        force(diagram.accelerators, true); force(diagram.deaccelerators, false)
         return LayoutScene(width, height, commands)
     }
 

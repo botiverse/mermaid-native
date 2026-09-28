@@ -376,11 +376,7 @@ class MermaidParserTest {
             // No nodes at all.
             "wardley-beta",
             "wardley-beta\ntitle Only",
-            // Quoted names are outside the slice.
-            "wardley-beta\ncomponent \"Custom Service\" [0.5, 0.5]",
             // Decorators, label offsets, and size are rejected.
-            "wardley-beta\ncomponent API [0.5, 0.5] (build)",
-            "wardley-beta\ncomponent API [0.5, 0.5] label [-50, 10]",
             "wardley-beta\nsize [800, 1000]",
             // Non-basic link styles are rejected.
             "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA --> B",
@@ -2111,6 +2107,33 @@ class MermaidParserTest {
         assertEquals(listOf("Block wide width 2 exceeds configured column width 1"), diagram.warnings)
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\n__proto__; constructor"))
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("block\nblock\nA"))
+    }
+
+    @Test fun wardleyOriginalPipelinesStagesAndAnnotations() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            wardley-beta
+            evolution Genesis@0.3 -> Custom@0.6 -> Product@0.85 -> Commodity@1.0
+            size [1200,900]
+            component Kettle [0.45,0.57]
+            pipeline Kettle {
+              component Campfire [0.35] label [-60,35]
+              component Electric [0.53] (buy)
+            }
+            component foo- [0.2,0.3]
+            Campfire +<> Electric; choice
+            annotations [0.1,0.1]
+            annotation 1,[0.5,0.6] "Critical"
+        """.trimIndent()))
+        val diagram = assertIs<WardleyMapDiagram>(result.diagram)
+        assertEquals(listOf(0.3, 0.6, 0.85, 1.0), diagram.stageBoundaries)
+        assertEquals(0.45, diagram.nodes[1].visibility)
+        assertEquals(-60.0, diagram.nodes[1].labelOffsetX)
+        assertEquals("Kettle", diagram.nodes[1].pipeline)
+        assertEquals("buy", diagram.nodes[2].sourceStrategy)
+        assertEquals("bidirectional", diagram.links.single().flow)
+        assertEquals("choice", diagram.links.single().label)
+        assertEquals("Critical", diagram.annotations.single().text)
+        assertEquals(1200.0, diagram.width)
     }
 
 }
