@@ -390,8 +390,15 @@ public data class GanttTask(
 )
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 
-public data class TimelineDiagram(val title: String?, val events: List<TimelineEvent>) : MermaidDiagram
-public data class TimelineEvent(val period: String, val labels: List<String>, val section: String? = null)
+public data class TimelineDiagram(
+    val title: String?, val events: List<TimelineEvent>,
+    val sections: List<String> = events.mapNotNull { it.section }.distinct(),
+    val direction: FlowDirection = FlowDirection.LR,
+    val directionExplicit: Boolean = false,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+) : MermaidDiagram
+public data class TimelineEvent(val period: String, val labels: List<String>, val section: String? = null, val sectionIndex: Int? = null)
 
 public data class QuadrantChartDiagram(
     val title: String?,

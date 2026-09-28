@@ -85,3 +85,5 @@ Metadata shape names currently cover the existing rectangle, rounded, circle/dou
 ### Gantt grammar and dates
 
 Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
+
+Timeline parsing preserves original section-only documents, standalone periods, continuation events, URL colons, semicolons and event whitespace. Explicit LR/TD changes actual placement; unspecified direction keeps the existing Native vertical presentation. Empty sections render without crashing. Original parser assertions and final cross-platform validation are in progress.

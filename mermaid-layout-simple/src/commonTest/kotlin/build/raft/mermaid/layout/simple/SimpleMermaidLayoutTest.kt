@@ -628,6 +628,28 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun timelineExplicitDirectionsChangeActualEventPositions() {
+        fun scene(direction: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline $direction\nsection Phase\nFirst: Alpha\nSecond: Beta",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val lr = scene("LR").commands.filterIsInstance<DrawPolygon>()
+        val td = scene("TD").commands.filterIsInstance<DrawPolygon>()
+        assertTrue(lr[1].points.first().x > lr[0].points.first().x)
+        assertEquals(lr[0].points.first().y, lr[1].points.first().y)
+        assertEquals(td[0].points.first().x, td[1].points.first().x)
+        assertTrue(td[1].points.first().y > td[0].points.first().y)
+        assertEquals("#2563eb", lr.first().fill.value)
+    }
+
+    @Test
+    fun timelineEmptySectionsRenderWithoutCrashing() {
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline\nsection Planning\nsection Delivery",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Planning", "Delivery")))
+    }
+
+    @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
             title = "Sales",
