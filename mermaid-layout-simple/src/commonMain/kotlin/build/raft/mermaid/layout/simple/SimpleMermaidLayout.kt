@@ -2416,45 +2416,37 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene {
         val style = TextStyle()
-        val sizes = diagram.states.associate { state ->
-            state.id to if (state.kind != StateNodeKind.STATE) {
-                SceneSize(STATE_TERMINAL_SIZE, STATE_TERMINAL_SIZE)
-            } else {
-                val text = textMeasurer.measure(state.label, style)
-                SceneSize(max(88.0, text.width + 32.0), max(40.0, text.height + 20.0))
-            }
+        val nodeIds=diagram.states.map { it.id }.toSet()
+        val groupIds=diagram.states.filter { it.childIds.isNotEmpty() }.map { it.id }.toSet()
+        val sizes=diagram.states.associate { state->
+            val lines=listOf(state.label)+state.description?.let(::classNoteLines).orEmpty()
+            state.id to if(state.kind!=StateNodeKind.STATE)SceneSize(STATE_TERMINAL_SIZE,STATE_TERMINAL_SIZE) else SceneSize(max(88.0,lines.maxOf { textMeasurer.measure(it,style).width }+32),max(40.0,lines.size*22.0+18))
         }
-        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
-        val contentWidth = if (horizontal) {
-            sizes.values.sumOf { it.width } + config.nodeGap * max(0, sizes.size - 1)
-        } else {
-            sizes.values.maxOfOrNull { it.width } ?: 0.0
-        }
-        val contentHeight = if (horizontal) {
-            sizes.values.maxOfOrNull { it.height } ?: 0.0
-        } else {
-            sizes.values.sumOf { it.height } + config.nodeGap * max(0, sizes.size - 1)
-        }
-        val width = contentWidth + config.padding * 2
-        val height = contentHeight + config.padding * 2
-        val rects = linkedMapOf<String, SceneRect>()
-        var cursor = config.padding
-        diagram.states.forEach { state ->
-            val size = sizes.getValue(state.id)
-            val forward = if (horizontal) {
-                SceneRect(cursor, config.padding + (contentHeight - size.height) / 2, size.width, size.height)
-            } else {
-                SceneRect(config.padding + (contentWidth - size.width) / 2, cursor, size.width, size.height)
-            }
-            rects[state.id] = when (diagram.direction) {
-                FlowDirection.RL -> forward.copy(x = width - config.padding - (forward.x - config.padding) - size.width)
-                FlowDirection.BT -> forward.copy(y = height - config.padding - (forward.y - config.padding) - size.height)
-                else -> forward
-            }
-            cursor += (if (horizontal) size.width else size.height) + config.nodeGap
-        }
+        val flow=FlowchartDiagram(diagram.direction,
+            diagram.states.filter { it.id !in groupIds }.map { build.raft.mermaid.core.FlowNode(it.id,it.label) },
+            emptyList(),diagram.states.filter { it.id in groupIds }.map { state->
+                build.raft.mermaid.core.FlowSubgraph(state.id,state.label,state.childIds.filter { it in nodeIds },state.direction,
+                    diagram.states.firstOrNull { state.id in it.childIds }?.id)
+            })
+        val placement=FlowPlacement(flow,sizes.filterKeys { it !in groupIds },config,textMeasurer).place()
+        val initialRects=placement.nodes+placement.groups
+        val noteRects=diagram.notes.mapNotNull { note->initialRects[note.targetId]?.let { target->
+            val lines=classNoteLines(note.text);val w=lines.maxOf { textMeasurer.measure(it,style).width }+20;val h=lines.size*22.0+12
+            note to SceneRect(if(note.position==StateNotePosition.LEFT_OF)target.x-w-10 else target.x+target.width+10,target.y,w,h)
+        }}
+        val dx=max(0.0,config.padding-(noteRects.minOfOrNull { it.second.x } ?: config.padding))
+        val rects=initialRects.mapValues { (_,r)->r.copy(x=r.x+dx) }
+        val width=max(placement.width,noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
+        val height=max(placement.height,noteRects.maxOfOrNull { it.second.y+it.second.height+config.padding } ?: 0.0)
+        val horizontal=diagram.direction in listOf(FlowDirection.LR,FlowDirection.RL)
 
         val commands = mutableListOf<DrawCommand>()
+        diagram.states.filter { it.id in groupIds }.sortedBy { rects[it.id]?.y }.forEach { state->
+            val rect=rects.getValue(state.id)
+            commands+=DrawRect(rect,cornerRadius=5.0,fill=SceneColor("#f7f7f7"),stroke=SceneColor("#999999"),strokeWidth=1.0)
+            commands+=DrawText(state.label,ScenePoint(rect.x+rect.width/2,rect.y+20),TextAnchor.MIDDLE,style)
+        }
+
         diagram.transitions.forEach { transition ->
             val source = rects[transition.from] ?: return@forEach
             val target = rects[transition.to] ?: return@forEach
@@ -2470,7 +2462,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
-        diagram.states.forEach { state ->
+        diagram.states.filter { it.id !in groupIds }.forEach { state ->
             val rect = rects.getValue(state.id)
             when (state.kind) {
                 StateNodeKind.STATE -> {
@@ -2481,12 +2473,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                         stroke = SceneColor("#999999"),
                         strokeWidth = 1.0,
                     )
-                    commands += DrawText(
-                        state.label,
-                        ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),
-                        TextAnchor.MIDDLE,
-                        style,
-                    )
+                    val lines=listOf(state.label)+state.description?.let(::classNoteLines).orEmpty()
+                    lines.forEachIndexed { index,line->commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*22+style.fontSize*0.35),TextAnchor.MIDDLE,style) }
+
                 }
                 StateNodeKind.START -> {
                     val radius = rect.width / 2.0
@@ -2543,19 +2532,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
         }
 
-        // Notes as boxed callouts beside their target.
-        diagram.notes.forEach { note ->
-            val rect = rects[note.targetId] ?: return@forEach
-            val noteWidth = textMeasurer.measure(note.text, style).width + 20.0
-            val noteHeight = 26.0
-            val noteX = if (note.position == StateNotePosition.LEFT_OF) rect.x - noteWidth - 10.0 else rect.x + rect.width + 10.0
-            commands += DrawRect(
-                SceneRect(noteX, rect.y, noteWidth, noteHeight),
-                cornerRadius = 3.0,
-                fill = SceneColor("#fff5ad"),
-                stroke = SceneColor("#aaaa33"),
-            )
-            commands += DrawText(note.text, ScenePoint(noteX + noteWidth / 2.0, rect.y + noteHeight / 2.0 + style.fontSize * 0.35), TextAnchor.MIDDLE, style)
+        noteRects.forEach { (note,initial)->
+            val rect=initial.copy(x=initial.x+dx)
+            commands+=DrawRect(rect,cornerRadius=3.0,fill=SceneColor("#fff5ad"),stroke=SceneColor("#aaaa33"))
+            classNoteLines(note.text).forEachIndexed { index,line->commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+20+index*22),TextAnchor.MIDDLE,style) }
         }
         return LayoutScene(width, height, commands)
     }

@@ -147,6 +147,8 @@ public data class StateDiagram(
     val states: List<StateNode>,
     val transitions: List<StateTransition>,
     val notes: List<StateNote> = emptyList(),
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class StateNode(
@@ -155,6 +157,7 @@ public data class StateNode(
     val kind: StateNodeKind = StateNodeKind.STATE,
     val description: String? = null,
     val childIds: List<String> = emptyList(),
+    val direction: FlowDirection? = null,
 )
 
 public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }

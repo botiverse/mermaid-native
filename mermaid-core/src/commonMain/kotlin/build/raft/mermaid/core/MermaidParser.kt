@@ -18,7 +18,7 @@ public object MermaidParser {
 
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> SequenceParser(source).parse()
-            STATE_HEADER.matches(header.text) -> parseState(statements)
+            STATE_HEADER.matches(header.text) -> StateParser(source).parse()
             header.text.startsWith("pie", ignoreCase = true) -> PieParser(source).parse()
             (header.text.equals("classDiagram", ignoreCase = true) || header.text.equals("classDiagram-v2", ignoreCase = true)) -> ClassParser(source).parse()
             header.text.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> EntityRelationshipParser(source).parse()
