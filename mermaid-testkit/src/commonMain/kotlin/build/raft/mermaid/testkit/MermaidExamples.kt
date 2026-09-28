@@ -4,6 +4,8 @@ import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdge
 import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowNode
+import build.raft.mermaid.core.FlowNodeShape
+import build.raft.mermaid.core.FlowSubgraph
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.core.ClassDiagram
 import build.raft.mermaid.core.ClassDefinition
