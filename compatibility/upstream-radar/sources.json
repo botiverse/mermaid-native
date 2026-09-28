@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/parser/tests/radar.test.ts": "55958f5bfcefacb14855dfcd5695a789a604fcfe05791ffb6d4197f676b5761a",
+    "packages/parser/tests/test-util.ts": "f3cb87c7dfa5842ec36a224d083e23ecc9772273ae460cb50ac48774374d54bd",
+    "packages/parser/src/language/radar/radar.langium": "e6bab113778803c5b45969fc3197a9c01f7b8162b9dd4b71d421da20625ec535",
+    "packages/parser/src/parse.ts": "b084a6936ad863c4d5d35a2b8a76fc59f6990cebc3fc4365bc42f909d1f733c8"
+  }
+}
