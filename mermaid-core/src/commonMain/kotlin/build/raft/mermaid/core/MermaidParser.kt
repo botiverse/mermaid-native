@@ -43,6 +43,7 @@ public object MermaidParser {
             header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlaneFlow(source)
             header.text == "treeView-beta" -> parseTreeView(source)
+            header.text.equals("railroad-peg-beta", ignoreCase = true) -> PegParser(source).parse()
             header.text.equals("railroad-ebnf-beta", ignoreCase = true) -> EbnfParser(source).parse()
             header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
             header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
