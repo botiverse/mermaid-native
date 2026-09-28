@@ -25,6 +25,7 @@ class StateStylesTest {
         assertEquals("map {x}",d.states.single { it.id=="A" }.description)
         assertEquals("{ok}",d.transitions.single().label)
         assertEquals("use {x}",d.notes.single().text)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("stateDiagram-v2\nstate \"Order: flow\" as Order { A --> B }"))
     }
     @Test fun indirectCompositeCyclesFailExplicitly() {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\nstate A { B }\nstate B { A }"))

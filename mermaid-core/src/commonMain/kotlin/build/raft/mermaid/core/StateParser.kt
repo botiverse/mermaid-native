@@ -139,13 +139,13 @@ internal class StateParser(private val source: String) {
         statementAt=at
         if(at>=source.length)return ""
         if(source[at]=='}'){at++;return "}"}
-        val begin=at;var quote=false
+        val begin=at;var quote=false;var literalText=false
         while(at<source.length){val c=source[at]
             if(c=='"')quote=!quote
             if(!quote){
                 if(at>begin && source.startsWith("class ",at) && source[at-1].isWhitespace() && "-->" in source.substring(begin,at) && descriptionColon(source.substring(begin,at))<0)return source.substring(begin,at).trim()
                 if(source.startsWith("%%",at)){val result=source.substring(begin,at).trim();while(at<source.length && source[at]!='\n')at++;return result}
-                val literalText = descriptionColon(source.substring(begin,at)) >= 0
+                if(c==':' && source.getOrNull(at-1)!=':' && source.getOrNull(at+1)!=':')literalText=true
                 if(c=='{' && !literalText){at++;return source.substring(begin,at).trim()}
                 if(c=='}' && !literalText)return source.substring(begin,at).trim()
                 if(c=='\n' || c==';'){val result=source.substring(begin,at).trim();at++;return result}
