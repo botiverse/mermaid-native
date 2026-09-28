@@ -1737,6 +1737,17 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun quadrantMeasuresLongYAxisLabelsBeforePlacingPlot() {
+        val label = "An extraordinarily long engagement label"
+        val source = "quadrantChart\ny-axis $label --> $label\nCampaign: [1,0]"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = scene.commands.filterIsInstance<DrawText>().filter { it.text == label }
+        assertEquals(2, labels.size)
+        labels.forEach { assertTrue(it.origin.x - FixedWidthTextMeasurer.measure(it.text, it.style).width >= 24.0) }
+        assertEquals(TextAnchor.END, scene.commands.filterIsInstance<DrawText>().single { it.text == "Campaign" }.anchor)
+    }
+
+    @Test
     fun quadrantPointClassAndInlineStylesReachActualGeometry() {
         val source = "quadrantChart\naccTitle: Portfolio\nclassDef special radius:10,color:#ff0000\nCampaign:::special: [0.5,0.5] color:#00ff00,stroke-color:#ff00ff,stroke-width:2px"
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
