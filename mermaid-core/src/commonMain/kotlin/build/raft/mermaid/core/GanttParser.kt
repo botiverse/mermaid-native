@@ -66,11 +66,16 @@ internal class GanttParser(private val source:String) {
                 else -> date(task.start) ?: fail("Invalid Gantt start date")
             }
             val duration=Regex("^(\\d+)([dw])$").matchEntire(task.end)
-            val end=when {
+            var end=when {
                 task.end.startsWith("until ")->reference(task.end,false)
-                duration!=null->{var count=duration.groupValues[1].toIntOrNull() ?: fail("Invalid Gantt duration");if(duration.groupValues[2]=="w")count*=7;requireGantt(count in 0..100000,"Gantt duration out of range");var d=start;var used=0;var guard=0
-                    while(used<count){requireGantt(guard++<1000000,"Excluded calendar has no working days");if(!excluded(d))used++;d++};d}
+                duration!=null->{var count=duration.groupValues[1].toIntOrNull() ?: fail("Invalid Gantt duration");if(duration.groupValues[2]=="w")count*=7;requireGantt(count in 0..100000,"Gantt duration out of range");start+count}
                 else -> (date(task.end) ?: fail("Invalid Gantt end date")) + if(inclusive)1 else 0
+            }
+            // Upstream advances from the day after start, including the end boundary.
+            // Explicit ISO end dates stay fixed; computed duration/until ends may extend.
+            if(excludes.isNotEmpty() && parseIsoDay(task.end)==null){
+                var cursor=start+1;val limit=end+10000
+                while(cursor<=end){if(excluded(cursor))end++;requireGantt(end<=limit,"Excluded calendar has no working days");cursor++}
             }
             requireGantt(end>=start,"Gantt end precedes start")
             val statuses=task.tags.mapNotNull { when(it){"done"->GanttTaskStatus.DONE;"active"->GanttTaskStatus.ACTIVE;"crit"->GanttTaskStatus.CRITICAL;else->null} }.toSet()
@@ -99,7 +104,7 @@ internal class GanttParser(private val source:String) {
     private fun excluded(day:Int):Boolean {
         if(includes.any { date(it)==day })return false
         val weekdayIndex=(day+6)%7
-        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;"weekdays"->weekdayIndex in 1..5;in days->weekdayIndex==days.indexOf(token);else->date(token)==day} }
+        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;in days->weekdayIndex==days.indexOf(token);else->date(token)==day} }
     }
     private fun click(text:String) {
         val id=text.takeWhile { !it.isWhitespace() };val rest=text.drop(id.length).trim()

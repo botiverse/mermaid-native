@@ -1267,9 +1267,9 @@ class MermaidParserTest {
         val diagram = assertIs<GanttDiagram>(result.diagram)
 
         assertEquals(3, diagram.sections.single().tasks.size)
-        // Exclusive Design boundary is Saturday; Build spans the excluded weekend.
-        assertEquals(3, diagram.sections.single().tasks[0].durationDays)
-        assertEquals(4, diagram.sections.single().tasks[1].durationDays)
+        // A Saturday computed end advances through the excluded weekend to Monday.
+        assertEquals(5, diagram.sections.single().tasks[0].durationDays)
+        assertEquals(2, diagram.sections.single().tasks[1].durationDays)
         assertEquals(0, diagram.sections.single().tasks[2].durationDays)
         assertEquals(GanttTaskStatus.TODO, diagram.sections.single().tasks[2].status)
         assertTrue(diagram.sections.single().tasks[2].milestone)
