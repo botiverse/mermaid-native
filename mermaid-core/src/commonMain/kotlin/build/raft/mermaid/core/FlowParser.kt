@@ -95,7 +95,7 @@ internal class FlowParser(private val source:String) {
                 if(closes.isEmpty() && (c=='\n' || c==';')){emit(at);start=at+1}
             };at++
         }
-        requireFlow(!quote && closes.isEmpty(),"Unclosed flowchart label");emit(source.length);return out
+        if(quote || closes.isNotEmpty()){val leading=source.drop(start).indexOfFirst { !it.isWhitespace() };offset=start+maxOf(0,leading);parsingHeader=out.isEmpty();fail("Unclosed flowchart label")};emit(source.length);return out
     }
     private fun unquote(raw:String):Pair<String,String> {
         val text=raw.trim()
