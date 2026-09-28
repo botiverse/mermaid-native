@@ -709,6 +709,28 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun xyNamedSeriesWrapBelowTitleWithoutOverlappingAxisTitle() {
+        for (orientation in listOf("vertical", "horizontal")) {
+            val names = listOf("Actual revenue for the first period", "Expected revenue for the next period", "Forecast")
+            val source = "xychart $orientation\ntitle \"Sales by quarter\"\nx-axis \"Quarter\" [Q1,Q2]\ny-axis \"Revenue\" 0 --> 100\n" +
+                names.joinToString("\n") { "bar \"$it\" [20,80]" }
+            val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram,
+                FixedWidthTextMeasurer, LayoutConfig())
+            val texts = scene.commands.filterIsInstance<DrawText>()
+            val title = texts.single { it.text == "Sales by quarter" }
+            val legend = texts.filter { it.text in names }
+            val axisTitle = texts.single { it.text == if (orientation == "horizontal") "Quarter" else "Revenue" }
+            assertTrue(legend.all { it.origin.y - it.style.fontSize > title.origin.y })
+            assertTrue(legend.all { it.origin.y + 8.0 < axisTitle.origin.y })
+            assertTrue(legend.map { it.origin.y }.distinct().size > 1)
+            legend.forEach { assertTrue(it.origin.x + FixedWidthTextMeasurer.measure(it.text, it.style).width <= scene.width) }
+            legend.groupBy { it.origin.y }.values.forEach { row -> row.zipWithNext().forEach { (left, right) ->
+                assertTrue(left.origin.x + FixedWidthTextMeasurer.measure(left.text, left.style).width + 20 <= right.origin.x)
+            } }
+        }
+    }
+
+    @Test
     fun xyBandAxisTruncatesExtraValuesBeforeInferringRangeAndPlacement() {
         fun render(values: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
             "xychart\nx-axis [A,B]\nbar [$values]",

@@ -132,7 +132,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
         is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
         is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
-        is XyChartDiagram -> layoutXyChart(diagram, config)
+        is XyChartDiagram -> layoutXyChart(diagram, textMeasurer, config)
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
@@ -1974,16 +1974,36 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
-    private fun layoutXyChart(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
-        if (diagram.orientation == build.raft.mermaid.core.XyOrientation.HORIZONTAL) return layoutHorizontalXy(diagram, config)
+    private fun xyLegend(diagram: XyChartDiagram, measurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val commands = mutableListOf<DrawCommand>()
+        val style = TextStyle(fontSize = 12.0)
+        val left = config.padding + 52.0
+        var x = left
+        var row = 0
+        var width = 640.0
+        diagram.series.forEachIndexed { index, series ->
+            if (series.title.isEmpty()) return@forEachIndexed
+            val measured = measurer.measure(series.title, style)
+            if (x > left && x + measured.width > 640.0 - config.padding) { row++; x = left }
+            commands += DrawText(series.title, ScenePoint(x, config.padding + 44.0 + row * 24.0),
+                style = style.copy(color = SceneColor(XY_COLORS[index % XY_COLORS.size])))
+            width = maxOf(width, x + measured.width + config.padding)
+            x += measured.width + 24.0
+        }
+        return LayoutScene(width, if (commands.isEmpty()) 0.0 else (row + 1) * 24.0, commands)
+    }
+
+    private fun layoutXyChart(diagram: XyChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.orientation == build.raft.mermaid.core.XyOrientation.HORIZONTAL) return layoutHorizontalXy(diagram, textMeasurer, config)
         val bodyStyle = TextStyle(fontSize = 12.0)
         val tickStyle = TextStyle(fontSize = 11.0)
         val valueStyle = TextStyle(fontSize = 11.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val width = 640.0
-        val height = 400.0
+        val legend = xyLegend(diagram, textMeasurer, config)
+        val width = maxOf(640.0, legend.width)
+        val height = 400.0 + legend.height
         val left = config.padding + 52.0
-        val top = config.padding + 48.0
+        val top = config.padding + 48.0 + legend.height
         val plotWidth = width - left - config.padding
         val plotHeight = height - top - config.padding - 52.0
         val bottom = top + plotHeight
@@ -1995,7 +2015,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             else left + plotWidth * index / maxOf(1, size - 1)).xyCoordinate()
         fun y(value: Double): Double = (bottom - ((value - diagram.yAxis.minimum) / range) * plotHeight).xyCoordinate()
 
-        val commands = mutableListOf<DrawCommand>()
+        val commands = legend.commands.toMutableList()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, config.padding + 18.0), TextAnchor.MIDDLE, titleStyle) }
         commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
         commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
@@ -2028,8 +2048,6 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.series.forEachIndexed { seriesIndex, original ->
             val series = if(categories.isNotEmpty()) original.copy(values = original.values.take(categories.size)) else original
             val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
-            if(series.title.isNotEmpty()) commands += DrawText(series.title,
-                ScenePoint(left + seriesIndex * 130.0, top - 28.0), style = bodyStyle.copy(color = color))
             when (series.kind) {
                 XySeriesKind.BAR -> {
                     series.values.forEachIndexed { index, value ->
@@ -2073,9 +2091,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
-    private fun layoutHorizontalXy(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
-        val width = 640.0; val height = 400.0
-        val left = config.padding + 72.0; val top = config.padding + 48.0
+    private fun layoutHorizontalXy(diagram: XyChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val legend = xyLegend(diagram, textMeasurer, config)
+        val width = maxOf(640.0, legend.width); val height = 400.0 + legend.height
+        val left = config.padding + 72.0; val top = config.padding + 48.0 + legend.height
         val plotWidth = width - left - config.padding - 32.0
         val plotHeight = height - top - config.padding - 52.0; val bottom = top + plotHeight
         val style = TextStyle(fontSize = 12.0)
@@ -2086,7 +2105,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         fun x(value: Double) = (left + (value - diagram.yAxis.minimum) / range * plotWidth).xyCoordinate()
         fun y(index: Int, size: Int = count) = (if(categories.isNotEmpty()) top + step * (index + 0.5)
             else top + plotHeight * index / maxOf(1, size - 1)).xyCoordinate()
-        val commands = mutableListOf<DrawCommand>()
+        val commands = legend.commands.toMutableList()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2, config.padding + 18), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
         commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
         commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
@@ -2114,7 +2133,6 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.series.forEachIndexed { seriesIndex, series ->
             val values = if(categories.isNotEmpty()) series.values.take(categories.size) else series.values
             val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
-            if(series.title.isNotEmpty()) commands += DrawText(series.title, ScenePoint(left + seriesIndex * 130.0, top - 28), style = style.copy(color = color))
             if(series.kind == XySeriesKind.LINE) commands += DrawPolyline(values.mapIndexed { i, value -> ScenePoint(x(value), y(i, values.size)) }, stroke = color, strokeWidth = 2.0)
             values.forEachIndexed { i, value ->
                 val row = y(i, values.size)
