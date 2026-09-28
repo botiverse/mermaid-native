@@ -1646,6 +1646,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene {
+        fun scoreLabel(task: build.raft.mermaid.core.UserJourneyTask): String {
+            val actors = task.actors.filter { it.isNotEmpty() }.joinToString(", ")
+            return "Score ${task.score}" + if (actors.isEmpty()) "" else " · $actors"
+        }
         val body = TextStyle(fontSize = 12.0)
         val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
@@ -1655,7 +1659,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             (diagram.sections.flatMap { it.tasks }.maxOfOrNull { task ->
                 max(
                     textMeasurer.measure(task.label.trim(), body).width,
-                    textMeasurer.measure("Score ${task.score} · ${task.actors.filter { it.isNotEmpty() }.joinToString(", ")}", body).width,
+                    textMeasurer.measure(scoreLabel(task), body).width,
                 ) + 20.0
             } ?: 0.0),
         )
@@ -1698,7 +1702,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
                 commands += DrawText(task.label.trim(), ScenePoint(x + 10.0, y + 22.0), style = body)
                 commands += DrawText(
-                    "Score ${task.score} · ${task.actors.filter { it.isNotEmpty() }.joinToString(", ")}",
+                    scoreLabel(task),
                     ScenePoint(x + 10.0, y + 42.0),
                     style = body,
                 )

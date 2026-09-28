@@ -1128,6 +1128,7 @@ class SimpleMermaidLayoutTest {
         val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse("journey\nsection Work\nA: 5\nB: 3:\nC: -2" )).diagram
         val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(15, scene.commands.filterIsInstance<DrawEllipse>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().none { "·" in it.text })
         assertEquals(listOf("#bbf7d0", "#fef3c7", "#fee2e2"), scene.commands.filterIsInstance<DrawRect>().drop(1).map { it.fill.value })
     }
 
