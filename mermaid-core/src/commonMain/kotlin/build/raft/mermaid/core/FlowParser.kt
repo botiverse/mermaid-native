@@ -3,6 +3,9 @@ package build.raft.mermaid.core
 /** Flow tokens retain quoted labels instead of splitting arrows inside node text. */
 internal class FlowParser(private val source:String) {
     private val nodes=linkedMapOf<String,FlowNode>()
+    private val definitions=linkedMapOf<String,List<String>>()
+    private val interactions=mutableListOf<FlowInteraction>()
+    private var defaultEdgeStyles=emptyList<String>()
     private val edges=mutableListOf<FlowEdge>()
     private val groups=mutableListOf<FlowSubgraph>()
     private data class Group(val id:String,val label:String,val labelType:String="text",val members:MutableList<String> = mutableListOf(),var direction:FlowDirection?=null)
@@ -39,15 +42,45 @@ internal class FlowParser(private val source:String) {
                 text.startsWith("accTitle:") -> accTitle=text.substringAfter(':').trim()
                 text.startsWith("accDescr:") -> accDescription=text.substringAfter(':').trim()
                 text.startsWith("accDescr") && text.contains('{') -> {requireFlow(text.endsWith('}'),"Unclosed accessibility description");accDescription=text.substringAfter('{').dropLast(1).trim()}
-                text.startsWith("style ") || text.startsWith("class ") || text.startsWith("classDef ") || text.startsWith("click ") || text.startsWith("linkStyle ") -> fail("Unsupported flowchart style or interaction")
+                text.startsWith("classDef ") -> styleDefinition(text.drop(9).trim())
+                text.startsWith("style ") -> nodeStyle(text.drop(6).trim())
+                text.startsWith("class ") -> cssClass(text.drop(6).trim())
+                text.startsWith("click ") -> interaction(text.drop(6).trim())
+                text.startsWith("linkStyle ") -> edgeStyle(text.drop(10).trim())
                 else -> Chain(text).parse()
             }
         }
         requireFlow(stack.isEmpty(),"Unclosed subgraph")
-        MermaidParseResult.Success(FlowchartDiagram(direction,nodes.values.toList(),edges.toList(),groups.toList(),accTitle,accDescription))
+        MermaidParseResult.Success(FlowchartDiagram(direction,nodes.values.toList(),edges.toList(),groups.toList(),accTitle,accDescription,definitions.toMap(),interactions.toList(),defaultEdgeStyles))
     } catch(e:FlowSyntaxError) {
         val prefix=source.take(offset)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(if(parsingHeader)MermaidDiagnosticCode.INVALID_HEADER else MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message?:"Unsupported flowchart syntax",SourceLocation(prefix.count { it=='\n' }+1,offset-prefix.lastIndexOf('\n')))))
+    }
+    private fun styles(text:String):List<String> {
+        val values=mutableListOf<String>();var start=0;var level=0
+        text.forEachIndexed { i,c->if(c=='(')level++ else if(c==')')level--;if(c==',' && level==0){values+=text.substring(start,i).trim();start=i+1} }
+        values+=text.drop(start).trim();requireFlow(level==0,"Unbalanced style value")
+        values.forEach { val key=it.substringBefore(':').trim();requireFlow(it.contains(':') && it.substringAfter(':').isNotBlank() && key in setOf("background","border","fill","stroke","color","stroke-width","font-size","font-weight","font-style","stroke-dasharray"),"Unsupported flowchart style property") }
+        return values
+    }
+    private fun styleDefinition(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { requireFlow(it.isNotBlank(),"Expected style name");definitions[it]=definitions[it].orEmpty()+values }}
+    private fun nodeStyle(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { id->val old=nodes[id] ?: FlowNode(id,id,createdByStyle=true);nodes[id]=old.copy(styles=old.styles+values) }}
+    private fun cssClass(text:String){val names=text.takeWhile { !it.isWhitespace() };val css=text.drop(names.length).trim();requireFlow(css.isNotBlank(),"Expected CSS class");names.split(',').forEach { id->nodes[id]?.let { nodes[id]=it.copy(classes=it.classes+css) } }}
+    private fun edgeStyle(text:String){val targets=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(targets.length).trim());targets.split(',').forEach { value->if(value=="default")defaultEdgeStyles=defaultEdgeStyles+values else {val index=value.toIntOrNull()?:fail("Expected edge index");requireFlow(index in edges.indices,"Link style index out of bounds");edges[index]=edges[index].copy(styles=edges[index].styles+values)} }}
+    private fun interaction(text:String){
+        val id=text.takeWhile { !it.isWhitespace() };var rest=text.drop(id.length).trim();requireFlow(id.isNotBlank() && rest.isNotEmpty(),"Expected click target")
+        val callback=!(rest.startsWith('"') || rest.startsWith("href "));if(rest.startsWith("href "))rest=rest.drop(5).trim()
+        var arguments:String?=null;val value:String
+        fun quoted():String {requireFlow(rest.startsWith('"'),"Expected quoted value");val end=rest.indexOf('"',1);requireFlow(end>0,"Unclosed quoted value");val result=rest.substring(1,end);rest=rest.drop(end+1).trim();return result}
+        if(!callback)value=quoted()
+        else if(rest.startsWith("call ")) {
+            rest=rest.drop(5).trim();val open=rest.indexOf('(');requireFlow(open>0,"Expected callback arguments");value=rest.take(open).trim();var end=open+1;var quote=false
+            while(end<rest.length){if(rest[end]=='"')quote=!quote;if(rest[end]==')' && !quote)break;end++};requireFlow(end<rest.length,"Unclosed callback arguments")
+            arguments=rest.substring(open+1,end).takeIf { it.isNotBlank() };rest=rest.drop(end+1).trim()
+        }else {value=rest.takeWhile { !it.isWhitespace() };rest=rest.drop(value.length).trim()}
+        val tooltip=if(rest.startsWith('"'))quoted()else null
+        requireFlow(rest.isEmpty() || (!callback && rest in setOf("_self","_blank","_parent","_top")),"Unsupported click suffix")
+        interactions+=FlowInteraction(id,value,callback,arguments,tooltip,rest.takeIf { it.isNotEmpty() })
     }
     private fun parseDirection(value:String)=when(value){">"->FlowDirection.LR;"<"->FlowDirection.RL;"^"->FlowDirection.BT;"v"->FlowDirection.TB;else->FlowDirection.entries.firstOrNull { it.name==value.uppercase() }?:fail("Invalid flowchart direction")}
     private fun statements():List<Pair<Int,String>> {
@@ -62,7 +95,7 @@ internal class FlowParser(private val source:String) {
                 if(closes.isEmpty() && (c=='\n' || c==';')){emit(at);start=at+1}
             };at++
         }
-        requireFlow(!quote && closes.isEmpty(),"Unclosed flowchart label");emit(source.length);return out
+        if(quote || closes.isNotEmpty()){val leading=source.drop(start).indexOfFirst { !it.isWhitespace() };offset=start+maxOf(0,leading);parsingHeader=out.isEmpty();fail("Unclosed flowchart label")};emit(source.length);return out
     }
     private fun unquote(raw:String):Pair<String,String> {
         val text=raw.trim()
@@ -104,8 +137,12 @@ internal class FlowParser(private val source:String) {
                 val label=unquote(raw)
                 if(label.second=="text") {requireFlow('(' !in raw,"Unexpected token: got 'PS'");requireFlow(')' !in raw,"Unexpected token: got 'PE'")}
                 at+=shape.second.length
-                nodes[id]=FlowNode(id,label.first,shape.third,label.second,borders)
+                nodes[id]=(nodes[id] ?: FlowNode(id,id)).copy(label=label.first,shape=shape.third,labelType=label.second,borders=borders)
             } else if(id !in nodes)nodes[id]=FlowNode(id,id)
+            while(text.startsWith(":::",at)) {
+                at+=3;val begin=at;while(at<text.length && !text[at].isWhitespace() && !(arrowStart(at) && text[at] !in "ox") && text[at]!='&')at++
+                requireFlow(at>begin,"Expected CSS class name");val node=nodes.getValue(id);nodes[id]=node.copy(classes=node.classes+text.substring(begin,at))
+            }
             return id
         }
         fun arrowStart(index:Int):Boolean = text.startsWith("--",index)||text.startsWith("==",index)||text.startsWith("-.",index)||text.startsWith("~~~",index)||((text.getOrNull(index) in listOf('<','o','x')) && (text.startsWith("--",index+1)||text.startsWith("==",index+1)||text.startsWith("-.",index+1)))

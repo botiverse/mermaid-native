@@ -18,6 +18,9 @@ public data class FlowchartDiagram(
     val subgraphs: List<FlowSubgraph> = emptyList(),
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val classDefinitions: Map<String,List<String>> = emptyMap(),
+    val interactions: List<FlowInteraction> = emptyList(),
+    val defaultEdgeStyles: List<String> = emptyList(),
 ) : MermaidDiagram
 
 public data class FlowNode(
@@ -26,6 +29,9 @@ public data class FlowNode(
     val shape: FlowNodeShape = FlowNodeShape.RECTANGLE,
     val labelType: String = "text",
     val borders: String? = null,
+    val styles: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
+    val createdByStyle: Boolean = false,
 )
 
 public data class FlowSubgraph(
@@ -36,6 +42,8 @@ public data class FlowSubgraph(
     val parentId: String? = null,
     val labelType: String = "text",
 )
+
+public data class FlowInteraction(val nodeId:String,val value:String,val callback:Boolean=false,val arguments:String?=null,val tooltip:String?=null,val target:String?=null)
 
 public enum class FlowMarker { NONE, POINT, CROSS, CIRCLE }
 
@@ -56,6 +64,7 @@ public data class FlowEdge(
     val length: Int = 1,
     val id: String? = null,
     val labelType: String = "text",
+    val styles: List<String> = emptyList(),
 )
 
 public enum class FlowNodeShape {
