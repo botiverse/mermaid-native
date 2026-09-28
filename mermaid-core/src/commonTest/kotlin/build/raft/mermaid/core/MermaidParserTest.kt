@@ -505,7 +505,7 @@ class MermaidParserTest {
         assertEquals(listOf(CynefinTransition(CynefinDomain.COMPLEX, CynefinDomain.CLEAR, "Move")), diagram.transitions)
         val empty = assertIs<CynefinDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("cynefin-beta")).diagram)
         assertTrue(empty.domains.isEmpty())
-        assertNull(empty.accTitle)
+        assertEquals(null, empty.accTitle)
     }
 
     @Test
