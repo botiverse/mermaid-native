@@ -662,6 +662,14 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun xyBandAxisTruncatesExtraValuesBeforeInferringRangeAndPlacement() {
+        fun render(values: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart\nx-axis [A,B]\nbar [$values]",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(render("10,20"), render("10,20,999"))
+    }
+
+    @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
             title = "Sales",

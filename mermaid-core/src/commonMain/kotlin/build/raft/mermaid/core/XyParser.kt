@@ -64,7 +64,11 @@ internal class XyParser(private val source: String) {
                         } else {
                             val range = Regex("^(.*?)($number)\\s*-->\\s*($number)$").matchEntire(body)
                             val name = if(range != null) range.groupValues[1].takeIf { it.isNotBlank() }?.let(::text) ?: Text("") else text(body)
-                            val numeric = range?.let { NumericAxis(name.value, it.groupValues[2].toDouble(), it.groupValues[3].toDouble(), titleType = name.type) }
+                            val numeric = range?.let {
+                                val low = it.groupValues[2].toDouble(); val high = it.groupValues[3].toDouble()
+                                require(low.isFinite() && high.isFinite() && (high - low).isFinite()) { "Axis range must be finite" }
+                                NumericAxis(name.value, low, high, titleType = name.type)
+                            }
                             if(key == "x-axis") x = XyAxis(name.value, range = numeric, titleType = name.type)
                             else y = numeric ?: y.copy(title = name.value, titleType = name.type)
                         }
@@ -85,7 +89,7 @@ internal class XyParser(private val source: String) {
                 }
             }
             if(!y.explicitRange) {
-                val values = series.flatMap { it.values }
+                val values = series.flatMap { if(x.categories.isNotEmpty()) it.values.take(x.categories.size) else it.values }
                 val low = values.minOrNull() ?: 0.0; val high = values.maxOrNull() ?: 1.0
                 y = y.copy(minimum = low, maximum = if(low == high) high + 1.0 else high)
             }
