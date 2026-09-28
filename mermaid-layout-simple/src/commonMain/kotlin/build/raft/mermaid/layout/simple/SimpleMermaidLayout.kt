@@ -477,10 +477,11 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         diagram.flowchart?.let { flow ->
             val simpleShapes=setOf(FlowNodeShape.RECTANGLE,FlowNodeShape.ROUNDED,FlowNodeShape.STADIUM,FlowNodeShape.CIRCLE,FlowNodeShape.DIAMOND)
+            val groupIds = flow.subgraphs.map { it.id }.toSet()
             val needsRichLayout=flow.subgraphs.any { it.parentId!=null || it.collapsed || it.direction!=null } ||
                 flow.nodes.any { it.shape !in simpleShapes || it.styles.isNotEmpty() || it.classes.isNotEmpty() || it.borders!=null } ||
                 flow.classDefinitions.isNotEmpty() || flow.defaultEdgeStyles.isNotEmpty() ||
-                flow.edges.any { it.style!=FlowEdgeStyle.NORMAL || it.fromMarker!=build.raft.mermaid.core.FlowMarker.NONE || it.toMarker!=build.raft.mermaid.core.FlowMarker.POINT || it.styles.isNotEmpty() }
+                flow.edges.any { it.sourceId in groupIds || it.targetId in groupIds || it.length > 1 || it.style!=FlowEdgeStyle.NORMAL || it.fromMarker!=build.raft.mermaid.core.FlowMarker.NONE || it.toMarker!=build.raft.mermaid.core.FlowMarker.POINT || it.styles.isNotEmpty() }
             if(needsRichLayout)return layoutFlowchart(visibleFlow(flow),textMeasurer,config)
         }
         val laneStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
@@ -548,6 +549,21 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.edges.forEach { edge ->
             val fromCenter = nodePoints.getValue(edge.sourceId)
             val toCenter = nodePoints.getValue(edge.targetId)
+            if (edge.sourceId == edge.targetId) {
+                val shape = nodeById.getValue(edge.sourceId).shape
+                val upper = ScenePoint(fromCenter.x + nodeWidth, fromCenter.y - nodeHeight / 2)
+                val lower = ScenePoint(fromCenter.x + nodeWidth, fromCenter.y + nodeHeight / 2)
+                val from = swimlaneBoundaryPoint(fromCenter, upper, shape, nodeWidth, nodeHeight)
+                val to = swimlaneBoundaryPoint(fromCenter, lower, shape, nodeWidth, nodeHeight)
+                val right = fromCenter.x + nodeWidth / 2 + 16.0
+                val points = listOf(from, ScenePoint(right, from.y), ScenePoint(right, to.y), to)
+                commands += DrawPolyline(points, stroke = SceneColor("#666666"), strokeWidth = 1.0)
+                commands += arrowHead(points[points.lastIndex - 1], to, fill = SceneColor("#333333"))
+                edge.label?.let { label ->
+                    commands += DrawText(label, ScenePoint(fromCenter.x, fromCenter.y - nodeHeight / 2 - 8), TextAnchor.MIDDLE, edgeStyle)
+                }
+                return@forEach
+            }
             val from = swimlaneBoundaryPoint(fromCenter, toCenter, nodeById.getValue(edge.sourceId).shape, nodeWidth, nodeHeight)
             val to = swimlaneBoundaryPoint(toCenter, fromCenter, nodeById.getValue(edge.targetId).shape, nodeWidth, nodeHeight)
             commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#666666"), strokeWidth = 1.0)
