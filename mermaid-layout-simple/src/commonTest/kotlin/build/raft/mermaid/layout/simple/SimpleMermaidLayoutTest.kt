@@ -141,6 +141,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun mindmapBlankIconHasNoHeightOrTextSideEffects() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)"))
+        val normal = assertIs<MindmapDiagram>(parsed.diagram)
+        val blank = normal.copy(nodes = normal.nodes.map { it.copy(icon = "") })
+        assertEquals(SimpleMermaidLayout.layout(normal, FixedWidthTextMeasurer, LayoutConfig()), SimpleMermaidLayout.layout(blank, FixedWidthTextMeasurer, LayoutConfig()))
+        val emptyDecoration = assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon()"))
+        assertEquals(SimpleMermaidLayout.layout(normal, FixedWidthTextMeasurer, LayoutConfig()), SimpleMermaidLayout.layout(emptyDecoration.diagram, FixedWidthTextMeasurer, LayoutConfig()))
+    }
+
     @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
         val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())

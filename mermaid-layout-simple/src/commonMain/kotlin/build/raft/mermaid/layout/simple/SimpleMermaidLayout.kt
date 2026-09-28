@@ -2080,7 +2080,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val children = diagram.nodes.groupBy { it.parentId }
         val sizes = diagram.nodes.associate { node ->
             val text = textMeasurer.measure(node.label, style)
-            val iconWidth = node.icon?.let { textMeasurer.measure(it, TextStyle(fontSize = 10.0)).width } ?: 0.0
+            val iconWidth = node.icon?.takeIf { it.isNotBlank() }?.let { textMeasurer.measure(it, TextStyle(fontSize = 10.0)).width } ?: 0.0
             val horizontalPadding = when (node.shape) { MindmapNodeShape.CLOUD, MindmapNodeShape.BANG, MindmapNodeShape.HEXAGON -> 64.0; MindmapNodeShape.DOUBLE_CIRCLE -> 44.0; else -> 32.0 }
             val contentWidth = max(text.width, iconWidth)
             val width = max(92.0, when (node.shape) {
@@ -2088,7 +2088,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 MindmapNodeShape.CLOUD -> (contentWidth + 32.0) / 0.88
                 else -> contentWidth + horizontalPadding
             })
-            val height = max(42.0, text.height + 20.0) + if (node.icon == null) 0.0 else 18.0
+            val height = max(42.0, text.height + 20.0) + if (node.icon.isNullOrBlank()) 0.0 else 18.0
             val side = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) max(width, height) else 0.0
             node.id to SceneSize(
                 if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) side else width,
@@ -2172,11 +2172,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             commands += DrawText(
                 node.label,
-                ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + style.fontSize * 0.35 - if (node.icon == null) 0.0 else 9.0),
+                ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + style.fontSize * 0.35 - if (node.icon.isNullOrBlank()) 0.0 else 9.0),
                 TextAnchor.MIDDLE,
                 style,
             )
-            node.icon?.let { icon -> commands += DrawText(icon, ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))) }
+            node.icon?.takeIf { it.isNotBlank() }?.let { icon -> commands += DrawText(icon, ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))) }
         }
         val width = rects.values.maxOf { it.x + it.width } + config.padding
         val height = maxOf(
