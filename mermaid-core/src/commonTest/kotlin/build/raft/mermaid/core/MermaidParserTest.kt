@@ -709,7 +709,7 @@ class MermaidParserTest {
     @Test
     fun unsupportedStateSyntaxFailsWithoutPartialSuccess() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("stateDiagram-v2\nA --> B\nconcurrent regions not supported"),
+            MermaidParser.parse("stateDiagram-v2\nA --> B\nstate \"unclosed"),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
