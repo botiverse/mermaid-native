@@ -1720,11 +1720,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             fun number(key: String, fallback: Double): Double = properties[key]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(100.0) ?: fallback
             fun color(key: String, fallback: String): SceneColor = SceneColor(properties[key]?.takeIf {
-                it.matches(Regex("#[0-9a-fA-F]{3,8}|[a-zA-Z]+"))
-            } ?: fallback)
+                it.matches(Regex("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"))
+            }?.let { if (it.startsWith('#')) it else "#$it" } ?: fallback)
             val radius = number("radius", 5.0)
             val vertices = listOf(ScenePoint(x, y - radius), ScenePoint(x + radius, y), ScenePoint(x, y + radius), ScenePoint(x - radius, y))
-            commands += DrawPolygon(vertices, fill = color("color", properties["fill"]?.takeIf { it.matches(Regex("#[0-9a-fA-F]{3,8}|[a-zA-Z]+")) } ?: "#2563eb"))
+            commands += DrawPolygon(vertices, fill = color("color", "#2563eb"))
             if ("stroke-color" in properties || "stroke-width" in properties) {
                 commands += DrawPolyline(vertices + vertices.first(), stroke = color("stroke-color", "#334155"), strokeWidth = number("stroke-width", 1.0))
             }
