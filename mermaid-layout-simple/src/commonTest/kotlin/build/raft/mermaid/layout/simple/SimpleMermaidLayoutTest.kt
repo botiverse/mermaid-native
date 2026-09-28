@@ -141,6 +141,18 @@ import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
     @Test
+    fun emptyPacketAndRelativeMultirowFieldsUseActualPacketRenderer() {
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("packet")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.width.isFinite() && empty.height.isFinite())
+        assertTrue(empty.commands.isEmpty())
+        val source = "packet\naccTitle: Frame\n+8: \"Header\"\n+64: \"Payload\""
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Frame", scene.accessibilityTitle)
+        assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
+        assertEquals(3, scene.commands.filterIsInstance<DrawText>().count { it.text == "Payload" })
+    }
+
+    @Test
     fun railroadProducesDeterministicMeasuredTracks() {
         val long = "step-".repeat(20)
         val diagram = RailroadDiagram(

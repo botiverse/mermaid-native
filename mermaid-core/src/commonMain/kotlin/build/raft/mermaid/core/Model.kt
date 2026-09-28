@@ -546,7 +546,12 @@ public data class KanbanColumn(val id: String, val title: String, val cards: Lis
 public data class KanbanCard(val id: String, val label: String)
 
 /** Minimal platform-neutral model for the Mermaid packet family. */
-public data class PacketDiagram(val title: String?, val fields: List<PacketField>) : MermaidDiagram
+public data class PacketDiagram(
+    val title: String?,
+    val fields: List<PacketField>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+) : MermaidDiagram
 public data class PacketField(val startBit: Int, val endBit: Int, val label: String)
 
 /** Minimal platform-neutral model for the Mermaid block diagram family. */

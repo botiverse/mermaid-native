@@ -1483,7 +1483,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val labelStyle = TextStyle(fontSize = 11.0)
         val bitIndexStyle = TextStyle(fontSize = 9.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val bitWidth = max(24.0, diagram.fields.maxOf { field ->
+        val bitWidth = max(24.0, diagram.fields.maxOfOrNull { field ->
             val firstRow = field.startBit / PACKET_BITS_PER_ROW
             val lastRow = field.endBit / PACKET_BITS_PER_ROW
             val narrowestSegmentBits = (firstRow..lastRow).minOf { row ->
@@ -1493,12 +1493,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 segmentEnd - segmentStart + 1
             }
             (textMeasurer.measure(field.label, labelStyle).width + 20.0) / narrowestSegmentBits
-        })
+        } ?: 0.0)
         val titleHeight = if (diagram.title == null) 0.0 else 34.0
         val indexBand = 14.0
         val blockHeight = 38.0
         val rowHeight = indexBand + blockHeight + 8.0
-        val rowCount = diagram.fields.maxOf { it.endBit } / PACKET_BITS_PER_ROW + 1
+        val rowCount = diagram.fields.maxOfOrNull { it.endBit }?.let { it / PACKET_BITS_PER_ROW + 1 } ?: 0
         val gridWidth = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
         val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
         val width = max(gridWidth, titleWidth)
@@ -1523,7 +1523,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + indexBand + 23.0), TextAnchor.MIDDLE, labelStyle)
             }
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

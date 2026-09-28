@@ -31,7 +31,7 @@ public object MermaidParser {
             header.text.startsWith("gitGraph") -> GitGraphParser(source).parse()
             header.text.equals("requirementDiagram", ignoreCase = true) -> RequirementParser(source).parse()
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
-            header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> parsePacket(statements)
+            header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> PacketParser(source).parse()
             header.text.equals("block", ignoreCase = true) || header.text.equals("block-beta", ignoreCase = true) -> parseBlock(statements)
             header.text.equals("sankey", ignoreCase = true) || header.text.equals("sankey-beta", ignoreCase = true) -> parseSankey(source)
             header.text.equals("treemap-beta", ignoreCase = true) -> parseTreemap(source)
@@ -454,42 +454,6 @@ public object MermaidParser {
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(MindmapDiagram(nodes.toList()))
         } else MermaidParseResult.Failure(diagnostics)
-    }
-
-    private fun parsePacket(statements: List<SourceStatement>): MermaidParseResult {
-        var title: String? = null
-        val fields = mutableListOf<PacketField>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var previousEnd = -1
-        statements.drop(1).forEach { statement ->
-            PACKET_TITLE.matchEntire(statement.text)?.let {
-                val value = it.groupValues[1].trim()
-                if (value.isEmpty() || title != null) diagnostics += unsupported(statement, "Packet requires at most one non-empty title")
-                else title = value
-                return@forEach
-            }
-            val match = PACKET_FIELD.matchEntire(statement.text)
-            if (match == null) {
-                diagnostics += unsupported(statement, "Unsupported packet field syntax")
-                return@forEach
-            }
-            val start = match.groupValues[1].toIntOrNull()
-            val end = match.groupValues[2].ifEmpty { match.groupValues[1] }.toIntOrNull()
-            val label = match.groupValues[3]
-            if (start == null || end == null || start > end || end > PACKET_MAX_BIT || start <= previousEnd || label.isBlank()) {
-                diagnostics += MermaidDiagnostic(
-                    MermaidDiagnosticCode.INVALID_VALUE,
-                    "Packet bit ranges must be finite, ascending, non-overlapping, and labelled",
-                    statement.location,
-                )
-            } else {
-                fields += PacketField(start, end, label)
-                previousEnd = end
-            }
-        }
-        if (fields.isEmpty() && diagnostics.isEmpty()) diagnostics += unsupported(statements.first(), "packet requires at least one field")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(PacketDiagram(title, fields))
-        else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseKanban(source: String): MermaidParseResult {
@@ -1663,11 +1627,8 @@ private val MINDMAP_DOUBLE_CIRCLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\(\\(([^()
 private val MINDMAP_RECTANGLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\[([^]\\r\\n]+)]$")
 private val MINDMAP_ANONYMOUS_DOUBLE_CIRCLE = Regex("^\\(\\(([^()\\r\\n]+)\\)\\)$")
 private val MINDMAP_ANONYMOUS_RECTANGLE = Regex("^\\[([^]\\r\\n]+)]$")
-private val PACKET_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
-private val PACKET_FIELD = Regex("^(\\d+)(?:-(\\d+))?\\s*:\\s*\"([^\"\\r\\n]+)\"$")
 private val EVENT_MODELING_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
 private val EVENT_MODELING_FRAME = Regex("^(tf|timeframe|rf|resetframe)\\s+(\\d{1,3})\\s+(ui|cmd|command|evt|event|pcr|processor|rmo|readmodel)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s+->>\\s+(\\d{1,3}(?:\\s+->>\\s+\\d{1,3})*))?$", RegexOption.IGNORE_CASE)
-private const val PACKET_MAX_BIT: Int = 4095
 
 private fun String.toMindmapLines(): List<MindmapSourceLine> = buildList {
     lineSequence().forEachIndexed { index, rawLine ->
