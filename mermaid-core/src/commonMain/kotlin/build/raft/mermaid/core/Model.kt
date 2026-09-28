@@ -428,6 +428,8 @@ public data class QuadrantPoint(val label: String, val x: Double, val y: Double)
 public data class UserJourneyDiagram(
     val title: String?,
     val sections: List<UserJourneySection>,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 
 public data class UserJourneySection(

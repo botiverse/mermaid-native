@@ -1646,22 +1646,27 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene {
+        fun scoreLabel(task: build.raft.mermaid.core.UserJourneyTask): String {
+            val actors = task.actors.filter { it.isNotEmpty() }.joinToString(", ")
+            return "Score ${task.score}" + if (actors.isEmpty()) "" else " · $actors"
+        }
         val body = TextStyle(fontSize = 12.0)
         val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val sectionWidth = max(120.0, diagram.sections.maxOf { textMeasurer.measure(it.name, sectionStyle).width } + 24.0)
+        val namedSections = diagram.sections.filter { it.name.isNotBlank() }
+        val sectionWidth = if (namedSections.isEmpty()) 0.0 else max(120.0, namedSections.maxOf { textMeasurer.measure(it.name, sectionStyle).width } + 24.0)
         val taskWidth = max(
             132.0,
-            diagram.sections.flatMap { it.tasks }.maxOf { task ->
+            (diagram.sections.flatMap { it.tasks }.maxOfOrNull { task ->
                 max(
-                    textMeasurer.measure(task.label, body).width,
-                    textMeasurer.measure("Score ${task.score} · ${task.actors.joinToString(", ")}", body).width,
+                    textMeasurer.measure(task.label.trim(), body).width,
+                    textMeasurer.measure(scoreLabel(task), body).width,
                 ) + 20.0
-            },
+            } ?: 0.0),
         )
         val taskGap = 14.0
-        val maxTasks = diagram.sections.maxOf { it.tasks.size }
-        val actors = diagram.sections.flatMap { it.tasks }.flatMap { it.actors }.distinct()
+        val maxTasks = diagram.sections.maxOfOrNull { it.tasks.size } ?: 0
+        val actors = diagram.sections.flatMap { it.tasks }.flatMap { it.actors }.filter { it.isNotEmpty() }.distinct()
         val contentWidth = config.padding * 2 + sectionWidth + maxTasks * taskWidth + max(0, maxTasks - 1) * taskGap
         val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
         val legendWidth = if (actors.isEmpty()) 0.0 else actors.sumOf { 28.0 + textMeasurer.measure(it, body).width + 16.0 }
@@ -1678,27 +1683,29 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.sections.forEachIndexed { sectionIndex, section ->
             val y = config.padding + titleHeight + sectionIndex * rowHeight
-            commands += DrawRect(
-                SceneRect(config.padding, y, sectionWidth - 12.0, cardHeight),
-                cornerRadius = 8.0,
-                fill = SceneColor("#e2e8f0"),
-            )
-            commands += DrawText(
-                section.name,
-                ScenePoint(config.padding + 12.0, y + 38.0),
-                style = sectionStyle,
-            )
+            if (section.name.isNotBlank()) {
+                commands += DrawRect(
+                    SceneRect(config.padding, y, sectionWidth - 12.0, cardHeight),
+                    cornerRadius = 8.0,
+                    fill = SceneColor("#e2e8f0"),
+                )
+                commands += DrawText(
+                    section.name,
+                    ScenePoint(config.padding + 12.0, y + 38.0),
+                    style = sectionStyle,
+                )
+            }
             section.tasks.forEachIndexed { taskIndex, task ->
                 val x = config.padding + sectionWidth + taskIndex * (taskWidth + taskGap)
-                val fill = JOURNEY_SCORE_COLORS[task.score]
+                val fill = JOURNEY_SCORE_COLORS[task.score.coerceIn(0, JOURNEY_SCORE_COLORS.lastIndex)]
                 commands += DrawRect(
                     SceneRect(x, y, taskWidth, cardHeight),
                     cornerRadius = 8.0,
                     fill = SceneColor(fill),
                 )
-                commands += DrawText(task.label, ScenePoint(x + 10.0, y + 22.0), style = body)
+                commands += DrawText(task.label.trim(), ScenePoint(x + 10.0, y + 22.0), style = body)
                 commands += DrawText(
-                    "Score ${task.score} · ${task.actors.joinToString(", ")}",
+                    scoreLabel(task),
                     ScenePoint(x + 10.0, y + 42.0),
                     style = body,
                 )
@@ -1712,7 +1719,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         strokeWidth = 1.0,
                     )
                 }
-                task.actors.forEachIndexed { actorIndex, actor ->
+                task.actors.filter { it.isNotEmpty() }.forEachIndexed { actorIndex, actor ->
                     val color = JOURNEY_ACTOR_COLORS[actors.indexOf(actor) % JOURNEY_ACTOR_COLORS.size]
                     commands += DrawEllipse(
                         ScenePoint(x + taskWidth - 14.0 - actorIndex * 12.0, y + 16.0),
@@ -1742,7 +1749,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 legendX += 28.0 + textMeasurer.measure(actor, body).width + 16.0
             }
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private data class TimelineEntry(val event: TimelineEvent?, val section: String?, val startsSection: Boolean)

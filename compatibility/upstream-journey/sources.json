@@ -1,0 +1,7 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/user-journey/parser/journey.spec.js": "a1dfe61217a27f6738bd71fea09e7c9d66e2f09646d5c562e9087af3d7099e4f",
+    "packages/mermaid/src/diagrams/user-journey/parser/journey.jison": "2230b9f958f7c2f2381149b0e484cd203ff919cf43abd065beba7ab6b5a660a5"
+  }
+}

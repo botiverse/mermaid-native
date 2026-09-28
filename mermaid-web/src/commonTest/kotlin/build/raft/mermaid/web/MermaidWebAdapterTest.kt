@@ -98,9 +98,14 @@ class MermaidWebAdapterTest {
     }
 
     @Test
-    fun userJourneyTaskWithoutSectionFailsClosedWithTypedDiagnostic() {
+    fun userJourneyTaskWithoutSectionRendersAndInvalidScoreFailsClosed() {
         val source = "journey\n  title Checkout\n  Open cart: 5: User"
-        val result = assertIs<MermaidWebResult.Failure>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+        val rendered = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source)))
+        assertContains(rendered.svg, "Checkout")
+        assertContains(rendered.svg, "Open cart")
+        val result = assertIs<MermaidWebResult.Failure>(
+            MermaidWebAdapter.render(MermaidWebRequest(source.replace("5: User", "invalid: User"))),
+        )
 
         assertTrue(result.diagnostics.isNotEmpty())
         assertTrue(result.diagnostics.all { it.code == MermaidDiagnosticCode.UNSUPPORTED_SYNTAX })
