@@ -2320,6 +2320,9 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutGantt(diagram: GanttDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.sections.any { section -> section.tasks.any { it.startEpochMillis % 86_400_000L != 0L || it.durationMillis % 86_400_000L != 0L || it.renderDurationMillis % 86_400_000L != 0L } }) {
+            return layoutPreciseGantt(diagram, textMeasurer, config, ::isoDayToYmd)
+        }
         val body = TextStyle(fontSize = 12.0)
         val tickStyle = TextStyle(fontSize = 10.0)
         val tasks = diagram.sections.flatMap { section -> section.tasks.map { section.name to it } }
