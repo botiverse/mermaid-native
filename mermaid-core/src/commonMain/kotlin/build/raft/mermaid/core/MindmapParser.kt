@@ -20,7 +20,8 @@ internal class MindmapParser(private val source: String) {
             }
             if (text.startsWith("::icon(") && text.endsWith(')')) {
                 if (nodes.isEmpty()) return fail("Mindmap decoration requires a node", line)
-                nodes[nodes.lastIndex] = nodes.last().copy(icon = text.substring(7, text.length - 1))
+                val icon = text.substring(7, text.length - 1)
+                if (icon.isNotBlank()) nodes[nodes.lastIndex] = nodes.last().copy(icon = icon)
                 return@forEachIndexed
             }
             if (text.startsWith(":::")) {
