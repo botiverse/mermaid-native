@@ -24,6 +24,9 @@ internal class TreeViewParser(private val source: String) {
             }
             if (text.isEmpty() || text.startsWith("%%")) return@forEachIndexed
             if (!header) { if (text != "treeView-beta") return fail("Expected treeView-beta", index + 1); header = true; return@forEachIndexed }
+            if (nodes.isNotEmpty() && Regex("^(?:title(?:\\s|$)|accTitle\\s*:|accDescr\\s*[:{])").containsMatchIn(text)) {
+                return fail("TreeView metadata must appear before nodes", index + 1)
+            }
             when {
                 Regex("^title(?:\\s|$)").containsMatchIn(text) -> { title = text.removePrefix("title").substringBefore("%%").trim(); return@forEachIndexed }
                 Regex("^accTitle\\s*:").containsMatchIn(text) -> { accTitle = text.substringAfter(':').substringBefore("%%").trim(); return@forEachIndexed }
