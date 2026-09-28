@@ -704,6 +704,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutC4(diagram: C4Diagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.boundaries.isNotEmpty()) return layoutC4Boundaries(diagram, textMeasurer, config)
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 10.0)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
@@ -711,12 +712,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         val contentWidth = diagram.elements.maxOf { element ->
             max(
                 max(textMeasurer.measure(element.label, style).width, element.description?.let { description -> textMeasurer.measure(description, bodyStyle).width } ?: 0.0),
-                textMeasurer.measure(c4Stereotype(element), stereotypeStyle).width,
+                max(textMeasurer.measure(c4Stereotype(element), stereotypeStyle).width, element.technology?.let { textMeasurer.measure("[$it]", stereotypeStyle).width } ?: 0.0),
             )
         }
         val cardWidth = max(180.0, contentWidth + 36.0)
         val columns = 3
-        val cardHeight = 92.0
+        val cardHeight = if (diagram.elements.any { it.technology != null }) 110.0 else 92.0
         val titleOffset = if (diagram.title == null) 0.0 else 44.0
         val points = diagram.elements.mapIndexed { index, element -> element.id to ScenePoint(config.padding + (index % columns) * (cardWidth + 32.0) + cardWidth / 2.0, config.padding + titleOffset + (index / columns) * (cardHeight + 36.0) + cardHeight / 2.0) }.toMap()
         val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
@@ -750,13 +751,96 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(element.label, point.copy(y = point.y - 16.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
             commands += DrawText(c4Stereotype(element), point.copy(y = point.y + 2.0).canonical(), anchor = TextAnchor.MIDDLE, style = stereotypeStyle)
             element.description?.let { commands += DrawText(it, point.copy(y = point.y + 20.0).canonical(), anchor = TextAnchor.MIDDLE, style = bodyStyle) }
+            element.technology?.let { commands += DrawText("[$it]", point.copy(y = point.y + 38.0).canonical(), anchor = TextAnchor.MIDDLE, style = stereotypeStyle) }
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
     }
 
-    private fun c4Stereotype(element: C4Element): String = when (element.kind) {
-        C4ElementKind.PERSON -> "[Person]"
-        C4ElementKind.SYSTEM -> "[Software System]"
+    private fun c4Stereotype(element: C4Element): String {
+        val name = when (element.kind) {
+            C4ElementKind.PERSON -> "Person"
+            C4ElementKind.SYSTEM -> "Software System"
+            C4ElementKind.CONTAINER -> "Container"
+            C4ElementKind.COMPONENT -> "Component"
+        }
+        return "[$name${if (element.variant.isEmpty()) "" else " · ${element.variant}"}]"
+    }
+
+    private fun layoutC4Boundaries(diagram: C4Diagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val bodyStyle = TextStyle(fontSize = 10.0)
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val groupStyle = TextStyle(fontSize = 13.0, fontWeight = 600, color = SceneColor("#475569"))
+        val elements = diagram.elements.associateBy { it.id }
+        val boundaries = diagram.boundaries.associateBy { it.id }
+        val childElements = diagram.elements.groupBy { it.parentBoundary }
+        val childBoundaries = diagram.boundaries.groupBy { it.parentBoundary }
+        val cardWidth = max(180.0, (diagram.elements.maxOfOrNull { element -> maxOf(
+            textMeasurer.measure(element.label, labelStyle).width,
+            textMeasurer.measure(element.description.orEmpty(), bodyStyle).width,
+            textMeasurer.measure(element.technology?.let { "[$it]" }.orEmpty(), bodyStyle).width,
+            textMeasurer.measure(c4Stereotype(element), bodyStyle).width,
+        ) } ?: 0.0) + 36.0)
+        val cardHeight = if (diagram.elements.any { it.technology != null }) 110.0 else 92.0
+        // Reserve room for both relationship label lines between stacked cards.
+        val childGap = 56.0
+        val sizes = mutableMapOf<String, SceneSize>()
+        fun children(id: String): List<String> = childElements[id].orEmpty().map { it.id } + childBoundaries[id].orEmpty().map { it.id }
+        fun size(id: String): SceneSize {
+            sizes[id]?.let { return it }
+            val boundary = boundaries[id]
+            val result = if (boundary == null) SceneSize(cardWidth, cardHeight) else {
+                val childSizes = children(id).map { size(it) }
+                SceneSize(max(textMeasurer.measure(boundary.label, groupStyle).width + 32.0, (childSizes.maxOfOrNull { it.width } ?: 120.0) + 32.0),
+                    40.0 + childSizes.sumOf { it.height } + childGap * (childSizes.size - 1).coerceAtLeast(0) + 20.0)
+            }
+            sizes[id] = result; return result
+        }
+        val roots = children("global")
+        roots.forEach { size(it) }
+        val rects = linkedMapOf<String, SceneRect>()
+        fun place(id: String, x: Double, y: Double) {
+            val box = sizes.getValue(id)
+            rects[id] = SceneRect(x, y, box.width, box.height)
+            if (id in boundaries) {
+                var childY = y + 40.0
+                children(id).forEach { child -> place(child, x + 16.0, childY); childY += sizes.getValue(child).height + childGap }
+            }
+        }
+        val top = config.padding + if (diagram.title == null) 0.0 else 44.0
+        var x = config.padding
+        roots.forEach { id -> place(id, x, top); x += sizes.getValue(id).width + 36.0 }
+        val width = max(x - 36.0 + config.padding, diagram.title?.let { textMeasurer.measure(it, titleStyle).width + 2 * config.padding } ?: 0.0)
+        val height = (rects.values.maxOfOrNull { it.y + it.height } ?: top) + config.padding
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 20.0), style = titleStyle) }
+        for ((id, rect) in rects) if (id in boundaries) {
+            commands += DrawRect(rect, 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#94a3b8"))
+            commands += DrawText(boundaries.getValue(id).label, ScenePoint(rect.x + 16.0, rect.y + 24.0), style = groupStyle)
+        }
+        diagram.relationships.forEach { rel ->
+            val a = rects.getValue(rel.sourceId); val b = rects.getValue(rel.targetId)
+            val ac = ScenePoint(a.x + a.width / 2.0, a.y + a.height / 2.0); val bc = ScenePoint(b.x + b.width / 2.0, b.y + b.height / 2.0)
+            val from = usecaseBoundaryPoint(ac, bc, a.width / 2.0, a.height / 2.0, false)
+            val to = usecaseBoundaryPoint(bc, ac, b.width / 2.0, b.height / 2.0, false)
+            commands += DrawLine(from, to)
+            commands += arrowHead(from, to)
+            if (rel.bidirectional) commands += arrowHead(to, from)
+            commands += DrawText(rel.label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0), TextAnchor.MIDDLE, bodyStyle)
+            rel.technology?.let { commands += DrawText("[$it]", ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 + 12.0), TextAnchor.MIDDLE, bodyStyle) }
+        }
+        for ((id, rect) in rects) {
+            val element = elements[id] ?: continue
+            val cx = rect.x + rect.width / 2.0; val cy = rect.y + rect.height / 2.0
+            val fill = if (element.external) SceneColor("#fef3c7") else if (element.kind == C4ElementKind.PERSON) SceneColor("#dcfce7") else SceneColor("#dbeafe")
+            commands += DrawRect(rect, 8.0, fill, SceneColor("#2563eb"))
+            if (element.kind == C4ElementKind.PERSON) commands += DrawEllipse(ScenePoint(cx, rect.y), 10.0, 10.0, fill = fill, stroke = SceneColor("#2563eb"))
+            commands += DrawText(element.label, ScenePoint(cx, cy - 16.0), TextAnchor.MIDDLE, labelStyle)
+            commands += DrawText(c4Stereotype(element), ScenePoint(cx, cy + 2.0), TextAnchor.MIDDLE, bodyStyle)
+            element.description?.let { commands += DrawText(it, ScenePoint(cx, cy + 20.0), TextAnchor.MIDDLE, bodyStyle) }
+            element.technology?.let { commands += DrawText("[$it]", ScenePoint(cx, cy + 38.0), TextAnchor.MIDDLE, bodyStyle) }
+        }
+        return LayoutScene(width, height, commands)
     }
 
     private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
