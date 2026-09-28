@@ -307,34 +307,7 @@ public object MermaidParser {
         return MermaidParseResult.Success(IshikawaDiagram(effectBuilder!!.toNode()))
     }
 
-    private fun parseEventModeling(source: String): MermaidParseResult {
-        val statements = source.toStatements()
-        val headerLine = source.lineSequence().firstOrNull()?.trim()
-        if (headerLine != "eventmodeling") {
-            return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected exact eventmodeling header", SourceLocation(1, 1))
-        }
-        val frames = linkedMapOf<String, EventModelingFrame>()
-        val relations = mutableListOf<EventModelingRelation>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var inferenceSource: String? = null
-        statements.drop(1).forEach { statement ->
-            EVENT_MODELING_TITLE.matchEntire(statement.text)?.let {
-                diagnostics += unsupported(statement, "Event Modeling title is not official mermaid syntax")
-                return@forEach
-            }
-            EVENT_MODELING_FRAME.matchEntire(statement.text)?.let { m ->
-                val reset = m.groupValues[1].equals("rf", true) || m.groupValues[1].equals("resetframe", true)
-                val id = m.groupValues[2]
-                val kind = when (m.groupValues[3].lowercase()) { "ui" -> EventModelingEntityKind.UI; "cmd", "command" -> EventModelingEntityKind.COMMAND; "evt", "event" -> EventModelingEntityKind.EVENT; "pcr", "processor" -> EventModelingEntityKind.PROCESSOR; else -> EventModelingEntityKind.READ_MODEL }
-                val sources = m.groupValues[5].takeIf { it.isNotEmpty() }?.split(Regex("\\s*->>\\s*"))?.filter { it.isNotEmpty() }.orEmpty()
-                when { id in frames -> diagnostics += unsupported(statement, "Duplicate Event Modeling frame identifier"); sources.any { it !in frames } -> diagnostics += unsupported(statement, "Event Modeling relation source must be declared first"); sources.any { it == id } -> diagnostics += unsupported(statement, "Event Modeling frame cannot reference itself"); else -> { frames[id] = EventModelingFrame(id, m.groupValues[4], kind, reset); (if (sources.isNotEmpty()) sources else if (reset) emptyList() else inferenceSource?.let { listOf(it) }.orEmpty()).forEach { relations += EventModelingRelation(it, id) }; inferenceSource = id } }
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported Event Modeling syntax")
-        }
-        if (frames.isEmpty()) diagnostics += unsupported(statements.first(), "Event Modeling requires at least one frame")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(EventModelingDiagram(title = null, frames = frames.values.toList(), relations = relations.toList())) else MermaidParseResult.Failure(diagnostics)
-    }
+    private fun parseEventModeling(source: String): MermaidParseResult = EventModelingParser(source).parse()
 
     private fun parseTreeView(source: String): MermaidParseResult = TreeViewParser(source).parse()
 
@@ -832,8 +805,6 @@ private val MINDMAP_DOUBLE_CIRCLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\(\\(([^()
 private val MINDMAP_RECTANGLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\[([^]\\r\\n]+)]$")
 private val MINDMAP_ANONYMOUS_DOUBLE_CIRCLE = Regex("^\\(\\(([^()\\r\\n]+)\\)\\)$")
 private val MINDMAP_ANONYMOUS_RECTANGLE = Regex("^\\[([^]\\r\\n]+)]$")
-private val EVENT_MODELING_TITLE = Regex("^title\\s+(.+)$", RegexOption.IGNORE_CASE)
-private val EVENT_MODELING_FRAME = Regex("^(tf|timeframe|rf|resetframe)\\s+(\\d{1,3})\\s+(ui|cmd|command|evt|event|pcr|processor|rmo|readmodel)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s+->>\\s+(\\d{1,3}(?:\\s+->>\\s+\\d{1,3})*))?$", RegexOption.IGNORE_CASE)
 
 private fun String.toMindmapLines(): List<MindmapSourceLine> = buildList {
     lineSequence().forEachIndexed { index, rawLine ->

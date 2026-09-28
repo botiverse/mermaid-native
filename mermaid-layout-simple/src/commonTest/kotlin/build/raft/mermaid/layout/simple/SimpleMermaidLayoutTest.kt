@@ -1727,6 +1727,19 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.width.isFinite() && scene.height.isFinite())
     }
 
+    @Test fun eventModelingDataIsDrawnByProductionLayout() {
+        val source = "eventmodeling\naccTitle: Inventory\ntf 01 cmd Add { productId: 7 }\ntf 02 evt Added [[Payload]]\ndata Payload\n{\n  productId: 8\n}"
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val texts = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(texts.any { "productId: 7" in it })
+        assertTrue(texts.any { "productId: 8" in it })
+        assertTrue(texts.any { "Payload" in it })
+        assertEquals("Inventory", scene.accessibilityTitle)
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.width.isFinite() && empty.height.isFinite())
+    }
+
     @Test fun classMemberFormattingAndDecorationsReachRealLayout() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\nclass Clock {\n+getTimes(List~List~T~~)$\n~read() List~T~*\n-count int$\n}")).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
