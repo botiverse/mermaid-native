@@ -720,11 +720,11 @@ public object MermaidExamples {
         """.trimIndent(),
         expected = TreeViewDiagram(
             listOf(
-                TreeViewNode("project", 0, null, true),
-                TreeViewNode("src", 1, 0, true),
-                TreeViewNode("index.ts", 2, 1, false),
-                TreeViewNode("README file.md", 1, 0, false),
-                TreeViewNode("package.json", 0, null, false),
+                TreeViewNode("project", 0, null, true, sourceIndent = 4),
+                TreeViewNode("src", 1, 0, true, sourceIndent = 8),
+                TreeViewNode("index.ts", 2, 1, false, sourceIndent = 12),
+                TreeViewNode("README file.md", 1, 0, false, sourceIndent = 8),
+                TreeViewNode("package.json", 0, null, false, sourceIndent = 4),
             ),
         ),
     )
