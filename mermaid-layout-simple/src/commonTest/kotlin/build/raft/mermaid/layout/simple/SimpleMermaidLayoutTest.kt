@@ -1719,6 +1719,14 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "mystery", "Server", "custom")))
     }
 
+    @Test fun abnfBoundedRepeatKeepsItsCountInRealLayout() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-abnf-beta\ncount = 2*4\"a\" 3\"b\" ;")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("2..4 times", "3 times", "a", "b")))
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
+
     @Test fun classMemberFormattingAndDecorationsReachRealLayout() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\nclass Clock {\n+getTimes(List~List~T~~)$\n~read() List~T~*\n-count int$\n}")).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())

@@ -479,6 +479,25 @@ class MermaidParserTest {
     }
 
     @Test
+    fun abnfPublicEntryPreservesNumericValuesAndRepeatBounds() {
+        val diagram = assertIs<RailroadDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            railroad-abnf-beta
+            title "URI grammar"
+            uri = scheme ":" [path] ;
+            scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ;
+            byte = %x41-5A / %d48.49 ;
+            count = 2*4"a" 3"b" *1"c" 1*"d" ;
+        """.trimIndent())).diagram)
+        assertEquals("URI grammar", diagram.title)
+        assertEquals(listOf(RailroadTerminal("%x41-5A"), RailroadTerminal("%d48.49")), assertIs<RailroadChoice>(diagram.rules[2].definition).children)
+        assertEquals(listOf(RailroadRepetition(RailroadTerminal("a"), 2, 4), RailroadRepetition(RailroadTerminal("b"), 3, 3), RailroadOptional(RailroadTerminal("c")), RailroadOneOrMore(RailroadTerminal("d"))), assertIs<RailroadSequence>(diagram.rules[3].definition).children)
+        listOf("x = \"a\"", "x = 4*2\"a\" ;", "x = %x ;", "x = [\"a\" ;", "x = \"a\" / ;", "x = 'a' ;").forEach {
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-abnf-beta\n$it"), it)
+        }
+        assertTrue(assertIs<RailroadDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-abnf-beta")).diagram).rules.isEmpty())
+    }
+
+    @Test
     fun pegGrammarLowersThroughProductionRailroadModel() {
         val diagram = assertIs<RailroadDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             railroad-peg-beta
