@@ -2197,4 +2197,29 @@ class MermaidParserTest {
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\na[API]"))
     }
 
+    @Test fun ebnfSyntaxLowersIntoTheRealRailroadConsumer() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""railroad-ebnf-beta
+            title "Expressions"
+            accTitle: Grammar
+            (* ISO comment *)
+            expression = term ("+" term)* ;
+            term = ["-"] digit+ ;
+            digit = "0" | "1" ;
+            special = ? digit class ? ;
+            combined = "prefix" ? character class ? ;
+        """.trimIndent()))
+        val diagram = assertIs<RailroadDiagram>(result.diagram)
+        val metadataIds = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-ebnf-beta\naccTitle = \"x\";\naccDescr = \"y\";"))
+        assertEquals(listOf("accTitle", "accDescr"), assertIs<RailroadDiagram>(metadataIds.diagram).rules.map { it.name })
+        assertEquals("Expressions", diagram.title)
+        assertEquals("Grammar", diagram.accTitle)
+        assertEquals(5, diagram.rules.size)
+        val expression = assertIs<RailroadSequence>(diagram.rules[0].definition)
+        assertIs<RailroadZeroOrMore>(expression.children[1])
+        assertEquals(RailroadSpecial("digit class"), diagram.rules[3].definition)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-ebnf-beta\nx = \"a\" ; junk"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-ebnf-beta\nx = [\"a\" ;"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-ebnf-beta\nx = \"a\", ;"))
+    }
+
 }

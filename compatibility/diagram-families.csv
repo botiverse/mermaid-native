@@ -16,7 +16,7 @@ packet,packet,in_progress,partial,partial,partial,partial,Vertical slice support
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData slice percents and bracket values.
 quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels finite normalized points and colored quadrant fills.
 radar,radar,in_progress,partial,partial,partial,partial,Bounded radar-beta slice supporting a single title multi-entry axis declarations with quoted labels curves with per-axis values and an optional max with circular polar graticule filled curves and SVG golden.
-railroad,railroad,in_progress,partial,partial,partial,partial,Bounded official railroad-beta slice: optional line-based title and named rules using sequence choice optional oneOrMore zeroOrMore terminal nonterminal special.
+railroad,railroad,in_progress,partial,partial,partial,partial,railroad-beta and railroad-ebnf-beta lower into shared Railroad nodes: titles and named sequence/choice/optional/repetition/terminal/nonterminal/special rules; PEG and ABNF remain pending.
 requirementDiagram,requirementDiagram,in_progress,partial,partial,partial,partial,Bounded requirementDiagram slice: requirement/element blocks, quoted ids, text/risk/verifymethod, and satisfies/verifies relationships.
 sankey,sankey,in_progress,partial,partial,partial,partial,Vertical slice supports acyclic positive weighted CSV links including quoted commas escaped quotes and node values on labels.
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset with top and bottom actor boxes and filled arrowheads.
