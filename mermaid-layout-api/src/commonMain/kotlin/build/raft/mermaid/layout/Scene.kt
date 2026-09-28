@@ -20,6 +20,7 @@ public data class TextStyle(
     val fontFamily: String = "sans-serif",
     val fontWeight: Int = 400,
     val color: SceneColor = SceneColor("#111827"),
+    val italic: Boolean = false,
 )
 
 public enum class TextAnchor { START, MIDDLE, END }

@@ -6,6 +6,13 @@ import kotlin.test.assertContains
 import kotlin.test.assertTrue
 
 class MermaidCanvasRendererTest {
+    @Test fun classAbstractMemberKeepsItalicInCanvasWireFormat() {
+        val result = MermaidWebAdapter.renderCanvas(MermaidWebRequest("classDiagram\nclass Clock {\n+read()*\n}"))
+        assertTrue(result is MermaidWebCanvasResult.Success)
+        assertContains(result.script, "\"text\":\"+read()\"")
+        assertContains(result.script, "\"italic\":true")
+    }
+
     @Test
     fun canvasTextUsesCanvasAlignmentAndEscapesControlCharacters() {
         val scene = build.raft.mermaid.layout.LayoutScene(100.0, 50.0, listOf(

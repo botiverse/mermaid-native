@@ -1719,6 +1719,22 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("API", "mystery", "Server", "custom")))
     }
 
+    @Test fun classMemberFormattingAndDecorationsReachRealLayout() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\nclass Clock {\n+getTimes(List~List~T~~)$\n~read() List~T~*\n-count int$\n}")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = scene.commands.filterIsInstance<DrawText>()
+        assertTrue(labels.any { it.text == "+getTimes(List<List<T>>)" && !it.style.italic })
+        assertTrue(labels.any { it.text == "~read() : List<T>" && it.style.italic })
+        assertTrue(labels.any { it.text == "-count int" })
+        listOf("+getTimes(List<List<T>>)", "-count int").forEach { text ->
+            val label = labels.single { it.text == text }
+            assertTrue(scene.commands.filterIsInstance<DrawLine>().any {
+                it.from == ScenePoint(label.origin.x, label.origin.y + 2.0) && it.to.x > it.from.x && it.strokeWidth == 1.0
+            })
+        }
+        assertTrue(labels.none { '$' in it.text || '*' in it.text })
+    }
+
     @Test fun cynefinAccessibilitySurvivesProductionLayout() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("cynefin-beta\ntitle Display title\naccTitle: Accessible title\naccDescr: Five domains\ncomplex\n\"Learn\"")).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())

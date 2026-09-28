@@ -229,7 +229,7 @@ public object MermaidKuiklyRenderer {
         }
 
         context.font(
-            style = FontStyle.NORMAL,
+            style = if (cmd.style.italic) FontStyle.ITALIC else FontStyle.NORMAL,
             weight = fontWeight,
             size = cmd.style.fontSize.toFloat(),
             family = cmd.style.fontFamily

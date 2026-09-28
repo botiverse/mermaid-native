@@ -25,6 +25,13 @@ import kotlin.test.assertTrue
 
 class MermaidKuiklyRendererTest {
 
+    @Test fun italicSceneTextUsesKuiklyCanvasFontStyle() {
+        val scene = LayoutScene(100.0, 50.0, listOf(DrawText("Abstract", ScenePoint(10.0, 20.0), style = TextStyle(italic = true))))
+        val context = MockCanvasContext()
+        MermaidKuiklyRenderer.render(scene, context)
+        assertTrue(context.log.contains("font(ITALIC, NORMAL, 14.0, sans-serif)"))
+    }
+
     @Test
     fun testParseSceneColorHexFormats() {
         val hex6 = MermaidKuiklyRenderer.parseSceneColor(SceneColor("#ff0000"))
