@@ -27,7 +27,7 @@ public object MermaidParser {
             header.text.equals("gantt", ignoreCase = true) -> GanttParser(source).parse()
             header.text.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> TimelineParser(source).parse()
             header.text.equals("quadrantChart", ignoreCase = true) -> parseQuadrantChart(statements)
-            header.text.equals("journey", ignoreCase = true) -> parseUserJourney(statements)
+            header.text.equals("journey", ignoreCase = true) -> JourneyParser(source).parse()
             header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
             header.text.equals("requirementDiagram", ignoreCase = true) -> RequirementParser(source).parse()
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
@@ -688,72 +688,6 @@ public object MermaidParser {
         return if (diagnostics.isEmpty() && x != null && y != null) MermaidParseResult.Success(
             QuadrantChartDiagram(title, x, y, quadrantLabels.toList(), points.toList()),
         ) else MermaidParseResult.Failure(diagnostics)
-    }
-
-    private fun parseUserJourney(statements: List<SourceStatement>): MermaidParseResult {
-        var title: String? = null
-        var current: UserJourneySection? = null
-        val sections = mutableListOf<UserJourneySection>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-
-        fun finishSection(statement: SourceStatement) {
-            current?.let { section ->
-                if (section.tasks.isEmpty()) {
-                    diagnostics += unsupported(statement, "User journey sections require at least one task")
-                }
-                sections += section
-            }
-        }
-
-        statements.drop(1).forEach { statement ->
-            when {
-                statement.text.startsWith("title ", ignoreCase = true) -> {
-                    val value = statement.text.substringAfter(' ').trim()
-                    if (value.isEmpty() || title != null) {
-                        diagnostics += unsupported(statement, "User journey requires at most one non-empty title")
-                    } else {
-                        title = value
-                    }
-                }
-                statement.text.startsWith("section ", ignoreCase = true) -> {
-                    finishSection(statement)
-                    val name = statement.text.substringAfter(' ').trim()
-                    if (name.isEmpty()) {
-                        diagnostics += unsupported(statement, "User journey section names must be non-empty")
-                        current = null
-                    } else {
-                        current = UserJourneySection(name, emptyList())
-                    }
-                }
-                else -> {
-                    val match = USER_JOURNEY_TASK.matchEntire(statement.text)
-                    val section = current
-                    if (match == null || section == null) {
-                        diagnostics += unsupported(statement, "Unsupported user journey task")
-                    } else {
-                        val actors = match.groupValues[3].split(',').map { it.trim() }
-                        if (actors.any { it.isEmpty() }) {
-                            diagnostics += unsupported(statement, "User journey actors must be non-empty")
-                        } else {
-                            current = section.copy(
-                                tasks = section.tasks + UserJourneyTask(
-                                    label = match.groupValues[1].trim(),
-                                    score = match.groupValues[2].toInt(),
-                                    actors = actors,
-                                ),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        finishSection(statements.last())
-        if (sections.isEmpty()) {
-            diagnostics += unsupported(statements.first(), "journey requires at least one section")
-        }
-        return if (diagnostics.isEmpty()) {
-            MermaidParseResult.Success(UserJourneyDiagram(title, sections))
-        } else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseGitGraph(statements: List<SourceStatement>): MermaidParseResult {
@@ -1787,7 +1721,6 @@ public object MermaidParser {
     private val QUADRANT_AXIS = Regex("^(x|y)-axis\\s+(.+?)\\s*-->\\s*(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_LABEL = Regex("^quadrant-([1-4])\\s+(.+)$", RegexOption.IGNORE_CASE)
     private val QUADRANT_POINT = Regex("^(.+?)\\s*:\\s*\\[($NUMBER)\\s*,\\s*($NUMBER)]$")
-    private val USER_JOURNEY_TASK = Regex("^(.+?)\\s*:\\s*([1-5])\\s*:\\s*(.+)$")
     private val GIT_COMMIT = Regex(
         "^commit(?:\\s+id\\s*:\\s*\"([^\"]+)\")?(?:\\s+type\\s*:\\s*(NORMAL|REVERSE|HIGHLIGHT))?(?:\\s+tag\\s*:\\s*\"([^\"]+)\")?$",
         RegexOption.IGNORE_CASE,

@@ -1118,6 +1118,20 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun journeyRendersEmptySectionsAndOptionalActorsWithoutPhantomLegend() {
+        for (source in listOf("journey", "journey\ntitle Only title", "journey\nsection Empty")) {
+            val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+            val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+            assertTrue(scene.width.isFinite() && scene.height.isFinite())
+            if (source.contains("Empty")) assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Empty" })
+        }
+        val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse("journey\nsection Work\nA: 5\nB: 3:\nC: -2" )).diagram
+        val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(15, scene.commands.filterIsInstance<DrawEllipse>().size)
+        assertEquals(listOf("#bbf7d0", "#fef3c7", "#fee2e2"), scene.commands.filterIsInstance<DrawRect>().drop(1).map { it.fill.value })
+    }
+
+    @Test
     fun userJourneyProducesDeterministicSectionAndTaskCards() {
         val diagram = UserJourneyDiagram(
             "Checkout journey",

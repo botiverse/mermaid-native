@@ -1472,20 +1472,27 @@ class MermaidParserTest {
     }
 
     @Test
+    fun journeySupportsEmptySectionsOptionalActorsAndAccessibility() {
+        val chart = assertIs<UserJourneyDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "journey\naccDescr { First line\n  second line }title Sample\naccTitle: Access\nsection Empty\nsection Work\nA: 5\nB: 3:\nC: 4: Alice, Bob",
+        )).diagram)
+        assertEquals("Sample", chart.title)
+        assertEquals("Access", chart.accessibilityTitle)
+        assertEquals("First line\nsecond line", chart.accessibilityDescription)
+        assertEquals(emptyList(), chart.sections.first().tasks)
+        assertEquals(listOf(emptyList(), listOf(""), listOf("Alice", "Bob")), chart.sections.last().tasks.map { it.actors })
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("journey"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("journey\nTask: -2"))
+    }
+
+    @Test
     fun malformedUserJourneyFailsClosed() {
         listOf(
-            "journey",
-            "journey\nTask: 4: Actor",
-            "journey\nsection Empty",
-            "journey\nsection A\nTask: 0: Actor",
-            "journey\nsection A\nTask: 6: Actor",
-            "journey\nsection A\nTask: 4:",
-            "journey\ntitle One\ntitle Two\nsection A\nTask: 4: Actor",
-            "journey\nsection A\nTask: 4: Actor,",
+            "journey\nsection A\nTask: bad: Actor",
+            "journey\nsection A\nTask:",
+            "journey\naccDescr {unterminated",
             "journey\nsection A\nunsupported statement",
-        ).forEach { source ->
-            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
-        }
+        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
     @Test
