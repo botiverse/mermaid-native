@@ -793,9 +793,6 @@ public object MermaidParser {
     private const val MINDMAP_INDENT = 2
 
     private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
-    private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
-    private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"\\])?(?::([1-9][0-9]*))?$")
-    private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
     private val USECASE_DIRECTION = Regex("^direction\\s+(TD|TB|LR|RL)$", RegexOption.IGNORE_CASE)
     private const val USECASE_IDENTIFIER = "[A-Za-z0-9_]+"
     private val USECASE_ACTOR = Regex("^actor\\s+($USECASE_IDENTIFIER)(?:\\(\"([^\"\\r\\n]+)\"\\))?$")

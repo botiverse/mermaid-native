@@ -2146,4 +2146,27 @@ class MermaidParserTest {
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta\nset A\nstyle A fill:red\ntext A A1"))
     }
 
+    @Test fun blockWhitespaceMultiTargetStylesAndRepeatedColumnsUseRealConsumer() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns\t2\ncolumns 3\nA B\nclassDef\tdark\tfill:#000000\nclass\tA, B\tdark\nstyle\tA, B\tstroke:#2563eb"))
+        val d = assertIs<BlockDiagram>(result.diagram)
+        assertEquals(3, d.columns)
+        assertEquals(listOf("A", "B"), d.nodes.map { it.id })
+        val widths = assertIs<BlockDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\ncolumns 2\ncolumns 3\nwide:3")).diagram)
+        assertEquals(3, widths.columns)
+        assertEquals(listOf("Block wide width 3 exceeds configured column width 2"), widths.warnings)
+        d.nodes.forEach { n -> assertEquals(listOf("dark"), n.classes); assertEquals(listOf("stroke:#2563eb"), n.styles) }
+        assertEquals(listOf("fill:#000000"), d.classes["dark"])
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\na<[\"Go\"]> (right)"))
+    }
+
+    @Test fun blockRejectsAmbiguousLabelsAndLabelledSpace() {
+        for (body in listOf("a[Public API]", "a['API']", "a -- 'calls' --> b", "a<[\"\"]>(right)", "space[\"X\"]")) {
+            val result = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("block\n$body"), body)
+            assertEquals(2, result.diagnostics.single().location.line, body)
+        }
+        // Empty diagrams and legacy single-token unquoted labels are deliberate Native extensions.
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("block"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\na[API]"))
+    }
+
 }
