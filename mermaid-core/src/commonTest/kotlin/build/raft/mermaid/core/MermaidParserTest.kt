@@ -143,18 +143,27 @@ class MermaidParserTest {
     @Test
     fun malformedEventModelingFailsClosed() {
         listOf(
-            "eventmodeling",
             "EventModeling\ntf 01 ui Cart",
             "eventmodeling; tf 01 ui Cart",
             "eventmodeling\ntf 01 ui Cart\ntf 01 evt Duplicate",
             "eventmodeling\ntf 01 rmo View ->> 99",
             "eventmodeling\ntf 1000 ui Cart",
             "eventmodeling\ntf 01 unknown Cart",
-            "eventmodeling\ntf 01 ui Cart { value: string }",
             "eventmodeling\ndata Cart {",
-            "eventmodeling\naccTitle: deferred",
-            "eventmodeling\ntitle Cart inventory\ntf 01 ui Cart",
+            "eventmodeling\ntf 01 evt Added [[Missing]]",
+            "eventmodeling\ntf 01 cmd Add { broken",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test
+    fun eventModelingDataReachesTypedModelAndEmptyIsValid() {
+        val source = "eventmodeling\ntitle Inventory\naccTitle: Accessible inventory\ntf 01 cmd Add { productId: 7 }\ntf 02 evt Added [[AddedData]]\ndata AddedData\n{\n  productId: 7\n}"
+        val diagram = assertIs<EventModelingDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals(" productId: 7 ", diagram.frames.first().inlineData?.value)
+        assertEquals("AddedData", diagram.frames.last().dataReference)
+        assertEquals("  productId: 7", diagram.data["AddedData"]?.value)
+        assertEquals("Accessible inventory", diagram.accTitle)
+        assertTrue(assertIs<EventModelingDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("eventmodeling")).diagram).frames.isEmpty())
     }
 
     @Test
