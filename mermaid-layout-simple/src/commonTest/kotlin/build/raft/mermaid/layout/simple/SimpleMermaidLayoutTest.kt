@@ -2157,4 +2157,29 @@ class SimpleMermaidLayoutTest {
         assertEquals(SceneColor("#ff0000"), scene.commands.filterIsInstance<DrawText>().single { it.text == "Visible note" }.style.color)
         assertTrue(render("venn-beta").commands.isEmpty())
     }
+    @Test fun blockCompositeLayoutContainsChildrenStylesAndSpace() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            block
+            columns 1
+            block:g["Services"]
+              columns 2
+              A["API"]
+              B["Database"]
+              space
+              next<["Go"]>(right)
+            end
+            style A fill:#ff0000
+        """.trimIndent()))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val rects = scene.commands.filterIsInstance<DrawRect>()
+        val parent = rects.first().rect
+        assertEquals(4, rects.size)
+        assertTrue(rects.drop(1).all { it.rect.x >= parent.x && it.rect.y >= parent.y && it.rect.x + it.rect.width <= parent.x + parent.width && it.rect.y + it.rect.height <= parent.y + parent.height })
+        assertTrue(rects.any { it.fill.value == "#ff0000" })
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Go" })
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolygon>().size)
+        val empty = SimpleMermaidLayout.layout(BlockDiagram(-1, emptyList(), emptyList()), FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.width.isFinite() && empty.height.isFinite())
+    }
+
 }

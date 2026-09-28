@@ -569,10 +569,17 @@ public data class BlockDiagram(
     val columns: Int,
     val nodes: List<BlockNode>,
     val edges: List<BlockEdge>,
+    val classes: Map<String, List<String>> = emptyMap(),
+    val warnings: List<String> = emptyList(),
 ) : MermaidDiagram
 
-public data class BlockNode(val id: String, val label: String, val columnSpan: Int = 1)
-public data class BlockEdge(val from: String, val to: String)
+public data class BlockNode(
+    val id: String, val label: String, val columnSpan: Int = 1,
+    val type: String = "square", val children: List<BlockNode> = emptyList(),
+    val columns: Int = -1, val directions: List<String> = emptyList(),
+    val classes: List<String> = emptyList(), val styles: List<String> = emptyList(),
+)
+public data class BlockEdge(val from: String, val to: String, val label: String? = null)
 
 /** Minimal platform-neutral model for the Mermaid sankey family. */
 public data class SankeyDiagram(

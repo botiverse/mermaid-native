@@ -1354,7 +1354,78 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    private fun layoutAdvancedBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
+        data class Plan(val width: Double, val height: Double, val rects: List<SceneRect>)
+        val plans = mutableMapOf<String, Plan>()
+        fun plan(nodes: List<build.raft.mermaid.core.BlockNode>, configured: Int): Plan {
+            if (nodes.isEmpty()) return Plan(160.0, 64.0, emptyList())
+            val columns = if (configured > 0) configured else nodes.sumOf { it.columnSpan.coerceIn(1, 512) }.coerceIn(1, 512)
+            val sizes = nodes.map { n ->
+                if (n.type == "composite") {
+                    val inner = plan(n.children, n.columns); plans[n.id] = inner
+                    SceneSize(max(inner.width + 32.0, textMeasurer.measure(n.label, textStyle).width + 32.0), inner.height + if (n.label.isEmpty()) 32.0 else 56.0)
+                } else SceneSize(textMeasurer.measure(n.label, textStyle).width + 32.0, 64.0)
+            }
+            val cell = max(160.0, nodes.indices.maxOf { i -> val span = nodes[i].columnSpan.coerceIn(1, columns); (sizes[i].width - 24.0 * (span - 1)) / span })
+            var x = 0; var y = 0.0; var rowHeight = 0.0
+            val rects = nodes.mapIndexed { i, node ->
+                val span = node.columnSpan.coerceIn(1, columns)
+                if (x > 0 && x + span > columns) { y += rowHeight + 40.0; x = 0; rowHeight = 0.0 }
+                val rect = SceneRect(x * (cell + 24.0), y, cell * span + 24.0 * (span - 1), sizes[i].height)
+                x += span; rowHeight = max(rowHeight, rect.height); rect
+            }
+            return Plan(columns * cell + (columns - 1) * 24.0, y + rowHeight, rects)
+        }
+        val rootPlan = plan(diagram.nodes, diagram.columns)
+        val commands = mutableListOf<DrawCommand>(); val placed = linkedMapOf<String, SceneRect>()
+        fun draw(nodes: List<build.raft.mermaid.core.BlockNode>, layout: Plan, originX: Double, originY: Double) {
+            nodes.forEachIndexed { i, node ->
+                val local = layout.rects[i]; val rect = local.copy(x = local.x + originX, y = local.y + originY); placed[node.id] = rect
+                if (node.type == "space") return@forEachIndexed
+                val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
+                    val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
+                }.toMap()
+                fun color(key: String, fallback: String) = SceneColor(properties[key]?.takeIf { Regex("#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Z]+").matches(it) } ?: fallback)
+                val fill = color("fill", "#f8fafc"); val stroke = color("stroke", "#334155")
+                val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: 1.5
+                if (node.type == "block_arrow") {
+                    val cx = rect.x + rect.width / 2; val cy = rect.y + rect.height / 2; val tip = 16.0
+                    val core = SceneRect(rect.x + tip, rect.y + tip, rect.width - tip * 2, rect.height - tip * 2)
+                    commands += DrawRect(core, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                    val directions = node.directions.flatMap { if (it == "x") listOf("left", "right") else if (it == "y") listOf("up", "down") else listOf(it) }
+                    for (direction in directions) {
+                        val points = when (direction) {
+                            "left" -> listOf(ScenePoint(rect.x, cy), ScenePoint(core.x, rect.y), ScenePoint(core.x, rect.y + rect.height))
+                            "right" -> listOf(ScenePoint(rect.x + rect.width, cy), ScenePoint(core.x + core.width, rect.y), ScenePoint(core.x + core.width, rect.y + rect.height))
+                            "up" -> listOf(ScenePoint(cx, rect.y), ScenePoint(core.x, core.y), ScenePoint(core.x + core.width, core.y))
+                            else -> listOf(ScenePoint(cx, rect.y + rect.height), ScenePoint(core.x, core.y + core.height), ScenePoint(core.x + core.width, core.y + core.height))
+                        }
+                        commands += DrawPolygon(points, fill)
+                    }
+                } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", "#111827")))
+                if (node.type == "composite") draw(node.children, plans.getValue(node.id), rect.x + 16.0, rect.y + if (node.label.isEmpty()) 16.0 else 40.0)
+            }
+        }
+        draw(diagram.nodes, rootPlan, config.padding, config.padding)
+        diagram.edges.forEach { edge ->
+            val from = placed[edge.from] ?: return@forEach; val to = placed[edge.to] ?: return@forEach
+            val fromCenter = ScenePoint(from.x + from.width / 2, from.y + from.height / 2); val toCenter = ScenePoint(to.x + to.width / 2, to.y + to.height / 2)
+            val (a, b) = when {
+                toCenter.y > fromCenter.y -> ScenePoint(fromCenter.x, from.y + from.height) to ScenePoint(toCenter.x, to.y)
+                toCenter.y < fromCenter.y -> ScenePoint(fromCenter.x, from.y) to ScenePoint(toCenter.x, to.y + to.height)
+                toCenter.x > fromCenter.x -> ScenePoint(from.x + from.width, fromCenter.y) to ScenePoint(to.x, toCenter.y)
+                else -> ScenePoint(from.x, fromCenter.y) to ScenePoint(to.x + to.width, toCenter.y)
+            }
+            commands += DrawLine(a, b); commands += arrowHead(a, b)
+            edge.label?.let { commands += DrawText(it, ScenePoint((a.x + b.x) / 2, (a.y + b.y) / 2 - 6.0), TextAnchor.MIDDLE, textStyle) }
+        }
+        return LayoutScene((rootPlan.width + config.padding * 2).xyCoordinate(), (rootPlan.height + config.padding * 2).xyCoordinate(), commands)
+    }
+
     private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.nodes.isEmpty() || diagram.columns <= 0 || diagram.nodes.any { it.type in setOf("composite", "space", "block_arrow") || it.columnSpan > diagram.columns || it.classes.isNotEmpty() || it.styles.isNotEmpty() } || diagram.edges.any { it.label != null }) return layoutAdvancedBlock(diagram, textMeasurer, config)
         val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
         val columnGap = 24.0
         val rowGap = 40.0

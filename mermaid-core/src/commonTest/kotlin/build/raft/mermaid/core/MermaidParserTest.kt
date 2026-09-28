@@ -1754,20 +1754,14 @@ class MermaidParserTest {
 
     @Test fun malformedBlockFailsClosed() {
         listOf(
-            "block",
             "block\ncolumns 0\na",
             "block\ncolumns 999999999999999999999\na",
-            "block\ncolumns 2\ncolumns 3\na",
-            "block\ncolumns 2\na:3",
             "block\ncolumns 2\na:999999999999999999999",
-            "block\ncolumns 2\na\na",
-            "block\ncolumns 2\na --> missing\na",
-            "block\ncolumns 2\na --> a\na",
-            "block\ncolumns 2\na b",
-            "block\ncolumns 2\napi[Public API]",
-            "block\ncolumns 2\napi['Public API']",
-            "block\ncolumns 2\nblock:group\na\nend",
-            "block\ncolumns 2\na\nstyle a fill:#fff",
+            "block\nend",
+            "block\nblock\na",
+            "block\na[\"unclosed",
+            "block\na -- bad --> b",
+            "block\nar<[\"Go\"]>(diagonal)",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
@@ -2089,6 +2083,34 @@ class MermaidParserTest {
         assertEquals(RailroadTerminal("d"), diagram.rules.first().definition)
         val repeated = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-beta\ntitle First\ntitle Last %% comment"))
         assertEquals("Last", assertIs<RailroadDiagram>(repeated.diagram).title)
+    }
+
+    @Test fun blockOriginalCompositesStylesAndWarningUseRealModel() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            block
+            columns 1
+            classDef dark color:#ffffff,fill:#000000;
+            block:group["Services"]
+              columns auto
+              A["API"] -- "calls" --> B["Database"]
+              space
+              next<["Go"]>(up,down)
+            end
+            class A dark
+            style B fill:#f9F
+            wide:2
+        """.trimIndent()))
+        val diagram = assertIs<BlockDiagram>(result.diagram)
+        assertEquals(2, diagram.nodes.size)
+        assertEquals(4, diagram.nodes.first().children.size)
+        assertEquals("composite", diagram.nodes.first().type)
+        assertEquals(-1, diagram.nodes.first().columns)
+        assertEquals(listOf("dark"), diagram.nodes.first().children.first().classes)
+        assertEquals(listOf("fill:#f9F"), diagram.nodes.first().children[1].styles)
+        assertEquals("calls", diagram.edges.single().label)
+        assertEquals(listOf("Block wide width 2 exceeds configured column width 1"), diagram.warnings)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\n__proto__; constructor"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("block\nblock\nA"))
     }
 
 }
