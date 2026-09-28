@@ -39,7 +39,7 @@ public object MermaidParser {
             header.text.equals("usecase-beta", ignoreCase = true) || header.text.equals("usecaseDiagram", ignoreCase = true) -> parseUsecase(source)
             Regex("^architecture-beta(?:\\s.*)?$").matches(header.text) -> parseArchitecture(source)
             header.text in setOf("C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment") -> parseC4Context(source)
-            header.text.equals("cynefin-beta", ignoreCase = true) || header.text.equals("cynefin", ignoreCase = true) -> parseCynefin(source)
+            header.text.lowercase() in setOf("cynefin-beta", "cynefin-beta:", "cynefin") -> CynefinParser(source).parse()
             header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlaneFlow(source)
             header.text == "treeView-beta" -> parseTreeView(source)
@@ -303,45 +303,6 @@ public object MermaidParser {
         }
         if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics)
         return MermaidParseResult.Success(IshikawaDiagram(effectBuilder!!.toNode()))
-    }
-
-    private fun parseCynefin(source: String): MermaidParseResult {
-        val lines = source.lineSequence().toList()
-        val headerIndex = lines.indexOfFirst { it.trim().equals("cynefin-beta", ignoreCase = true) || it.trim().equals("cynefin", ignoreCase = true) }
-        if (headerIndex < 0) return failure(MermaidDiagnosticCode.INVALID_HEADER, "Expected cynefin-beta or cynefin header", SourceLocation(1, 1))
-        var title: String? = null
-        val blocks = linkedMapOf<CynefinDomain, MutableList<String>>()
-        val transitions = mutableListOf<CynefinTransition>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var current: CynefinDomain? = null
-        val domainRegex = Regex("^(complex|complicated|clear|chaotic|confusion)$", RegexOption.IGNORE_CASE)
-        val itemRegex = Regex("^\\\"([^\\\"\\r\\n]+)\\\"$")
-        val transitionRegex = Regex("^(complex|complicated|clear|chaotic|confusion)\\s+-->\\s+(complex|complicated|clear|chaotic|confusion)(?:\\s*:\\s*\\\"([^\\\"\\r\\n]+)\\\")?$", RegexOption.IGNORE_CASE)
-        lines.drop(headerIndex + 1).forEachIndexed { offset, raw ->
-            val line = raw.trim()
-            if (line.isEmpty() || line.startsWith("%%")) return@forEachIndexed
-            val location = SourceLocation(headerIndex + offset + 2, raw.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0) + 1)
-            when {
-                line.startsWith("title ", ignoreCase = true) && title == null -> title = line.substringAfter(' ').trim().takeIf { it.isNotEmpty() }
-                line.startsWith("title ", ignoreCase = true) -> diagnostics += unsupported(SourceStatement(line, location), "Duplicate cynefin title")
-                transitionRegex.matches(line) -> {
-                    val m = transitionRegex.matchEntire(line)!!
-                    val from = CynefinDomain.valueOf(m.groupValues[1].uppercase())
-                    val to = CynefinDomain.valueOf(m.groupValues[2].uppercase())
-                    if (from != to) transitions += CynefinTransition(from, to, m.groupValues[3].ifEmpty { null })
-                }
-                domainRegex.matches(line) -> {
-                    val domain = CynefinDomain.valueOf(line.uppercase())
-                    if (domain in blocks) diagnostics += unsupported(SourceStatement(line, location), "Duplicate cynefin domain")
-                    else { blocks[domain] = mutableListOf(); current = domain }
-                }
-                itemRegex.matches(line) && current != null -> blocks.getValue(current!!).add(itemRegex.matchEntire(line)!!.groupValues[1])
-                else -> diagnostics += unsupported(SourceStatement(line, location), "Unsupported cynefin syntax")
-            }
-        }
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(
-            CynefinDiagram(title, blocks.map { CynefinDomainBlock(it.key, it.value.toList()) }, transitions.toList())
-        ) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parseEventModeling(source: String): MermaidParseResult {

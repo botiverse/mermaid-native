@@ -694,7 +694,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawText("+${items.size - 3} more", ScenePoint(center.x, itemStartY + visibleItems.size * itemStep), TextAnchor.MIDDLE, itemStyle)
             }
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
 
     private fun cynefinBoundaryPoint(center: ScenePoint, toward: ScenePoint, ellipse: Boolean, quadrantWidth: Double, quadrantHeight: Double): ScenePoint =
