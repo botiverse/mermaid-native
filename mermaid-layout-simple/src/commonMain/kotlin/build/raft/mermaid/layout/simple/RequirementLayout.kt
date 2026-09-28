@@ -15,6 +15,14 @@ internal fun layoutRequirementGraph(diagram:RequirementDiagram,measurer:TextMeas
     cards+=diagram.elements.map { e->Card(e.name,"element ${e.name}",buildList {if(e.type.isNotEmpty())addAll(("type: "+e.type).lines());if(e.docRef.isNotEmpty())addAll(("docref: "+e.docRef).lines())},true,e.classes,e.styles) }
     val missing=diagram.relationships.flatMap { listOf(it.from,it.to) }.distinct().filter { id->cards.none{it.id==id} }
     cards+=missing.map { Card(it,it,emptyList(),false,emptyList(),emptyList()) }
+    if(diagram.direction!=null){
+        val pending=cards.toMutableList();val ordered=mutableListOf<Card>()
+        while(pending.isNotEmpty()){
+            val candidate=pending.firstOrNull { card->diagram.relationships.none { e->e.to==card.id&&e.from!=card.id&&pending.any { it.id==e.from } } } ?: pending.first()
+            ordered+=candidate;pending.remove(candidate)
+        }
+        cards.clear();cards+=ordered
+    }
     val nodes=cards.map { FlowNode(it.id,it.heading,classes=it.classes.filterNot { c->c=="default" },styles=it.styles) }
     val flow=FlowchartDiagram(diagram.direction?:FlowDirection.TB,nodes,diagram.relationships.map { FlowEdge(it.from,it.to) },classDefinitions=diagram.classDefinitions)
     val paints=cards.associate { c->c.id to FlowStyle(nodes.first { it.id==c.id },flow,listOf("fill:"+if(c.element)"#eff6ff"else"#ffffff","stroke:#334155","stroke-width:1.5","font-size:12px")) }

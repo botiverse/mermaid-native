@@ -10,6 +10,10 @@ class RequirementGrammarLayoutTest {
         when(dir){"LR"->assertTrue(a.x<b.x);"RL"->assertTrue(a.x>b.x);"TB"->assertTrue(a.y<b.y);else->assertTrue(a.y>b.y)}
         assertTrue(s.commands.filterIsInstance<DrawText>().any { it.text=="copies" });assertEquals(1,s.commands.filterIsInstance<DrawPolygon>().size)
     }}
+    @Test fun explicitDirectionFollowsRelationsRatherThanDeclarationOrder(){
+        val s=scene("requirementDiagram\ndirection LR\nrequirement Target {\n}\nelement Source {\n}\nSource - satisfies -> Target")
+        val labels=s.commands.filterIsInstance<DrawText>();val source=labels.first { it.text=="element Source" };val target=labels.first { it.text=="requirement Target" };assertTrue(source.origin.x<target.origin.x)
+    }
     @Test fun actualStyleMeasuresLargeHeadingsAndPaintsOriginalElementDefault(){
         val s=scene("requirementDiagram\nrequirement LongRequirementTitle:::big {\ntext: Summary\n}\nelement client {\n}\nclassDef big fill:#dbeafe,stroke:#2563eb,font-size:30px\nstyle LongRequirementTitle stroke-width:3px")
         val rects=s.commands.filterIsInstance<DrawRect>();val heading=s.commands.filterIsInstance<DrawText>().first { it.text.startsWith("requirement ") };assertEquals(32.0,heading.style.fontSize);assertTrue(rects[0].rect.width>=FixedWidthTextMeasurer.measure(heading.text,heading.style).width+24);assertEquals("#dbeafe",rects[0].fill.value);assertEquals(3.0,rects[0].strokeWidth);assertEquals("#eff6ff",rects[1].fill.value)
