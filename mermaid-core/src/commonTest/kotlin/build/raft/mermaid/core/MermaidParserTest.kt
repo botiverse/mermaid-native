@@ -479,6 +479,31 @@ class MermaidParserTest {
     }
 
     @Test
+    fun pegGrammarLowersThroughProductionRailroadModel() {
+        val diagram = assertIs<RailroadDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            railroad-peg-beta
+            title "Expression grammar"
+            accTitle: Accessible grammar
+            # comment
+            expression <- number (("+" / "-") number)* ;
+            number <- digit+ ;
+            digit <- "0" / "1" ;
+            guard <- &"a" !digit . ("tail")? ;
+            accTitle <- "a rule name" ;
+        """.trimIndent())).diagram)
+        assertEquals(5, diagram.rules.size)
+        assertEquals("Accessible grammar", diagram.accTitle)
+        assertIs<RailroadSequence>(diagram.rules.first().definition)
+        val guard = assertIs<RailroadSequence>(diagram.rules[3].definition).children
+        assertEquals(listOf(RailroadSpecial("&\"a\""), RailroadSpecial("!digit"), RailroadSpecial("."), RailroadOptional(RailroadTerminal("tail"))), guard)
+        assertEquals(RailroadTerminal("a rule name"), diagram.rules.last().definition)
+        listOf("rule <- \"a\"", "rule <- [\"a\"] ;", "rule <- \"a\"** ;", "rule <- \"a\" / ;", "rule = \"a\" ;").forEach {
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-peg-beta\n$it"), it)
+        }
+        assertTrue(assertIs<RailroadDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-peg-beta")).diagram).rules.isEmpty())
+    }
+
+    @Test
     fun cynefinCanonicalMetadataAndReplacementReachPublicModel() {
         val source = """
             cynefin-beta:
