@@ -51,4 +51,9 @@ are retained as data; animated playback and exact D3 curve interpolation are not
 yet implemented by Native drawing. Collapsed groups do affect actual drawing:
 internal members disappear, internal edges are removed and external edges route
 to the group node. Repeated sibling groups combine their members for placement.
-Tests and frozen original-suite counts for this extension are pending.
+The original suite now passes 947 tests, with 1 failure (the separately parsed
+swimlane alias) and 3 upstream skips. Core JAR SHA-256:
+`0cd01328367fcd9d56477696e90c2052e982900103addc57155ea55ca01fbc57`.
+The frozen first matrix passed 142 core tests on each platform,104 layout tests
+and5 testkit tests; the final public-Web-consumer matrix is being rerun after
+updating a stale click-metadata negative assertion.
