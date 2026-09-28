@@ -782,6 +782,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             textMeasurer.measure(c4Stereotype(element), bodyStyle).width,
         ) } ?: 0.0) + 36.0)
         val cardHeight = if (diagram.elements.any { it.technology != null }) 110.0 else 92.0
+        // Reserve room for both relationship label lines between stacked cards.
+        val childGap = 56.0
         val sizes = mutableMapOf<String, SceneSize>()
         fun children(id: String): List<String> = childElements[id].orEmpty().map { it.id } + childBoundaries[id].orEmpty().map { it.id }
         fun size(id: String): SceneSize {
@@ -790,7 +792,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val result = if (boundary == null) SceneSize(cardWidth, cardHeight) else {
                 val childSizes = children(id).map { size(it) }
                 SceneSize(max(textMeasurer.measure(boundary.label, groupStyle).width + 32.0, (childSizes.maxOfOrNull { it.width } ?: 120.0) + 32.0),
-                    40.0 + childSizes.sumOf { it.height } + 20.0 * childSizes.size.coerceAtLeast(1))
+                    40.0 + childSizes.sumOf { it.height } + childGap * (childSizes.size - 1).coerceAtLeast(0) + 20.0)
             }
             sizes[id] = result; return result
         }
@@ -802,7 +804,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             rects[id] = SceneRect(x, y, box.width, box.height)
             if (id in boundaries) {
                 var childY = y + 40.0
-                children(id).forEach { child -> place(child, x + 16.0, childY); childY += sizes.getValue(child).height + 20.0 }
+                children(id).forEach { child -> place(child, x + 16.0, childY); childY += sizes.getValue(child).height + childGap }
             }
         }
         val top = config.padding + if (diagram.title == null) 0.0 else 44.0

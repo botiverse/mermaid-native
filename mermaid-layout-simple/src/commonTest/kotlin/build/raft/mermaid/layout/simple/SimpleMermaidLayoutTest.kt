@@ -128,6 +128,7 @@ import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.SceneColor
 import build.raft.mermaid.layout.ScenePoint
 import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
@@ -168,6 +169,24 @@ class SimpleMermaidLayoutTest {
         val edge = scene.commands.filterIsInstance<DrawLine>().single()
         assertEquals(outer.x, edge.from.x)
         assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
+
+    @Test fun c4StackedRelationshipTextStaysBetweenCards() {
+        val source = """C4Container
+            Boundary(app, "Application") {
+              Container(a, "First", "Kotlin")
+              Container(b, "Second", "SQL")
+            }
+            Rel(a, b, "Stores", "SQL")
+        """.trimIndent()
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val cards = scene.commands.filterIsInstance<DrawRect>().filter { it.fill == SceneColor("#dbeafe") }.map { it.rect }
+        val labels = scene.commands.filterIsInstance<DrawText>().filter { it.text == "Stores" || it.text == "[SQL]" && it.origin.y < cards[1].y }
+        assertEquals(2, labels.size)
+        for (label in labels) {
+            assertTrue(label.origin.y - label.style.fontSize > cards[0].y + cards[0].height)
+            assertTrue(label.origin.y + 3.0 < cards[1].y)
+        }
     }
 
     @Test fun mindmapOriginalShapesDrawDistinctGeometryWithMeasuredIconText() {

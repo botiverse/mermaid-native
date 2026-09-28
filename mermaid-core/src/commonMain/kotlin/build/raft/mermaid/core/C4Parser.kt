@@ -66,7 +66,7 @@ internal class C4Parser(private val source: String) {
             val hasTechnology = kind == C4ElementKind.CONTAINER || kind == C4ElementKind.COMPONENT
             val fields = if (hasTechnology) listOf("technology", "description", "sprite", "tags", "link") else listOf("description", "sprite", "tags", "link")
             args.drop(2).forEachIndexed { i, arg -> attrs[arg.name ?: fields.getOrElse(i) { "extra$i" }] = arg.value }
-            elements[id] = C4Element(id, label.value, attrs["description"], kind, macro.endsWith("_Ext"), attrs["technology"],
+            elements[id] = C4Element(id, label.value, attrs["description"] ?: attrs["descr"], kind, macro.endsWith("_Ext"), attrs["technology"] ?: attrs["techn"],
                 when { base.endsWith("Db") -> "database"; base.endsWith("Queue") -> "queue"; else -> "" }, stack.last(), label.name, attrs.filterKeys { it != "description" && it != "technology" })
         }
         if (pending.isNotEmpty()) return fail("Unclosed C4 macro", source.lines().size)
