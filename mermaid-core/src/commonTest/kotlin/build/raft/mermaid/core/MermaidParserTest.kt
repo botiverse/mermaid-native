@@ -912,6 +912,13 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun mindmapEmptyIconDecorationDoesNotReserveAnIcon() {
+        val empty = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon()")).diagram)
+        assertEquals(null, empty.nodes.single().icon)
+        val retained = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon(star)\n::icon()")).diagram)
+        assertEquals("star", retained.nodes.single().icon)
+    }
+
     @Test fun mindmapArbitraryIndentationPreservesSourceIdsDecorationsAndShapes() {
         val diagram = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             mindmap
