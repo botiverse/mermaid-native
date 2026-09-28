@@ -1785,6 +1785,17 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun radarCapsActualGridAtOriginalLimitAndUsesFirstNamedEntry() {
+        for ((requested, expected) in listOf(0 to 0, 12 to 12, 32 to 32, 33 to 32, 1000000 to 32)) {
+            val source = "radar-beta\naxis a,b,c\ncurve c{a 50, a 0, b 35, c 20}\nmin 20\nmax 50\nticks $requested"
+            val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+            assertEquals(expected, scene.commands.filterIsInstance<DrawEllipse>().size)
+            val firstMarker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
+            assertEquals(98.0, firstMarker.points.first().y)
+        }
+    }
+
+    @Test
     fun radarEmptyAndShortAxisGraphsRenderWithoutInvalidGeometry() {
         for (source in listOf("radar-beta", "radar-beta\ncurve c{1}", "radar-beta\naxis a\ncurve c{0}\nmax 0", "radar-beta\naxis a,b\ncurve c{1,2,3}")) {
             val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())

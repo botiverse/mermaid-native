@@ -1598,7 +1598,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val bodyStyle = TextStyle(fontSize = 12.0)
         val radius = 170.0
         val labelRadius = radius + 26.0
-        val ticks = (diagram.options.lastOrNull { it.name == "ticks" }?.number?.toInt() ?: 5).coerceIn(1, 50)
+        val ticks = (diagram.options.lastOrNull { it.name == "ticks" }?.number?.toInt() ?: 5).coerceIn(0, 32)
         val ringFractions = (1..ticks).map { it.toDouble() / ticks }
         val polygonGrid = diagram.options.lastOrNull { it.name == "graticule" }?.text == "polygon"
         val showLegend = diagram.options.lastOrNull { it.name == "showLegend" }?.flag != false
@@ -1635,7 +1635,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let {
             commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
         }
-        // Official radar uses circular graticule rings, not axis polygons.
+        // Circular rings are the default; polygon is an explicit diagram option.
         ringFractions.forEach { fraction ->
             val ringRadius = radius * fraction
             if (polygonGrid && axisCount >= 3) {
@@ -1677,7 +1677,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
             val points = diagram.axes.mapIndexed { axisIndex, axis ->
                 val value = if (curve.entries.any { it.axis != null }) {
-                    curve.entries.lastOrNull { it.axis == axis.id }?.value ?: diagram.minimum
+                    curve.entries.firstOrNull { it.axis == axis.id }?.value ?: diagram.minimum
                 } else curve.values.getOrElse(axisIndex) { diagram.minimum }
                 vertex(axisIndex, ((value - diagram.minimum) / range).coerceIn(0.0, 1.0))
             }
