@@ -18,6 +18,10 @@ public data class FlowchartDiagram(
     val subgraphs: List<FlowSubgraph> = emptyList(),
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val classDefinitions: Map<String,List<String>> = emptyMap(),
+    val interactions: List<FlowInteraction> = emptyList(),
+    val defaultEdgeStyles: List<String> = emptyList(),
+    val defaultInterpolate: String? = null,
 ) : MermaidDiagram
 
 public data class FlowNode(
@@ -26,6 +30,10 @@ public data class FlowNode(
     val shape: FlowNodeShape = FlowNodeShape.RECTANGLE,
     val labelType: String = "text",
     val borders: String? = null,
+    val styles: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
+    val createdByStyle: Boolean = false,
+    val metadata: Map<String,String> = emptyMap(),
 )
 
 public data class FlowSubgraph(
@@ -35,7 +43,11 @@ public data class FlowSubgraph(
     val direction: FlowDirection? = null,
     val parentId: String? = null,
     val labelType: String = "text",
+    val collapsed: Boolean = false,
+    val classes: List<String> = emptyList(),
 )
+
+public data class FlowInteraction(val nodeId:String,val value:String,val callback:Boolean=false,val arguments:String?=null,val tooltip:String?=null,val target:String?=null)
 
 public enum class FlowMarker { NONE, POINT, CROSS, CIRCLE }
 
@@ -56,6 +68,11 @@ public data class FlowEdge(
     val length: Int = 1,
     val id: String? = null,
     val labelType: String = "text",
+    val styles: List<String> = emptyList(),
+    val interpolate: String? = null,
+    val animate: Boolean? = null,
+    val animation: String? = null,
+    val classes: List<String> = emptyList(),
 )
 
 public enum class FlowNodeShape {
