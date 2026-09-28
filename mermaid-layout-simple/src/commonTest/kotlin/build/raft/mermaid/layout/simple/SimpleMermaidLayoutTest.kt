@@ -642,6 +642,31 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun timelinePreservesInterveningAndRepeatedEmptySectionsWithMeasuredHeaders() {
+        val name = "Wide section heading ".repeat(8)
+        val measurer = build.raft.mermaid.layout.TextMeasurer { text, style ->
+            val size = FixedWidthTextMeasurer.measure(text, style)
+            size.copy(width = size.width * if (style.fontWeight >= 600) 1.7 else 1.0)
+        }
+        for (direction in listOf("LR", "TD")) {
+            val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+                "timeline $direction\nsection Start\nFirst: Alpha\nsection $name\nsection Finish\nSecond: Beta\nsection Finish",
+            )).diagram
+            val scene = SimpleMermaidLayout.layout(chart, measurer, LayoutConfig())
+            val texts = scene.commands.filterIsInstance<DrawText>()
+            val empty = texts.single { it.text == name }
+            val first = texts.single { it.text == "First" }; val last = texts.single { it.text == "Second" }
+            assertEquals(2, texts.count { it.text == "Finish" })
+            if (direction == "LR") {
+                assertTrue(empty.origin.x > first.origin.x && empty.origin.x < last.origin.x)
+                val half = measurer.measure(empty.text, empty.style).width / 2
+                assertTrue(empty.origin.x - half >= 0 && empty.origin.x + half <= scene.width)
+            } else assertTrue(empty.origin.y > first.origin.y && empty.origin.y < last.origin.y)
+            assertEquals(2, scene.commands.filterIsInstance<DrawPolygon>().size)
+        }
+    }
+
+    @Test
     fun timelineEmptySectionsRenderWithoutCrashing() {
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
             "timeline\nsection Planning\nsection Delivery",

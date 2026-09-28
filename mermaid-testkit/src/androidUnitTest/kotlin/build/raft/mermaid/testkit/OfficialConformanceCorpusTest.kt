@@ -125,7 +125,7 @@ private fun MermaidDiagram.expectedVisibleLabels(): List<String> = when (this) {
     is SequenceDiagram -> actors.map { it.label } + messages.map { it.label }
     is EventModelingDiagram -> frames.map { it.entityId }
     is TimelineDiagram -> events.flatMap { event ->
-        listOfNotNull(event.section, event.period) + event.labels.flatMap { label ->
+        listOfNotNull(event.section, event.period.trim()) + event.labels.flatMap { label ->
             listOf(label.substringBefore('<').trim().takeIf { it.isNotEmpty() } ?: label)
         }
     }

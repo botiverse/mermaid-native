@@ -1351,6 +1351,19 @@ class MermaidParserTest {
     }
 
     @Test
+    fun timelineUsesTokenSpecificCommentAndSectionBoundaries() {
+        val chart = assertIs<TimelineDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline\ntitle URL %% encoded\n2023: Event %% retained\nsection Q1: plan\n20#24: ignored\n2025: #event#",
+        )).diagram)
+        assertEquals("URL %% encoded", chart.title)
+        assertEquals(listOf("Q1"), chart.sections)
+        assertEquals(listOf("Event %% retained", "plan"), chart.events.first().labels)
+        assertEquals(listOf("2023", "20", "2025"), chart.events.map { it.period })
+        assertEquals(emptyList(), chart.events[1].labels)
+        assertEquals(listOf("#event#"), chart.events.last().labels)
+    }
+
+    @Test
     fun malformedTimelineFailsClosed() {
         listOf("timeline RL", "timeline\n: Event without period", "timeline\n2024 :", "timeline\n2024 : Launch : ", "timeline\naccDescr {unclosed")
             .forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
