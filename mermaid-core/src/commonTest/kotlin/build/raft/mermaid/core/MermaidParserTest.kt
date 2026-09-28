@@ -1865,7 +1865,6 @@ class MermaidParserTest {
 
     @Test fun malformedVennFailsClosed() {
         listOf(
-            "venn-beta",
             "venn-beta\nset A\nset A",
             "venn-beta\nset A\nset B\nset C\nset D",
             "venn-beta\nset A:0\nset B",
@@ -1876,7 +1875,6 @@ class MermaidParserTest {
             "venn-beta\nset A\nset B\nunion A",
             "venn-beta\nset A\nset B\nunion A,B:Infinity",
             "venn-beta\nset A\nset B\ntext T[\"Deferred\"]",
-            "venn-beta\nset A\nset B\nstyle A fill:red",
             "venn-beta;\nset A\nset B",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
@@ -2051,5 +2049,13 @@ class MermaidParserTest {
         }
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("TREEVIEW-BETA\nroot/"))
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta\ntitle X\nroot/\n  titleFile.ts"))
+    }
+    @Test fun vennOriginalTextAndStylesReachTheProductModel() {
+        val d = assertIs<VennDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta\ntitle Overlap\nset A[Alpha]\n  text a1[Note]\nset B\nunion A,B[Both]\n  text ab1\nstyle A fill:rgb(255, 0, 128), color:#333")).diagram)
+        assertEquals("Overlap", d.title)
+        assertEquals(listOf("A"), d.texts[0].setIds)
+        assertEquals(listOf("A", "B"), d.texts[1].setIds)
+        assertEquals("rgb(255, 0, 128)", d.styles.single().properties["fill"])
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta"))
     }
 }

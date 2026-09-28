@@ -1082,16 +1082,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val unionStyle = TextStyle(fontSize = 12.0, fontWeight = 600, color = SceneColor("#334155"))
-        val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label }
+        val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label } + diagram.texts.map { it.label ?: it.id }
         val measuredWidth = max(
-            labels.maxOf { textMeasurer.measure(it, labelStyle).width },
+            (labels.maxOfOrNull { textMeasurer.measure(it, labelStyle).width } ?: 0.0),
             diagram.title?.let { textMeasurer.measure(it, titleStyle).width } ?: 0.0,
         )
         val width = max(720.0, measuredWidth + config.padding * 2 + 80.0).xyCoordinate()
         val height = if (diagram.sets.size == 2) 420.0 else 500.0
         val centerX = width / 2.0
         val titleOffset = if (diagram.title == null) 0.0 else 34.0
-        val centers = if (diagram.sets.size == 2) {
+        val centers = if (diagram.sets.size <= 1) listOf(ScenePoint(centerX, 220.0 + titleOffset)) else if (diagram.sets.size == 2) {
             listOf(ScenePoint(centerX - 82.0, 220.0 + titleOffset), ScenePoint(centerX + 82.0, 220.0 + titleOffset))
         } else {
             listOf(
@@ -1110,23 +1110,37 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let {
             commands += DrawText(it, ScenePoint(centerX, 32.0), anchor = TextAnchor.MIDDLE, style = titleStyle)
         }
+        fun properties(targets: List<String>): Map<String, String> = diagram.styles.filter { it.targets.sorted() == targets.sorted() }.flatMap { it.properties.entries }.associate { it.key to it.value }
+        fun color(value: String?, fallback: String): SceneColor {
+            if (value == null) return SceneColor(fallback)
+            val lower = value.lowercase()
+            val rgb = Regex("rgba?\\(\\s*([0-9.]+),\\s*([0-9.]+),\\s*([0-9.]+)(?:,\\s*([0-9.]+))?\\s*\\)").matchEntire(lower)
+            if (rgb != null) {
+                val channels = (1..3).map { rgb.groupValues[it].toDouble().toInt().coerceIn(0, 255) }
+                val alpha = rgb.groupValues[4].toDoubleOrNull()?.coerceIn(0.0, 1.0)
+                return SceneColor("#" + channels.joinToString("") { it.toString(16).padStart(2, '0') } + (alpha?.let { (it * 255).toInt().toString(16).padStart(2, '0') } ?: ""))
+            }
+            val hex = lower.startsWith('#') && lower.length in listOf(4, 5, 7, 9) && lower.drop(1).all { it in "0123456789abcdef" }
+            return SceneColor(if (hex) lower else NAMED_COLORS[lower] ?: fallback)
+        }
         diagram.sets.forEachIndexed { index, set ->
+            val style = properties(listOf(set.id))
             val center = centers[index]
             val radius = radii[index]
             commands += DrawEllipse(
                 center = center.canonical(),
                 radiusX = radius,
                 radiusY = radius,
-                fill = SceneColor(VENN_COLORS[index % VENN_COLORS.size]),
+                fill = color(style["fill"], VENN_COLORS[index % VENN_COLORS.size]),
                 fillOpacity = 0.28,
-                stroke = SceneColor(VENN_STROKES[index % VENN_STROKES.size]),
+                stroke = color(style["stroke"], VENN_STROKES[index % VENN_STROKES.size]),
                 strokeWidth = 2.0,
             )
             val dx = center.x - centroid.x
             val dy = center.y - centroid.y
             val length = sqrt(dx * dx + dy * dy).coerceAtLeast(1.0)
             val labelPoint = ScenePoint(center.x + dx / length * radius * 0.48, center.y + dy / length * radius * 0.48 + 4.0)
-            commands += DrawText(set.label, labelPoint.canonical(), anchor = TextAnchor.MIDDLE, style = labelStyle)
+            commands += DrawText(set.label, labelPoint.canonical(), anchor = TextAnchor.MIDDLE, style = labelStyle.copy(color = color(style["color"], "#111827")))
         }
         val centerById = diagram.sets.mapIndexed { index, set -> set.id to centers[index] }.toMap()
         diagram.unions.forEach { union ->
@@ -1136,7 +1150,19 @@ public object SimpleMermaidLayout : DiagramLayout {
                     memberCenters.sumOf { it.x } / memberCenters.size,
                     memberCenters.sumOf { it.y } / memberCenters.size + 4.0,
                 )
-                commands += DrawText(label, point.canonical(), anchor = TextAnchor.MIDDLE, style = unionStyle)
+                commands += DrawText(label, point.canonical(), anchor = TextAnchor.MIDDLE, style = unionStyle.copy(color = color(properties(union.setIds)["color"], "#334155")))
+            }
+        }
+        val rows = mutableMapOf<List<String>, Int>()
+        diagram.texts.forEach { text ->
+            val centersForText = text.setIds.mapNotNull { centerById[it] }
+            if (centersForText.isNotEmpty()) {
+                val key = text.setIds.sorted(); val row = rows[key] ?: 0; rows[key] = row + 1
+                val style = TextStyle(fontSize = 12.0, color = color(properties(listOf(text.id))["color"], "#334155"))
+                val label = text.label ?: text.id; val measured = textMeasurer.measure(label, style)
+                val x = centersForText.sumOf { it.x } / centersForText.size
+                val y = centersForText.sumOf { it.y } / centersForText.size + 26.0 + row * (measured.height + 6.0)
+                commands += DrawText(label, ScenePoint(x, y).canonical(), anchor = TextAnchor.MIDDLE, style = style)
             }
         }
         return LayoutScene(width, height, commands)

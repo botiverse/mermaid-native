@@ -604,7 +604,11 @@ public data class VennDiagram(
     val title: String? = null,
     val sets: List<VennSet>,
     val unions: List<VennUnion> = emptyList(),
+    val texts: List<VennText> = emptyList(),
+    val styles: List<VennStyle> = emptyList(),
 ) : MermaidDiagram
+public data class VennText(val setIds: List<String>, val id: String, val label: String? = null)
+public data class VennStyle(val targets: List<String>, val properties: Map<String, String>)
 public data class VennSet(val id: String, val label: String, val size: Double? = null)
 public data class VennUnion(val setIds: List<String>, val label: String? = null, val size: Double? = null)
 
