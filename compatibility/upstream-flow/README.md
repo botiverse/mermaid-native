@@ -43,3 +43,11 @@ Callback arguments remain data; Native hosts do not execute callbacks or bind
 links yet. Italic font rendering and exact dash arrays (including ellipse dashes)
 are not implemented. FlowDB warnings/URL policy are upstream behavior, not Native
 coverage. Frozen original-suite and multiplatform results are pending.
+
+The metadata extension decodes scalar YAML labels and a set of supported shape
+aliases, retaining metadata on typed nodes. Edge interpolation/animation settings
+are retained as data; animated playback and exact D3 curve interpolation are not
+yet implemented by Native drawing. Collapsed groups do affect actual drawing:
+internal members disappear, internal edges are removed and external edges route
+to the group node. Repeated sibling groups combine their members for placement.
+Tests and frozen original-suite counts for this extension are pending.

@@ -126,7 +126,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene = when (diagram) {
-        is FlowchartDiagram -> layoutFlowchart(diagram, textMeasurer, config)
+        is FlowchartDiagram -> layoutFlowchart(visibleFlow(diagram), textMeasurer, config)
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
         is PieDiagram -> layoutPie(diagram, textMeasurer, config)
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
