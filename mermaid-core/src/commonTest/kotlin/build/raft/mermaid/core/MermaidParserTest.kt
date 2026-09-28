@@ -1762,18 +1762,23 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun sankeyPreservesParallelLinksAndCyclicIdentifiers() {
+        val source = "sankey\n__proto__,A,0.597\nA,__proto__,0.403\nA,__proto__,0.2\nA,A,0.1"
+        val diagram = assertIs<SankeyDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals(listOf("__proto__", "A"), diagram.nodes.map { it.id })
+        assertEquals(4, diagram.links.size)
+        assertEquals(listOf(0.597, 0.403, 0.2, 0.1), diagram.links.map { it.value })
+    }
+
     @Test fun malformedSankeyFailsClosed() {
         listOf(
             "sankey",
             "sankey\nA,B",
             "sankey\nA,B,1,extra",
             "sankey\nA,,1",
-            "sankey\nA,A,1",
             "sankey\nA,B,0",
             "sankey\nA,B,NaN",
             "sankey\nA,B,Infinity",
-            "sankey\nA,B,1\nA,B,2",
-            "sankey\nA,B,1\nB,A,1",
             "sankey\nA,\"unterminated,1",
             "sankey\nA,\"B\" tail,1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
