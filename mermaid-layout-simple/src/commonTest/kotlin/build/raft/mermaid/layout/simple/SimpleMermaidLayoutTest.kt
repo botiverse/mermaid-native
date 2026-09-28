@@ -140,6 +140,24 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun mindmapOriginalShapesDrawDistinctGeometryWithMeasuredIconText() {
+        val source = "mindmap\nroot(Root)\n cloud)Cloud(\n ::icon(star)\n bang))Burst((\n hex{{Hexagon}}"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(3, scene.commands.filterIsInstance<DrawPolygon>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "star" })
+        for (polygon in scene.commands.filterIsInstance<DrawPolygon>()) for (point in polygon.points) {
+            assertTrue(point.x >= 0.0 && point.x <= scene.width)
+            assertTrue(point.y >= 0.0 && point.y <= scene.height)
+        }
+        val tallRoot = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot((Long round root))\n child")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(tallRoot.commands.filterIsInstance<DrawEllipse>().all { it.center.y - it.radiusY >= 24.0 })
+        val longText = "A".repeat(100)
+        val longScene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot))$longText((")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val outline = longScene.commands.filterIsInstance<DrawPolygon>().single()
+        val measured = FixedWidthTextMeasurer.measure(longText, build.raft.mermaid.layout.TextStyle()).width
+        assertTrue((outline.points.maxOf { it.x } - outline.points.minOf { it.x }) * 0.80 >= measured + 32.0)
+    }
+
     @Test fun packetAdjacentBitIndicesHaveAReadableGapAndSingleBitsAreNotDuplicated() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""packet
 +8: "Version"

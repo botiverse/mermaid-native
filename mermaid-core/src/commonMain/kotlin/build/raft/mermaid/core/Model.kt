@@ -381,9 +381,12 @@ public data class MindmapNode(
     val parentId: String?,
     val depth: Int,
     val shape: MindmapNodeShape = MindmapNodeShape.DEFAULT,
+    val sourceId: String = if (id.startsWith("__mindmap_")) label else id,
+    val icon: String? = null,
+    val cssClasses: String? = null,
 )
 
-public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE }
+public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE, ROUNDED_RECTANGLE, CLOUD, BANG, HEXAGON }
 
 public data class GanttDiagram(
     val title: String?, val dateFormat: String, val sections: List<GanttSection>,

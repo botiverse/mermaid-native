@@ -912,13 +912,34 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun mindmapArbitraryIndentationPreservesSourceIdsDecorationsAndShapes() {
+        val diagram = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            mindmap
+            root(Root)
+                  child["Quoted []"]
+                  ::icon(star)
+                  :::hot
+                   cloud)Cloud(
+                  boom))Burst((
+                  hex{{Hexagon}}
+        """.trimIndent())).diagram)
+        assertEquals(listOf(0, 1, 2, 1, 1), diagram.nodes.map { it.depth })
+        assertEquals("star", diagram.nodes[1].icon)
+        assertEquals("hot", diagram.nodes[1].cssClasses)
+        assertEquals("child", diagram.nodes[2].parentId)
+        assertEquals(MindmapNodeShape.CLOUD, diagram.nodes[2].shape)
+        assertEquals(MindmapNodeShape.BANG, diagram.nodes[3].shape)
+        assertEquals(MindmapNodeShape.HEXAGON, diagram.nodes[4].shape)
+        val duplicate = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot\n a[One]\n a[Two]")).diagram)
+        assertEquals(listOf("a", "a"), duplicate.nodes.drop(1).map { it.sourceId })
+        assertEquals(3, duplicate.nodes.map { it.id }.distinct().size)
+    }
+
     @Test
     fun malformedMindmapIndentationAndMultipleRootsFailClosed() {
         listOf(
-            "mindmap\n    root((Root))\n      Child",
             "mindmap\n  root((Root))\n  Other",
             "mindmap\n  root((Root))\n\tChild",
-            "mindmap\n  root((Root))\n    Child\n        Grandchild",
             "mindmap\n  root((Root))\n    unsupported { shape",
             "mindmap\n  root((Root))\n    __mindmap_1[Reserved]",
         ).forEach { source ->
