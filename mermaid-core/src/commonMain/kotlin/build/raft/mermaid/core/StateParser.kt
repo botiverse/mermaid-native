@@ -3,6 +3,7 @@ package build.raft.mermaid.core
 /** State grammar keeps composite boundaries and multiline notes before tokenization. */
 internal class StateParser(private val source: String) {
     private val nodes = linkedMapOf<String, StateNode>()
+    private val definitions = linkedMapOf<String,List<String>>()
     private val transitions = mutableListOf<StateTransition>()
     private val notes = mutableListOf<StateNote>()
     private val stack = mutableListOf<String>()
@@ -34,6 +35,18 @@ internal class StateParser(private val source: String) {
                 }
                 text == "hide empty description" -> Unit
                 text.startsWith("scale ") -> requireState(text.removePrefix("scale ").trim().removeSuffix("width").trim().let { it.isNotEmpty() && it.all(Char::isDigit) },"Expected numeric scale width") // Upstream grammar emits no state statement for these directives.
+                text.startsWith("classDef ") -> {
+                    val rest=text.drop(9).trim();val name=rest.takeWhile { !it.isWhitespace() }
+                    requireState(name.isNotBlank(),"Expected class name");definitions[name]=styleValues(rest.drop(name.length).trim())
+                }
+                text.startsWith("class ") -> {
+                    val rest=text.drop(6).trim();val split=rest.lastIndexOf(' ');requireState(split>0,"Expected state class")
+                    val css=rest.drop(split+1).trim();rest.take(split).split(',').forEach { id->val key=id.trim();validateId(key,false);register(key);nodes[key]=nodes.getValue(key).copy(classes=nodes.getValue(key).classes+css) }
+                }
+                text.startsWith("style ") -> {
+                    val rest=text.drop(6).trim();val split=rest.indexOf(' ');requireState(split>0,"Expected state style")
+                    val values=styleValues(rest.drop(split+1));rest.take(split).split(',').forEach { id->validateId(id,false);register(id);nodes[id]=nodes.getValue(id).copy(styles=values) }
+                }
                 text.startsWith("note ") -> note(text)
                 text.endsWith('{') -> {
                     val declaration=text.dropLast(1).trim();requireState(declaration.startsWith("state "),"Expected composite state")
@@ -42,14 +55,22 @@ internal class StateParser(private val source: String) {
                 }
                 "-->" in text -> {
                     val split=text.indexOf("-->");val from=endpoint(text.take(split).trim(),true)
-                    val target=text.drop(split+3).trim();val colon=target.indexOf(':');val to=endpoint(if(colon<0)target else target.take(colon).trim(),false)
+                    val target=text.drop(split+3).trim();val colon=descriptionColon(target);val targetText=if(colon<0)target else target.take(colon).trim();val tokens=targetText.split(Regex("\\s+"));val to=endpoint(tokens.first(),false);tokens.drop(1).forEach { state(it) }
                     transitions+=StateTransition(from,to,if(colon<0)""else target.drop(colon+1).trim())
                 }
-                else -> state(text.removePrefix("state "))
+                else -> if(!text.startsWith("state ") && descriptionColon(text)<0 && !text.startsWith('"'))text.split(Regex("\\s+")).forEach { state(it) } else state(text.removePrefix("state "))
             }
         }
         requireState(stack.isEmpty(),"Unclosed composite state")
-        MermaidParseResult.Success(StateDiagram(direction,nodes.values.toList(),transitions.toList(),notes.toList(),title,description))
+        val visiting=mutableSetOf<String>();val visited=mutableSetOf<String>()
+        fun validateHierarchy(id:String) {
+            if(id in visited)return
+            requireState(visiting.add(id),"Cyclic composite state")
+            nodes[id]?.childIds?.forEach(::validateHierarchy)
+            visiting.remove(id);visited.add(id)
+        }
+        nodes.keys.forEach(::validateHierarchy)
+        MermaidParseResult.Success(StateDiagram(direction,nodes.values.toList(),transitions.toList(),notes.toList(),title,description,definitions.toMap()))
     } catch(e:StateSyntaxError) {
         val prefix=source.take(statementAt)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message ?: "Unsupported state syntax",SourceLocation(prefix.count { it=='\n' }+1,statementAt-prefix.lastIndexOf('\n')))))
@@ -61,12 +82,26 @@ internal class StateParser(private val source: String) {
         stack.lastOrNull()?.let { parent -> val node=nodes.getValue(parent);if(id!=parent && id !in node.childIds)nodes[parent]=node.copy(childIds=node.childIds+id) }
         return id
     }
-    private fun endpoint(text:String,sourceEndpoint:Boolean):String = if(text=="[*]") {
-        val kind=if(sourceEndpoint)StateNodeKind.START else StateNodeKind.END
-        register("__${kind.name.lowercase()}_${pseudoIndex++}","",kind)
-    }else state(text,declared=false)
+    private fun endpoint(text:String,sourceEndpoint:Boolean):String {
+        val raw=text.substringBefore(":::");val css=text.substringAfter(":::","")
+        val id=if(raw=="[*]") {
+            val kind=if(sourceEndpoint)StateNodeKind.START else StateNodeKind.END
+            register("__${kind.name.lowercase()}_${pseudoIndex++}","",kind)
+        }else state(raw,declared=false)
+        if(css.isNotEmpty())nodes[id]=nodes.getValue(id).copy(classes=nodes.getValue(id).classes+css)
+        return id
+    }
+    private fun descriptionColon(text:String)=text.indices.firstOrNull { text[it]==':' && text.getOrNull(it-1)!=':' && text.getOrNull(it+1)!=':' } ?: -1
+    private fun styleValues(text:String):List<String> {
+        val values=text.split(',').map { it.trim() };requireState(values.all { it.contains(':') && it.substringAfter(':').isNotBlank() },"Invalid state style");return values
+    }
     private fun state(raw:String,composite:Boolean=false,declared:Boolean=true):String {
         val text=raw.trim()
+        if(":::" in text && !text.startsWith('"')) {
+            val id=state(text.substringBefore(":::"),composite,declared)
+            val css=text.substringAfter(":::").trim();requireState(css.isNotEmpty(),"Expected state class")
+            nodes[id]=nodes.getValue(id).copy(classes=nodes.getValue(id).classes+css);return id
+        }
         if(text.startsWith('"')) {
             val end=text.indexOf('"',1);requireState(end>0,"Unclosed state label")
             val rest=text.drop(end+1).trim();requireState(rest.startsWith("as "),"Expected state alias")
@@ -98,13 +133,15 @@ internal class StateParser(private val source: String) {
         statementAt=at
         if(at>=source.length)return ""
         if(source[at]=='}'){at++;return "}"}
-        val begin=at;var quote=false
+        val begin=at;var quote=false;var literalText=false
         while(at<source.length){val c=source[at]
             if(c=='"')quote=!quote
             if(!quote){
+                if(at>begin && source.startsWith("class ",at) && source[at-1].isWhitespace() && "-->" in source.substring(begin,at) && descriptionColon(source.substring(begin,at))<0)return source.substring(begin,at).trim()
                 if(source.startsWith("%%",at)){val result=source.substring(begin,at).trim();while(at<source.length && source[at]!='\n')at++;return result}
-                if(c=='{' ){at++;return source.substring(begin,at).trim()}
-                if(c=='}')return source.substring(begin,at).trim()
+                if(c==':' && source.getOrNull(at-1)!=':' && source.getOrNull(at+1)!=':')literalText=true
+                if(c=='{' && !literalText){at++;return source.substring(begin,at).trim()}
+                if(c=='}' && !literalText)return source.substring(begin,at).trim()
                 if(c=='\n' || c==';'){val result=source.substring(begin,at).trim();at++;return result}
             };at++
         }
