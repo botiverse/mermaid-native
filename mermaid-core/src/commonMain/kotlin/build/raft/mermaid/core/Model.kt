@@ -449,6 +449,8 @@ public data class RequirementDiagram(
     val relationships: List<RequirementRelationship>,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val direction: FlowDirection? = null,
+    val classDefinitions: Map<String,List<String>> = emptyMap(),
 ) : MermaidDiagram
 
 public data class RequirementDefinition(
@@ -458,16 +460,20 @@ public data class RequirementDefinition(
     val risk: RequirementRisk,
     val verifyMethod: RequirementVerifyMethod,
     val type: RequirementType = RequirementType.REQUIREMENT,
+    val classes: List<String> = listOf("default"),
+    val styles: List<String> = emptyList(),
 )
 
-public enum class RequirementType { REQUIREMENT, FUNCTIONAL_REQUIREMENT, INTERFACE_REQUIREMENT, PERFORMANCE_REQUIREMENT }
-public enum class RequirementRisk { LOW, MEDIUM, HIGH }
-public enum class RequirementVerifyMethod { ANALYSIS, DEMONSTRATION, INSPECTION, TEST }
+public enum class RequirementType { REQUIREMENT, FUNCTIONAL_REQUIREMENT, INTERFACE_REQUIREMENT, PERFORMANCE_REQUIREMENT, PHYSICAL_REQUIREMENT, DESIGN_CONSTRAINT }
+public enum class RequirementRisk { UNSPECIFIED, LOW, MEDIUM, HIGH }
+public enum class RequirementVerifyMethod { UNSPECIFIED, ANALYSIS, DEMONSTRATION, INSPECTION, TEST }
 
 public data class RequirementElement(
     val name: String,
     val type: String,
     val docRef: String,
+    val classes: List<String> = listOf("default"),
+    val styles: List<String> = emptyList(),
 )
 
 public data class RequirementRelationship(
@@ -476,7 +482,7 @@ public data class RequirementRelationship(
     val kind: RequirementRelationshipKind,
 )
 
-public enum class RequirementRelationshipKind { CONTAINS, SATISFIES, VERIFIES }
+public enum class RequirementRelationshipKind { CONTAINS, COPIES, DERIVES, SATISFIES, VERIFIES, REFINES, TRACES }
 
 public data class KanbanDiagram(val columns: List<KanbanColumn>) : MermaidDiagram
 public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>)

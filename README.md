@@ -82,6 +82,8 @@ State diagrams support bare identifiers, aliases, repeated descriptions, nested 
 
 Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
 
+Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards, blue elements, line spacing and stroke palette remain unchanged. The pinned original Requirement parser suite passes43/43; this does not establish complete DB or visual parity.
+
 ### Gantt grammar and dates
 
 Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
