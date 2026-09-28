@@ -2018,7 +2018,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val maxDay = tasks.maxOfOrNull { it.second.startDay + it.second.durationDays } ?: minDay + 1
         val tickLabelWidth = textMeasurer.measure("0000-00-00", tickStyle).width
         val span = max(1, maxDay - minDay)
-        val scale = if(span>30) 720.0/span else max(28.0,tickLabelWidth+8.0)
+        val scale = minOf(720.0 / span, max(28.0, tickLabelWidth + 8.0))
         val labelWidth = tasks.maxOfOrNull { textMeasurer.measure("${it.first}: ${it.second.name}", body).width }?.plus(16.0) ?: 120.0
         val rightPadding=max(config.padding,tickLabelWidth/2+2)
         val width = config.padding + rightPadding + labelWidth + span * scale
@@ -2031,8 +2031,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 16.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
         commands += DrawLine(ScenePoint(axisStartX, axisY.xyCoordinate()), ScenePoint(axisEndX, axisY.xyCoordinate()))
-        val tickStep=max(1,kotlin.math.ceil(span/12.0).toInt())
-        val tickDays=((minDay..maxDay step tickStep).toList()+maxDay).distinct()
+        val tickStep = max(1, ceil((tickLabelWidth + 8.0) / scale).toInt())
+        val tickDays = ((minDay..maxDay step tickStep).toList() + maxDay).distinct().toMutableList()
+        if (tickDays.size > 2 && (tickDays.last() - tickDays[tickDays.lastIndex - 1]) * scale < tickLabelWidth + 8.0) {
+            tickDays.removeAt(tickDays.lastIndex - 1)
+        }
         for (day in tickDays) {
             val x = (config.padding + labelWidth + (day - minDay) * scale).xyCoordinate()
             commands += DrawLine(ScenePoint(x, axisY.xyCoordinate()), ScenePoint(x, (axisY + 6.0).xyCoordinate()), strokeWidth = 1.0)
