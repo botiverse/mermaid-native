@@ -457,61 +457,7 @@ public object MermaidParser {
         } else MermaidParseResult.Failure(diagnostics)
     }
 
-    private fun parseVenn(source: String): MermaidParseResult {
-        val physicalLines = source.toMindmapLines()
-        if (physicalLines.firstOrNull()?.text != "venn-beta") {
-            return failure(
-                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-                "Venn requires the exact venn-beta header",
-                physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1),
-            )
-        }
-        val statements = source.toStatements()
-        val sets = linkedMapOf<String, VennSet>()
-        val unions = mutableListOf<VennUnion>()
-        val unionKeys = mutableSetOf<String>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var title: String? = null
-
-        statements.drop(1).forEach { statement ->
-            VENN_TITLE.matchEntire(statement.text)?.let { match ->
-                if (title != null || sets.isNotEmpty() || unions.isNotEmpty()) {
-                    diagnostics += unsupported(statement, "Venn title must appear once before sets")
-                } else {
-                    title = match.groupValues[1]
-                }
-                return@forEach
-            }
-            VENN_SET.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1].unquoteVennId()
-                val label = match.groupValues[2].ifEmpty { id }
-                val size = match.groupValues[3].parseVennSize(statement, diagnostics)
-                if (id in sets) diagnostics += unsupported(statement, "Duplicate venn set")
-                else if (size != INVALID_VENN_SIZE) sets[id] = VennSet(id, label, size)
-                return@forEach
-            }
-            VENN_UNION.matchEntire(statement.text)?.let { match ->
-                val rawMembers = match.groupValues[1].parseVennMembers()
-                val members = rawMembers.mapNotNull { token -> VENN_IDENTIFIER.matchEntire(token)?.value?.unquoteVennId() }
-                val key = members.sorted().joinToString("\u0000")
-                val size = match.groupValues[3].parseVennSize(statement, diagnostics)
-                when {
-                    members.size != rawMembers.size || members.size !in 2..3 -> diagnostics += unsupported(statement, "Venn unions require two or three valid set identifiers")
-                    members.toSet().size != members.size -> diagnostics += unsupported(statement, "Venn union members must be unique")
-                    members.any { it !in sets } -> diagnostics += unsupported(statement, "Venn union members must reference earlier sets")
-                    !unionKeys.add(key) -> diagnostics += unsupported(statement, "Duplicate venn union")
-                    size != INVALID_VENN_SIZE -> unions += VennUnion(members, match.groupValues[2].ifEmpty { null }, size)
-                }
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported venn syntax")
-        }
-        if (sets.size !in 2..3) {
-            diagnostics += unsupported(statements.first(), "Venn partial support requires two or three sets")
-        }
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(VennDiagram(title, sets.values.toList(), unions))
-        else MermaidParseResult.Failure(diagnostics)
-    }
+    private fun parseVenn(source: String): MermaidParseResult = VennParser(source).parse()
 
     private fun parseUsecase(source: String): MermaidParseResult {
         val physicalLines = source.toMindmapLines()

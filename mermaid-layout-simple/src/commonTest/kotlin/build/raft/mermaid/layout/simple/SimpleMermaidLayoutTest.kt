@@ -2150,4 +2150,11 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Empty grammar" })
         assertTrue(scene.width > 0 && scene.height > 0)
     }
+    @Test fun vennSingleSetStylesAndNotesRenderWithoutEmptyCrash() {
+        fun render(source: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val scene = render("venn-beta\nset A[Alpha]\n  text note[Visible note]\nstyle A fill:rgb(255, 0, 128)\nstyle note color:red")
+        assertEquals(SceneColor("#ff0080"), scene.commands.filterIsInstance<DrawEllipse>().single().fill)
+        assertEquals(SceneColor("#ff0000"), scene.commands.filterIsInstance<DrawText>().single { it.text == "Visible note" }.style.color)
+        assertTrue(render("venn-beta").commands.isEmpty())
+    }
 }
