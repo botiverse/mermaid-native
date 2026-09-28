@@ -1222,7 +1222,7 @@ class SimpleMermaidLayoutTest {
 
     @Test
     fun gitGraphVerticalDirectionsPreserveLabelsOrderAndMeasuredBounds() {
-        val source = "gitGraph TB\ncommit id: \"base\" msg: \"Initial work\" tag: \"v1\" tag: \"stable\"\nbranch feature order: 2\ncommit id: \"next\""
+        val source = "gitGraph TB:\ncommit id: \"base\" msg: \"Initial work\" tag: \"v1\" tag: \"stable\"\nbranch feature order: 2\ncommit id: \"next\""
         fun scene(source: String): LayoutScene = SimpleMermaidLayout.layout(
             assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram,
             FixedWidthTextMeasurer, LayoutConfig(),
@@ -1251,6 +1251,19 @@ class SimpleMermaidLayoutTest {
         val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("gitGraph")).diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertTrue(empty.width.isFinite() && empty.height.isFinite())
         assertTrue(empty.commands.filterIsInstance<DrawText>().any { it.text == "main" })
+    }
+
+    @Test
+    fun gitGraphReplacementCommitDrawsAfterEarlierSequence() {
+        for (header in listOf("gitGraph", "gitGraph TB:")) {
+            val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+                header + "\ncommit id: \"first\"\ncommit id: \"second\"\ncommit id: \"first\"",
+            )).diagram
+            val texts = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()).commands.filterIsInstance<DrawText>()
+            val first = texts.first { it.text == "first" }.origin
+            val second = texts.first { it.text == "second" }.origin
+            if (header == "gitGraph") assertTrue(first.x > second.x) else assertTrue(first.y > second.y)
+        }
     }
 
     @Test

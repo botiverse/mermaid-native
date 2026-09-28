@@ -474,6 +474,7 @@ public data class GitGraphCommit(
     val customId: Boolean = false,
     val customType: GitGraphCommitType? = null,
     val isCherryPick: Boolean = false,
+    val sequence: Int = 0,
 )
 
 public enum class GitGraphCommitType { NORMAL, REVERSE, HIGHLIGHT }
