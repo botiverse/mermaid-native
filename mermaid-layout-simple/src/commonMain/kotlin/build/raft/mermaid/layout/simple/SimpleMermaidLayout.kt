@@ -1962,9 +1962,15 @@ public object SimpleMermaidLayout : DiagramLayout {
         val children = diagram.nodes.groupBy { it.parentId }
         val sizes = diagram.nodes.associate { node ->
             val text = textMeasurer.measure(node.label, style)
-            val horizontalPadding = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) 44.0 else 32.0
-            val width = max(92.0, text.width + horizontalPadding)
-            val height = max(42.0, text.height + 20.0)
+            val iconWidth = node.icon?.let { textMeasurer.measure(it, TextStyle(fontSize = 10.0)).width } ?: 0.0
+            val horizontalPadding = when (node.shape) { MindmapNodeShape.CLOUD, MindmapNodeShape.BANG, MindmapNodeShape.HEXAGON -> 64.0; MindmapNodeShape.DOUBLE_CIRCLE -> 44.0; else -> 32.0 }
+            val contentWidth = max(text.width, iconWidth)
+            val width = max(92.0, when (node.shape) {
+                MindmapNodeShape.BANG -> (contentWidth + 32.0) / 0.80
+                MindmapNodeShape.CLOUD -> (contentWidth + 32.0) / 0.88
+                else -> contentWidth + horizontalPadding
+            })
+            val height = max(42.0, text.height + 20.0) + if (node.icon == null) 0.0 else 18.0
             val side = if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) max(width, height) else 0.0
             node.id to SceneSize(
                 if (node.shape == MindmapNodeShape.DOUBLE_CIRCLE) side else width,
@@ -2001,7 +2007,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val root = diagram.nodes.single { it.parentId == null }
         place(root.id)
 
-        val rects = diagram.nodes.associate { node ->
+        val rawRects = diagram.nodes.associate { node ->
             val size = sizes.getValue(node.id)
             node.id to SceneRect(
                 x = columnX[node.depth],
@@ -2010,6 +2016,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 height = size.height,
             )
         }
+        val shiftY = max(0.0, config.padding - rawRects.values.minOf { it.y })
+        val rects = rawRects.mapValues { (_, rect) -> rect.copy(y = rect.y + shiftY) }
         val commands = mutableListOf<DrawCommand>()
         diagram.nodes.filter { it.parentId != null }.forEach { node ->
             val parent = rects.getValue(requireNotNull(node.parentId))
@@ -2026,16 +2034,31 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val radius = rect.width / 2.0
                 commands += DrawEllipse(center, radius, radius)
                 commands += DrawEllipse(center, radius - 4.0, radius - 4.0)
+            } else if (node.shape in setOf(MindmapNodeShape.CLOUD, MindmapNodeShape.BANG, MindmapNodeShape.HEXAGON)) {
+                val cx = rect.x + rect.width / 2.0
+                val cy = rect.y + rect.height / 2.0
+                val points = if (node.shape == MindmapNodeShape.HEXAGON) listOf(
+                    ScenePoint(rect.x, cy), ScenePoint(rect.x + 18.0, rect.y), ScenePoint(rect.x + rect.width - 18.0, rect.y),
+                    ScenePoint(rect.x + rect.width, cy), ScenePoint(rect.x + rect.width - 18.0, rect.y + rect.height), ScenePoint(rect.x + 18.0, rect.y + rect.height),
+                ) else (0 until 48).map { i ->
+                    val angle = 2.0 * kotlin.math.PI * i / 48.0
+                    val radius = if (node.shape == MindmapNodeShape.BANG) (if (i % 2 == 0) 1.0 else 0.80)
+                        else 0.94 + 0.06 * kotlin.math.cos(8.0 * angle)
+                    ScenePoint(cx + rect.width / 2.0 * radius * kotlin.math.cos(angle), cy + rect.height / 2.0 * radius * kotlin.math.sin(angle))
+                }
+                commands += DrawPolygon(points, SceneColor("#ffffff"))
+                commands += DrawPolyline(points + points.first(), stroke = SceneColor("#334155"))
             } else {
                 val radius = if (node.shape == MindmapNodeShape.RECTANGLE) 2.0 else 12.0
                 commands += DrawRect(rect, cornerRadius = radius)
             }
             commands += DrawText(
                 node.label,
-                ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + style.fontSize * 0.35),
+                ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + style.fontSize * 0.35 - if (node.icon == null) 0.0 else 9.0),
                 TextAnchor.MIDDLE,
                 style,
             )
+            node.icon?.let { icon -> commands += DrawText(icon, ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))) }
         }
         val width = rects.values.maxOf { it.x + it.width } + config.padding
         val height = maxOf(
