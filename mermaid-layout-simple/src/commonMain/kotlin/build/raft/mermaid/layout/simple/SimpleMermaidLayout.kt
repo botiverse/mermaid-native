@@ -1785,7 +1785,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         var cursor = config.padding + 52.0
         val rows = mutableListOf<Pair<Double, TimelineEntry>>()
         entries.forEach { entry ->
-            if (entry.startsSection) cursor += 8.0
+            if (entry.startsSection) cursor += if (rows.lastOrNull()?.second?.event?.labels?.isNotEmpty() == true) 24.0 else 8.0
             rows += cursor to entry
             cursor += entry.event?.let(::eventHeight) ?: 30.0
         }
