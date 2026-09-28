@@ -1145,6 +1145,17 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun sectionlessJourneyStartsAtPaddingWithoutInventingSectionCard() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("journey\nTask: 5")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val cards = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(1, cards.size)
+        assertEquals(LayoutConfig().padding, cards.single().rect.x)
+        assertEquals("#bbf7d0", cards.single().fill.value)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().none { it.text.isBlank() })
+    }
+
+    @Test
     fun userJourneyProducesDeterministicSectionAndTaskCards() {
         val diagram = UserJourneyDiagram(
             "Checkout journey",

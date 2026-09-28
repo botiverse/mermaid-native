@@ -1653,7 +1653,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val body = TextStyle(fontSize = 12.0)
         val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val sectionWidth = max(120.0, (diagram.sections.maxOfOrNull { textMeasurer.measure(it.name, sectionStyle).width } ?: 0.0) + 24.0)
+        val namedSections = diagram.sections.filter { it.name.isNotBlank() }
+        val sectionWidth = if (namedSections.isEmpty()) 0.0 else max(120.0, namedSections.maxOf { textMeasurer.measure(it.name, sectionStyle).width } + 24.0)
         val taskWidth = max(
             132.0,
             (diagram.sections.flatMap { it.tasks }.maxOfOrNull { task ->
@@ -1682,16 +1683,18 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.sections.forEachIndexed { sectionIndex, section ->
             val y = config.padding + titleHeight + sectionIndex * rowHeight
-            commands += DrawRect(
-                SceneRect(config.padding, y, sectionWidth - 12.0, cardHeight),
-                cornerRadius = 8.0,
-                fill = SceneColor("#e2e8f0"),
-            )
-            commands += DrawText(
-                section.name,
-                ScenePoint(config.padding + 12.0, y + 38.0),
-                style = sectionStyle,
-            )
+            if (section.name.isNotBlank()) {
+                commands += DrawRect(
+                    SceneRect(config.padding, y, sectionWidth - 12.0, cardHeight),
+                    cornerRadius = 8.0,
+                    fill = SceneColor("#e2e8f0"),
+                )
+                commands += DrawText(
+                    section.name,
+                    ScenePoint(config.padding + 12.0, y + 38.0),
+                    style = sectionStyle,
+                )
+            }
             section.tasks.forEachIndexed { taskIndex, task ->
                 val x = config.padding + sectionWidth + taskIndex * (taskWidth + taskGap)
                 val fill = JOURNEY_SCORE_COLORS[task.score.coerceIn(0, JOURNEY_SCORE_COLORS.lastIndex)]
