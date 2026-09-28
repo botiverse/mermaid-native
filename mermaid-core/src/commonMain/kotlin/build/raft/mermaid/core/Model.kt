@@ -182,7 +182,7 @@ public data class StateNode(
     val styles: List<String> = emptyList(),
 )
 
-public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
+public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN, DIVIDER, NOTE }
 
 public data class StateNote(
     val targetId: String,
@@ -372,9 +372,22 @@ public data class MindmapNode(
 
 public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE }
 
-public data class GanttDiagram(val title: String?, val dateFormat: String, val sections: List<GanttSection>) : MermaidDiagram
+public data class GanttDiagram(
+    val title: String?, val dateFormat: String, val sections: List<GanttSection>,
+    val accessibilityTitle: String? = null, val accessibilityDescription: String? = null,
+    val excludes: List<String> = emptyList(), val includes: List<String> = emptyList(),
+    val inclusiveEndDates: Boolean = false, val todayMarker: String? = null,
+    val axisFormat: String? = null, val tickInterval: String? = null,
+    val weekday: String = "sunday", val weekend: String = "saturday",
+    val displayMode: String? = null, val interactions: List<FlowInteraction> = emptyList(),
+) : MermaidDiagram
 public data class GanttSection(val name: String, val tasks: List<GanttTask>)
-public data class GanttTask(val name: String, val id: String, val startDay: Int, val durationDays: Int, val status: GanttTaskStatus = GanttTaskStatus.TODO)
+public data class GanttTask(
+    val name: String, val id: String, val startDay: Int, val durationDays: Int,
+    val status: GanttTaskStatus = GanttTaskStatus.TODO,
+    val statuses: Set<GanttTaskStatus> = if(status==GanttTaskStatus.TODO)emptySet()else setOf(status),
+    val milestone: Boolean = durationDays==0,
+)
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 
 public data class TimelineDiagram(val title: String?, val events: List<TimelineEvent>) : MermaidDiagram

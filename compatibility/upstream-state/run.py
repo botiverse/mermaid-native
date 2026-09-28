@@ -79,7 +79,7 @@ export const parser={yy:null,parse(source){
  const db=this.yy;db.setDirection(model.direction);if(model.accTitle!==null)db.setAccTitle(model.accTitle);if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  const nodes=new Map(model.nodes.map(n=>[n.id,n]));
  const parents=new Map();for(const n of model.nodes)for(const id of n.children)parents.set(id,n.id);
- const state=id=>{const n=nodes.get(id);return {stmt:'state',id:n&&['START','END'].includes(n.kind)?'[*]':id,classes:n?.classes??[],type:n?({STATE:'default',START:'default',END:'default',CHOICE:'choice',FORK:'fork',JOIN:'join'}[n.kind]):'default'};};
+ const state=id=>{const n=nodes.get(id);return {stmt:'state',id:n&&['START','END'].includes(n.kind)?'[*]':id,classes:n?.classes??[],type:n?({STATE:'default',START:'default',END:'default',CHOICE:'choice',FORK:'fork',JOIN:'join',DIVIDER:'divider',NOTE:'note'}[n.kind]):'default'};};
  const document=parent=>{
    const doc=[];if(parent===undefined)for(const [id,styles] of Object.entries(model.definitions))doc.push({stmt:"classDef",id,classes:styles.join(",")});
    const direction=parent===undefined?model.direction:nodes.get(parent)?.direction;if(direction)doc.push({stmt:"dir",value:direction});
