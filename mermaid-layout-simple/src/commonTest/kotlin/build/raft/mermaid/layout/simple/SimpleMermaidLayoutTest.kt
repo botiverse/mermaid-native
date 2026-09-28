@@ -141,6 +141,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun architectureEmptyAndMetadataRenderWithoutInvalidGeometry() {
+        fun render(source: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val empty = render("architecture-beta")
+        assertEquals(720.0, empty.width); assertEquals(420.0, empty.height); assertTrue(empty.commands.isEmpty())
+        val scene = render("architecture-beta title Sample\naccTitle: Accessible\naccDescr: Description\ngroup api(cloud)[API]\nservice db(database)[Database] in api")
+        assertEquals("Accessible", scene.accessibilityTitle); assertEquals("Description", scene.accessibilityDescription)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Sample" })
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.y >= 68.0 })
+    }
+
     @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
         val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())

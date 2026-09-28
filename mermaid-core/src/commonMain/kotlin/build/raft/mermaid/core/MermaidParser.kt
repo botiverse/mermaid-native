@@ -37,7 +37,7 @@ public object MermaidParser {
             (header.text.equals("treemap-beta", ignoreCase = true) || header.text.equals("treemap", ignoreCase = true)) -> TreemapParser(source).parse()
             header.text.equals("venn-beta", ignoreCase = true) -> parseVenn(source)
             header.text.equals("usecase-beta", ignoreCase = true) || header.text.equals("usecaseDiagram", ignoreCase = true) -> parseUsecase(source)
-            header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
+            Regex("^architecture-beta(?:\\s.*)?$").matches(header.text) -> parseArchitecture(source)
             header.text in setOf("C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment") -> parseC4Context(source)
             header.text.equals("cynefin-beta", ignoreCase = true) || header.text.equals("cynefin", ignoreCase = true) -> parseCynefin(source)
             header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
@@ -570,57 +570,7 @@ public object MermaidParser {
         else MermaidParseResult.Failure(diagnostics)
     }
 
-    private fun parseArchitecture(source: String): MermaidParseResult {
-        val physicalLines = source.toMindmapLines()
-        if (physicalLines.firstOrNull()?.text != "architecture-beta") {
-            return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Architecture requires the exact architecture-beta header", physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1))
-        }
-        val statements = source.toStatements()
-        val groups = linkedMapOf<String, ArchitectureGroup>()
-        val services = linkedMapOf<String, ArchitectureService>()
-        val edges = mutableListOf<ArchitectureEdge>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        statements.drop(1).forEach { statement ->
-            ARCHITECTURE_GROUP.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1]
-                if (id in groups || id in services) diagnostics += unsupported(statement, "Duplicate architecture identifier")
-                else groups[id] = ArchitectureGroup(id, match.groupValues[2], match.groupValues[3])
-                return@forEach
-            }
-            ARCHITECTURE_SERVICE.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1]
-                val groupId = match.groupValues[4].ifEmpty { null }
-                when {
-                    id in groups || id in services -> diagnostics += unsupported(statement, "Duplicate architecture identifier")
-                    groupId != null && groupId !in groups -> diagnostics += unsupported(statement, "Architecture service group must be declared first")
-                    else -> services[id] = ArchitectureService(id, match.groupValues[2], match.groupValues[3], groupId)
-                }
-                return@forEach
-            }
-            ARCHITECTURE_EDGE.matchEntire(statement.text)?.let { match ->
-                val sourceId = match.groupValues[1]
-                val targetId = match.groupValues[5]
-                val edge = ArchitectureEdge(
-                    sourceId = sourceId,
-                    sourcePort = match.groupValues[2].toArchitecturePort(),
-                    targetId = targetId,
-                    targetPort = match.groupValues[4].toArchitecturePort(),
-                    directed = match.groupValues[3] == "-->",
-                )
-                when {
-                    sourceId !in services || targetId !in services -> diagnostics += unsupported(statement, "Architecture edge services must be declared first")
-                    sourceId == targetId -> diagnostics += unsupported(statement, "Architecture self edges are not supported")
-                    edge in edges -> diagnostics += unsupported(statement, "Duplicate architecture edge")
-                    else -> edges += edge
-                }
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported architecture syntax")
-        }
-        if (services.isEmpty()) diagnostics += unsupported(statements.first(), "Architecture requires at least one service")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(ArchitectureDiagram(groups.values.toList(), services.values.toList(), edges))
-        else MermaidParseResult.Failure(diagnostics)
-    }
+    private fun parseArchitecture(source: String): MermaidParseResult = ArchitectureParser(source).parseValidated()
 
     private fun parseC4Context(source: String): MermaidParseResult = C4Parser(source).parse()
 
@@ -1158,23 +1108,13 @@ public object MermaidParser {
     private val USECASE_ELLIPSE = Regex("^($USECASE_IDENTIFIER)\\(\"([^\"\\r\\n]+)\"\\)$")
     private val USECASE_RECTANGLE = Regex("^($USECASE_IDENTIFIER)\\[([^]\\r\\n]+)]$")
     private val USECASE_EDGE = Regex("^($USECASE_IDENTIFIER)(?:\\s+--\\s+\"([^\"\\r\\n]+)\"\\s+-->|\\s+-->)\\s+($USECASE_IDENTIFIER)$")
-    private const val ARCHITECTURE_IDENTIFIER = "[A-Za-z0-9_]+"
-    private const val ARCHITECTURE_ICON = "[A-Za-z0-9_-]+"
-    private val ARCHITECTURE_GROUP = Regex("^group\\s+($ARCHITECTURE_IDENTIFIER)\\(($ARCHITECTURE_ICON)\\)\\[([^]\\r\\n]+)]$")
-    private val ARCHITECTURE_SERVICE = Regex("^service\\s+($ARCHITECTURE_IDENTIFIER)\\(($ARCHITECTURE_ICON)\\)\\[([^]\\r\\n]+)](?:\\s+in\\s+($ARCHITECTURE_IDENTIFIER))?$")
-    private val ARCHITECTURE_EDGE = Regex("^($ARCHITECTURE_IDENTIFIER):(T|B|L|R)\\s+(-->|--)\\s+(T|B|L|R):($ARCHITECTURE_IDENTIFIER)$")
     private const val C4_IDENTIFIER = "[A-Za-z0-9_]+"
     private val C4_TITLE = Regex("^title\\s+(.+)$")
     private val C4_ELEMENT = Regex("^(Person|Person_Ext|System|System_Ext)\\(($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
     private val C4_RELATIONSHIP = Regex("^(Rel|BiRel)\\(($C4_IDENTIFIER),\\s*($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
 }
 
-private fun String.toArchitecturePort(): ArchitecturePort = when (this) {
-    "T" -> ArchitecturePort.TOP
-    "B" -> ArchitecturePort.BOTTOM
-    "L" -> ArchitecturePort.LEFT
-    else -> ArchitecturePort.RIGHT
-}
+
 
 private val INVALID_VENN_SIZE: Double = Double.NEGATIVE_INFINITY
 
