@@ -719,7 +719,7 @@ public object MermaidParser {
 
     /**
      * Bounded official railroad-beta slice: optional line-based `title ...`
-     * plus one or more `name = expression;` rules. Expressions are the official
+     * plus zero or more `name = expression;` rules. Expressions are the official
      * lowercase constructors: sequence, choice, optional, oneOrMore, zeroOrMore,
      * terminal, nonterminal, special. JS Diagram()/Stack()/Choice(0, ...) and
      * ABNF/EBNF/PEG dialects fail closed.
@@ -771,7 +771,17 @@ public object MermaidParser {
         }
 
         fun skipWhitespace() {
-            while (peek()?.isWhitespace() == true) advance()
+            while (true) {
+                while (peek()?.isWhitespace() == true) advance()
+                if (source.startsWith("%%", index)) {
+                    while (peek() != null && peek() != '\n') advance()
+                } else if (source.startsWith("/*", index)) {
+                    advance(); advance()
+                    while (peek() != null && !source.startsWith("*/", index)) advance()
+                    if (peek() == null) { fail("Unclosed railroad block comment"); return }
+                    advance(); advance()
+                } else return
+            }
         }
 
         fun expect(character: Char, description: String): Boolean {
@@ -793,7 +803,7 @@ public object MermaidParser {
             val value = StringBuilder()
             while (true) {
                 val character = peek() ?: break
-                if (character.isLetterOrDigit() || character == '_') {
+                if (character.isLetterOrDigit() || character == '_' || character == '-') {
                     value.append(character)
                     advance()
                 } else {
@@ -805,8 +815,9 @@ public object MermaidParser {
 
         fun parseStringLiteral(): String? {
             skipWhitespace()
-            if (peek() != '"') {
-                fail("Railroad strings must use double quotes")
+            val quote = peek()
+            if (quote != '"' && quote != '\'') {
+                fail("Railroad strings must use quotes")
                 return null
             }
             advance()
@@ -817,7 +828,7 @@ public object MermaidParser {
                         fail("Unterminated railroad string literal")
                         return null
                     }
-                    '"' -> {
+                    quote -> {
                         advance()
                         break
                     }
@@ -830,6 +841,8 @@ public object MermaidParser {
                             }
                             'n' -> value.append('\n')
                             't' -> value.append('\t')
+                            'r' -> value.append('\r')
+                            '\'' -> value.append('\'')
                             '"' -> value.append('"')
                             '\\' -> value.append('\\')
                             else -> {
@@ -844,10 +857,6 @@ public object MermaidParser {
                         advance()
                     }
                 }
-            }
-            if (value.isEmpty()) {
-                fail("Railroad labels must not be empty")
-                return null
             }
             return value.toString()
         }
@@ -941,6 +950,8 @@ public object MermaidParser {
                     if (children.isEmpty()) {
                         fail("railroad choice requires at least one branch")
                         null
+                    } else if (children.size == 1) {
+                        children[0]
                     } else {
                         RailroadChoice(children.toList())
                     }
@@ -980,6 +991,8 @@ public object MermaidParser {
 
         skipWhitespace()
         var title: String? = null
+        var accTitle: String? = null
+        var accDescription: String? = null
         val rules = mutableListOf<RailroadRule>()
         while (peek() != null) {
             skipWhitespace()
@@ -990,6 +1003,22 @@ public object MermaidParser {
                 return MermaidParseResult.Failure(diagnostics.toList())
             }
             skipWhitespace()
+            if (name == "accTitle" || name == "accDescr") {
+                if (rules.isNotEmpty()) { fail("Railroad metadata must appear before rules"); return MermaidParseResult.Failure(diagnostics.toList()) }
+                val value = if (name == "accDescr" && peek() == '{') {
+                    advance(); val text = StringBuilder()
+                    while (peek() != null && peek() != '}') { text.append(peek()); advance() }
+                    if (peek() == null) { fail("Unclosed railroad accessibility description"); return MermaidParseResult.Failure(diagnostics.toList()) }
+                    advance(); text.toString().trim()
+                } else {
+                    if (!expect(':', "Railroad accessibility metadata requires ':'")) return MermaidParseResult.Failure(diagnostics.toList())
+                    val text = StringBuilder()
+                    while (peek() != null && peek() != '\n' && peek() != '\r') { text.append(peek()); advance() }
+                    text.toString().substringBefore("%%").trim()
+                }
+                if (name == "accTitle") accTitle = value else accDescription = value
+                continue
+            }
             if (name == "title") {
                 if (peek() == '=') {
                     fail("railroad title must be a line, not a named rule")
@@ -1016,14 +1045,7 @@ public object MermaidParser {
             rules += RailroadRule(name, definition)
         }
         if (diagnostics.isNotEmpty()) return MermaidParseResult.Failure(diagnostics.toList())
-        if (rules.isEmpty()) {
-            return failure(
-                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-                "railroad-beta requires at least one named rule",
-                SourceLocation(headerLineIndex + 2, 1),
-            )
-        }
-        return MermaidParseResult.Success(RailroadDiagram(title = title, rules = rules.toList()))
+        return MermaidParseResult.Success(RailroadDiagram(title = title, rules = rules.toList(), accTitle = accTitle, accDescription = accDescription))
     }
 
     private fun unsupported(statement: SourceStatement, message: String): MermaidDiagnostic =

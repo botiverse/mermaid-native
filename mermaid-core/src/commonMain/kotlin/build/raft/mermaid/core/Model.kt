@@ -718,6 +718,8 @@ public data class TreeViewNode(
 public data class RailroadDiagram(
     val title: String? = null,
     val rules: List<RailroadRule>,
+    val accTitle: String? = null,
+    val accDescription: String? = null,
 ) : MermaidDiagram
 
 public data class RailroadRule(

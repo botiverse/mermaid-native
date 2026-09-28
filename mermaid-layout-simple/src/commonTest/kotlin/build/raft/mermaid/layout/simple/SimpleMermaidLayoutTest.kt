@@ -2141,4 +2141,13 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Project" })
     }
 
+    @Test
+    fun railroadEmptyGrammarPreservesTitleAndAccessibility() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-beta\ntitle Empty grammar\naccTitle: Grammar overview\naccDescr: No rules yet"))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Grammar overview", scene.accessibilityTitle)
+        assertEquals("No rules yet", scene.accessibilityDescription)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Empty grammar" })
+        assertTrue(scene.width > 0 && scene.height > 0)
+    }
 }

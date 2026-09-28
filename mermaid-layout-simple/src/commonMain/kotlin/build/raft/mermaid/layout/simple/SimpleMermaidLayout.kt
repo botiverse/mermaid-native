@@ -341,7 +341,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             y += max(box.height, nameMeasured.height) + 20.0
         }
         val height = max(180.0, y + config.padding)
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands.map { command -> command.canonical() })
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands.map { command -> command.canonical() }, accessibilityTitle = diagram.accTitle, accessibilityDescription = diagram.accDescription)
     }
 
     private fun buildRailroadBox(node: RailroadNode, textMeasurer: TextMeasurer, commands: MutableList<DrawCommand>): RailroadBox =
