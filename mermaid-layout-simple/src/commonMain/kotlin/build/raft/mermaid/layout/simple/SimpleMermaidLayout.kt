@@ -132,7 +132,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is StateDiagram -> layoutState(diagram, textMeasurer, config)
         is ClassDiagram -> layoutClass(diagram, textMeasurer, config)
         is EntityRelationshipDiagram -> layoutEntityRelationship(diagram, textMeasurer, config)
-        is XyChartDiagram -> layoutXyChart(diagram, config)
+        is XyChartDiagram -> layoutXyChart(diagram, textMeasurer, config)
         is MindmapDiagram -> layoutMindmap(diagram, textMeasurer, config)
         is GanttDiagram -> layoutGantt(diagram, textMeasurer, config)
         is TimelineDiagram -> layoutTimeline(diagram, textMeasurer, config)
@@ -1930,29 +1930,52 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
-    private fun layoutXyChart(diagram: XyChartDiagram, config: LayoutConfig): LayoutScene {
+    private fun xyLegend(diagram: XyChartDiagram, measurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val commands = mutableListOf<DrawCommand>()
+        val style = TextStyle(fontSize = 12.0)
+        val left = config.padding + 52.0
+        var x = left
+        var row = 0
+        var width = 640.0
+        diagram.series.forEachIndexed { index, series ->
+            if (series.title.isEmpty()) return@forEachIndexed
+            val measured = measurer.measure(series.title, style)
+            if (x > left && x + measured.width > 640.0 - config.padding) { row++; x = left }
+            commands += DrawText(series.title, ScenePoint(x, config.padding + 44.0 + row * 24.0),
+                style = style.copy(color = SceneColor(XY_COLORS[index % XY_COLORS.size])))
+            width = maxOf(width, x + measured.width + config.padding)
+            x += measured.width + 24.0
+        }
+        return LayoutScene(width, if (commands.isEmpty()) 0.0 else (row + 1) * 24.0, commands)
+    }
+
+    private fun layoutXyChart(diagram: XyChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.orientation == build.raft.mermaid.core.XyOrientation.HORIZONTAL) return layoutHorizontalXy(diagram, textMeasurer, config)
         val bodyStyle = TextStyle(fontSize = 12.0)
         val tickStyle = TextStyle(fontSize = 11.0)
         val valueStyle = TextStyle(fontSize = 11.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val width = 640.0
-        val height = 400.0
+        val legend = xyLegend(diagram, textMeasurer, config)
+        val width = maxOf(640.0, legend.width)
+        val height = 400.0 + legend.height
         val left = config.padding + 52.0
-        val top = config.padding + 48.0
+        val top = config.padding + 48.0 + legend.height
         val plotWidth = width - left - config.padding
         val plotHeight = height - top - config.padding - 52.0
         val bottom = top + plotHeight
         val categories = diagram.xAxis.categories
-        val step = plotWidth / categories.size
-        val range = diagram.yAxis.maximum - diagram.yAxis.minimum
-        fun x(index: Int): Double = (left + step * (index + 0.5)).xyCoordinate()
+        val count = if(categories.isNotEmpty()) categories.size else maxOf(1, diagram.series.maxOfOrNull { it.values.size } ?: 0)
+        val step = plotWidth / count
+        val range = (diagram.yAxis.maximum - diagram.yAxis.minimum).takeIf { it != 0.0 } ?: 1.0
+        fun x(index: Int, size: Int = count): Double = (if(categories.isNotEmpty()) left + step * (index + 0.5)
+            else left + plotWidth * index / maxOf(1, size - 1)).xyCoordinate()
         fun y(value: Double): Double = (bottom - ((value - diagram.yAxis.minimum) / range) * plotHeight).xyCoordinate()
 
-        val commands = mutableListOf<DrawCommand>()
+        val commands = legend.commands.toMutableList()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, config.padding + 18.0), TextAnchor.MIDDLE, titleStyle) }
         commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
         commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
-        numericAxisTicks(diagram.yAxis.minimum, diagram.yAxis.maximum).forEach { tick ->
+        numericAxisTicks(minOf(diagram.yAxis.minimum, diagram.yAxis.maximum), maxOf(diagram.yAxis.minimum, diagram.yAxis.maximum)).forEach { tick ->
             val tickY = y(tick)
             commands += DrawLine(ScenePoint(left - 6.0, tickY), ScenePoint(left, tickY), strokeWidth = 1.0)
             commands += DrawText(tick.canonicalNumber(), ScenePoint(left - 8.0, tickY + 4.0), TextAnchor.END, tickStyle)
@@ -1965,17 +1988,28 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(category, ScenePoint(tickX, bottom + 20.0), TextAnchor.MIDDLE, bodyStyle)
         }
 
+        if(categories.isEmpty()) {
+            val axis = diagram.xAxis.range
+            val lo = axis?.minimum ?: 1.0; val hi = axis?.maximum ?: count.toDouble()
+            val span = (hi - lo).takeIf { it != 0.0 } ?: 1.0
+            numericAxisTicks(minOf(lo, hi), maxOf(lo, hi)).forEach { tick ->
+                val tickX = left + (tick - lo) / span * plotWidth
+                commands += DrawLine(ScenePoint(tickX, bottom), ScenePoint(tickX, bottom + 6.0), strokeWidth = 1.0)
+                commands += DrawText(tick.canonicalNumber(), ScenePoint(tickX, bottom + 20.0), TextAnchor.MIDDLE, bodyStyle)
+            }
+        }
         val barSeries = diagram.series.filter { it.kind == XySeriesKind.BAR }
         val barWidth = (step * 0.64 / max(1, barSeries.size)).coerceAtMost(36.0)
         var barIndex = 0
-        diagram.series.forEachIndexed { seriesIndex, series ->
+        diagram.series.forEachIndexed { seriesIndex, original ->
+            val series = if(categories.isNotEmpty()) original.copy(values = original.values.take(categories.size)) else original
             val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
             when (series.kind) {
                 XySeriesKind.BAR -> {
                     series.values.forEachIndexed { index, value ->
-                        val baseline = y(diagram.yAxis.minimum.coerceAtLeast(0.0).coerceAtMost(diagram.yAxis.maximum))
+                        val baseline = y(0.0.coerceIn(minOf(diagram.yAxis.minimum, diagram.yAxis.maximum), maxOf(diagram.yAxis.minimum, diagram.yAxis.maximum)))
                         val valueY = y(value)
-                        val barX = (x(index) - barSeries.size * barWidth / 2.0 + barIndex * barWidth).xyCoordinate()
+                        val barX = (x(index, series.values.size) - barSeries.size * barWidth / 2.0 + barIndex * barWidth).xyCoordinate()
                         commands += DrawRect(
                             rect = SceneRect(
                                 x = barX,
@@ -1988,7 +2022,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                             strokeWidth = 1.0,
                         )
                         commands += DrawText(
-                            value.canonicalNumber(),
+                            series.labels.getOrNull(index)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
                             ScenePoint((barX + barWidth / 2.0).xyCoordinate(), (minOf(baseline, valueY) - 6.0).xyCoordinate()),
                             TextAnchor.MIDDLE,
                             valueStyle.copy(color = color),
@@ -1997,18 +2031,74 @@ public object SimpleMermaidLayout : DiagramLayout {
                     barIndex += 1
                 }
                 XySeriesKind.LINE -> {
-                    val points = series.values.mapIndexed { index, value -> ScenePoint(x(index), y(value)) }
+                    val points = series.values.mapIndexed { index, value -> ScenePoint(x(index, series.values.size), y(value)) }
                     commands += DrawPolyline(points = points, stroke = color, strokeWidth = 2.0)
                     series.values.forEachIndexed { index, value ->
                         commands += DrawText(
-                            value.canonicalNumber(),
-                            ScenePoint(x(index), (y(value) - 10.0).xyCoordinate()),
+                            series.labels.getOrNull(index)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
+                            ScenePoint(x(index, series.values.size), (y(value) - 10.0).xyCoordinate()),
                             TextAnchor.MIDDLE,
                             valueStyle.copy(color = color),
                         )
                     }
                 }
             }
+        }
+        return LayoutScene(width, height, commands)
+    }
+
+    private fun layoutHorizontalXy(diagram: XyChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val legend = xyLegend(diagram, textMeasurer, config)
+        val width = maxOf(640.0, legend.width); val height = 400.0 + legend.height
+        val left = config.padding + 72.0; val top = config.padding + 48.0 + legend.height
+        val plotWidth = width - left - config.padding - 32.0
+        val plotHeight = height - top - config.padding - 52.0; val bottom = top + plotHeight
+        val style = TextStyle(fontSize = 12.0)
+        val categories = diagram.xAxis.categories
+        val count = if(categories.isNotEmpty()) categories.size else maxOf(1, diagram.series.maxOfOrNull { it.values.size } ?: 0)
+        val step = plotHeight / count
+        val range = (diagram.yAxis.maximum - diagram.yAxis.minimum).takeIf { it != 0.0 } ?: 1.0
+        fun x(value: Double) = (left + (value - diagram.yAxis.minimum) / range * plotWidth).xyCoordinate()
+        fun y(index: Int, size: Int = count) = (if(categories.isNotEmpty()) top + step * (index + 0.5)
+            else top + plotHeight * index / maxOf(1, size - 1)).xyCoordinate()
+        val commands = legend.commands.toMutableList()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2, config.padding + 18), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        commands += DrawLine(ScenePoint(left, top), ScenePoint(left, bottom))
+        commands += DrawLine(ScenePoint(left, bottom), ScenePoint(left + plotWidth, bottom))
+        numericAxisTicks(minOf(diagram.yAxis.minimum, diagram.yAxis.maximum), maxOf(diagram.yAxis.minimum, diagram.yAxis.maximum)).forEach { tick ->
+            commands += DrawLine(ScenePoint(x(tick), bottom), ScenePoint(x(tick), bottom + 6), strokeWidth = 1.0)
+            commands += DrawText(tick.canonicalNumber(), ScenePoint(x(tick), bottom + 20), TextAnchor.MIDDLE, style)
+        }
+        categories.forEachIndexed { i, category ->
+            commands += DrawLine(ScenePoint(left - 6, y(i)), ScenePoint(left, y(i)), strokeWidth = 1.0)
+            commands += DrawText(category, ScenePoint(left - 8, y(i) + 4), TextAnchor.END, style)
+        }
+        if(categories.isEmpty()) {
+            val lo = diagram.xAxis.range?.minimum ?: 1.0; val hi = diagram.xAxis.range?.maximum ?: count.toDouble()
+            val span = (hi - lo).takeIf { it != 0.0 } ?: 1.0
+            numericAxisTicks(minOf(lo, hi), maxOf(lo, hi)).forEach { tick ->
+                val tickY = top + (tick - lo) / span * plotHeight
+                commands += DrawText(tick.canonicalNumber(), ScenePoint(left - 8, tickY + 4), TextAnchor.END, style)
+            }
+        }
+        diagram.xAxis.title?.let { commands += DrawText(it, ScenePoint(left, top - 12), style = style) }
+        diagram.yAxis.title?.let { commands += DrawText(it, ScenePoint(left + plotWidth / 2, height - config.padding), TextAnchor.MIDDLE, style) }
+        val bars = diagram.series.count { it.kind == XySeriesKind.BAR }
+        val thickness = minOf(36.0, step * 0.64 / maxOf(1, bars)); var barIndex = 0
+        val zero = x(0.0.coerceIn(minOf(diagram.yAxis.minimum, diagram.yAxis.maximum), maxOf(diagram.yAxis.minimum, diagram.yAxis.maximum)))
+        diagram.series.forEachIndexed { seriesIndex, series ->
+            val values = if(categories.isNotEmpty()) series.values.take(categories.size) else series.values
+            val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
+            if(series.kind == XySeriesKind.LINE) commands += DrawPolyline(values.mapIndexed { i, value -> ScenePoint(x(value), y(i, values.size)) }, stroke = color, strokeWidth = 2.0)
+            values.forEachIndexed { i, value ->
+                val row = y(i, values.size)
+                if(series.kind == XySeriesKind.BAR) commands += DrawRect(
+                    SceneRect(minOf(zero, x(value)), row - bars * thickness / 2 + barIndex * thickness, maxOf(1.0, kotlin.math.abs(x(value) - zero)), thickness),
+                    fill = color, stroke = color, strokeWidth = 1.0)
+                commands += DrawText(series.labels.getOrNull(i)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
+                    ScenePoint(x(value) + 8, row + 4), style = style.copy(color = color, fontWeight = 600))
+            }
+            if(series.kind == XySeriesKind.BAR) barIndex++
         }
         return LayoutScene(width, height, commands)
     }

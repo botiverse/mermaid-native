@@ -656,17 +656,56 @@ class MermaidParserTest {
     }
 
     @Test
+    fun xyChartPreservesOriginalMetadataRangesAndPointLabels() {
+        val chart = assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart horizontal\ntitle \" Revenue \"\nx-axis \"Time\" 45.5 --> .34\ny-axis \"  Value  \"\nline \"Trend\" [10 \"First\", 20, 30 \"Last\"]\naccTitle: Sales\naccDescr {First line\n  second line}",
+        )).diagram)
+        assertEquals(XyOrientation.HORIZONTAL, chart.orientation)
+        assertEquals("Revenue", chart.title)
+        assertEquals(45.5, chart.xAxis.range?.minimum)
+        assertEquals(0.34, chart.xAxis.range?.maximum)
+        assertEquals("  Value  ", chart.yAxis.title)
+        assertEquals(false, chart.yAxis.explicitRange)
+        assertEquals(10.0, chart.yAxis.minimum)
+        assertEquals("Trend", chart.series.single().title)
+        assertEquals(listOf("First", "", "Last"), chart.series.single().labels)
+        assertEquals("Sales", chart.accessibilityTitle)
+        assertEquals("First line\n  second line", chart.accessibilityDescription)
+    }
+
+    @Test
+    fun xyChartAcceptsPartialChartsAndPreservesQuotedCategorySpaces() {
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("xychart"))
+        val chart = assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart\nx-axis [first category, \" second category \"]\nbar [1]",
+        )).diagram)
+        assertEquals(listOf("firstcategory", " second category "), chart.xAxis.categories)
+        assertEquals(listOf(1.0), chart.series.single().values)
+    }
+
+    @Test
+    fun xyChartKeepsMarkdownTypesAndQuotedStatementSeparators() {
+        val chart = assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart-beta; x-axis \"`**Axis**`\" [\"a;b\", \"`**b**`\"]; bar \"`**Series**`\" [1,2]",
+        )).diagram)
+        assertEquals("markdown", chart.xAxis.titleType)
+        assertEquals(listOf("text", "markdown"), chart.xAxis.categoryTypes)
+        assertEquals("a;b", chart.xAxis.categories.first())
+        assertEquals("markdown", chart.series.single().titleType)
+    }
+
+    @Test
     fun malformedXyChartFailsClosed() {
         listOf(
-            "xychart-beta\nx-axis [A, B]\ny-axis 0 --> 10\nline [1]",
-            "xychart-beta\nx-axis [A]\ny-axis 10 --> 0\nline [1]",
+            "xychart-beta\nx-axis [A, B]\ny-axis 0 --> 10\nline []",
+            "xychart-beta\nx-axis [A]\ny-axis bad --> 0\nline [1]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [nope]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [NaN]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [Infinity]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [-Infinity]",
             "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [+Infinity]",
-            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [11]",
-            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10",
+            "xychart-beta\nx-axis [A]\ny-axis 0 --> 10\nline [11 extra]",
+            "xychart-beta\nx-axis [A]\ny-axis [0, 10]",
         ).forEach { source ->
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }

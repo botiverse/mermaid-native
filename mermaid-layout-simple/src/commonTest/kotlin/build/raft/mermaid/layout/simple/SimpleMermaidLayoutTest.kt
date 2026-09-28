@@ -628,6 +628,70 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun xyHorizontalPlotUsesRealHorizontalBarsLabelsAndPalette() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart horizontal\nx-axis [A,B]\ny-axis 0 --> 100\nbar \"Sales\" [20 \"First\", 80 \"Last\"]\nline [30,70]",
+        )).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val bars = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, bars.size)
+        assertEquals(bars[0].rect.x, bars[1].rect.x)
+        assertTrue(bars[1].rect.y > bars[0].rect.y)
+        assertTrue(bars[1].rect.width > bars[0].rect.width * 3)
+        assertEquals("#2563eb", bars.first().fill.value)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Sales", "First", "Last")))
+        val line = scene.commands.filterIsInstance<DrawPolyline>().single()
+        assertTrue(line.points[1].x > line.points[0].x && line.points[1].y > line.points[0].y)
+    }
+
+    @Test
+    fun xyNumericAxesRenderDescendingRangesAndEmptyChartsWithoutInvalidCoordinates() {
+        listOf("xychart", "xychart\nx-axis 45 --> 5\ny-axis 100 --> 0\nline [10,40,80]").forEach { source ->
+            val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+            val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+            scene.commands.filterIsInstance<DrawLine>().forEach { line ->
+                assertTrue(line.from.x.isFinite() && line.from.y.isFinite() && line.to.x.isFinite() && line.to.y.isFinite())
+            }
+            if(source.contains("45")) {
+                val line = scene.commands.filterIsInstance<DrawPolyline>().single()
+                assertTrue(line.points.last().x > line.points.first().x)
+                assertTrue(line.points.last().y > line.points.first().y)
+                assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "45" })
+            }
+        }
+    }
+
+    @Test
+    fun xyNamedSeriesWrapBelowTitleWithoutOverlappingAxisTitle() {
+        for (orientation in listOf("vertical", "horizontal")) {
+            val names = listOf("Actual revenue for the first period", "Expected revenue for the next period", "Forecast")
+            val source = "xychart $orientation\ntitle \"Sales by quarter\"\nx-axis \"Quarter\" [Q1,Q2]\ny-axis \"Revenue\" 0 --> 100\n" +
+                names.joinToString("\n") { "bar \"$it\" [20,80]" }
+            val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram,
+                FixedWidthTextMeasurer, LayoutConfig())
+            val texts = scene.commands.filterIsInstance<DrawText>()
+            val title = texts.single { it.text == "Sales by quarter" }
+            val legend = texts.filter { it.text in names }
+            val axisTitle = texts.single { it.text == if (orientation == "horizontal") "Quarter" else "Revenue" }
+            assertTrue(legend.all { it.origin.y - it.style.fontSize > title.origin.y })
+            assertTrue(legend.all { it.origin.y + 8.0 < axisTitle.origin.y })
+            assertTrue(legend.map { it.origin.y }.distinct().size > 1)
+            legend.forEach { assertTrue(it.origin.x + FixedWidthTextMeasurer.measure(it.text, it.style).width <= scene.width) }
+            legend.groupBy { it.origin.y }.values.forEach { row -> row.zipWithNext().forEach { (left, right) ->
+                assertTrue(left.origin.x + FixedWidthTextMeasurer.measure(left.text, left.style).width + 20 <= right.origin.x)
+            } }
+        }
+    }
+
+    @Test
+    fun xyBandAxisTruncatesExtraValuesBeforeInferringRangeAndPlacement() {
+        fun render(values: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart\nx-axis [A,B]\nbar [$values]",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(render("10,20"), render("10,20,999"))
+    }
+
+    @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
             title = "Sales",
