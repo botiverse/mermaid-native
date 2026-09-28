@@ -1792,21 +1792,26 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun treemapAcceptsOriginalRowsMetadataAndClasses() {
+        val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red;\n\"Root\"\n \"Leaf\", 100:::hot\n\"Empty\""
+        val d = assertIs<TreemapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Portfolio", d.title)
+        assertEquals("Access", d.accessibilityTitle)
+        assertEquals("Allocation", d.accessibilityDescription)
+        assertEquals("hot", d.roots[0].children.single().classSelector)
+        assertEquals(100.0, d.roots[0].children.single().value)
+        assertEquals("fill:red", d.classes["hot"])
+        assertEquals("Empty", d.roots[1].label)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap"))
+    }
+
     @Test fun malformedTreemapFailsClosed() {
         listOf(
-            "treemap-beta",
-            "treemap-beta\n\"Root leaf\": 1",
-            "treemap-beta\n\"Empty\"",
-            "treemap-beta\n  \"Jump\": 1",
-            "treemap-beta\n\"Root\"\n \"Bad indent\": 1",
-            "treemap-beta\n\"Root\"\n\t\"Tab\": 1",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 0",
             "treemap-beta\n\"Root\"\n  \"Leaf\": NaN",
             "treemap-beta\n\"Root\"\n  \"A\": 1.7976931348623157E308\n  \"B\": 1.7976931348623157E308",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n  \"Leaf\": 2",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n    \"Child\": 1",
-            "treemap-beta\n\"Root\":::class1\n  \"Leaf\": 1",
-            "treemap-beta\n\"Root\"\n  \"Leaf\": 1\nclassDef class1 fill:red",
             "treemap-beta;\n\"Root\"\n  \"Leaf\": 1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }

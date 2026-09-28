@@ -1,0 +1,7 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/parser/tests/treemap.test.ts": "f7496691b24e8c03abab6dd9dd24c033651e8fa034afe29673e0b284a8049ffa",
+    "packages/parser/src/language/treemap/treemap.langium": "09ae0dfbd0cb7747a6c161ada9a529b657c5181aa5e98dc5501b4b6a33d7f909"
+  }
+}
