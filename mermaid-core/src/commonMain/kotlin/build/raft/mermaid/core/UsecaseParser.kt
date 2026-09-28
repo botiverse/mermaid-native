@@ -9,6 +9,7 @@ public class UsecaseParser(private val source: String) {
     private val boundaries = mutableListOf<UsecaseBoundary>()
     private val notes = mutableListOf<UsecaseNote>()
     private val jsonNodes = mutableListOf<UsecaseJsonNode>()
+    private val jsonStarts = mutableListOf<Int>()
     private val attrs = linkedMapOf<String, UsecaseAttributes>()
     private val classes = linkedMapOf<String, Map<String, String>>()
     private var direction = FlowDirection.LR
@@ -135,7 +136,7 @@ public class UsecaseParser(private val source: String) {
                 "systemBoundary" -> { pos += 14; val e = entity(boundary = true); boundaries += UsecaseBoundary(e.id, e.label); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
                 "actor" -> { pos += 5; val e = entity(actor = true); publish(e, true); if (take(",")) { do { publish(entity(actor = true), true) } while (take(",")) } else { hws(); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } } }
                 "note" -> { pos += 4; if (identifier() != "for") fail("Expected note for"); val target = identifier(); if (at(",")) fail("Notes require a single target"); val text = if (at("\"")) quoted() else lineText(); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text) }
-                "json" -> { pos += 4; val id = identifier(); requireText("@"); val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
+                "json" -> { pos += 4; val id = identifier(); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
                 "classDef" -> { pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
                 "class" -> { pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
                 "style" -> { pos += 5; val id = identifier(); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
@@ -159,10 +160,18 @@ public class UsecaseParser(private val source: String) {
     public fun parseValidated(): MermaidParseResult {
         val result = parse(); if (result !is MermaidParseResult.Success) return result
         val d = result.diagram as UsecaseDiagram
+        val validatedJson = try {
+            d.jsonNodes.mapIndexed { index, node ->
+                val lines = source.take(jsonStarts[index]).split(Regex("\\r\\n|\\r|\\n"))
+                node.copy(data = UsecaseJsonParser.parseOrderedJsonObject(node.source, lines.size, lines.last().length + 1))
+            }
+        } catch (e: UsecaseJsonError) {
+            return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid JSON", SourceLocation(e.line, e.column))))
+        }
         val nodeIds = (d.actors.map { it.id } + d.useCases.map { it.id }).toSet()
         val allIds = nodeIds + d.boundaries.map { it.id } + d.jsonNodes.map { it.id } + d.relationships.mapNotNull { it.id }
         val unknown = d.notes.firstOrNull { it.targetId !in nodeIds }?.targetId ?: d.attributes.keys.firstOrNull { it !in allIds }
         if (unknown != null) return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unknown usecase target $unknown", SourceLocation(1, 1))))
-        return result
+        return MermaidParseResult.Success(d.copy(jsonNodes = validatedJson))
     }
 }
