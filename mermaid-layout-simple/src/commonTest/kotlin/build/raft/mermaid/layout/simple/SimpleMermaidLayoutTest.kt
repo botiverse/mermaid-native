@@ -2173,11 +2173,13 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
         val rects = scene.commands.filterIsInstance<DrawRect>()
         val parent = rects.first().rect
-        assertEquals(4, rects.size)
+        assertEquals(3, rects.size)
         assertTrue(rects.drop(1).all { it.rect.x >= parent.x && it.rect.y >= parent.y && it.rect.x + it.rect.width <= parent.x + parent.width && it.rect.y + it.rect.height <= parent.y + parent.height })
         assertTrue(rects.any { it.fill.value == "#ff0000" })
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Go" })
         assertEquals(1, scene.commands.filterIsInstance<DrawPolygon>().size)
+        val outline = scene.commands.filterIsInstance<DrawPolyline>().single()
+        assertEquals(outline.points.first(), outline.points.last())
         val empty = SimpleMermaidLayout.layout(BlockDiagram(-1, emptyList(), emptyList()), FixedWidthTextMeasurer, LayoutConfig())
         assertTrue(empty.width.isFinite() && empty.height.isFinite())
     }

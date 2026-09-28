@@ -1392,17 +1392,17 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if (node.type == "block_arrow") {
                     val cx = rect.x + rect.width / 2; val cy = rect.y + rect.height / 2; val tip = 16.0
                     val core = SceneRect(rect.x + tip, rect.y + tip, rect.width - tip * 2, rect.height - tip * 2)
-                    commands += DrawRect(core, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                     val directions = node.directions.flatMap { if (it == "x") listOf("left", "right") else if (it == "y") listOf("up", "down") else listOf(it) }
-                    for (direction in directions) {
-                        val points = when (direction) {
-                            "left" -> listOf(ScenePoint(rect.x, cy), ScenePoint(core.x, rect.y), ScenePoint(core.x, rect.y + rect.height))
-                            "right" -> listOf(ScenePoint(rect.x + rect.width, cy), ScenePoint(core.x + core.width, rect.y), ScenePoint(core.x + core.width, rect.y + rect.height))
-                            "up" -> listOf(ScenePoint(cx, rect.y), ScenePoint(core.x, core.y), ScenePoint(core.x + core.width, core.y))
-                            else -> listOf(ScenePoint(cx, rect.y + rect.height), ScenePoint(core.x, core.y + core.height), ScenePoint(core.x + core.width, core.y + core.height))
-                        }
-                        commands += DrawPolygon(points, fill)
-                    }
+                    val points = mutableListOf(ScenePoint(core.x, core.y))
+                    if ("up" in directions) points += ScenePoint(cx, rect.y)
+                    points += ScenePoint(core.x + core.width, core.y)
+                    if ("right" in directions) points += ScenePoint(rect.x + rect.width, cy)
+                    points += ScenePoint(core.x + core.width, core.y + core.height)
+                    if ("down" in directions) points += ScenePoint(cx, rect.y + rect.height)
+                    points += ScenePoint(core.x, core.y + core.height)
+                    if ("left" in directions) points += ScenePoint(rect.x, cy)
+                    commands += DrawPolygon(points, fill)
+                    commands += DrawPolyline(points + points.first(), stroke, strokeWidth)
                 } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                 if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", "#111827")))
                 if (node.type == "composite") draw(node.children, plans.getValue(node.id), rect.x + 16.0, rect.y + if (node.label.isEmpty()) 16.0 else 40.0)
