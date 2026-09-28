@@ -1,0 +1,11 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/state/stateDiagram.spec.js": "b6e5063b946c493482a851550a7fbd2ba67865b2407ad10586066531e79921fb",
+    "packages/mermaid/src/diagrams/state/stateDiagram-v2.spec.js": "d589a371ec3c21d0ce949c86cdc27409878afa2277d54ee8936a9a79098e8229",
+    "packages/mermaid/src/diagrams/state/parser/state-parser.spec.js": "e3d597723499fc35cc8ffb3dccced511d02278262161d8f94eed0a4d642933c5",
+    "packages/mermaid/src/diagrams/state/parser/state-style.spec.js": "d3cda9a8772129da28679121ddb687a24d132177ef762d80f26d62dca6312e9d",
+    "packages/mermaid/src/diagrams/state/parser/stateDiagram.jison": "94d4715707c3b35192b8586fa271e843f2c084e9ff70dd8db07c510c1a23e231",
+    "packages/mermaid/src/diagrams/state/stateDb.ts": "f135a0c6753d4656437b3ffa091f93bde7002f0213178f5546032f1e27e601cc"
+  }
+}
