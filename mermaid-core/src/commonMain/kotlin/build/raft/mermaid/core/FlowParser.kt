@@ -20,7 +20,7 @@ internal class FlowParser(private val source:String) {
         val statements=statements()
         requireFlow(statements.isNotEmpty(),"Expected flowchart header")
         val header=statements.first().second.trim().split(Regex("\\s+"))
-        requireFlow(header.first().lowercase() in setOf("graph","flowchart","flowchart-elk"),"Expected flowchart header")
+        requireFlow(header.first().lowercase() in setOf("graph","flowchart","flowchart-elk","swimlane-beta"),"Expected flowchart header")
         requireFlow(header.size<=2,"Invalid flowchart header")
         direction=if(header.size==1)FlowDirection.TB else parseDirection(header[1])
         parsingHeader=false

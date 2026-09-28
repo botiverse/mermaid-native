@@ -11,6 +11,7 @@ public class FlowNativeBridge {
   MermaidParseResult result=MermaidParser.INSTANCE.parse(source);
   if(result instanceof MermaidParseResult.Failure){System.out.println("{\"error\":"+q(((MermaidParseResult.Failure)result).getDiagnostics().toString())+"}");return;}
   MermaidDiagram diagram=((MermaidParseResult.Success)result).getDiagram();
+  if(diagram instanceof SwimlaneDiagram)diagram=((SwimlaneDiagram)diagram).getFlowchart();
   if(!(diagram instanceof FlowchartDiagram)){System.out.println("{\"error\":\"Native produced another diagram type\"}");return;}
   FlowchartDiagram d=(FlowchartDiagram)diagram;
   List<String> nodes=new ArrayList<>(),edges=new ArrayList<>(),groups=new ArrayList<>();

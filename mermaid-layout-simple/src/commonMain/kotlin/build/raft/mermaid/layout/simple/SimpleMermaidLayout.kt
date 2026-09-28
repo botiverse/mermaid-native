@@ -475,6 +475,14 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        diagram.flowchart?.let { flow ->
+            val simpleShapes=setOf(FlowNodeShape.RECTANGLE,FlowNodeShape.ROUNDED,FlowNodeShape.STADIUM,FlowNodeShape.CIRCLE,FlowNodeShape.DIAMOND)
+            val needsRichLayout=flow.subgraphs.any { it.parentId!=null || it.collapsed || it.direction!=null } ||
+                flow.nodes.any { it.shape !in simpleShapes || it.styles.isNotEmpty() || it.classes.isNotEmpty() || it.borders!=null } ||
+                flow.classDefinitions.isNotEmpty() || flow.defaultEdgeStyles.isNotEmpty() ||
+                flow.edges.any { it.style!=FlowEdgeStyle.NORMAL || it.fromMarker!=build.raft.mermaid.core.FlowMarker.NONE || it.toMarker!=build.raft.mermaid.core.FlowMarker.POINT || it.styles.isNotEmpty() }
+            if(needsRichLayout)return layoutFlowchart(visibleFlow(flow),textMeasurer,config)
+        }
         val laneStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
         val nodeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val edgeStyle = TextStyle(fontSize = 11.0)
