@@ -991,9 +991,10 @@ public object SimpleMermaidLayout : DiagramLayout {
     )
 
     private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if (diagram.classDefs.containsKey("default") || diagram.boundaries.isNotEmpty() || diagram.notes.isNotEmpty() || diagram.jsonNodes.isNotEmpty() || diagram.attributes.isNotEmpty() || diagram.relationships.any { it.startMarker != "none" || it.endMarker != "arrow" || it.dashed || it.sourceId == it.targetId }) return layoutUsecaseExtended(diagram, textMeasurer, config)
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val labels = diagram.actors.map { it.label } + diagram.useCases.map { it.label }
-        val nodeWidth = max(150.0, labels.maxOf { textMeasurer.measure(it, style).width } + 40.0)
+        val nodeWidth = max(150.0, (labels.maxOfOrNull { textMeasurer.measure(it, style).width } ?: 0.0) + 40.0)
         val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
         val rows = max(diagram.actors.size, diagram.useCases.size)
         val width = if (horizontal) max(720.0, nodeWidth * 2 + 180.0) else max(720.0, nodeWidth * rows + 32.0 * (rows - 1) + config.padding * 2)
@@ -1054,7 +1055,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, diagram.accTitle, diagram.accDescription)
     }
 
     private fun usecaseBoundaryPoint(
