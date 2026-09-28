@@ -2450,7 +2450,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         val rects=initialRects.mapValues { (_,r)->r.copy(x=r.x+dx) }
         val width=max(placement.width,noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
         val height=max(placement.height,noteRects.maxOfOrNull { it.second.y+it.second.height+config.padding } ?: 0.0)
-        val horizontal=diagram.direction in listOf(FlowDirection.LR,FlowDirection.RL)
+        val statesById = diagram.states.associateBy { it.id }
+        val parents = diagram.states.flatMap { state -> state.childIds.map { it to state.id } }.toMap()
+        fun ancestors(id: String): List<String> {
+            val result = mutableListOf<String>()
+            var parent = parents[id]
+            while (parent != null && parent !in result) {
+                result += parent
+                parent = parents[parent]
+            }
+            return result
+        }
 
         val commands = mutableListOf<DrawCommand>()
         diagram.states.filter { it.id in groupIds }.sortedBy { rects[it.id]?.y }.forEach { state->
@@ -2462,7 +2472,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.transitions.forEach { transition ->
             val source = rects[transition.from] ?: return@forEach
             val target = rects[transition.to] ?: return@forEach
-            val anchors = edgeAnchors(source, target, horizontal)
+            val targetAncestors = ancestors(transition.to).toSet()
+            val commonParent = ancestors(transition.from).firstOrNull { it in targetAncestors }
+            val direction = statesById[commonParent]?.direction ?: diagram.direction
+            val anchors = edgeAnchors(source, target, direction in listOf(FlowDirection.LR, FlowDirection.RL))
             commands += DrawLine(anchors.first, anchors.second, stroke = SceneColor("#666666"), strokeWidth = 1.0)
             commands += arrowHead(anchors.first, anchors.second, fill = SceneColor("#333333"))
             if (transition.label.isNotEmpty()) {
