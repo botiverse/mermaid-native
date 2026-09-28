@@ -285,7 +285,7 @@ public object MermaidExamples {
                 GitGraphCommit("base", "main", emptyList(), tag = "v1.0"),
                 GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
                 GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
-                GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true),
+                GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true, message = "merged branch develop into main", customId = true),
             ),
         ),
     )

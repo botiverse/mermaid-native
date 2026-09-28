@@ -94,3 +94,9 @@ XY charts accept both original headers, optional axes/metadata, numeric ranges i
 Gantt bars retain a separate render duration for excluded trailing dates while dependencies use the fully adjusted end. Calendar include/exclude tokens accept both the configured date format and ISO dates. Milestones require an explicit start (and may use `0d`); shorthand that treated a non-date ID as an omitted field is rejected. Long spans use a bounded plot width and sampled date ticks, with room for the last label.
 
 Journey parsing retains empty sections, optional actor lists, accessibility metadata and original task-name whitespace. The renderer handles empty documents/sections and omits empty actors from cards and legends, preserving the existing score palette. The current typed score remains an integer; decimal and non-finite JavaScript Number values are outside this slice.
+
+### Git history grammar and rendering
+
+GitGraph resolves commits, branch heads, checkout/switch, merge and cherry-pick in the shared model. Quoted branch names, explicit branch order, commit messages, repeated tags, merge overrides and accessibility metadata are retained. Cherry-picking a merge requires an immediate parent; invalid references fail with a typed diagnostic. Duplicate commit IDs follow upstream replacement semantics and expose a warning in the model.
+
+The default LR layout keeps Native's branch colors, commit markers and tag flags. TB/BT use vertical lanes with upright measured labels; explicit branch order controls lane order. Native automatic IDs remain deterministic. JavaScript configuration getters and arbitrary renderer theme/directive settings are outside this parser-boundary validation.

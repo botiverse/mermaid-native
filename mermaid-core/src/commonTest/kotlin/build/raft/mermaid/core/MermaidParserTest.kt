@@ -1513,7 +1513,7 @@ class MermaidParserTest {
                     GitGraphCommit("base", "main", emptyList(), tag = "v1"),
                     GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
                     GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
-                    GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2", isMerge = true),
+                    GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2", isMerge = true, message = "merged branch develop into main", customId = true),
                 ),
             ),
             result.diagram,
@@ -1543,12 +1543,73 @@ class MermaidParserTest {
     }
 
     @Test
+    fun gitGraphSupportsOrderedQuotedBranchesMetadataAndAttributeOrder() {
+        val source = """
+            gitGraph TB:
+            accTitle: History
+            accDescr { Accessible
+              history }
+            commit tag: "v1" msg: "Initial work" id: "base" tag: "stable"
+            branch "feature branch" order: 2
+            commit type: HIGHLIGHT id: "feature"
+            checkout main
+        """.trimIndent()
+        val chart = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals(FlowDirection.TB, chart.direction)
+        assertEquals("History", chart.accessibilityTitle)
+        assertEquals("Accessible\nhistory", chart.accessibilityDescription)
+        assertEquals("main", chart.currentBranch)
+        assertEquals("base", chart.branchHeads["main"])
+        assertEquals(2, chart.branches.last().order)
+        assertEquals(listOf("v1", "stable"), chart.commits.first().tags)
+        assertEquals("Initial work", chart.commits.first().message)
+    }
+
+    @Test
+    fun gitGraphResolvesCherryPickAndValidatesMergeParents() {
+        val source = """
+            gitGraph BT
+            commit id: "base"
+            branch develop
+            commit id: "work" msg: "Feature"
+            checkout main
+            commit id: "release"
+            merge develop id: "merged" type: REVERSE
+            branch cherry
+            checkout develop
+            cherry-pick id: "merged" parent: "release" tag: "picked"
+        """.trimIndent()
+        val chart = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        val merge = chart.commits.first { it.id == "merged" }
+        assertEquals(GitGraphCommitType.REVERSE, merge.customType)
+        assertTrue(merge.customId)
+        assertEquals(listOf("release", "work"), merge.parentIds)
+        val picked = chart.commits.last()
+        assertTrue(picked.isCherryPick)
+        assertEquals(listOf("work", "merged"), picked.parentIds)
+        assertEquals(listOf("picked"), picked.tags)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source.replace("parent: \"release\"", "parent: \"base\"")))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source.replace("parent: \"release\"", "")))
+    }
+
+    @Test
+    fun gitGraphAcceptsEmptyHistoryAndReportsDuplicateCommitWarning() {
+        val empty = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("gitGraph")).diagram)
+        assertTrue(empty.commits.isEmpty())
+        val duplicate = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "gitGraph\ncommit id: \"same\"\ncommit id: \"same\" msg: \"replacement\"",
+        )).diagram)
+        assertEquals("replacement", duplicate.commits.single().message)
+        assertEquals(listOf("Commit ID same already exists"), duplicate.warnings)
+    }
+
+    @Test
     fun malformedGitGraphFailsClosed() {
         listOf(
-            "gitGraph",
+            "gitGraph WRONG",
             "gitGraph\ncheckout missing\ncommit",
             "gitGraph\nbranch develop\nbranch develop\ncommit",
-            "gitGraph\ncommit id: \"same\"\ncommit id: \"same\"",
+            "gitGraph\ncommit unknown: \"same\"",
             "gitGraph\ncommit\nmerge main",
             "gitGraph\ncommit\nbranch develop\nswitch main\nmerge develop",
             "gitGraph\ncommit type: UNKNOWN",

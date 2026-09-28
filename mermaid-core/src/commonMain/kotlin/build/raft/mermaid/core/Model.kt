@@ -447,11 +447,19 @@ public data class UserJourneyTask(
 public data class GitGraphDiagram(
     val branches: List<GitGraphBranch>,
     val commits: List<GitGraphCommit>,
+    val direction: FlowDirection = FlowDirection.LR,
+    val currentBranch: String = commits.lastOrNull()?.branch ?: "main",
+    val branchHeads: Map<String, String?> = branches.associate { branch -> branch.name to (commits.lastOrNull { it.branch == branch.name }?.id ?: branch.parentCommitId) },
+    val title: String? = null,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+    val warnings: List<String> = emptyList(),
 ) : MermaidDiagram
 
 public data class GitGraphBranch(
     val name: String,
     val parentCommitId: String?,
+    val order: Int = 0,
 )
 
 public data class GitGraphCommit(
@@ -461,6 +469,11 @@ public data class GitGraphCommit(
     val type: GitGraphCommitType = GitGraphCommitType.NORMAL,
     val tag: String? = null,
     val isMerge: Boolean = false,
+    val message: String = "",
+    val tags: List<String> = listOfNotNull(tag),
+    val customId: Boolean = false,
+    val customType: GitGraphCommitType? = null,
+    val isCherryPick: Boolean = false,
 )
 
 public enum class GitGraphCommitType { NORMAL, REVERSE, HIGHLIGHT }
