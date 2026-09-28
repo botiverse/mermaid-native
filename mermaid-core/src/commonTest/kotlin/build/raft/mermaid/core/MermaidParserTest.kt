@@ -7,6 +7,15 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class MermaidParserTest {
+    @Test fun infoSupportsOriginalShowInfoAndUsesNativeBuildVersion() {
+        val plain = assertIs<InfoDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("info")).diagram)
+        assertEquals(MERMAID_NATIVE_VERSION, plain.version)
+        assertEquals(false, plain.showInfo)
+        val shown = assertIs<InfoDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("info\nshowInfo")).diagram)
+        assertEquals(true, shown.showInfo)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("info unsupported"))
+    }
+
     @Test
     fun bareFlowchartReferencesPreserveLabelsAndShapes() {
         val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(

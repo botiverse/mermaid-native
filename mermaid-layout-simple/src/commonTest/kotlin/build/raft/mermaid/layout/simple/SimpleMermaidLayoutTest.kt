@@ -141,6 +141,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun infoShowsMeasuredNativeVersionWithoutClipping() {
+        val scene = SimpleMermaidLayout.layout(build.raft.mermaid.core.InfoDiagram(version = "123456789.987654321-long-build"), FixedWidthTextMeasurer, LayoutConfig())
+        val text = scene.commands.filterIsInstance<DrawText>().single()
+        assertEquals("Mermaid Native v123456789.987654321-long-build", text.text)
+        assertTrue(scene.width >= FixedWidthTextMeasurer.measure(text.text, text.style).width + 48.0)
+        assertEquals(text.text, scene.accessibilityTitle)
+    }
+
     @Test fun architectureEmptyAndMetadataRenderWithoutInvalidGeometry() {
         fun render(source: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
         val empty = render("architecture-beta")
