@@ -53,26 +53,26 @@ internal class StateParser(private val source: String) {
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message ?: "Unsupported state syntax",SourceLocation(prefix.count { it=='\n' }+1,statementAt-prefix.lastIndexOf('\n')))))
     }
 
-    private fun register(id:String,label:String?=null,kind:StateNodeKind=StateNodeKind.STATE):String {
+    private fun register(id:String,label:String?=null,kind:StateNodeKind=StateNodeKind.STATE,declared:Boolean=false):String {
         val old=nodes[id]
-        nodes[id]=(old ?: StateNode(id,id,kind)).copy(label=label ?: old?.label ?: if(kind==StateNodeKind.STATE)id else "",kind=if(old?.kind!=null && kind==StateNodeKind.STATE)old.kind else kind)
+        nodes[id]=(old ?: StateNode(id,id,kind)).copy(label=label ?: old?.label ?: if(kind==StateNodeKind.STATE)id else "",kind=if(old?.kind!=null && kind==StateNodeKind.STATE)old.kind else kind,explicitLabel=old?.explicitLabel==true || (label!=null && kind==StateNodeKind.STATE),declared=old?.declared==true || declared)
         stack.lastOrNull()?.let { parent -> val node=nodes.getValue(parent);if(id!=parent && id !in node.childIds)nodes[parent]=node.copy(childIds=node.childIds+id) }
         return id
     }
     private fun endpoint(text:String,sourceEndpoint:Boolean):String = if(text=="[*]") {
         val kind=if(sourceEndpoint)StateNodeKind.START else StateNodeKind.END
         register("__${kind.name.lowercase()}_${pseudoIndex++}","",kind)
-    }else state(text)
-    private fun state(raw:String,composite:Boolean=false):String {
+    }else state(text,declared=false)
+    private fun state(raw:String,composite:Boolean=false,declared:Boolean=true):String {
         val text=raw.trim()
         if(text.startsWith('"')) {
             val end=text.indexOf('"',1);requireState(end>0,"Unclosed state label")
             val rest=text.drop(end+1).trim();requireState(rest.startsWith("as "),"Expected state alias")
-            val id=rest.drop(3).trim();validateId(id,composite);return register(id,text.substring(1,end))
+            val id=rest.drop(3).trim();validateId(id,composite);return register(id,text.substring(1,end),declared=declared)
         }
         val pseudo=text.indexOf("<<")
-        if(pseudo>=0){val id=text.take(pseudo).trim();validateId(id,composite);val type=text.substring(pseudo).trim();return register(id,kind=when(type){"<<choice>>"->StateNodeKind.CHOICE;"<<fork>>"->StateNodeKind.FORK;"<<join>>"->StateNodeKind.JOIN;else->fail("Unsupported state stereotype")})}
-        val colon=text.indexOf(':');val id=if(colon<0)text else text.take(colon).trim();validateId(id,composite);register(id)
+        if(pseudo>=0){val id=text.take(pseudo).trim();validateId(id,composite);val type=text.substring(pseudo).trim();return register(id,declared=declared,kind=when(type){"<<choice>>"->StateNodeKind.CHOICE;"<<fork>>"->StateNodeKind.FORK;"<<join>>"->StateNodeKind.JOIN;else->fail("Unsupported state stereotype")})}
+        val colon=text.indexOf(':');val id=if(colon<0)text else text.take(colon).trim();validateId(id,composite);register(id,declared=declared)
         if(colon>=0){val value=text.drop(colon+1).trim();val old=nodes.getValue(id);nodes[id]=old.copy(description=listOfNotNull(old.description,value).joinToString("\n"))}
         return id
     }
@@ -87,7 +87,7 @@ internal class StateParser(private val source: String) {
         val value=if(colon>=0)rest.drop(colon+1).trim()else {
             val begin=at;var end=-1
             while(at<source.length){val lineStart=at;val newline=source.indexOf('\n',at).let { if(it<0)source.length else it };val line=source.substring(at,newline).trim();at=newline+if(newline<source.length)1 else 0;if(line=="end note"){end=lineStart;break}}
-            requireState(end>=0,"Unclosed state note");source.substring(begin,end).trim().lines().joinToString("\n") { it.trim() }
+            requireState(end>=0,"Unclosed state note");source.substring(begin,end).trim()
         }
         notes+=StateNote(id,if(left)StateNotePosition.LEFT_OF else StateNotePosition.RIGHT_OF,value)
     }

@@ -158,6 +158,8 @@ public data class StateNode(
     val description: String? = null,
     val childIds: List<String> = emptyList(),
     val direction: FlowDirection? = null,
+    val explicitLabel: Boolean = kind == StateNodeKind.STATE && label != id,
+    val declared: Boolean = explicitLabel,
 )
 
 public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
