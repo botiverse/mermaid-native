@@ -424,10 +424,10 @@ class MermaidParserTest {
         assertEquals(
             TreeViewDiagram(
                 listOf(
-                    TreeViewNode("project", 0, null, true),
-                    TreeViewNode("src", 1, 0, true),
-                    TreeViewNode("index.ts", 2, 1, false),
-                    TreeViewNode("README file.md", 1, 0, false),
+                    TreeViewNode("project", 0, null, true, sourceIndent = 4),
+                    TreeViewNode("src", 1, 0, true, sourceIndent = 8),
+                    TreeViewNode("index.ts", 2, 1, false, sourceIndent = 12),
+                    TreeViewNode("README file.md", 1, 0, false, sourceIndent = 8),
                 ),
             ),
             result.diagram,
@@ -436,17 +436,7 @@ class MermaidParserTest {
 
     @Test
     fun malformedTreeViewFailsClosed() {
-        listOf(
-            "treeView-beta",
-            "treeView-beta\nroot/",
-            "treeView-beta\n  root/",
-            "treeView-beta\n    root/\n            skipped.txt",
-            "treeView-beta\n    unquoted label",
-            "treeView-beta\n    \"unterminated",
-            "treeView-beta\n    root/ :::highlight",
-            "treeView-beta\n    root/ ## description",
-            "treeView-beta\n\troot/",
-        ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+        listOf("treeView-beta\n    \"unterminated", "treeView-beta\nfile icon(bad value)", "treeView-beta\n:::highlight", "treeView-beta\naccDescr { missing close").forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 
     @Test
@@ -2018,4 +2008,13 @@ class MermaidParserTest {
             "C4Context;\nPerson(a, \"A\")",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
+    @Test fun treeViewRawIndentationAndAnnotationsReachModel() {
+        val d = assertIs<TreeViewDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta\ntitle Project\nroot/\n  'my file.ts' icon(logos:react) :::highlight ## entry point\n      nested\n  sibling")).diagram)
+        assertEquals(listOf(null, 2, 6, 2), d.nodes.map { it.sourceIndent })
+        assertEquals(listOf(null, 0, 1, 0), d.nodes.map { it.parentIndex })
+        assertEquals("my file.ts", d.nodes[1].label); assertEquals("logos:react", d.nodes[1].iconAnnotation)
+        assertEquals("entry point", d.nodes[1].description); assertEquals("highlight", d.nodes[1].classAnnotation)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta"))
+    }
+
 }
