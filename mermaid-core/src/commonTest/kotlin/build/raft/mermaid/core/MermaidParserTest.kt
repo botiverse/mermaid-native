@@ -233,11 +233,9 @@ class MermaidParserTest {
     @Test
     fun malformedRailroadFailsClosed() {
         listOf(
-            "railroad-beta",
             "railroad\nauth = terminal(\"a\");",
             "railroad-beta\nDiagram(sequence(terminal(\"a\")));",
             "railroad-beta\nauth = Sequence(terminal(\"a\"));",
-            "railroad-beta\nauth = terminal('a');",
             "railroad-beta\nauth = terminal(\"a\")",
             "railroad-beta\nauth = choice();",
             "railroad-beta\nauth = sequence();",
@@ -2017,4 +2015,23 @@ class MermaidParserTest {
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta"))
     }
 
+    @Test
+    fun railroadOriginalMetadataCommentsEmptyAndSingleChoice() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            railroad-beta
+            title Grammar
+            accTitle: Accessible grammar
+            accDescr { line one
+            line two }
+            /* comment */
+            my-rule = choice(terminal('a')) ;
+        """.trimIndent()))
+        val diagram = assertIs<RailroadDiagram>(result.diagram)
+        assertEquals("Accessible grammar", diagram.accTitle)
+        assertEquals("line one\nline two", diagram.accDescription)
+        assertEquals(RailroadTerminal("a"), diagram.rules.single().definition)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-beta\ntitle Empty Grammar"))
+        val bad = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-beta\n/* unclosed"))
+        assertEquals(2, bad.diagnostics.single().location.line)
+    }
 }
