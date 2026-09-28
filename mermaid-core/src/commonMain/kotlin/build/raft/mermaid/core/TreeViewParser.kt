@@ -2,6 +2,16 @@ package build.raft.mermaid.core
 
 internal class TreeViewParser(private val source: String) {
     fun parse(): MermaidParseResult {
+        val prepared = try { TreeViewBoxDrawing.preprocess(source) } catch (error: IllegalArgumentException) {
+            val line = Regex("Line ([0-9]+):").find(error.message.orEmpty())?.groupValues?.get(1)?.toIntOrNull() ?: 1
+            return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error.message.orEmpty(), SourceLocation(line, 1))))
+        }
+        val result = parseIndented(prepared.text)
+        return if (result is MermaidParseResult.Failure) result.copy(diagnostics = result.diagnostics.map { diagnostic ->
+            diagnostic.copy(location = diagnostic.location.copy(line = prepared.lineMap[diagnostic.location.line] ?: diagnostic.location.line))
+        }) else result
+    }
+    private fun parseIndented(source: String): MermaidParseResult {
         val nodes = mutableListOf<TreeViewNode>(); val stack = mutableListOf<Pair<Int, Int>>()
         var header = false; var title: String? = null; var accTitle: String? = null; var accDescription: String? = null; var description: StringBuilder? = null
         fun fail(message: String, line: Int) = MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, message, SourceLocation(line, 1))))
