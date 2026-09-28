@@ -1231,11 +1231,24 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if (next == 0) queue.addLast(target)
             }
         }
+        // Only cyclic components remain after Kahn traversal. Assign bounded depths,
+        // then route edges that return to an earlier layer through separate top lanes.
+        val visited = mutableSetOf<String>()
+        fun placeCycle(id: String) {
+            if (!visited.add(id)) return
+            for (target in adjacent.getValue(id)) if (indegree.getValue(target) > 0 && target !in visited) {
+                depths[target] = max(depths.getValue(target), depths.getValue(id) + 1)
+                placeCycle(target)
+            }
+        }
+        diagram.nodes.filter { indegree.getValue(it.id) > 0 }.forEach { placeCycle(it.id) }
+        val feedbackCount = diagram.links.count { depths.getValue(it.targetId) <= depths.getValue(it.sourceId) }
+        val feedbackSpace = feedbackCount * 22.0
         val groupedLayers = diagram.nodes.groupBy { depths.getValue(it.id) }
         val layers = groupedLayers.keys.sorted().associateWith { groupedLayers.getValue(it) }
         val placements = linkedMapOf<String, SceneRect>()
         layers.forEach { (depth, nodes) ->
-            var y = config.padding
+            var y = config.padding + feedbackSpace
             nodes.forEach { node ->
                 placements[node.id] = SceneRect(
                     x = (config.padding + depth * (nodeWidth + layerGap)).xyCoordinate(),
@@ -1246,20 +1259,30 @@ public object SimpleMermaidLayout : DiagramLayout {
                 y += nodeHeights.getValue(node.id) + nodeGap
             }
         }
-        val width = (config.padding * 2 + layers.size * nodeWidth + max(0, layers.size - 1) * layerGap).xyCoordinate()
-        val height = (config.padding * 2 + layers.values.maxOf { nodes ->
+        val width = (config.padding * 2 + (depths.values.maxOrNull()!! + 1) * nodeWidth + depths.values.maxOrNull()!! * layerGap).xyCoordinate()
+        val height = (config.padding * 2 + feedbackSpace + layers.values.maxOf { nodes ->
             nodes.sumOf { nodeHeights.getValue(it.id) } + max(0, nodes.size - 1) * nodeGap
         }).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
+        var feedbackIndex = 0
         diagram.links.forEach { link ->
             val source = placements.getValue(link.sourceId)
             val target = placements.getValue(link.targetId)
-            commands += DrawLine(
-                ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
-                ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
-                stroke = SceneColor("#60a5fa"),
-                strokeWidth = max(1.5, link.value / maxValue * 12.0).xyCoordinate(),
-            )
+            val strokeWidth = max(1.5, link.value / maxValue * 12.0).xyCoordinate()
+            if (depths.getValue(link.targetId) <= depths.getValue(link.sourceId)) {
+                val laneY = config.padding + 8.0 + feedbackIndex++ * 22.0
+                val self = link.sourceId == link.targetId
+                val fromX = source.x + source.width * if (self) 0.7 else 0.5
+                val toX = target.x + target.width * if (self) 0.3 else 0.5
+                commands += DrawPolyline(listOf(ScenePoint(fromX, source.y), ScenePoint(fromX, laneY), ScenePoint(toX, laneY), ScenePoint(toX, target.y)),
+                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth)
+            } else {
+                commands += DrawLine(
+                    ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
+                    ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
+                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth,
+                )
+            }
         }
         diagram.nodes.forEach { node ->
             val rect = placements.getValue(node.id)

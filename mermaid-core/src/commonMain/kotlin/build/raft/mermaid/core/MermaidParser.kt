@@ -423,7 +423,6 @@ public object MermaidParser {
     private fun parseSankey(source: String): MermaidParseResult {
         val nodes = linkedMapOf<String, SankeyNode>()
         val links = mutableListOf<SankeyLink>()
-        val linkIds = mutableSetOf<Pair<String, String>>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         val lines = source.lineSequence().mapIndexedNotNull { index, raw ->
             val trimmed = raw.trim()
@@ -447,18 +446,11 @@ public object MermaidParser {
                 diagnostics += unsupported(statement, "sankey values must be finite and positive")
                 return@forEach
             }
-            if (sourceLabel == targetLabel || !linkIds.add(sourceLabel to targetLabel)) {
-                diagnostics += unsupported(statement, "sankey self-links and duplicate links are not supported")
-                return@forEach
-            }
             nodes.getOrPut(sourceLabel) { SankeyNode(sourceLabel, sourceLabel) }
             nodes.getOrPut(targetLabel) { SankeyNode(targetLabel, targetLabel) }
             links += SankeyLink(sourceLabel, targetLabel, value)
         }
         if (links.isEmpty()) diagnostics += unsupported(lines.first(), "sankey requires at least one link")
-        if (diagnostics.isEmpty() && sankeyHasCycle(nodes.keys, links)) {
-            diagnostics += unsupported(lines.first(), "Cyclic sankey links are not supported")
-        }
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(SankeyDiagram(nodes.values.toList(), links))
         } else MermaidParseResult.Failure(diagnostics)
@@ -1332,27 +1324,6 @@ private fun String.parseSankeyCsvLine(): List<String>? {
     if (quoted) return null
     fields += current.toString()
     return fields
-}
-
-private fun sankeyHasCycle(nodeIds: Set<String>, links: List<SankeyLink>): Boolean {
-    val indegree = nodeIds.associateWith { 0 }.toMutableMap()
-    val outgoing = nodeIds.associateWith { mutableListOf<String>() }
-    links.forEach { link ->
-        indegree[link.targetId] = indegree.getValue(link.targetId) + 1
-        outgoing.getValue(link.sourceId) += link.targetId
-    }
-    val queue = ArrayDeque(indegree.filterValues { it == 0 }.keys)
-    var visited = 0
-    while (queue.isNotEmpty()) {
-        val node = queue.removeFirst()
-        visited += 1
-        outgoing.getValue(node).forEach { target ->
-            val next = indegree.getValue(target) - 1
-            indegree[target] = next
-            if (next == 0) queue.addLast(target)
-        }
-    }
-    return visited != nodeIds.size
 }
 
 private data class MutableTreemapNode(
