@@ -2601,6 +2601,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEach
             val anchors = edgeAnchors(source, target, horizontal)
             val edgeStyle=flowEdgeStyle(edge,diagram)
+            val markerColor=if((diagram.defaultEdgeStyles+edge.styles).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
             commands += DrawLine(
                 anchors.first,
                 anchors.second,
@@ -2608,9 +2609,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                 strokeWidth = edgeStyle.strokeWidth,
                 pattern = if (edge.style == FlowEdgeStyle.DOTTED) StrokePattern.DASHED else StrokePattern.SOLID,
             )
-            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = edgeStyle.stroke)
-            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second,edgeStyle.stroke,edgeStyle.strokeWidth)
-            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first,edgeStyle.stroke,edgeStyle.strokeWidth)
+            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = markerColor)
+            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second,markerColor,edgeStyle.strokeWidth)
+            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first,markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
                 val mid = ScenePoint(
                     (anchors.first.x + anchors.second.x) / 2.0,
