@@ -1260,7 +1260,7 @@ class MermaidParserTest {
                   section Phase 1
                   Design :done, design, 2026-08-19, 3d
                   Build :after design, 2d
-                  Ship :milestone, ship, 2026-08-24
+                  Ship :milestone, ship, 2026-08-24, 0d
                 """.trimIndent(),
             ),
         )

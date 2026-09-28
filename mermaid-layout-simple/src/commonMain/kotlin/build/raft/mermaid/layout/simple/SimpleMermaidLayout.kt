@@ -1891,20 +1891,26 @@ public object SimpleMermaidLayout : DiagramLayout {
         val minDay = tasks.minOfOrNull { it.second.startDay } ?: 0
         val maxDay = tasks.maxOfOrNull { it.second.startDay + it.second.durationDays } ?: minDay + 1
         val tickLabelWidth = textMeasurer.measure("0000-00-00", tickStyle).width
-        val scale = max(28.0, tickLabelWidth + 8.0)
-        val labelWidth = tasks.maxOfOrNull { textMeasurer.measure("${it.first}: ${it.second.name}", body).width }?.plus(16.0) ?: 120.0
         val span = max(1, maxDay - minDay)
-        val width = config.padding * 2 + labelWidth + span * scale
+        val scale = minOf(720.0 / span, max(28.0, tickLabelWidth + 8.0))
+        val labelWidth = tasks.maxOfOrNull { textMeasurer.measure("${it.first}: ${it.second.name}", body).width }?.plus(16.0) ?: 120.0
+        val rightPadding=max(config.padding,tickLabelWidth/2+2)
+        val width = config.padding + rightPadding + labelWidth + span * scale
         val titleOffset = if (diagram.title == null) 0.0 else 28.0
         val axisY = config.padding + titleOffset + 8.0
         val tasksTop = axisY + 28.0
         val height = tasksTop + maxOf(1, tasks.size) * 34.0 + config.padding
         val axisStartX = (config.padding + labelWidth).xyCoordinate()
-        val axisEndX = (width - config.padding).xyCoordinate()
+        val axisEndX = (width - rightPadding).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 16.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
         commands += DrawLine(ScenePoint(axisStartX, axisY.xyCoordinate()), ScenePoint(axisEndX, axisY.xyCoordinate()))
-        for (day in minDay..maxDay) {
+        val tickStep = max(1, ceil((tickLabelWidth + 8.0) / scale).toInt())
+        val tickDays = ((minDay..maxDay step tickStep).toList() + maxDay).distinct().toMutableList()
+        if (tickDays.size > 2 && (tickDays.last() - tickDays[tickDays.lastIndex - 1]) * scale < tickLabelWidth + 8.0) {
+            tickDays.removeAt(tickDays.lastIndex - 1)
+        }
+        for (day in tickDays) {
             val x = (config.padding + labelWidth + (day - minDay) * scale).xyCoordinate()
             commands += DrawLine(ScenePoint(x, axisY.xyCoordinate()), ScenePoint(x, (axisY + 6.0).xyCoordinate()), strokeWidth = 1.0)
             commands += DrawText(isoDayToYmd(day), ScenePoint(x, axisY + 20.0), TextAnchor.MIDDLE, tickStyle)
@@ -1918,7 +1924,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             if(task.milestone) {
                 val center=x+task.durationDays*scale/2
                 commands+=DrawPolygon(listOf(ScenePoint(center,y),ScenePoint(center+11,y+11),ScenePoint(center,y+22),ScenePoint(center-11,y+11)),fill=SceneColor(fill))
-            }else commands += DrawRect(SceneRect(x, y, task.durationDays * scale, 22.0), cornerRadius = 4.0, fill = SceneColor(fill))
+            }else commands += DrawRect(SceneRect(x, y, task.renderDurationDays * scale, 22.0), cornerRadius = 4.0, fill = SceneColor(fill))
             row++
         }
         return LayoutScene(width, height, commands)
