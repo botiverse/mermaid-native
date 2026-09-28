@@ -127,6 +127,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene = when (diagram) {
+        is build.raft.mermaid.core.InfoDiagram -> layoutInfo(diagram, textMeasurer, config)
         is FlowchartDiagram -> layoutFlowchart(visibleFlow(diagram), textMeasurer, config)
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
         is PieDiagram -> layoutPie(diagram, textMeasurer, config)
@@ -159,6 +160,15 @@ public object SimpleMermaidLayout : DiagramLayout {
         is ZenumlDiagram -> layoutZenuml(diagram, textMeasurer, config)
         is WardleyMapDiagram -> layoutWardleyMap(diagram, textMeasurer, config)
         is EventModelingDiagram -> layoutEventModeling(diagram, textMeasurer, config)
+    }
+
+    private fun layoutInfo(diagram: build.raft.mermaid.core.InfoDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val label = "Mermaid Native v${diagram.version}"
+        val style = TextStyle(fontSize = 24.0, fontWeight = 600, color = SceneColor("#334155"))
+        val measured = textMeasurer.measure(label, style)
+        val width = max(400.0, measured.width + config.padding * 2)
+        val height = max(100.0, measured.height + config.padding * 2)
+        return LayoutScene(width, height, listOf(DrawText(label, ScenePoint(width / 2.0, height / 2.0 + style.fontSize * 0.35), TextAnchor.MIDDLE, style)), accessibilityTitle = label)
     }
 
     /** Deterministic sequence-style layout for the bounded zenuml slice. */
