@@ -26,7 +26,7 @@ public object MermaidParser {
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             header.text.equals("gantt", ignoreCase = true) -> GanttParser(source).parse()
             header.text.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> TimelineParser(source).parse()
-            header.text.takeWhile { !it.isWhitespace() }.equals("quadrantChart", ignoreCase = true) -> QuadrantParser(source).parse()
+            header.text.takeWhile { !it.isWhitespace() }.equals("quadrantChart", ignoreCase = true) -> QuadrantParser(source).parseValidated()
             header.text.equals("journey", ignoreCase = true) -> JourneyParser(source).parse()
             header.text.startsWith("gitGraph") -> GitGraphParser(source).parse()
             header.text.equals("requirementDiagram", ignoreCase = true) -> RequirementParser(source).parse()

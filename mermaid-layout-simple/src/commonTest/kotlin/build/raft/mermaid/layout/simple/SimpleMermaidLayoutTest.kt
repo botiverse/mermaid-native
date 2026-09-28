@@ -159,6 +159,22 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.y >= 68.0 })
     }
 
+    @Test fun quadrantHexColorsBecomeValidRenderedColors() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("quadrantChart\nA: [0.5, 0.5] color:abc,stroke-color:123456"))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill?.value == "#abc" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolyline>().any { it.stroke.value == "#123456" })
+    }
+
+    @Test fun mindmapBlankIconHasNoHeightOrTextSideEffects() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)"))
+        val normal = assertIs<MindmapDiagram>(parsed.diagram)
+        val blank = normal.copy(nodes = normal.nodes.map { it.copy(icon = "") })
+        assertEquals(SimpleMermaidLayout.layout(normal, FixedWidthTextMeasurer, LayoutConfig()), SimpleMermaidLayout.layout(blank, FixedWidthTextMeasurer, LayoutConfig()))
+        val emptyDecoration = assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon()"))
+        assertEquals(SimpleMermaidLayout.layout(normal, FixedWidthTextMeasurer, LayoutConfig()), SimpleMermaidLayout.layout(emptyDecoration.diagram, FixedWidthTextMeasurer, LayoutConfig()))
+    }
+
     @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
         val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())

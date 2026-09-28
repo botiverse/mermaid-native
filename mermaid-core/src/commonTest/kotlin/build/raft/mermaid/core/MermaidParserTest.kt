@@ -921,6 +921,13 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun mindmapEmptyIconDecorationDoesNotReserveAnIcon() {
+        val empty = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon()")).diagram)
+        assertEquals(null, empty.nodes.single().icon)
+        val retained = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon(star)\n::icon()")).diagram)
+        assertEquals("star", retained.nodes.single().icon)
+    }
+
     @Test fun mindmapArbitraryIndentationPreservesSourceIdsDecorationsAndShapes() {
         val diagram = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             mindmap
@@ -1688,6 +1695,22 @@ class MermaidParserTest {
         ).forEach { source ->
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }
+    }
+
+    @Test fun quadrantCommentsAndTitleLikePointLabelsRemainVisible() {
+        val source = "%% introductory comment\nquadrantChart\ntitle Overview\ntitleA: [0.1, 0.2]\ntitle: [0.3, 0.4]"
+        val diagram = assertIs<QuadrantChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Overview", diagram.title)
+        assertEquals(listOf("titleA", "title"), diagram.points.map { it.label })
+    }
+
+    @Test fun quadrantInvalidStylesFailAtTheParserBoundary() {
+        for (style in listOf("color: red", "color: notacolor", "radius: abc", "stroke-width: -5px", "fill: #abc")) {
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("quadrantChart\nA: [0.1, 0.2] $style"), style)
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("quadrantChart\nclassDef invalid $style"), style)
+        }
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("quadrantChart\nquadrant-1 a: b"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("quadrantChart\nquadrant-1 \"a: b\"\nA: [0.1, 0.2] color:abc,stroke-color:#123456,radius:10,stroke-width:2px"))
     }
 
     @Test fun parsesKanbanColumnsAndCards() {

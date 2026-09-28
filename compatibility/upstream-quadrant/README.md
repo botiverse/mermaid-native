@@ -5,3 +5,9 @@ Runs the pinned, unchanged `quadrant.jison.spec.ts`: 24 original tests, 46 disti
 Run `python3 compatibility/upstream-quadrant/run.py --upstream /path/to/upstream --stdlib /path/to/kotlin-stdlib.jar --skip-build` after building `:mermaid-core:bundleLibRuntimeToJarDebug`. Omitting `--skip-build` performs that build. Original source hashes, runtime JAR SHA256, inputs and reports are retained in the upstream `.native-quadrant-audit` directory.
 
 These are parser-boundary assertions. The original Quadrant database/layout unit tests and screenshot equivalence are separate coverage; no claim is made that this harness executes them.
+
+Native reports typed syntax diagnostics; it does not reproduce Jison's complete parse-error wording. Styles follow the original database's numeric, hex-color and pixel-width validation. Native keeps diamond markers and side-anchored point labels rather than the upstream circular markers.
+
+The original Jison suite supplies a mock database and intentionally admits `classDef constructor fill:#fff`, while the real upstream database rejects `fill`. Accordingly this bridge invokes shared Kotlin `QuadrantParser.parse()` at the grammar boundary. The real `MermaidParser` consumer invokes `parseValidated()` and rejects invalid styles before producing a product model. Tests cover that product admission separately; grammar passes do not imply all original inputs are admitted for rendering.
+
+Known admission differences outside those 24 assertions remain: `title: [x,y]`, including case and whitespace variants such as `TITLE : [x,y]`, is a Native point while the original lexer treats it as a title. Native rejects extra colon suffixes in style values and requires each style token to contain a colon even at the grammar boundary.
