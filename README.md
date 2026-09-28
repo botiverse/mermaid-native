@@ -82,8 +82,11 @@ State diagrams support bare identifiers, aliases, repeated descriptions, nested 
 
 Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
 
+Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards, blue elements, line spacing and stroke palette remain unchanged. The pinned original Requirement parser suite passes43/43; this does not establish complete DB or visual parity.
+
 ### Gantt grammar and dates
 
 Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
 
 XY charts accept both original headers, optional axes/metadata, numeric ranges in either direction, orientation, named series and point labels. Native draws horizontal bars/lines and numeric axes while retaining the existing vertical colors and value labels. Markdown text types are retained in the model; rich inline Markdown and host interactions are not claimed. Original parser assertion integration is being validated; direct XY database/builder tests remain outside this parser boundary.
+Gantt bars retain a separate render duration for excluded trailing dates while dependencies use the fully adjusted end. Calendar include/exclude tokens accept both the configured date format and ISO dates. Milestones require an explicit start (and may use `0d`); shorthand that treated a non-date ID as an omitted field is rejected. Long spans use a bounded plot width and sampled date ticks, with room for the last label.

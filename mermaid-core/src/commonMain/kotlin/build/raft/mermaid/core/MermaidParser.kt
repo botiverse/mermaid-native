@@ -29,7 +29,7 @@ public object MermaidParser {
             header.text.equals("quadrantChart", ignoreCase = true) -> parseQuadrantChart(statements)
             header.text.equals("journey", ignoreCase = true) -> parseUserJourney(statements)
             header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
-            header.text.equals("requirementDiagram", ignoreCase = true) -> parseRequirement(statements)
+            header.text.equals("requirementDiagram", ignoreCase = true) -> RequirementParser(source).parse()
             header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
             header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> parsePacket(statements)
             header.text.equals("block", ignoreCase = true) || header.text.equals("block-beta", ignoreCase = true) -> parseBlock(statements)
@@ -852,153 +852,6 @@ public object MermaidParser {
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(GitGraphDiagram(branches.values.toList(), commits))
         } else MermaidParseResult.Failure(diagnostics)
-    }
-
-    private fun parseRequirement(statements: List<SourceStatement>): MermaidParseResult {
-        val requirements = linkedMapOf<String, RequirementDefinition>()
-        val elements = linkedMapOf<String, RequirementElement>()
-        val relationships = mutableListOf<RequirementRelationship>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var accessibilityTitle: String? = null
-        var accessibilityDescription: String? = null
-        var block: RequirementBlock? = null
-
-        fun duplicateName(name: String): Boolean = name in requirements || name in elements
-        fun closeBlock(statement: SourceStatement) {
-            when (val current = block) {
-                is RequirementBlock.Requirement -> {
-                    val id = current.fields["id"]
-                    val text = current.fields["text"]
-                    val risk = current.fields["risk"]?.uppercase()?.let { runCatching { RequirementRisk.valueOf(it) }.getOrNull() }
-                    val method = current.fields["verifymethod"]?.uppercase()?.let {
-                        runCatching { RequirementVerifyMethod.valueOf(it) }.getOrNull()
-                    }
-                    if (id == null || text == null || risk == null || method == null) {
-                        diagnostics += unsupported(statement, "Requirement requires id, text, risk low|medium|high, and verifymethod")
-                    } else {
-                        requirements[current.name] = RequirementDefinition(current.name, id, text, risk, method, current.type)
-                    }
-                }
-                is RequirementBlock.Element -> {
-                    val type = current.fields["type"]
-                    val docRef = current.fields["docref"]
-                    if (type == null || docRef == null) {
-                        diagnostics += unsupported(statement, "Element requires type and docref")
-                    } else {
-                        elements[current.name] = RequirementElement(current.name, type, docRef)
-                    }
-                }
-                null -> diagnostics += unsupported(statement, "Unexpected requirement block terminator")
-            }
-            block = null
-        }
-
-        statements.drop(1).forEach { statement ->
-            val current = block
-            if (current != null) {
-                if (statement.text == "}") {
-                    closeBlock(statement)
-                    return@forEach
-                }
-                val field = REQUIREMENT_FIELD.matchEntire(statement.text)
-                if (field == null) {
-                    diagnostics += unsupported(statement, "Unsupported requirement block field")
-                    return@forEach
-                }
-                val key = field.groupValues[1].lowercase()
-                val allowed = when (current) {
-                    is RequirementBlock.Requirement -> REQUIREMENT_FIELDS
-                    is RequirementBlock.Element -> ELEMENT_FIELDS
-                }
-                if (key !in allowed || key in current.fields) {
-                    diagnostics += unsupported(statement, "Unknown or duplicate requirement block field")
-                } else {
-                    val raw = field.groupValues[2].trim()
-                    val value = if (raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"")) {
-                        raw.substring(1, raw.length - 1)
-                    } else {
-                        raw
-                    }
-                    if (value.isEmpty()) {
-                        diagnostics += unsupported(statement, "Requirement field values must not be empty")
-                    } else {
-                        current.fields[key] = value
-                    }
-                }
-                return@forEach
-            }
-
-            if (statement.text.startsWith("accTitle:", ignoreCase = true)) {
-                val value = statement.text.substringAfter(':').trim()
-                if (value.isEmpty() || accessibilityTitle != null) diagnostics += unsupported(statement, "Requirement accessibility title must be non-empty and unique")
-                else accessibilityTitle = value
-                return@forEach
-            }
-            if (statement.text.startsWith("accDescr:", ignoreCase = true)) {
-                val value = statement.text.substringAfter(':').trim()
-                if (value.isEmpty() || accessibilityDescription != null) diagnostics += unsupported(statement, "Requirement accessibility description must be non-empty and unique")
-                else accessibilityDescription = value
-                return@forEach
-            }
-            REQUIREMENT_START.matchEntire(statement.text)?.let {
-                val name = it.groupValues[2]
-                if (duplicateName(name)) diagnostics += unsupported(statement, "Duplicate requirement artifact name")
-                else block = RequirementBlock.Requirement(name, type = it.groupValues[1].toRequirementType())
-                return@forEach
-            }
-            ELEMENT_START.matchEntire(statement.text)?.let {
-                val name = it.groupValues[1]
-                if (duplicateName(name)) diagnostics += unsupported(statement, "Duplicate requirement artifact name")
-                else block = RequirementBlock.Element(name)
-                return@forEach
-            }
-            REQUIREMENT_RELATION.matchEntire(statement.text)?.let {
-                relationships += RequirementRelationship(
-                    from = it.groupValues[1],
-                    to = it.groupValues[3],
-                    kind = when (it.groupValues[2].lowercase()) {
-                        "contains" -> RequirementRelationshipKind.CONTAINS
-                        "satisfies" -> RequirementRelationshipKind.SATISFIES
-                        else -> RequirementRelationshipKind.VERIFIES
-                    },
-                )
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported requirementDiagram syntax")
-        }
-        if (block != null) {
-            diagnostics += MermaidDiagnostic(
-                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-                "Unclosed requirementDiagram block",
-                statements.last().location,
-            )
-        }
-        val names = requirements.keys + elements.keys
-        relationships.forEach { relationship ->
-            if (names.isNotEmpty() && (relationship.from !in names || relationship.to !in names)) {
-                diagnostics += MermaidDiagnostic(
-                    MermaidDiagnosticCode.INVALID_VALUE,
-                    "Requirement relationship references an unknown artifact: ${relationship.from} -> ${relationship.to}",
-                    statements.first().location,
-                )
-            }
-        }
-        return if (diagnostics.isEmpty() && (requirements.isNotEmpty() || elements.isNotEmpty() || relationships.isNotEmpty())) {
-            MermaidParseResult.Success(
-                RequirementDiagram(
-                    requirements = requirements.values.toList(),
-                    elements = elements.values.toList(),
-                    relationships = relationships,
-                    accessibilityTitle = accessibilityTitle,
-                    accessibilityDescription = accessibilityDescription,
-                )
-            )
-        } else {
-            if (requirements.isEmpty() && diagnostics.isEmpty()) {
-                diagnostics += unsupported(statements.first(), "requirementDiagram requires at least one requirement or element")
-            }
-            MermaidParseResult.Failure(diagnostics)
-        }
     }
 
     private fun parseKanban(source: String): MermaidParseResult {
@@ -2145,39 +1998,6 @@ private data class ParsedMindmapNode(
     val shape: MindmapNodeShape,
     val explicitId: Boolean,
 )
-
-private fun String.toRequirementType(): RequirementType = when (lowercase()) {
-    "functionalrequirement" -> RequirementType.FUNCTIONAL_REQUIREMENT
-    "interfacerequirement" -> RequirementType.INTERFACE_REQUIREMENT
-    "performancerequirement" -> RequirementType.PERFORMANCE_REQUIREMENT
-    else -> RequirementType.REQUIREMENT
-}
-
-private sealed interface RequirementBlock {
-    val name: String
-    val fields: MutableMap<String, String>
-
-    data class Requirement(
-        override val name: String,
-        val type: RequirementType = RequirementType.REQUIREMENT,
-        override val fields: MutableMap<String, String> = linkedMapOf(),
-    ) : RequirementBlock
-
-    data class Element(
-        override val name: String,
-        override val fields: MutableMap<String, String> = linkedMapOf(),
-    ) : RequirementBlock
-}
-
-private val REQUIREMENT_START = Regex("^(requirement|functionalRequirement|interfaceRequirement|performanceRequirement)\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
-private val ELEMENT_START = Regex("^element\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s*[{]$", RegexOption.IGNORE_CASE)
-private val REQUIREMENT_FIELD = Regex("^([A-Za-z]+)\\s*:\\s*(\\S(?:.*\\S)?)$")
-private val REQUIREMENT_RELATION = Regex(
-    "^([A-Za-z_][A-Za-z0-9_-]*)\\s+-\\s+(contains|satisfies|verifies)\\s+->\\s+([A-Za-z_][A-Za-z0-9_-]*)$",
-    RegexOption.IGNORE_CASE,
-)
-private val REQUIREMENT_FIELDS = setOf("id", "text", "risk", "verifymethod")
-private val ELEMENT_FIELDS = setOf("type", "docref")
 
 private fun String.toMindmapNodeSyntax(index: Int): ParsedMindmapNode? {
     MINDMAP_DOUBLE_CIRCLE.matchEntire(this@toMindmapNodeSyntax)?.let { match ->
