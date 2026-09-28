@@ -47,6 +47,7 @@ internal class StateParser(private val source: String) {
                     val rest=text.drop(6).trim();val split=rest.indexOf(' ');requireState(split>0,"Expected state style")
                     val values=styleValues(rest.drop(split+1));rest.take(split).split(',').forEach { id->validateId(id,false);register(id);nodes[id]=nodes.getValue(id).copy(styles=values) }
                 }
+                text == "--" -> { requireState(stack.isNotEmpty(), "Concurrent divider requires composite state");register("__divider_${pseudoIndex++}", "", StateNodeKind.DIVIDER, declared=true) }
                 text.startsWith("note ") -> note(text)
                 text.endsWith('{') -> {
                     val declaration=text.dropLast(1).trim();requireState(declaration.startsWith("state "),"Expected composite state")
@@ -110,6 +111,11 @@ internal class StateParser(private val source: String) {
         requireState(id !in setOf("classDef","class","style","note","end","--","=="),"Unsupported state statement")
     }
     private fun note(text:String) {
+        if (text.startsWith("note \"")) {
+            val id = state(text.drop(5))
+            nodes[id] = nodes.getValue(id).copy(kind=StateNodeKind.NOTE)
+            return
+        }
         val left=text.startsWith("note left of ");val right=text.startsWith("note right of ")
         requireState(left || right,"Unsupported floating note")
         val rest=text.drop(if(left)13 else 14).trim();val colon=rest.indexOf(':');val id=if(colon<0)rest else rest.take(colon).trim();validateId(id,false);register(id)
