@@ -25,7 +25,7 @@ public object MermaidParser {
             XY_HEADER.matches(header.text) -> XyParser(source).parse()
             header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
             header.text.equals("gantt", ignoreCase = true) -> GanttParser(source).parse()
-            header.text.equals("timeline", ignoreCase = true) -> parseTimeline(statements)
+            header.text.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> TimelineParser(source).parse()
             header.text.equals("quadrantChart", ignoreCase = true) -> parseQuadrantChart(statements)
             header.text.equals("journey", ignoreCase = true) -> parseUserJourney(statements)
             header.text.equals("gitGraph", ignoreCase = true) -> parseGitGraph(statements)
@@ -605,28 +605,6 @@ public object MermaidParser {
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(MindmapDiagram(nodes.toList()))
         } else MermaidParseResult.Failure(diagnostics)
-    }
-
-    private fun parseTimeline(statements: List<SourceStatement>): MermaidParseResult {
-        var title: String? = null
-        var section: String? = null
-        val events = mutableListOf<TimelineEvent>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        statements.drop(1).forEach { statement ->
-            if (statement.text.startsWith("title ", ignoreCase = true)) {
-                val value = statement.text.substringAfter(' ').trim()
-                if (value.isEmpty() || title != null) diagnostics += unsupported(statement, "Timeline requires at most one non-empty title") else title = value
-            } else if (statement.text.startsWith("section ", ignoreCase = true)) {
-                val value = statement.text.substringAfter(' ').trim()
-                if (value.isEmpty()) diagnostics += unsupported(statement, "Timeline section requires a non-empty name") else section = value
-            } else {
-                val parts = statement.text.split(':').map { it.trim() }
-                if (parts.size < 2 || parts.any { it.isEmpty() }) diagnostics += unsupported(statement, "Timeline event requires period : event [: event]")
-                else events += TimelineEvent(parts.first(), parts.drop(1), section)
-            }
-        }
-        if (events.isEmpty()) diagnostics += unsupported(statements.first(), "timeline requires at least one event")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(TimelineDiagram(title, events)) else MermaidParseResult.Failure(diagnostics)
     }
 
     private fun parsePacket(statements: List<SourceStatement>): MermaidParseResult {

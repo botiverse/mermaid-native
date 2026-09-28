@@ -628,6 +628,65 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun timelineExplicitDirectionsChangeActualEventPositions() {
+        fun scene(direction: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline $direction\nsection Phase\nFirst: Alpha\nSecond: Beta",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val lr = scene("LR").commands.filterIsInstance<DrawPolygon>()
+        val td = scene("TD").commands.filterIsInstance<DrawPolygon>()
+        assertTrue(lr[1].points.first().x > lr[0].points.first().x)
+        assertEquals(lr[0].points.first().y, lr[1].points.first().y)
+        assertEquals(td[0].points.first().x, td[1].points.first().x)
+        assertTrue(td[1].points.first().y > td[0].points.first().y)
+        assertEquals("#2563eb", lr.first().fill.value)
+    }
+
+    @Test
+    fun timelinePreservesInterveningAndRepeatedEmptySectionsWithMeasuredHeaders() {
+        val name = "Wide section heading ".repeat(8)
+        val measurer = build.raft.mermaid.layout.TextMeasurer { text, style ->
+            val size = FixedWidthTextMeasurer.measure(text, style)
+            size.copy(width = size.width * if (style.fontWeight >= 600) 1.7 else 1.0)
+        }
+        for (direction in listOf("LR", "TD")) {
+            val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+                "timeline $direction\nsection Start\nFirst: Alpha\nsection $name\nsection Finish\nSecond: Beta\nsection Finish",
+            )).diagram
+            val scene = SimpleMermaidLayout.layout(chart, measurer, LayoutConfig())
+            val texts = scene.commands.filterIsInstance<DrawText>()
+            val empty = texts.single { it.text == name }
+            val first = texts.single { it.text == "First" }; val last = texts.single { it.text == "Second" }
+            assertEquals(2, texts.count { it.text == "Finish" })
+            if (direction == "LR") {
+                assertTrue(empty.origin.x > first.origin.x && empty.origin.x < last.origin.x)
+                val half = measurer.measure(empty.text, empty.style).width / 2
+                assertTrue(empty.origin.x - half >= 0 && empty.origin.x + half <= scene.width)
+            } else assertTrue(empty.origin.y > first.origin.y && empty.origin.y < last.origin.y)
+            assertEquals(2, scene.commands.filterIsInstance<DrawPolygon>().size)
+        }
+    }
+
+    @Test
+    fun timelineNextSectionClearsThePreviousMultilineEvent() {
+        val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline TD\nsection Planning\n2024: Launch: First users\nsection Research\nsection Delivery\n2025: Scale",
+        )).diagram
+        val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
+        val texts = scene.commands.filterIsInstance<DrawText>()
+        val lastEvent = texts.single { it.text == "First users" }
+        val nextSection = texts.single { it.text == "Research" }
+        assertTrue(nextSection.origin.y - nextSection.style.fontSize >= lastEvent.origin.y + 12.0)
+    }
+
+    @Test
+    fun timelineEmptySectionsRenderWithoutCrashing() {
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline\nsection Planning\nsection Delivery",
+        )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Planning", "Delivery")))
+    }
+
+    @Test
     fun xyHorizontalPlotUsesRealHorizontalBarsLabelsAndPalette() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
             "xychart horizontal\nx-axis [A,B]\ny-axis 0 --> 100\nbar \"Sales\" [20 \"First\", 80 \"Last\"]\nline [30,70]",

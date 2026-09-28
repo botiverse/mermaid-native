@@ -1322,12 +1322,50 @@ class MermaidParserTest {
               2024 : Launch : First users
               2025 : Scale
         """.trimIndent()))
-        assertEquals(TimelineDiagram("Product history", listOf(TimelineEvent("2024", listOf("Launch", "First users")), TimelineEvent("2025", listOf("Scale")))), result.diagram)
+        assertEquals(TimelineDiagram("Product history", listOf(TimelineEvent("2024 ", listOf("Launch ", "First users")), TimelineEvent("2025 ", listOf("Scale")))), result.diagram)
+    }
+
+    @Test
+    fun timelineKeepsEmptySectionsUrlsContinuationAndOriginalWhitespace() {
+        val chart = assertIs<TimelineDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline TD\nsection empty\nsection Phase\n2024: [Link](http://example.com): Extra \n  : Continued\n2025\nsection empty",
+        )).diagram)
+        assertEquals(FlowDirection.TB, chart.direction)
+        assertEquals(true, chart.directionExplicit)
+        assertEquals(listOf("empty", "Phase", "empty"), chart.sections)
+        assertEquals(listOf("[Link](http://example.com)", "Extra ", "Continued"), chart.events.first().labels)
+        assertEquals(1, chart.events.first().sectionIndex)
+        assertEquals(emptyList(), chart.events.last().labels)
+    }
+
+    @Test
+    fun timelinePreservesMetadataAndAcceptsEmptyDocument() {
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("timeline"))
+        val chart = assertIs<TimelineDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline LR\ntitle ;title;\naccTitle: History\naccDescr {Line one\n  line two}\nsection #phase#\n2024: #event# ; ",
+        )).diagram)
+        assertEquals(";title;", chart.title)
+        assertEquals("History", chart.accessibilityTitle)
+        assertEquals("Line one\n  line two", chart.accessibilityDescription)
+        assertEquals(listOf("#event# ; "), chart.events.single().labels)
+    }
+
+    @Test
+    fun timelineUsesTokenSpecificCommentAndSectionBoundaries() {
+        val chart = assertIs<TimelineDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline\ntitle URL %% encoded\n2023: Event %% retained\nsection Q1: plan\n20#24: ignored\n2025: #event#",
+        )).diagram)
+        assertEquals("URL %% encoded", chart.title)
+        assertEquals(listOf("Q1"), chart.sections)
+        assertEquals(listOf("Event %% retained", "plan"), chart.events.first().labels)
+        assertEquals(listOf("2023", "20", "2025"), chart.events.map { it.period })
+        assertEquals(emptyList(), chart.events[1].labels)
+        assertEquals(listOf("#event#"), chart.events.last().labels)
     }
 
     @Test
     fun malformedTimelineFailsClosed() {
-        listOf("timeline", "timeline\n2024", "timeline\n2024 :", "timeline\n2024 : Launch :", "timeline\ntitle One\ntitle Two\n2024 : Launch")
+        listOf("timeline RL", "timeline\n: Event without period", "timeline\n2024 :", "timeline\n2024 : Launch : ", "timeline\naccDescr {unclosed")
             .forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
         val comma = assertIs<MermaidParseResult.Success>(MermaidParser.parse("timeline\n2024 : Launch, First users"))
         assertEquals(listOf("Launch, First users"), assertIs<TimelineDiagram>(comma.diagram).events.single().labels)

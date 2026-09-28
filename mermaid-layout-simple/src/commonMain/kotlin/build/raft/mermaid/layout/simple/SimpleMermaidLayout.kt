@@ -1745,47 +1745,91 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    private data class TimelineEntry(val event: TimelineEvent?, val section: String?, val startsSection: Boolean)
+
+    private fun timelineEntries(diagram: TimelineDiagram): List<TimelineEntry> {
+        if (diagram.sections.isEmpty()) {
+            var previous: String? = null
+            return diagram.events.map { event ->
+                TimelineEntry(event, event.section, event.section != null && event.section != previous).also { previous = event.section }
+            }
+        }
+        val entries = diagram.events.filter { it.sectionIndex == null }.map { TimelineEntry(it, it.section, false) }.toMutableList()
+        diagram.sections.forEachIndexed { index, name ->
+            val events = diagram.events.filter { it.sectionIndex == index }
+            if (events.isEmpty()) entries += TimelineEntry(null, name, true)
+            else events.forEachIndexed { i, event -> entries += TimelineEntry(event, name, i == 0) }
+        }
+        return entries
+    }
+
     private fun layoutTimeline(diagram: TimelineDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        if(diagram.directionExplicit && diagram.direction == FlowDirection.LR) return layoutHorizontalTimeline(diagram, textMeasurer, config)
+        val entries = timelineEntries(diagram)
         val body = TextStyle(fontSize = 12.0)
         val sectionStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val eventLineHeight = 18.0
         fun eventHeight(event: TimelineEvent): Double =
             max(42.0, 16.0 + max(1, event.labels.size) * eventLineHeight)
-        val labelWidth = diagram.events.maxOf { textMeasurer.measure(it.period, body).width } + 32.0
-        val sectionWidth = diagram.events.mapNotNull { it.section }.maxOfOrNull { textMeasurer.measure(it, sectionStyle).width } ?: 0.0
-        val detailWidth = diagram.events.maxOf { event ->
-            event.labels.maxOfOrNull { textMeasurer.measure(it, body).width } ?: 0.0
-        } + 40.0
+        val labelWidth = (diagram.events.maxOfOrNull { textMeasurer.measure(it.period.trim(), body).width } ?: 0.0) + 32.0
+        val sectionWidth = entries.mapNotNull { it.section }.maxOfOrNull { textMeasurer.measure(it, sectionStyle).width } ?: 0.0
+        val detailWidth = (diagram.events.maxOfOrNull { event ->
+            event.labels.maxOfOrNull { textMeasurer.measure(it.trim(), body).width } ?: 0.0
+        } ?: 0.0) + 40.0
         val width = max(420.0, config.padding * 2 + labelWidth + max(300.0, max(sectionWidth + 40.0, detailWidth)))
         val axisX = config.padding + labelWidth
         var cursor = config.padding + 52.0
-        var previousSection: String? = null
-        val rows = mutableListOf<Triple<Double, TimelineEvent, Boolean>>()
-        diagram.events.forEach { event ->
-            val newSection = event.section != null && event.section != previousSection
-            if (newSection) cursor += 8.0
-            rows += Triple(cursor, event, newSection)
-            previousSection = event.section
-            cursor += eventHeight(event)
+        val rows = mutableListOf<Pair<Double, TimelineEntry>>()
+        entries.forEach { entry ->
+            if (entry.startsSection) cursor += if (rows.lastOrNull()?.second?.event?.labels?.isNotEmpty() == true) 24.0 else 8.0
+            rows += cursor to entry
+            cursor += entry.event?.let(::eventHeight) ?: 30.0
         }
         val height = cursor + config.padding
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
         commands += DrawLine(ScenePoint(axisX, config.padding + 32.0), ScenePoint(axisX, height - config.padding))
-        rows.forEach { (y, event, newSection) ->
-            if (newSection) {
-                commands += DrawText(requireNotNull(event.section), ScenePoint(axisX + 18.0, y - 18.0), style = sectionStyle)
+        rows.forEach { (y, entry) ->
+            if (entry.startsSection) {
+                commands += DrawText(requireNotNull(entry.section), ScenePoint(axisX + 18.0, y - 18.0), style = sectionStyle)
                 commands += DrawLine(
                     ScenePoint(config.padding, y - 12.0),
                     ScenePoint(width - config.padding, y - 12.0),
                     stroke = SceneColor("#cbd5e1"),
                 )
             }
-            commands += DrawText(event.period, ScenePoint(config.padding, y + 5.0), style = body)
+            val event = entry.event ?: return@forEach
+            commands += DrawText(event.period.trim(), ScenePoint(config.padding, y + 5.0), style = body)
             commands += DrawPolygon(listOf(ScenePoint(axisX, y), ScenePoint(axisX + 7.0, y + 7.0), ScenePoint(axisX, y + 14.0), ScenePoint(axisX - 7.0, y + 7.0)), fill = SceneColor("#2563eb"))
             event.labels.forEachIndexed { labelIndex, label ->
-                commands += DrawText(label, ScenePoint(axisX + 18.0, y + 11.0 + labelIndex * eventLineHeight), style = body)
+                commands += DrawText(label.trim(), ScenePoint(axisX + 18.0, y + 11.0 + labelIndex * eventLineHeight), style = body)
             }
+        }
+        return LayoutScene(width, maxOf(height, config.padding * 2 + 52 + diagram.sections.size * 22), commands)
+    }
+
+    private fun layoutHorizontalTimeline(diagram: TimelineDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val entries = timelineEntries(diagram)
+        val style = TextStyle(fontSize = 12.0)
+        val sectionStyle = style.copy(fontWeight = 600)
+        val columns = entries.map { entry -> maxOf(120.0, textMeasurer.measure(entry.event?.period.orEmpty().trim(), style).width + 32,
+            (entry.event?.labels?.maxOfOrNull { textMeasurer.measure(it.trim(), style).width } ?: 0.0) + 32,
+            textMeasurer.measure(entry.section.orEmpty(), sectionStyle).width + 32) }
+        val width = maxOf(420.0, config.padding * 2 + columns.sum())
+        val height = maxOf(160.0, config.padding * 2 + 98 + (diagram.events.maxOfOrNull { it.labels.size } ?: 0) * 18)
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        val axisY = config.padding + 68
+        commands += DrawLine(ScenePoint(config.padding, axisY), ScenePoint(width - config.padding, axisY))
+        var cursor = config.padding
+        entries.forEachIndexed { index, entry ->
+            val x = cursor + columns[index] / 2
+            if(entry.startsSection) commands += DrawText(requireNotNull(entry.section), ScenePoint(x, axisY - 32), TextAnchor.MIDDLE, sectionStyle)
+            cursor += columns[index]
+            val event = entry.event ?: return@forEachIndexed
+            commands += DrawText(event.period.trim(), ScenePoint(x, axisY - 14), TextAnchor.MIDDLE, style)
+            commands += DrawPolygon(listOf(ScenePoint(x, axisY - 7), ScenePoint(x + 7, axisY), ScenePoint(x, axisY + 7), ScenePoint(x - 7, axisY)), fill = SceneColor("#2563eb"))
+            event.labels.forEachIndexed { j, label -> commands += DrawText(label.trim(), ScenePoint(x, axisY + 24 + j * 18), TextAnchor.MIDDLE, style) }
         }
         return LayoutScene(width, height, commands)
     }

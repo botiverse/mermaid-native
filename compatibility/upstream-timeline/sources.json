@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/timeline/timeline.spec.js": "66ed971d427439652e2a89b4bc606b21e5e6a825319163c4f0f82e07dfd5f42d",
+    "packages/mermaid/src/diagrams/timeline/parser/timeline.jison": "65a1aaa24f2a9f5416b89b9774847e832cc2e810bb4233d77ad756c94f8baf8f",
+    "packages/mermaid/src/diagrams/timeline/timelineDb.js": "d7f8ff92b7b21c3fb5276a22ad6b848c546e16230092e42c71f768913a8902b6"
+  }
+}
