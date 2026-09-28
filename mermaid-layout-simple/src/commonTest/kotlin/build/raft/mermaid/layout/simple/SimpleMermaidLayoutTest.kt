@@ -1727,6 +1727,14 @@ class SimpleMermaidLayoutTest {
         assertTrue(scene.width.isFinite() && scene.height.isFinite())
     }
 
+    @Test fun eventModelingNotesAndScenariosReachRealLayout() {
+        val source = "eventmodeling\ntf 01 evt Added\nnote 01 {\nRemember this\n}\ngwt 01\n given\n  evt Added\n then\n  evt Updated"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("Remember this", "Given evt Added", "Then evt Updated")))
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
+
     @Test fun eventModelingDataIsDrawnByProductionLayout() {
         val source = "eventmodeling\naccTitle: Inventory\ntf 01 cmd Add { productId: 7 }\ntf 02 evt Added [[Payload]]\ndata Payload\n{\n  productId: 8\n}"
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
