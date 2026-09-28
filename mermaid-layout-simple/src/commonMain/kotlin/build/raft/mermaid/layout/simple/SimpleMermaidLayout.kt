@@ -2432,7 +2432,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 var key="__state_inline_${state.id}";while(key in groupDefinitions)key+="_"
                 groupDefinitions[key]=state.styles;listOf(key)
             }
-            state.id to state.classes+extra
+            state.id to listOf("default")+state.classes+extra
         }
         val dividerIds = diagram.states.filter { it.kind == StateNodeKind.DIVIDER }.map { it.id }.toSet()
         val regionIds = mutableMapOf<String,List<String>>()

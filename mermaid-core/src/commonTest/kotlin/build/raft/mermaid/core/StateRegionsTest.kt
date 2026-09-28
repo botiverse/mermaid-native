@@ -20,4 +20,13 @@ class StateRegionsTest {
     @Test fun dividerOutsideCompositeIsRejected() {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\n--"))
     }
+    @Test fun emptyClassAndRepeatedStylesPreserveValidDeclarations() {
+        val d=parse("classDef empty\nA:::empty\nstyle A fill:#ff0000\nstyle A stroke:#0000ff")
+        assertEquals(emptyList(),d.classDefinitions["empty"])
+        assertEquals(listOf("fill:#ff0000","stroke:#0000ff"),d.states.single().styles)
+    }
+    @Test fun bareStereotypeDoesNotBecomeAnAccidentalStateIdentifier() {
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\nA <<choice>>"))
+        assertEquals(StateNodeKind.CHOICE,parse("state A <<choice>>").states.single().kind)
+    }
 }

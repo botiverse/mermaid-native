@@ -30,4 +30,11 @@ class StateRegionsLayoutTest {
             assertTrue(path.points.all { it.x in 0.0..scene.width && it.y in 0.0..scene.height })
         }
     }
+    @Test fun defaultClassFontMeasuresCompositeTitleAsDrawn() {
+        val scene=layout("classDef default font-size:40px\nstate LongCompositeTitle { A }")
+        val title=scene.commands.filterIsInstance<DrawText>().single { it.text=="LongCompositeTitle" }
+        val group=scene.commands.filterIsInstance<DrawRect>().first().rect
+        assertEquals(40.0,title.style.fontSize)
+        assertTrue(group.width>=FixedWidthTextMeasurer.measure(title.text,title.style).width+24)
+    }
 }

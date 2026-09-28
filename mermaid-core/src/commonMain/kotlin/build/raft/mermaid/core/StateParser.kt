@@ -37,7 +37,7 @@ internal class StateParser(private val source: String) {
                 text.startsWith("scale ") -> requireState(text.removePrefix("scale ").trim().removeSuffix("width").trim().let { it.isNotEmpty() && it.all(Char::isDigit) },"Expected numeric scale width") // Upstream grammar emits no state statement for these directives.
                 text.startsWith("classDef ") -> {
                     val rest=text.drop(9).trim();val name=rest.takeWhile { !it.isWhitespace() }
-                    requireState(name.isNotBlank(),"Expected class name");definitions[name]=styleValues(rest.drop(name.length).trim())
+                    requireState(name.isNotBlank(),"Expected class name");definitions[name]=rest.drop(name.length).trim().let { if(it.isEmpty())emptyList()else styleValues(it) }
                 }
                 text.startsWith("class ") -> {
                     val rest=text.drop(6).trim();val split=rest.lastIndexOf(' ');requireState(split>0,"Expected state class")
@@ -45,7 +45,7 @@ internal class StateParser(private val source: String) {
                 }
                 text.startsWith("style ") -> {
                     val rest=text.drop(6).trim();val split=rest.indexOf(' ');requireState(split>0,"Expected state style")
-                    val values=styleValues(rest.drop(split+1));rest.take(split).split(',').forEach { id->validateId(id,false);register(id);nodes[id]=nodes.getValue(id).copy(styles=values) }
+                    val values=styleValues(rest.drop(split+1));rest.take(split).split(',').forEach { id->validateId(id,false);register(id);nodes[id]=nodes.getValue(id).copy(styles=nodes.getValue(id).styles+values) }
                 }
                 text == "--" -> { requireState(stack.isNotEmpty(), "Concurrent divider requires composite state");register("__divider_${pseudoIndex++}", "", StateNodeKind.DIVIDER, declared=true) }
                 text.startsWith("note ") -> note(text)
@@ -116,6 +116,7 @@ internal class StateParser(private val source: String) {
     }
     private fun validateId(id:String,composite:Boolean) {
         requireState(id.isNotBlank() && id.none { it.isWhitespace() || it in "{};:\"" },if(composite)"Error: State name must be a single word."else"Expected single state identifier")
+        requireState(!(id.startsWith("<<") && id.endsWith(">>")),"State stereotype requires state keyword")
         requireState(id !in setOf("classDef","class","style","note","end","--","=="),"Unsupported state statement")
     }
     private fun note(text:String) {
