@@ -3,6 +3,7 @@ package build.raft.mermaid.core
 /** Retains original label text and point lexemes independently of their numeric geometry. */
 internal class QuadrantParser(private val source: String) {
     private var line = 1
+    private val styleStatements = mutableListOf<Pair<Int, String>>()
     private data class Label(val text: String, val type: String = "text")
     private fun label(value: String): Label {
         val text = value.trimStart()
@@ -19,19 +20,38 @@ internal class QuadrantParser(private val source: String) {
         return Label(text)
     }
     private fun styles(value: String): List<String> = if (value.isBlank()) emptyList() else value.split(',').map {
-        val part = it.trim()
-        val key = part.substringBefore(':').trim()
-        val rawValue = part.substringAfter(':', "").trim()
-        val (pattern, expected) = when (key) {
-            "radius" -> Regex("[0-9]+") to "number"
-            "color", "stroke-color" -> Regex("#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})") to "hex code"
-            "stroke-width" -> Regex("[0-9]+px") to "number of pixels (eg. 10px)"
-            else -> error("style named $key is not supported.")
+        it.trim().also { part ->
+            require(part.isNotBlank() && part.contains(':')) { "Invalid quadrant style" }
+            styleStatements += line to part
         }
-        require(pattern.matches(rawValue)) { "value for $key $rawValue is invalid, please use a valid $expected" }
-        part
+    }
+    /** Product admission adds the database-level style validation after grammar parsing. */
+    fun parseValidated(): MermaidParseResult {
+        val result = parse()
+        if (result !is MermaidParseResult.Success) return result
+        return try {
+            styleStatements.forEach { (sourceLine, part) ->
+                line = sourceLine
+                val key = part.substringBefore(':').trim()
+                val rawValue = part.substringAfter(':', "").trim()
+                val (pattern, expected) = when (key) {
+                    "radius" -> Regex("[0-9]+") to "number"
+                    "color", "stroke-color" -> Regex("#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})") to "hex code"
+                    "stroke-width" -> Regex("[0-9]+px") to "number of pixels (eg. 10px)"
+                    else -> error("style named $key is not supported.")
+                }
+                require(pattern.matches(rawValue)) { "value for $key $rawValue is invalid, please use a valid $expected" }
+            }
+            result
+        } catch (error: IllegalArgumentException) {
+            failure(error.message ?: "Invalid quadrant style")
+        } catch (error: IllegalStateException) {
+            failure(error.message ?: "Unsupported quadrant style")
+        }
     }
     fun parse(): MermaidParseResult = try {
+        line = 1
+        styleStatements.clear()
         val header = Regex("^(?:\\s|%%[^\\n]*(?:\\n|$))*quadrantChart\\b[ \\t]*", RegexOption.IGNORE_CASE).find(source)
         require(header != null) { "Expected quadrantChart" }
         var title: String? = null; var accTitle: String? = null; var accDescription: String? = null
