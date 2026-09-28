@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/sankey/parser/sankey.jison": "1f5b7bf55f5cf1c9149543678aa827f5ab5340998dd33fbdeaaf73921b49cff0",
+    "packages/mermaid/src/diagrams/sankey/parser/sankey.spec.ts": "bcdd95f9d7e25bcf325da0736b621dcebd0aeda5121705be516ef530cb939969",
+    "packages/mermaid/src/diagrams/sankey/parser/energy.csv": "e2aeac99786eaef24e6508f405e88c153d62c58e6137f621aa9a84469e439213"
+  }
+}

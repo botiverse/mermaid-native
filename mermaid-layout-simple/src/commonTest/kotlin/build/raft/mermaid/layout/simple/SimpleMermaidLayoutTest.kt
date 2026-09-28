@@ -128,6 +128,7 @@ import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.SceneColor
 import build.raft.mermaid.layout.ScenePoint
 import build.raft.mermaid.layout.SceneRect
 import build.raft.mermaid.layout.StrokePattern
@@ -145,6 +146,87 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill?.value == "#abc" })
         assertTrue(scene.commands.filterIsInstance<DrawPolyline>().any { it.stroke.value == "#123456" })
+    }
+
+    @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
+        val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Access", scene.accessibilityTitle)
+        assertEquals("Allocation", scene.accessibilityDescription)
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, boxes.size)
+        assertEquals("#ff0000", boxes[0].fill?.value)
+        assertEquals("#123456", boxes[0].stroke?.value)
+        assertEquals(2.0, boxes[0].strokeWidth)
+        for (box in boxes) assertTrue(box.rect.width.isFinite() && box.rect.width > 0.0 && box.rect.y >= 68.0)
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.commands.isEmpty() && empty.width.isFinite())
+    }
+
+    @Test fun sankeyFeedbackLinksHaveDistinctFiniteLanes() {
+        val source = "sankey\n__proto__,A,0.597\nA,__proto__,0.403\nA,__proto__,0.2\nA,A,0.1"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val loops = scene.commands.filterIsInstance<DrawPolyline>()
+        assertEquals(3, loops.size)
+        assertEquals(3, loops.map { it.points[1].y }.distinct().size)
+        for (edge in loops) for (point in edge.points) {
+            assertTrue(point.x.isFinite() && point.y.isFinite())
+            assertTrue(point.x in 0.0..scene.width && point.y in 0.0..scene.height)
+        }
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+    }
+
+    @Test fun c4NestedBoundariesContainCardsAndServeAsRelationshipEndpoints() {
+        val source = "C4Container\nBoundary(bank, \"Bank\") {\nContainerDb(db, \"Ledger\", \"SQL\")\nBoundary(inner, \"Internal\") {\nComponent(worker, \"Worker\", \"Kotlin\")\n}\n}\nPerson(user, \"Customer\")\nRel(bank, user, \"Serves\")"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(5, boxes.size)
+        val outer = boxes.first().rect
+        val nested = boxes[1].rect
+        assertTrue(nested.x > outer.x && nested.y > outer.y)
+        assertTrue(nested.x + nested.width < outer.x + outer.width)
+        assertTrue(nested.y + nested.height < outer.y + outer.height)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "[SQL]" })
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "[Component]" })
+        val edge = scene.commands.filterIsInstance<DrawLine>().single()
+        assertEquals(outer.x, edge.from.x)
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
+
+    @Test fun c4StackedRelationshipTextStaysBetweenCards() {
+        val source = """C4Container
+            Boundary(app, "Application") {
+              Container(a, "First", "Kotlin")
+              Container(b, "Second", "SQL")
+            }
+            Rel(a, b, "Stores", "SQL")
+        """.trimIndent()
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val cards = scene.commands.filterIsInstance<DrawRect>().filter { it.fill == SceneColor("#dbeafe") }.map { it.rect }
+        val labels = scene.commands.filterIsInstance<DrawText>().filter { it.text == "Stores" || it.text == "[SQL]" && it.origin.y < cards[1].y }
+        assertEquals(2, labels.size)
+        for (label in labels) {
+            assertTrue(label.origin.y - label.style.fontSize > cards[0].y + cards[0].height)
+            assertTrue(label.origin.y + 3.0 < cards[1].y)
+        }
+    }
+
+    @Test fun mindmapOriginalShapesDrawDistinctGeometryWithMeasuredIconText() {
+        val source = "mindmap\nroot(Root)\n cloud)Cloud(\n ::icon(star)\n bang))Burst((\n hex{{Hexagon}}"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(3, scene.commands.filterIsInstance<DrawPolygon>().size)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "star" })
+        for (polygon in scene.commands.filterIsInstance<DrawPolygon>()) for (point in polygon.points) {
+            assertTrue(point.x >= 0.0 && point.x <= scene.width)
+            assertTrue(point.y >= 0.0 && point.y <= scene.height)
+        }
+        val tallRoot = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot((Long round root))\n child")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(tallRoot.commands.filterIsInstance<DrawEllipse>().all { it.center.y - it.radiusY >= 24.0 })
+        val longText = "A".repeat(100)
+        val longScene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot))$longText((")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val outline = longScene.commands.filterIsInstance<DrawPolygon>().single()
+        val measured = FixedWidthTextMeasurer.measure(longText, build.raft.mermaid.layout.TextStyle()).width
+        assertTrue((outline.points.maxOf { it.x } - outline.points.minOf { it.x }) * 0.80 >= measured + 32.0)
     }
 
     @Test fun packetAdjacentBitIndicesHaveAReadableGapAndSingleBitsAreNotDuplicated() {

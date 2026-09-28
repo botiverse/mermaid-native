@@ -381,9 +381,12 @@ public data class MindmapNode(
     val parentId: String?,
     val depth: Int,
     val shape: MindmapNodeShape = MindmapNodeShape.DEFAULT,
+    val sourceId: String = if (id.startsWith("__mindmap_")) label else id,
+    val icon: String? = null,
+    val cssClasses: String? = null,
 )
 
-public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE }
+public enum class MindmapNodeShape { DEFAULT, RECTANGLE, DOUBLE_CIRCLE, ROUNDED_RECTANGLE, CLOUD, BANG, HEXAGON }
 
 public data class GanttDiagram(
     val title: String?, val dateFormat: String, val sections: List<GanttSection>,
@@ -581,11 +584,19 @@ public data class SankeyNode(val id: String, val label: String)
 public data class SankeyLink(val sourceId: String, val targetId: String, val value: Double)
 
 /** Minimal platform-neutral model for the Mermaid treemap family. */
-public data class TreemapDiagram(val roots: List<TreemapNode>) : MermaidDiagram
+public data class TreemapDiagram(
+    val roots: List<TreemapNode>,
+    val title: String? = null,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+    val classes: Map<String, String> = emptyMap(),
+    val classAssignments: Map<String, String> = emptyMap(),
+) : MermaidDiagram
 public data class TreemapNode(
     val label: String,
     val value: Double? = null,
     val children: List<TreemapNode> = emptyList(),
+    val classSelector: String? = null,
 )
 
 /** Minimal platform-neutral model for the Mermaid venn family. */
@@ -628,9 +639,19 @@ public data class C4Diagram(
     val title: String? = null,
     val elements: List<C4Element>,
     val relationships: List<C4Relationship>,
+    val boundaries: List<C4Boundary> = emptyList(),
+    val diagramType: String = "C4Context",
 ) : MermaidDiagram
-public enum class C4ElementKind { PERSON, SYSTEM }
-public data class C4Element(val id: String, val label: String, val description: String? = null, val kind: C4ElementKind, val external: Boolean = false)
+public enum class C4ElementKind { PERSON, SYSTEM, CONTAINER, COMPONENT }
+public data class C4Element(
+    val id: String, val label: String, val description: String? = null, val kind: C4ElementKind, val external: Boolean = false,
+    val technology: String? = null, val variant: String = "", val parentBoundary: String = "global",
+    val labelAttribute: String? = null, val attributes: Map<String, String> = emptyMap(),
+)
+public data class C4Boundary(
+    val id: String, val label: String, val type: String = "system", val parentBoundary: String = "global",
+    val labelAttribute: String? = null, val attributes: Map<String, String> = emptyMap(),
+)
 public data class C4Relationship(val sourceId: String, val targetId: String, val label: String, val technology: String? = null, val bidirectional: Boolean = false)
 
 /** Bounded platform-neutral model for the Ishikawa (fishbone) family. */

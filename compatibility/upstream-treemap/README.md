@@ -1,0 +1,5 @@
+# Original Treemap grammar assertions
+
+Runs all 17 unchanged original Langium assertions via Native Kotlin models, including empty diagrams, empty sections, comma/colon values, accessibility metadata and inline class selectors. The original parser is only the reference capture; the Native adapter projects model nodes and class definitions without original parsing or database construction. Source hashes, raw inputs and exact JAR are retained.
+
+Build core then run `python3 run.py --upstream /path/to/upstream --stdlib /path/to/kotlin-stdlib.jar`. The original class assignment cases only assert a returned AST; they do not prove full assignment semantics. Class definitions precede hierarchy rows in the comparison projection; arbitrary mixed declaration ordering is not claimed. These are grammar/model tests, not screenshot equivalence. Native retains finite positive values, unique labels and leaf/section safety checks. Empty sections receive equal nonzero layout weight; explicit class fill/stroke/width use a bounded supported subset, not arbitrary CSS.

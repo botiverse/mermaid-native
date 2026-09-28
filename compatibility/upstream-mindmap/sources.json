@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/mindmap/mindmap.spec.ts": "98f31bd7b274c97e59d43f2eeb2f5260bc31ec66d9ff6a3dc38c552cea269494",
+    "packages/mermaid/src/diagrams/mindmap/parser/mindmap.jison": "1114fbccc641f2ad59a56eec452e21dfb947d78283adf571a6ce24b09dce6993",
+    "packages/mermaid/src/diagrams/mindmap/mindmapDb.ts": "1a5691900b6038d36a020d4a50cf75343f50cca753d7220b85da22f022e1ebe6"
+  }
+}
