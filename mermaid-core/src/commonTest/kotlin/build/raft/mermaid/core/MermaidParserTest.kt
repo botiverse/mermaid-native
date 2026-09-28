@@ -2117,9 +2117,9 @@ class MermaidParserTest {
             component Kettle [0.45,0.57]
             pipeline Kettle {
               component Campfire [0.35] label [-60,35]
-              component Electric [0.53] (buy)
+              component Electric [0.53]
             }
-            component foo- [0.2,0.3]
+            component foo- [0.2,0.3] (buy)
             Campfire +<> Electric; choice
             annotations [0.1,0.1]
             annotation 1,[0.5,0.6] "Critical"
@@ -2129,11 +2129,12 @@ class MermaidParserTest {
         assertEquals(0.45, diagram.nodes[1].visibility)
         assertEquals(-60.0, diagram.nodes[1].labelOffsetX)
         assertEquals("Kettle", diagram.nodes[1].pipeline)
-        assertEquals("buy", diagram.nodes[2].sourceStrategy)
+        assertEquals("buy", diagram.nodes[3].sourceStrategy)
         assertEquals("bidirectional", diagram.links.single().flow)
         assertEquals("choice", diagram.links.single().label)
         assertEquals("Critical", diagram.annotations.single().text)
         assertEquals(1200.0, diagram.width)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("wardley-beta\ncomponent A [0.5,0.5]\npipeline A {\ncomponent B [0.7] (buy)\n}"))
     }
 
 }

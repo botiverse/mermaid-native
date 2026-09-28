@@ -42,6 +42,7 @@ internal class WardleyParser(private val source: String) {
                     var tail = match.groupValues[3].trim(); var strategy: String? = null; var inertia = false; var dx: Double? = null; var dy: Double? = null
                     val offset = Regex("label\\s*\\[([^,]+),([^]]+)]").find(tail)
                     if (offset != null) { dx = offset.groupValues[1].trim().toDoubleOrNull()?.takeIf { it.isFinite() } ?: fail("Invalid Wardley label offset"); dy = offset.groupValues[2].trim().toDoubleOrNull()?.takeIf { it.isFinite() } ?: fail("Invalid Wardley label offset"); tail = tail.removeRange(offset.range).trim() }
+                    if (parent != null && tail.isNotEmpty()) fail("Wardley pipeline components support label offsets, not decorators")
                     while (tail.isNotEmpty()) { val token = Regex("^\\((build|buy|outsource|inertia)\\)").find(tail) ?: fail("Unsupported Wardley component decorator"); if (token.groupValues[1] == "inertia") inertia = true else strategy = token.groupValues[1]; tail = tail.substring(token.value.length).trim() }
                     nodes[label] = WardleyNode(label, coordinates.first, coordinates.second, anchor, parent, dx, dy, strategy, inertia)
                 }

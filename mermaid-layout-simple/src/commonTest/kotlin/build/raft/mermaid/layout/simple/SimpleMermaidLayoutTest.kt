@@ -2189,10 +2189,10 @@ class SimpleMermaidLayoutTest {
             wardley-beta
             size [1200,900]
             evolution Discovery@0.3 -> Delivery@1.0
-            component Kettle [0.5,0.5]
+            component Kettle [0.5,0.5] (buy)
             pipeline Kettle {
               component Campfire [0.2] label [0,30]
-              component Electric [0.7] (buy)
+              component Electric [0.7]
             }
             annotations [0.1,0.1]
             annotation 1,[0.6,0.5] "Critical"
