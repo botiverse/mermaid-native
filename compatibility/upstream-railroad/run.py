@@ -3,6 +3,7 @@
 import argparse,base64,hashlib,json,os,shutil,subprocess
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--upstream',type=Path,required=True);p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--stdlib',type=Path,required=True);o=p.parse_args()
+assert o.stdlib.is_file(), o.stdlib
 u=o.upstream.resolve();r=o.repo.resolve();h=Path(__file__).resolve().parent;w=u/'.native-railroad-audit';w.mkdir(exist_ok=True)
 m=json.loads((h/'sources.json').read_text())
 for f,sha in m['files'].items():assert hashlib.sha256((u/f).read_bytes()).hexdigest()==sha,f
@@ -34,7 +35,7 @@ def test(mode):
  with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-railroad-audit/{mode}.config.ts','--workspace',f'.native-railroad-audit/{mode}.workspace.ts','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
 if test('official').returncode:raise SystemExit('Original Railroad suite failed')
 sources=list(dict.fromkeys(json.loads(x)['source'] for x in calls.read_text().splitlines()))
-result=subprocess.run(['java','-cp',cp,'RailroadNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True)
+result=subprocess.run(['java','-cp',cp,'RailroadNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True,timeout=60)
 models=[json.loads(x) for x in result.stdout.splitlines()];assert len(models)==len(sources)
 cache=w/'native-models.json';cache.write_text(json.dumps(list(zip(sources,models))))
 (w/'adapter.ts').write_text(imports+"""import {readFileSync} from 'node:fs';
@@ -42,11 +43,11 @@ const models=new Map(JSON.parse(readFileSync(CACHE,'utf8')));
 const model=source=>{const d=models.get(source);if(!d)throw new Error('Missing Native result');return structuredClone(d);};
 const types={terminal:'RailroadTerminalExpr',nonterminal:'RailroadNonTerminalExpr',special:'RailroadSpecialExpr',sequence:'RailroadSequenceExpr',choice:'RailroadChoiceExpr',optional:'RailroadOptionalExpr'};
 function astNode(n){let out={...n,$type:types[n.type]??(n.min===1?'RailroadOneOrMoreExpr':'RailroadZeroOrMoreExpr')};delete out.type;if(n.elements)out.elements=n.elements.map(astNode);if(n.alternatives)out.alternatives=n.alternatives.map(astNode);if(n.element)out.element=astNode(n.element);return out;}
-function result(source){const d=model(source);return d.error?{value:{$type:'Railroad',rules:[]},lexerErrors:[],parserErrors:[{message:d.error,token:{startLine:1,startColumn:1}}]}:{value:{...d,$type:'Railroad',rules:d.rules.map(r=>({...r,$type:'RailroadRule',definition:astNode(r.definition)}))},lexerErrors:[],parserErrors:[]};}
+function result(source){const d=model(source);return Object.hasOwn(d,'error')?{value:{$type:'Railroad',rules:[]},lexerErrors:[],parserErrors:[{message:d.error,token:{startLine:1,startColumn:1}}]}:{value:{...d,$type:'Railroad',rules:d.rules.map(r=>({...r,$type:'RailroadRule',definition:astNode(r.definition)}))},lexerErrors:[],parserErrors:[]};}
 const create=module.createRailroadServices;vi.spyOn(module,'createRailroadServices').mockImplementation((...args)=>{const s=create(...args);s.Railroad.parser.LangiumParser.parse=result;return s;});
 vi.spyOn(api,'parse').mockImplementation(async(kind,source)=>{const r=result(source);if(r.parserErrors.length)throw new api.MermaidParseError(r);return r.value;});
 let current={rules:[],title:''};vi.spyOn(db,'clear').mockImplementation(()=>{current={rules:[],title:''};});vi.spyOn(db,'getRules').mockImplementation(()=>current.rules);vi.spyOn(db,'getTitle').mockImplementation(()=>current.title);
-vi.spyOn(parser,'parse').mockImplementation(source=>{current=model(source);if(current.error)throw new Error(current.error);});
+vi.spyOn(parser,'parse').mockImplementation(source=>{current=model(source);if(Object.hasOwn(current,'error'))throw new Error(current.error);});
 afterAll(()=>vi.restoreAllMocks());
 """.replace('CACHE',json.dumps(str(cache))))
 status=test('native');summary={'upstreamRevision':m['revision'],'nativeJarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'uniqueInputs':len(sources)}

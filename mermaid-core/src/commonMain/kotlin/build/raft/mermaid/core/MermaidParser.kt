@@ -791,10 +791,7 @@ public object MermaidParser {
                             '\'' -> value.append('\'')
                             '"' -> value.append('"')
                             '\\' -> value.append('\\')
-                            else -> {
-                                fail("Unsupported railroad string escape")
-                                return null
-                            }
+                            else -> value.append(escaped)
                         }
                         advance()
                     }
@@ -813,14 +810,10 @@ public object MermaidParser {
 
         fun parseTitleLine(): String? {
             skipSpaces()
-            if (peek() == null || peek() == '\n' || peek() == '\r') {
-                fail("railroad title must not be empty")
-                return null
-            }
             val raw = StringBuilder()
             while (true) {
                 val character = peek()
-                if (character == null || character == '\n' || character == '\r') break
+                if (character == null || character == '\n' || character == '\r' || source.startsWith("%%", index)) break
                 raw.append(character)
                 advance()
             }
@@ -829,10 +822,6 @@ public object MermaidParser {
                 ((text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("'") && text.endsWith("'")))
             ) {
                 text = text.substring(1, text.length - 1)
-            }
-            if (text.isEmpty()) {
-                fail("railroad title must not be empty")
-                return null
             }
             return text
         }
@@ -857,10 +846,13 @@ public object MermaidParser {
             }
             val children = mutableListOf<RailroadNode>()
             var stringArg: String? = null
+            var argumentCount = 0
+            var afterComma = false
             loop@ while (true) {
                 skipWhitespace()
                 when (peek()) {
                     ')' -> {
+                        if (afterComma) { fail("Trailing comma in railroad $identifier call"); return null }
                         advance()
                         break@loop
                     }
@@ -869,10 +861,15 @@ public object MermaidParser {
                         return null
                     }
                     ',' -> {
+                        if (argumentCount == 0 || afterComma) { fail("Unexpected comma in railroad $identifier call"); return null }
                         advance()
+                        afterComma = true
                         continue@loop
                     }
                 }
+                if (argumentCount > 0 && !afterComma) { fail("Expected comma in railroad $identifier call"); return null }
+                afterComma = false
+                argumentCount++
                 if ((identifier == "terminal" || identifier == "nonterminal" || identifier == "special") &&
                     children.isEmpty() && stringArg == null
                 ) {
@@ -948,8 +945,10 @@ public object MermaidParser {
                 fail("Expected a railroad rule or title")
                 return MermaidParseResult.Failure(diagnostics.toList())
             }
-            skipWhitespace()
-            if (name == "accTitle" || name == "accDescr") {
+            skipSpaces()
+            if ((name == "accTitle" && peek() == ':') ||
+                (name == "accDescr" && (peek() == ':' || peek() == '{'))
+            ) {
                 if (rules.isNotEmpty()) { fail("Railroad metadata must appear before rules"); return MermaidParseResult.Failure(diagnostics.toList()) }
                 val value = if (name == "accDescr" && peek() == '{') {
                     advance(); val text = StringBuilder()
@@ -972,10 +971,6 @@ public object MermaidParser {
                 }
                 if (rules.isNotEmpty()) {
                     fail("railroad title must appear before rules")
-                    return MermaidParseResult.Failure(diagnostics.toList())
-                }
-                if (title != null) {
-                    fail("railroad-beta accepts at most one title")
                     return MermaidParseResult.Failure(diagnostics.toList())
                 }
                 title = parseTitleLine() ?: return MermaidParseResult.Failure(diagnostics.toList())

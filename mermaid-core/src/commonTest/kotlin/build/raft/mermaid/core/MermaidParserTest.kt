@@ -2058,4 +2058,37 @@ class MermaidParserTest {
         assertEquals("rgb(255, 0, 128)", d.styles.single().properties["fill"])
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta"))
     }
+    @Test
+    fun railroadRejectsMalformedArgumentSeparators() {
+        listOf(
+            "sequence(terminal(\"a\") terminal(\"b\"))",
+            "choice(terminal(\"a\"),)",
+            "sequence(,terminal(\"a\"))",
+            "choice(terminal(\"a\"),,terminal(\"b\"))",
+            "optional(terminal(\"a\"),)",
+            "terminal(\"a\",)",
+        ).forEach { expression ->
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-beta\nr = $expression;"), expression)
+        }
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-beta\nr = choice(terminal(\"a\"), /* gap */ terminal(\"b\"));"))
+    }
+
+    @Test
+    fun railroadTitlesStayOnTheirLineAndMetadataNamesCanBeRules() {
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            railroad-beta
+            title First
+            title Last %% hidden comment
+            title
+            accTitle = terminal('\d');
+            accDescr = terminal('b');
+        """.trimIndent()))
+        val diagram = assertIs<RailroadDiagram>(result.diagram)
+        assertEquals("", diagram.title)
+        assertEquals(listOf("accTitle", "accDescr"), diagram.rules.map { it.name })
+        assertEquals(RailroadTerminal("d"), diagram.rules.first().definition)
+        val repeated = assertIs<MermaidParseResult.Success>(MermaidParser.parse("railroad-beta\ntitle First\ntitle Last %% comment"))
+        assertEquals("Last", assertIs<RailroadDiagram>(repeated.diagram).title)
+    }
+
 }
