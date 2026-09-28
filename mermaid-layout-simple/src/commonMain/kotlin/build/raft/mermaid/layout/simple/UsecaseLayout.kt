@@ -13,21 +13,26 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         rows + row
     }
     data class Item(val id: String, val label: String, val actor: Boolean = false, val ellipse: Boolean = false, val body: String? = null)
-    val items = d.actors.map { Item(it.id, it.label, actor = true) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE) } + d.jsonNodes.map { Item(it.id, it.id, body = it.source) }
+    val items = d.actors.map { Item(it.id, it.label, actor = true) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE) } + d.jsonNodes.map { Item(it.id, it.id, body = if (it.data == null) it.source else null) }
     val lines = items.associate { item -> item.id to buildList {
         d.attributes[item.id]?.stereotype?.let { add("«$it»") }
         if (d.attributes[item.id]?.properties?.get("business") == "true") add("«business»")
         addAll(wrapped(item.label)); item.body?.let { addAll(wrapped(it)) }
     } }
+    val tables = d.jsonNodes.mapNotNull { node -> node.data?.let { node.id to UsecaseJsonTableLayout(it, lines.getValue(node.id), measurer) } }.toMap()
     val nodeW = maxOf(180.0, (lines.values.flatten().maxOfOrNull { measurer.measure(it, textStyle).width } ?: 0.0) + 40.0)
     val nodeH = maxOf(76.0, (lines.values.maxOfOrNull { it.size } ?: 1) * 20.0 + 28.0)
+    val slotW = maxOf(nodeW, tables.values.maxOfOrNull { it.width } ?: 0.0)
+    val slotH = maxOf(nodeH, tables.values.maxOfOrNull { it.height } ?: 0.0)
+    fun itemWidth(item: Item): Double = tables[item.id]?.width ?: nodeW
+    fun itemHeight(item: Item): Double = tables[item.id]?.height ?: nodeH
     val actorExtent = items.filter { it.actor }.maxOfOrNull { 56.0 + (lines.getValue(it.id).size - 1) * 20.0 + 20.0 } ?: 0.0
-    val rowH = maxOf(140.0, nodeH + 60.0, actorExtent * 2.0)
+    val rowH = maxOf(140.0, slotH + 60.0, actorExtent * 2.0)
     val horizontal = d.direction == FlowDirection.LR || d.direction == FlowDirection.RL
     val reverse = d.direction == FlowDirection.RL || d.direction == FlowDirection.BT
     val groupIds: List<String?> = listOf(null) + d.boundaries.map { it.id }
     val maxColumns = groupIds.maxOf { id -> val group = items.filter { d.attributes[it.id]?.parentId == id }; maxOf(group.count { it.actor }, group.count { !it.actor }, 1) }
-    val graphW = if (horizontal) maxOf(720.0, nodeW * 2 + 180.0) else maxOf(720.0, maxColumns * (nodeW + 40.0) + config.padding * 2)
+    val graphW = if (horizontal) maxOf(720.0, slotW * 2 + 180.0) else maxOf(720.0, maxColumns * (slotW + 40.0) + config.padding * 2)
     val noteW = 290.0
     val width = graphW + if (d.notes.isNotEmpty()) noteW + 60.0 else 0.0
     val points = linkedMapOf<String, ScenePoint>()
@@ -43,8 +48,8 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         val height = if (horizontal) maxOf(a.size, n.size, 1) * rowH else rowH * 2
         for ((lane, members) in listOf(a, n).withIndex()) for ((index, item) in members.withIndex()) {
             val side = if (reverse) 1 - lane else lane
-            points[item.id] = if (horizontal) ScenePoint(if (side == 0) config.padding + nodeW / 2 + 24.0 else graphW - config.padding - nodeW / 2 - 24.0, contentY + rowH / 2 + index * rowH)
-            else ScenePoint(config.padding + nodeW / 2 + 20.0 + index * (nodeW + 40.0), contentY + rowH / 2 + side * rowH)
+            points[item.id] = if (horizontal) ScenePoint(if (side == 0) config.padding + slotW / 2 + 24.0 else graphW - config.padding - slotW / 2 - 24.0, contentY + rowH / 2 + index * rowH)
+            else ScenePoint(config.padding + slotW / 2 + 20.0 + index * (slotW + 40.0), contentY + rowH / 2 + side * rowH)
         }
         if (boundary != null) groupBoxes += boundary to SceneRect(config.padding, y, graphW - config.padding * 2, height + headerH + 12.0)
         y = contentY + height + 32.0
@@ -59,7 +64,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     }
     fun anchor(item: Item, toward: ScenePoint): ScenePoint {
         val c = points.getValue(item.id); val dx = toward.x - c.x; val dy = toward.y - c.y
-        val hw = if (item.actor) 20.0 else nodeW / 2; val hh = if (item.actor) 38.0 else nodeH / 2
+        val hw = if (item.actor) 20.0 else itemWidth(item) / 2; val hh = if (item.actor) 38.0 else itemHeight(item) / 2
         val scale = if (dx == 0.0 && dy == 0.0) 0.0 else if (item.ellipse) 1.0 / sqrt(dx * dx / (hw * hw) + dy * dy / (hh * hh)) else minOf(if (dx == 0.0) Double.POSITIVE_INFINITY else hw / abs(dx), if (dy == 0.0) Double.POSITIVE_INFINITY else hh / abs(dy))
         return ScenePoint(c.x + dx * scale, c.y + dy * scale)
     }
@@ -73,7 +78,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     for (edge in d.relationships) {
         val a = byId[edge.sourceId] ?: continue; val b = byId[edge.targetId] ?: continue
         if (a.id == b.id) {
-            val center = points.getValue(a.id); val hw = if (a.actor) 20.0 else nodeW / 2; val hh = if (a.actor) 38.0 else nodeH / 2
+            val center = points.getValue(a.id); val hw = if (a.actor) 20.0 else itemWidth(a) / 2; val hh = if (a.actor) 38.0 else itemHeight(a) / 2
             val loop = listOf(ScenePoint(center.x + hw, center.y), ScenePoint(center.x + hw + 20, center.y), ScenePoint(center.x + hw + 20, center.y - hh - 24), ScenePoint(center.x, center.y - hh - 24), ScenePoint(center.x, center.y - hh))
             commands += DrawPolyline(loop, pattern = if (edge.dashed) StrokePattern.DASHED else StrokePattern.SOLID)
             marker(edge.startMarker, loop[1], loop.first()); marker(edge.endMarker, loop[loop.lastIndex - 1], loop.last())
@@ -87,6 +92,11 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     }
     for (item in items) {
         val p = points.getValue(item.id); val fill = color(item.id, "fill", "#eff6ff"); val stroke = color(item.id, "stroke", "#2563eb")
+        val table = tables[item.id]
+        if (table != null) {
+            commands += table.draw(p, fill, stroke, color(item.id, "color", "#111827"))
+            continue
+        }
         if (item.actor) {
             commands += DrawEllipse(ScenePoint(p.x, p.y - 20), 10.0, 10.0, fill = SceneColor("#ffffff"), stroke = stroke)
             commands += DrawLine(ScenePoint(p.x, p.y - 10), ScenePoint(p.x, p.y + 20), stroke = stroke)
