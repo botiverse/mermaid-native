@@ -50,6 +50,9 @@ internal class EventModelingParser(private val source: String) {
         val frames = linkedMapOf<String, EventModelingFrame>()
         val data = linkedMapOf<String, EventModelingData>()
         val relations = mutableListOf<EventModelingRelation>()
+        val notes = mutableListOf<EventModelingNote>()
+        val scenarios = mutableListOf<EventModelingScenario>()
+        val entities = mutableListOf<String>()
         var previous: String? = null
         var title: String? = null
         var accTitle: String? = null
@@ -62,6 +65,34 @@ internal class EventModelingParser(private val source: String) {
                 text.startsWith("title ") -> title = text.substring(6).substringBefore("%%").trim()
                 text.startsWith("accTitle:") -> accTitle = text.substringAfter(':').substringBefore("%%").trim()
                 text.startsWith("accDescr:") -> accDescription = text.substringAfter(':').substringBefore("%%").trim()
+                text.startsWith("entity ") -> {
+                    val id = text.substring(7).trim()
+                    if (!Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").matches(id)) fail("Invalid model entity")
+                    entities += id
+                }
+                text.startsWith("note ") -> {
+                    val match = Regex("^note\\s+(\\d{1,3})\\s*(.*)$").matchEntire(text) ?: fail("Invalid note")
+                    notes += EventModelingNote(match.groupValues[1], payload(match.groupValues[2], true))
+                }
+                text.startsWith("gwt ") -> {
+                    val frameId = text.substring(4).trim()
+                    if (!Regex("\\d{1,3}").matches(frameId)) fail("Invalid scenario frame")
+                    val steps = linkedMapOf("given" to mutableListOf<EventModelingStep>(), "when" to mutableListOf<EventModelingStep>(), "then" to mutableListOf<EventModelingStep>())
+                    var phase = ""
+                    while (line + 1 < lines.size) {
+                        val next = withoutComment(lines[line + 1])
+                        if (next.isEmpty()) { line++; continue }
+                        if (next in steps) {
+                            if (next == "given" && phase.isNotEmpty() || next == "when" && phase != "given" || next == "then" && phase !in listOf("given", "when")) fail("Invalid scenario phase order")
+                            phase = next; line++; continue
+                        }
+                        val step = Regex("^(ui|cmd|command|evt|event|pcr|processor|rmo|readmodel)\\s+([A-Za-z_][A-Za-z0-9_]*)$").matchEntire(next) ?: break
+                        if (phase.isEmpty()) fail("Scenario requires given first")
+                        steps.getValue(phase) += EventModelingStep(step.groupValues[1], step.groupValues[2]); line++
+                    }
+                    if (steps.getValue("given").isEmpty() || steps.getValue("then").isEmpty()) fail("Scenario requires given and then statements")
+                    scenarios += EventModelingScenario(frameId, steps.getValue("given"), steps.getValue("when"), steps.getValue("then"))
+                }
                 dataPattern.matches(text) -> {
                     val match = dataPattern.matchEntire(text)!!
                     if (match.groupValues[1] in data) fail("Duplicate data identifier")
@@ -86,7 +117,8 @@ internal class EventModelingParser(private val source: String) {
                         dataRef = ref.groupValues[1]; rest = rest.substring(ref.value.length).trim()
                     }
                     val inline = rest.takeIf { it.isNotEmpty() }?.let { payload(it, false) }
-                    frames[id] = EventModelingFrame(id, match.groupValues[4], kind, reset, inline, dataRef)
+                    EventModelingValidator.errors(match.groupValues[3], sources.map { frames.getValue(it).sourceType }).firstOrNull()?.let { fail(it) }
+                    frames[id] = EventModelingFrame(id, match.groupValues[4], kind, reset, inline, dataRef, match.groupValues[3])
                     (if (sources.isNotEmpty()) sources else if (reset) emptyList() else previous?.let { listOf(it) }.orEmpty()).forEach { relations += EventModelingRelation(it, id) }
                     previous = id
                 }
@@ -94,7 +126,8 @@ internal class EventModelingParser(private val source: String) {
             line++
         }
         frames.values.forEach { if (it.dataReference != null && it.dataReference !in data) fail("Unknown data reference: ${it.dataReference}") }
-        MermaidParseResult.Success(EventModelingDiagram(title, frames.values.toList(), relations, data, accTitle, accDescription))
+        (notes.map { it.frameId } + scenarios.map { it.frameId }).forEach { if (it !in frames) fail("Unknown note or scenario frame: $it") }
+        MermaidParseResult.Success(EventModelingDiagram(title, frames.values.toList(), relations, data, accTitle, accDescription, notes, scenarios, entities))
     } catch (e: IllegalArgumentException) {
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid Event Modeling syntax", SourceLocation((line + 1).coerceAtMost(lines.size), 1))))
     }

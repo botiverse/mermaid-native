@@ -4,6 +4,6 @@ Runs the pinned original `eventmodeling.spec.ts` unchanged. Official mode record
 
 The production model retains inline and referenced payloads as inert text, including their format identifier; the layout draws payload cards with their source frame/data identifier. It does not evaluate JavaScript, parse JSON semantics, fetch URIs, or render HTML/Markdown/Figma content. Existing frame ordering, inferred arrows, reset behavior and swimlane palette remain unchanged. Empty diagrams are finite. Plain title/accessibility fields are supported.
 
-The separate 31 Langium parser/validator assertions, notes, given/when/then scenarios, model-entity declarations, exact source spans, external data renderer semantics and unrestricted comments/frontmatter remain unclaimed.
+The separate `upstream-eventmodeling-grammar` harness covers five original grammar and 25 source-type validator assertions. Notes and given/when/then scenarios are retained and displayed as inert text cards. Exact source spans, the complete Langium object/runtime API, external data renderer semantics and unrestricted comments/frontmatter remain unclaimed.
 
 Run with `python3 compatibility/upstream-eventmodeling/run.py --upstream /path/to/upstream --stdlib /path/to/kotlin-stdlib.jar` after building the Android debug core runtime JAR. Use `--repo` for the baseline checkout.

@@ -859,9 +859,12 @@ public data class WardleyEvolution(val component: String, val evolution: Double)
 
 public data class WardleyNote(val text: String, val visibility: Double, val evolution: Double)
 
-public data class EventModelingDiagram(val title: String?, val frames: List<EventModelingFrame>, val relations: List<EventModelingRelation>, val data: Map<String, EventModelingData> = emptyMap(), val accTitle: String? = null, val accDescription: String? = null) : MermaidDiagram
+public data class EventModelingDiagram(val title: String?, val frames: List<EventModelingFrame>, val relations: List<EventModelingRelation>, val data: Map<String, EventModelingData> = emptyMap(), val accTitle: String? = null, val accDescription: String? = null, val notes: List<EventModelingNote> = emptyList(), val scenarios: List<EventModelingScenario> = emptyList(), val entities: List<String> = emptyList()) : MermaidDiagram
 public enum class EventModelingEntityKind { UI, COMMAND, EVENT, PROCESSOR, READ_MODEL }
-public data class EventModelingFrame(val id: String, val entityId: String, val kind: EventModelingEntityKind, val reset: Boolean = false, val inlineData: EventModelingData? = null, val dataReference: String? = null)
+public data class EventModelingFrame(val id: String, val entityId: String, val kind: EventModelingEntityKind, val reset: Boolean = false, val inlineData: EventModelingData? = null, val dataReference: String? = null, val sourceType: String = kind.name.lowercase().replace("read_model", "readmodel"))
+public data class EventModelingNote(val frameId: String, val data: EventModelingData)
+public data class EventModelingStep(val kind: String, val entityId: String)
+public data class EventModelingScenario(val frameId: String, val given: List<EventModelingStep>, val whenSteps: List<EventModelingStep>, val thenSteps: List<EventModelingStep>)
 public data class EventModelingData(val type: String, val value: String)
 public data class EventModelingRelation(val sourceFrameId: String, val targetFrameId: String)
 

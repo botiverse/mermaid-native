@@ -156,6 +156,21 @@ class MermaidParserTest {
     }
 
     @Test
+    fun eventModelingNotesScenariosAndSourceValidationUseRealEntry() {
+        val source = "eventmodeling\ntf 01 cmd Add\ntf 02 evt Added ->> 01\nnote 02 `md` {\n  Remember this\n}\ngwt 02\n given\n  evt Added\n when\n  cmd Add\n then\n  evt Added"
+        val diagram = assertIs<EventModelingDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("evt", diagram.frames.last().sourceType)
+        assertEquals("md", diagram.notes.single().data.type)
+        assertEquals("Added", diagram.scenarios.single().given.single().entityId)
+        assertEquals("Add", diagram.scenarios.single().whenSteps.single().entityId)
+        assertEquals("Added", diagram.scenarios.single().thenSteps.single().entityId)
+        val invalid = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("eventmodeling\ntf 01 ui Screen\ntf 02 evt Wrong ->> 01"))
+        assertTrue(invalid.diagnostics.first().message.contains("event can only receive input from a command"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("eventmodeling\nnote 99 {\nMissing\n}"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("eventmodeling\ntf 01 evt Added\ngwt 01\n then\n  evt Added"))
+    }
+
+    @Test
     fun eventModelingDataReachesTypedModelAndEmptyIsValid() {
         val source = "eventmodeling\ntitle Inventory\naccTitle: Accessible inventory\ntf 01 cmd Add { productId: 7 }\ntf 02 evt Added [[AddedData]]\ndata AddedData\n{\n  productId: 7\n}"
         val diagram = assertIs<EventModelingDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)

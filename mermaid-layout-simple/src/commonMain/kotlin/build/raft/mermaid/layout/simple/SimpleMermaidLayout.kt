@@ -3256,12 +3256,18 @@ public object SimpleMermaidLayout : DiagramLayout {
             listOfNotNull(frame.inlineData?.let { "Frame ${frame.id} · ${it.type}" to it },
                 frame.dataReference?.let { id -> diagram.data[id]?.let { "Frame ${frame.id} · $id" to it } })
         } + diagram.data.filterKeys { id -> diagram.frames.none { it.dataReference == id } }.map { (id, value) -> "$id · ${value.type}" to value }
-        val dataRows = attachments.map { (label, value) -> listOf(label) + value.value.lines() }
+        val notes = diagram.notes.map { "Note · frame ${it.frameId}" to it.data }
+        val scenarios = diagram.scenarios.map { scenario ->
+            val rows = listOf("Given" to scenario.given, "When" to scenario.whenSteps, "Then" to scenario.thenSteps)
+                .flatMap { (phase, steps) -> steps.map { "$phase ${it.kind} ${it.entityId}" } }
+            "Scenario · frame ${scenario.frameId}" to build.raft.mermaid.core.EventModelingData("text", rows.joinToString("\n"))
+        }
+        val dataRows = (attachments + notes + scenarios).map { (label, value) -> listOf(label) + value.value.lines() }
         val dataWidth = max(cardWidth, (dataRows.flatten().maxOfOrNull { textMeasurer.measure(it, dataStyle).width } ?: 0.0) + 24.0)
-        val dataHeight = if (attachments.isEmpty()) 0.0 else 36.0 + dataRows.maxOf { it.size } * 17.0
+        val dataHeight = if (dataRows.isEmpty()) 0.0 else 36.0 + dataRows.maxOf { it.size } * 17.0
         val cardHeight = 58.0; val laneHeight = 106.0; val laneLabel = 112.0; val gap = 44.0
         val titleOffset = if (diagram.title == null) 0.0 else 44.0
-        val width = maxOf(640.0, config.padding * 2 + textMeasurer.measure(diagram.title.orEmpty(), TextStyle(fontSize = 20.0, fontWeight = 600)).width, config.padding * 2 + laneLabel + max(diagram.frames.size * (cardWidth + gap), attachments.size * (dataWidth + gap)))
+        val width = maxOf(640.0, config.padding * 2 + textMeasurer.measure(diagram.title.orEmpty(), TextStyle(fontSize = 20.0, fontWeight = 600)).width, config.padding * 2 + laneLabel + max(diagram.frames.size * (cardWidth + gap), dataRows.size * (dataWidth + gap)))
         val height = max(300.0, config.padding * 2 + titleOffset + lanes.size * laneHeight + dataHeight)
         val points = diagram.frames.mapIndexed { i, frame -> frame.id to ScenePoint(config.padding + laneLabel + i * (cardWidth + gap) + cardWidth / 2, config.padding + titleOffset + lanes.indexOf(frame.kind) * laneHeight + laneHeight / 2) }.toMap()
         val commands = mutableListOf<DrawCommand>()
