@@ -47,6 +47,7 @@ import build.raft.mermaid.core.SankeyDiagram
 import build.raft.mermaid.core.TreemapDiagram
 import build.raft.mermaid.core.TreemapNode
 import build.raft.mermaid.core.VennDiagram
+import build.raft.mermaid.core.UsecaseActorType
 import build.raft.mermaid.core.UsecaseDiagram
 import build.raft.mermaid.core.UsecaseShape
 import build.raft.mermaid.core.ArchitectureDiagram
@@ -1004,7 +1005,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     )
 
     private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        if (diagram.classDefs.containsKey("default") || diagram.boundaries.isNotEmpty() || diagram.notes.isNotEmpty() || diagram.jsonNodes.isNotEmpty() || diagram.attributes.isNotEmpty() || diagram.relationships.any { it.startMarker != "none" || it.endMarker != "arrow" || it.dashed || it.sourceId == it.targetId }) return layoutUsecaseExtended(diagram, textMeasurer, config)
+        if (diagram.actors.any { it.type != UsecaseActorType.NORMAL || it.business } || diagram.classDefs.containsKey("default") || diagram.boundaries.isNotEmpty() || diagram.notes.isNotEmpty() || diagram.jsonNodes.isNotEmpty() || diagram.attributes.isNotEmpty() || diagram.relationships.any { it.startMarker != "none" || it.endMarker != "arrow" || it.dashed || it.sourceId == it.targetId }) return layoutUsecaseExtended(diagram, textMeasurer, config)
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val labels = diagram.actors.map { it.label } + diagram.useCases.map { it.label }
         val nodeWidth = max(150.0, (labels.maxOfOrNull { textMeasurer.measure(it, style).width } ?: 0.0) + 40.0)

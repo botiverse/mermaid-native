@@ -62,9 +62,10 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         if (d.attributes[boundary.id]?.properties?.get("type") == "package") commands += DrawRect(SceneRect(box.x + 12.0, box.y - 10.0, minOf(box.width - 24.0, 180.0), 20.0), fill = SceneColor("#f8fafc"), stroke = SceneColor("#94a3b8"))
         wrapped(boundary.label).forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(box.x + 16.0, box.y + 25.0 + i * 18.0), style = textStyle) }
     }
+    fun actorHalfWidth(id: String) = if (d.actors.first { it.id == id }.type == UsecaseActorType.NORMAL) 20.0 else 28.0
     fun anchor(item: Item, toward: ScenePoint): ScenePoint {
         val c = points.getValue(item.id); val dx = toward.x - c.x; val dy = toward.y - c.y
-        val hw = if (item.actor) 20.0 else itemWidth(item) / 2; val hh = if (item.actor) 38.0 else itemHeight(item) / 2
+        val hw = if (item.actor) actorHalfWidth(item.id) else itemWidth(item) / 2; val hh = if (item.actor) 38.0 else itemHeight(item) / 2
         val scale = if (dx == 0.0 && dy == 0.0) 0.0 else if (item.ellipse) 1.0 / sqrt(dx * dx / (hw * hw) + dy * dy / (hh * hh)) else minOf(if (dx == 0.0) Double.POSITIVE_INFINITY else hw / abs(dx), if (dy == 0.0) Double.POSITIVE_INFINITY else hh / abs(dy))
         return ScenePoint(c.x + dx * scale, c.y + dy * scale)
     }
@@ -78,17 +79,17 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     for (edge in d.relationships) {
         val a = byId[edge.sourceId] ?: continue; val b = byId[edge.targetId] ?: continue
         if (a.id == b.id) {
-            val center = points.getValue(a.id); val hw = if (a.actor) 20.0 else itemWidth(a) / 2; val hh = if (a.actor) 38.0 else itemHeight(a) / 2
+            val center = points.getValue(a.id); val hw = if (a.actor) actorHalfWidth(a.id) else itemWidth(a) / 2; val hh = if (a.actor) 38.0 else itemHeight(a) / 2
             val loop = listOf(ScenePoint(center.x + hw, center.y), ScenePoint(center.x + hw + 20, center.y), ScenePoint(center.x + hw + 20, center.y - hh - 24), ScenePoint(center.x, center.y - hh - 24), ScenePoint(center.x, center.y - hh))
             commands += DrawPolyline(loop, pattern = if (edge.dashed) StrokePattern.DASHED else StrokePattern.SOLID)
             marker(edge.startMarker, loop[1], loop.first()); marker(edge.endMarker, loop[loop.lastIndex - 1], loop.last())
-            edge.label?.let { commands += DrawText(if (edge.dashed) "«$it»" else it, ScenePoint(center.x + hw / 2, center.y - hh - 30), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0)) }
+            edge.label?.let { commands += DrawText(if (edge.type == UsecaseRelationshipType.INCLUDE || edge.type == UsecaseRelationshipType.EXTEND) "«$it»" else it, ScenePoint(center.x + hw / 2, center.y - hh - 30), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0)) }
             continue
         }
         val from = anchor(a, points.getValue(b.id)); val to = anchor(b, points.getValue(a.id))
         commands += DrawLine(from, to, pattern = if (edge.dashed) StrokePattern.DASHED else StrokePattern.SOLID)
         marker(edge.startMarker, to, from); marker(edge.endMarker, from, to)
-        edge.label?.let { commands += DrawText(if (edge.dashed) "«$it»" else it, ScenePoint((from.x + to.x) / 2, (from.y + to.y) / 2 - 10), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0)) }
+        edge.label?.let { commands += DrawText(if (edge.type == UsecaseRelationshipType.INCLUDE || edge.type == UsecaseRelationshipType.EXTEND) "«$it»" else it, ScenePoint((from.x + to.x) / 2, (from.y + to.y) / 2 - 10), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0)) }
     }
     for (item in items) {
         val p = points.getValue(item.id); val fill = color(item.id, "fill", "#eff6ff"); val stroke = color(item.id, "stroke", "#2563eb")
@@ -98,11 +99,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
             continue
         }
         if (item.actor) {
-            commands += DrawEllipse(ScenePoint(p.x, p.y - 20), 10.0, 10.0, fill = SceneColor("#ffffff"), stroke = stroke)
-            commands += DrawLine(ScenePoint(p.x, p.y - 10), ScenePoint(p.x, p.y + 20), stroke = stroke)
-            commands += DrawLine(ScenePoint(p.x - 15, p.y), ScenePoint(p.x + 15, p.y), stroke = stroke)
-            commands += DrawLine(ScenePoint(p.x, p.y + 20), ScenePoint(p.x - 13, p.y + 38), stroke = stroke)
-            commands += DrawLine(ScenePoint(p.x, p.y + 20), ScenePoint(p.x + 13, p.y + 38), stroke = stroke)
+            commands += drawUsecaseActor(d.actors.first { it.id == item.id }, p, fill, stroke)
         } else if (item.ellipse) commands += DrawEllipse(p, nodeW / 2, nodeH / 2, fill = fill, stroke = stroke)
         else commands += DrawRect(SceneRect(p.x - nodeW / 2, p.y - nodeH / 2, nodeW, nodeH), 4.0, fill = fill, stroke = stroke)
         val rows = lines.getValue(item.id)

@@ -91,16 +91,31 @@ public class UsecaseParser(private val source: String) {
         var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null
         if (operator == "..>") { requireText(":"); edgeLabel = identifier().lowercase(); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
         else if (operator in listOf("--", "<--", "o--", "x--")) {
-            val restStart = pos; val rest = source.substring(pos).takeWhile { it !in "\r\n" }
-            val right = Regex("\\s+(--+(?:>|[ox])?)\\s+").find(rest)
-            if (right != null) {
-                val raw = rest.substring(0, right.range.first).trim()
-                if (raw.isNotEmpty()) {
-                    edgeLabel = if (raw.startsWith('"')) quoted().also { val end = restStart + right.range.first; if (pos > end || source.substring(pos, end).isNotBlank()) fail("Invalid relation label") } else raw
-                    val rightOperator = right.groupValues[1]
-                    if (operator != "--" && rightOperator != "--") fail("Invalid reverse labelled relation")
-                    if (operator == "--") operator = rightOperator
-                    pos = restStart + right.range.last + 1
+            val restStart = pos
+            hws()
+            if (source.getOrNull(pos) == '"') {
+                val text = quoted(); hws()
+                val right = Regex("--+(?:>|[ox])?").find(source, pos)?.takeIf { it.range.first == pos }
+                if (right == null) pos = restStart // A quoted destination, not a relation label.
+                else {
+                    if (operator != "--" && right.value != "--") fail("Invalid reverse labelled relation")
+                    edgeLabel = text
+                    if (operator == "--") operator = right.value
+                    pos = right.range.last + 1
+                }
+            } else {
+                pos = restStart
+                val rest = source.substring(pos).takeWhile { it !in "\r\n" }
+                val right = Regex("\\s*(--+(?:>|[ox])?)\\s*").find(rest)
+                if (right != null) {
+                    val raw = rest.substring(0, right.range.first).trim()
+                    if (raw.isNotEmpty()) {
+                        edgeLabel = raw
+                        val rightOperator = right.groupValues[1]
+                        if (operator != "--" && rightOperator != "--") fail("Invalid reverse labelled relation")
+                        if (operator == "--") operator = rightOperator
+                        pos = restStart + right.range.last + 1
+                    }
                 }
             }
         }
@@ -172,6 +187,23 @@ public class UsecaseParser(private val source: String) {
         val allIds = nodeIds + d.boundaries.map { it.id } + d.jsonNodes.map { it.id } + d.relationships.mapNotNull { it.id }
         val unknown = d.notes.firstOrNull { it.targetId !in nodeIds }?.targetId ?: d.attributes.keys.firstOrNull { it !in allIds }
         if (unknown != null) return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unknown usecase target $unknown", SourceLocation(1, 1))))
-        return MermaidParseResult.Success(d.copy(jsonNodes = validatedJson))
+        val validatedActors = mutableListOf<UsecaseActor>()
+        for (actor in d.actors) {
+            val properties = d.attributes[actor.id]?.properties.orEmpty()
+            val declared = properties["type"] ?: "normal"
+            val icon = properties["icon"]?.takeIf { it.isNotEmpty() }
+            val business = properties["business"] == "true"
+            val error = when {
+                declared !in listOf("normal", "hollow", "awesome") -> "Invalid actor type '$declared' for '${actor.id}'"
+                properties["business"] != null && properties["business"] !in listOf("true", "false") -> "Invalid business value for '${actor.id}'"
+                icon != null && declared != "normal" -> "Actor '${actor.id}' cannot combine icon with type '$declared'"
+                business && (icon != null || declared == "awesome") -> "Business actor '${actor.id}' must use normal or hollow geometry"
+                else -> null
+            }
+            if (error != null) return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error, SourceLocation(1, 1))))
+            val type = if (icon != null) UsecaseActorType.ICON else when (declared) { "hollow" -> UsecaseActorType.HOLLOW; "awesome" -> UsecaseActorType.AWESOME; else -> UsecaseActorType.NORMAL }
+            validatedActors += actor.copy(type = type, icon = icon, business = business)
+        }
+        return MermaidParseResult.Success(d.copy(actors = validatedActors, jsonNodes = validatedJson))
     }
 }

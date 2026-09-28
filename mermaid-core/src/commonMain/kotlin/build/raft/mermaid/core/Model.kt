@@ -632,13 +632,26 @@ public data class UsecaseDiagram(
     val accTitle: String? = null,
     val accDescription: String? = null,
 ) : MermaidDiagram
-public data class UsecaseActor(val id: String, val label: String)
+public enum class UsecaseActorType { NORMAL, HOLLOW, AWESOME, ICON }
+public data class UsecaseActor(
+    val id: String, val label: String,
+    val type: UsecaseActorType = UsecaseActorType.NORMAL,
+    val icon: String? = null, val business: Boolean = false,
+)
 public enum class UsecaseShape { ELLIPSE, RECTANGLE }
 public data class UsecaseNode(val id: String, val label: String, val shape: UsecaseShape)
+public enum class UsecaseRelationshipType { ASSOCIATION, INCLUDE, EXTEND, GENERALIZATION }
 public data class UsecaseRelationship(
     val sourceId: String, val targetId: String, val label: String? = null,
     val id: String? = null, val startMarker: String = "none", val endMarker: String = "arrow", val dashed: Boolean = false,
-)
+) {
+    val type: UsecaseRelationshipType get() = when {
+        endMarker == "generalization" -> UsecaseRelationshipType.GENERALIZATION
+        dashed && label == "include" -> UsecaseRelationshipType.INCLUDE
+        dashed && label == "extend" -> UsecaseRelationshipType.EXTEND
+        else -> UsecaseRelationshipType.ASSOCIATION
+    }
+}
 public data class UsecaseBoundary(val id: String, val label: String)
 public data class UsecaseNote(val targetId: String, val label: String)
 public data class UsecaseJsonNode(val id: String, val source: String, val data: UsecaseOrderedJsonObject? = null)
