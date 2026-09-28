@@ -46,4 +46,4 @@ internal class ClassPlacement(private val diagram:ClassDiagram,private val sizes
     }
 }
 
-internal fun classNoteLines(text:String):List<String> = text.replace("\\n","\n").replace(Regex("<br\\s*/?>",RegexOption.IGNORE_CASE),"\n").split('\n')
+internal fun classNoteLines(text:String):List<String> = MermaidText.splitBreaks(text.replace("\\n","\n")).flatMap { it.split('\n') }
