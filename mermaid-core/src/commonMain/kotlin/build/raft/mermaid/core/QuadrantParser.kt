@@ -15,14 +15,24 @@ internal class QuadrantParser(private val source: String) {
             require(text.trimEnd().endsWith('"') && text.trimEnd().length > 1) { "Unclosed quadrant label" }
             return Label(text.trimEnd().removeSurrounding("\""))
         }
-        require(text.none { it in "[](){}\"" }) { "Quote special characters in quadrant labels" }
+        require(text.none { it in "[](){}:\"" }) { "Quote special characters in quadrant labels" }
         return Label(text)
     }
     private fun styles(value: String): List<String> = if (value.isBlank()) emptyList() else value.split(',').map {
-        it.trim().also { part -> require(part.isNotBlank() && part.contains(':')) { "Invalid quadrant style" } }
+        val part = it.trim()
+        val key = part.substringBefore(':').trim()
+        val rawValue = part.substringAfter(':', "").trim()
+        val (pattern, expected) = when (key) {
+            "radius" -> Regex("[0-9]+") to "number"
+            "color", "stroke-color" -> Regex("#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})") to "hex code"
+            "stroke-width" -> Regex("[0-9]+px") to "number of pixels (eg. 10px)"
+            else -> error("style named $key is not supported.")
+        }
+        require(pattern.matches(rawValue)) { "value for $key $rawValue is invalid, please use a valid $expected" }
+        part
     }
     fun parse(): MermaidParseResult = try {
-        val header = Regex("^\\s*quadrantChart\\b[ \\t]*", RegexOption.IGNORE_CASE).find(source)
+        val header = Regex("^(?:\\s|%%[^\\n]*(?:\\n|$))*quadrantChart\\b[ \\t]*", RegexOption.IGNORE_CASE).find(source)
         require(header != null) { "Expected quadrantChart" }
         var title: String? = null; var accTitle: String? = null; var accDescription: String? = null
         var xAxis = QuadrantAxis("", "", false, false)
@@ -57,7 +67,7 @@ internal class QuadrantParser(private val source: String) {
             val quadrant = Regex("^quadrant-([1-4])[ \\t]*(.*)$", RegexOption.IGNORE_CASE).matchEntire(text)
             val point = Regex("^(.*?)(?::::(\\w+))?\\s*:\\s*\\[\\s*(1|0(?:\\.\\d+)?)\\s*,\\s*(1|0(?:\\.\\d+)?)\\s*]\\s*(.*)$").matchEntire(text)
             when {
-                text.startsWith("title", true) -> title = text.substring(5).trim()
+                Regex("^title(?:[ \\t]+|$)", RegexOption.IGNORE_CASE).containsMatchIn(text) && point == null -> title = text.substring(5).trim()
                 Regex("^accTitle\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(text) -> accTitle = text.substringAfter(':').trim()
                 Regex("^accDescr\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(text) -> accDescription = text.substringAfter(':').trim()
                 Regex("^accDescr\\s*\\{", RegexOption.IGNORE_CASE).containsMatchIn(text) -> accDescription = text.substringAfter('{').substringBeforeLast('}').trim()

@@ -140,6 +140,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun quadrantHexColorsBecomeValidRenderedColors() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("quadrantChart\nA: [0.5, 0.5] color:abc,stroke-color:123456"))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill?.value == "#abc" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolyline>().any { it.stroke.value == "#123456" })
+    }
+
     @Test fun packetAdjacentBitIndicesHaveAReadableGapAndSingleBitsAreNotDuplicated() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""packet
 +8: "Version"
