@@ -141,6 +141,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
+        val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Access", scene.accessibilityTitle)
+        assertEquals("Allocation", scene.accessibilityDescription)
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, boxes.size)
+        assertEquals("#ff0000", boxes[0].fill?.value)
+        assertEquals("#123456", boxes[0].stroke?.value)
+        assertEquals(2.0, boxes[0].strokeWidth)
+        for (box in boxes) assertTrue(box.rect.width.isFinite() && box.rect.width > 0.0 && box.rect.y >= 68.0)
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.commands.isEmpty() && empty.width.isFinite())
+    }
+
     @Test fun sankeyFeedbackLinksHaveDistinctFiniteLanes() {
         val source = "sankey\n__proto__,A,0.597\nA,__proto__,0.403\nA,__proto__,0.2\nA,A,0.1"
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
