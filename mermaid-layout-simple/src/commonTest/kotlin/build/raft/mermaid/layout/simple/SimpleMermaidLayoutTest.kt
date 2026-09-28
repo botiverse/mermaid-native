@@ -1518,7 +1518,7 @@ class SimpleMermaidLayoutTest {
             val ticks = scene.commands.filterIsInstance<DrawText>().filter { it.text.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")) }
             ticks.zipWithNext().forEach { (left, right) ->
                 val halfWidths = (FixedWidthTextMeasurer.measure(left.text, left.style).width + FixedWidthTextMeasurer.measure(right.text, right.style).width) / 2
-                assertTrue(right.position.x - left.position.x >= halfWidths + 7.9)
+                assertTrue(right.origin.x - left.origin.x >= halfWidths + 7.9)
             }
         }
     }
