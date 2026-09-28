@@ -48,4 +48,13 @@ class FlowMetadataLayoutTest {
         assertEquals(2, scene.commands.filterIsInstance<DrawLine>().size)
         assertTrue(scene.width.isFinite() && scene.height.isFinite())
     }
+    @Test fun groupAndEdgeClassesPaintActualShapesAndCollapsedReplacement() {
+        val source="graph LR\nsubgraph one[Group]\nA[Child]\nend\none:::hot\nA e1@--> B\ne1:::hot\nclassDef hot fill:#ffcccc,stroke:#cc0000,stroke-width:3px"
+        for (suffix in listOf("", "\none@{view: collapsed}")) {
+            val d=assertIs<MermaidParseResult.Success>(MermaidParser.parse(source+suffix)).diagram
+            val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
+            assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#ffcccc" && it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
+            assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
+        }
+    }
 }

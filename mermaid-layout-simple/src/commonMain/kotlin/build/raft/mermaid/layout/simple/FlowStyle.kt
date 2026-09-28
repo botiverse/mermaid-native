@@ -27,4 +27,7 @@ internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram) {
         else->listOf(command)
     }
 }
-internal fun flowEdgeStyle(edge:FlowEdge,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition("edge",styles=listOf("stroke:#666666","stroke-width:"+if(edge.style==FlowEdgeStyle.THICK)"3"else"1.5")+diagram.defaultEdgeStyles+edge.styles),ClassDiagram(emptyList(),emptyList()))
+internal fun flowEdgeStyle(edge:FlowEdge,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition("edge",styles=listOf("stroke:#666666","stroke-width:"+if(edge.style==FlowEdgeStyle.THICK)"3"else"1.5")+flowEdgeStyles(edge,diagram)),ClassDiagram(emptyList(),emptyList()))
+
+internal fun flowEdgeStyles(edge:FlowEdge,diagram:FlowchartDiagram)=diagram.defaultEdgeStyles+edge.classes.flatMap { diagram.classDefinitions[it].orEmpty() }+edge.styles
+internal fun flowGroupStyle(group:FlowSubgraph,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition(group.id,styles=listOf("fill:#f7f7f7","stroke:#aaaaaa","stroke-width:1")+group.classes.flatMap { diagram.classDefinitions[it].orEmpty() }),ClassDiagram(emptyList(),emptyList()))

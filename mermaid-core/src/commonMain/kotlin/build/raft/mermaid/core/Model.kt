@@ -44,6 +44,7 @@ public data class FlowSubgraph(
     val parentId: String? = null,
     val labelType: String = "text",
     val collapsed: Boolean = false,
+    val classes: List<String> = emptyList(),
 )
 
 public data class FlowInteraction(val nodeId:String,val value:String,val callback:Boolean=false,val arguments:String?=null,val tooltip:String?=null,val target:String?=null)
@@ -71,6 +72,7 @@ public data class FlowEdge(
     val interpolate: String? = null,
     val animate: Boolean? = null,
     val animation: String? = null,
+    val classes: List<String> = emptyList(),
 )
 
 public enum class FlowNodeShape {

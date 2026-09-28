@@ -25,11 +25,12 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
         val ids=children(parent);val values=ids.map(::size);val spacing=ids.zipWithNext().sumOf { gap(it.first,it.second) }
         return if(horizontal(parent))SceneSize(values.sumOf { it.width }+spacing,values.maxOfOrNull { it.height }?:0.0) else SceneSize(values.maxOfOrNull { it.width }?:0.0,values.sumOf { it.height }+spacing)
     }
-    private fun size(id:String):SceneSize = nodeSizes[id] ?: sizes.getOrPut(id){val content=measure(id);SceneSize(max(content.width+32,measurer.measure(groups.getValue(id).label,TextStyle()).width+24),max(52.0,content.height+48))}
+    private fun headerHeight(id:String)=max(32.0,flowGroupStyle(groups.getValue(id),diagram).text.fontSize+18)
+    private fun size(id:String):SceneSize = nodeSizes[id] ?: sizes.getOrPut(id){val content=measure(id);SceneSize(max(content.width+32,measurer.measure(groups.getValue(id).label,flowGroupStyle(groups.getValue(id),diagram).text).width+24),max(52.0,content.height+headerHeight(id)+16))}
     private fun locate(parent:String?,x:Double,y:Double){
         val content=measure(parent);val ids=children(parent).let { if(direction(parent) in listOf(FlowDirection.BT,FlowDirection.RL))it.reversed()else it };var cursor=if(horizontal(parent))x else y
         ids.forEachIndexed { index,id->val sz=size(id);val r=if(horizontal(parent))SceneRect(cursor,y+(content.height-sz.height)/2,sz.width,sz.height)else SceneRect(x+(content.width-sz.width)/2,cursor,sz.width,sz.height)
-            if(id in groups){groupRects[id]=r;locate(id,r.x+16,r.y+32)}else rects[id]=r
+            if(id in groups){groupRects[id]=r;locate(id,r.x+16,r.y+headerHeight(id))}else rects[id]=r
             cursor+=(if(horizontal(parent))sz.width else sz.height)+(if(index<ids.lastIndex)gap(id,ids[index+1])else 0.0)
         }
     }

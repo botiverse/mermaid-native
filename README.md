@@ -75,3 +75,5 @@ and a fixture or differential vector before it is considered complete. See
 ### Swimlane grammar and rendering
 
 `swimlane-beta` consumes the same typed flow grammar as upstream, including implicit nodes and labeled or nested subgraphs. The model retains the full `FlowchartDiagram` alongside the legacy lanes. Plain lane diagrams preserve the existing lane renderer; diagrams using richer shapes, styles, nested or collapsed groups use the actual Flow renderer so these features are not silently discarded. Complex graph routing remains bounded by the deterministic layout.
+
+Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.

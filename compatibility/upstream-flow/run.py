@@ -98,6 +98,8 @@ export const parser={yy:null,parse(source){
  if(model.defaultInterpolate!==null)db.updateLinkInterpolate(['default'],model.defaultInterpolate);
  model.edges.forEach((e,i)=>{if(e.interpolate!==null)db.updateLinkInterpolate([i],e.interpolate);if(e.id!==null&&(e.animate!==null||e.animation!==null))db.addVertex(e.id,undefined,undefined,undefined,undefined,undefined,{},JSON.stringify({...(e.animate===null?{}:{animate:e.animate}),...(e.animation===null?{}:{animation:e.animation})}).slice(1,-1));});
  for(const g of model.subgraphs)db.addSubGraph({text:g.id},g.nodes.concat(g.direction===null?[]:[{stmt:'dir',value:g.direction}]),{text:g.label,type:g.labelType});
+ for(const e of model.edges)if(e.id)for(const css of e.classes)db.setClass(e.id,css);
+ for(const g of model.subgraphs)for(const css of g.classes)db.setClass(g.id,css);
  for(const g of model.subgraphs)if(g.collapsed)db.addVertex(g.id,undefined,undefined,undefined,undefined,undefined,{},'view: collapsed');
  return true;
 }};
