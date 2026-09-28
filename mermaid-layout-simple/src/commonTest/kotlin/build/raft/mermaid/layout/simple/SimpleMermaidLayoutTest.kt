@@ -2184,4 +2184,24 @@ class SimpleMermaidLayoutTest {
         assertTrue(empty.width.isFinite() && empty.height.isFinite())
     }
 
+    @Test fun wardleyRendersCustomStagesPipelineAndDeclaredCanvas() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+            wardley-beta
+            size [1200,900]
+            evolution Discovery@0.3 -> Delivery@1.0
+            component Kettle [0.5,0.5] (buy)
+            pipeline Kettle {
+              component Campfire [0.2] label [0,30]
+              component Electric [0.7]
+            }
+            annotations [0.1,0.1]
+            annotation 1,[0.6,0.5] "Critical"
+        """.trimIndent()))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(1200.0, scene.width); assertEquals(900.0, scene.height)
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.rect.height == 20.0 })
+        val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
+        assertTrue(labels.containsAll(listOf("Discovery", "Delivery", "buy", "1. Critical", "Campfire")))
+    }
+
 }
