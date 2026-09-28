@@ -1299,7 +1299,7 @@ class MermaidParserTest {
                   section Phase 1
                   Design :done, design, 2026-08-19, 3d
                   Build :after design, 2d
-                  Ship :milestone, ship, 2026-08-24
+                  Ship :milestone, ship, 2026-08-24, 0d
                 """.trimIndent(),
             ),
         )
@@ -1539,12 +1539,12 @@ class MermaidParserTest {
     @Test
     fun malformedRequirementDiagramFailsClosed() {
         listOf(
-            "requirementDiagram\n  requirement r {\n    id: R-1\n  }",
-            "requirementDiagram\n  requirement r {\n    id: R-1\n    id: R-2\n    text: Text\n    risk: low\n    verifymethod: test\n  }",
+            "requirementDiagram\n  requirement r {\n    unknown: R-1\n  }",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    field: R-2\n    text: Text\n    risk: low\n    verifymethod: test\n  }",
             "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: extreme\n    verifymethod: test\n  }",
             "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: low\n    verifymethod: test",
-            "requirementDiagram\n  element e {\n    type: app\n    docref: doc.md\n  }\n  e - copies -> missing",
-            "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: low\n    verifymethod: test\n  }\n  e - satisfies -> r",
+            "requirementDiagram\n  element e {\n    type: app\n    docref: doc.md\n  }\n  e - unknown -> missing",
+            "requirementDiagram\n  requirement r {\n    id: R-1\n    text: Text\n    risk: low\n    verifymethod: test\n  }\n  e - satisfies ->",
         ).forEach { source ->
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source)
         }

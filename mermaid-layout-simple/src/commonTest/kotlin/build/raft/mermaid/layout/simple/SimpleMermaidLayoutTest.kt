@@ -1570,6 +1570,24 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun ganttFinalTicksDoNotOverlapAndThirtyDayBoundaryKeepsSameWidth() {
+        val scenes = listOf(30, 31, 32).map { days ->
+            SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+                "gantt\ndateFormat YYYY-MM-DD\nTask :2024-01-01, ${days}d",
+            )).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        }
+        assertEquals(scenes[0].width, scenes[1].width)
+        assertEquals(scenes[1].width, scenes[2].width)
+        scenes.forEach { scene ->
+            val ticks = scene.commands.filterIsInstance<DrawText>().filter { it.text.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")) }
+            ticks.zipWithNext().forEach { (left, right) ->
+                val halfWidths = (FixedWidthTextMeasurer.measure(left.text, left.style).width + FixedWidthTextMeasurer.measure(right.text, right.style).width) / 2
+                assertTrue(right.origin.x - left.origin.x >= halfWidths + 7.9)
+            }
+        }
+    }
+
+    @Test
     fun ganttDrawsIsoDateAxisTicks() {
         val diagram = GanttDiagram("Plan", "YYYY-MM-DD", listOf(GanttSection("Build", listOf(
             GanttTask("Parser", "parse", 740212, 2, GanttTaskStatus.DONE),
