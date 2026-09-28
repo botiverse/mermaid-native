@@ -283,9 +283,9 @@ public object MermaidExamples {
             listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
             listOf(
                 GitGraphCommit("base", "main", emptyList(), tag = "v1.0"),
-                GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
-                GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
-                GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true),
+                GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT, sequence = 1),
+                GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE, sequence = 2),
+                GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2 & stable", isMerge = true, message = "merged branch develop into main", customId = true, sequence = 3),
             ),
         ),
     )

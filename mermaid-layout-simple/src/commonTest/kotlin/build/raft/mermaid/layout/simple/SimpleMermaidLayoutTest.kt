@@ -26,6 +26,7 @@ import build.raft.mermaid.core.SequenceMessage
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.PieSection
 import build.raft.mermaid.layout.DrawPolygon
+import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.core.StateDiagram
 import build.raft.mermaid.core.StateNode
@@ -1217,6 +1218,52 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val measuredTitle = FixedWidthTextMeasurer.measure(title, build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600))
         assertTrue(scene.width >= measuredTitle.width + 48.0)
+    }
+
+    @Test
+    fun gitGraphVerticalDirectionsPreserveLabelsOrderAndMeasuredBounds() {
+        val source = "gitGraph TB:\ncommit id: \"base\" msg: \"Initial work\" tag: \"v1\" tag: \"stable\"\nbranch feature order: 2\ncommit id: \"next\""
+        fun scene(source: String): LayoutScene = SimpleMermaidLayout.layout(
+            assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram,
+            FixedWidthTextMeasurer, LayoutConfig(),
+        )
+        val top = scene(source)
+        val bottom = scene(source.replace("TB", "BT"))
+        fun y(scene: LayoutScene, id: String) = scene.commands.filterIsInstance<DrawText>().first { it.text == id }.origin.y
+        assertTrue(y(top, "base") < y(top, "next"))
+        assertTrue(y(bottom, "base") > y(bottom, "next"))
+        for (rendered in listOf(top, bottom)) {
+            val texts = rendered.commands.filterIsInstance<DrawText>()
+            assertTrue(texts.map { it.text }.containsAll(listOf("Initial work", "v1, stable", "main", "feature")))
+            texts.forEach { assertTrue(it.origin.x + FixedWidthTextMeasurer.measure(it.text, it.style).width <= rendered.width) }
+            assertEquals("#2563eb", rendered.commands.filterIsInstance<DrawRect>().first().fill.value)
+            if (rendered == top) assertTrue(texts.first { it.text == "v1, stable" }.origin.y - texts.first { it.text == "main" }.origin.y >= 30.0)
+        }
+    }
+
+    @Test
+    fun gitGraphEmptyAndCherryPickRenderThroughRealParser() {
+        val source = "gitGraph\ncommit id: \"base\"\nbranch feature\ncommit id: \"work\"\ncheckout main\ncherry-pick id: \"work\""
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "cherry-pick:work" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == "#2563eb" })
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("gitGraph")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.width.isFinite() && empty.height.isFinite())
+        assertTrue(empty.commands.filterIsInstance<DrawText>().any { it.text == "main" })
+    }
+
+    @Test
+    fun gitGraphReplacementCommitDrawsAfterEarlierSequence() {
+        for (header in listOf("gitGraph", "gitGraph TB:")) {
+            val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+                header + "\ncommit id: \"first\"\ncommit id: \"second\"\ncommit id: \"first\"",
+            )).diagram
+            val texts = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()).commands.filterIsInstance<DrawText>()
+            val first = texts.first { it.text == "first" }.origin
+            val second = texts.first { it.text == "second" }.origin
+            if (header == "gitGraph") assertTrue(first.x > second.x) else assertTrue(first.y > second.y)
+        }
     }
 
     @Test

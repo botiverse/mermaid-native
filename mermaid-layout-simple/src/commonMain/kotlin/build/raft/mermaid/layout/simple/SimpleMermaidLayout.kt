@@ -1296,6 +1296,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
     ): LayoutScene {
+        val ordered = diagram.branches.sortedBy { it.order }
+        val commits = diagram.commits.sortedBy { it.sequence }
+        if (ordered != diagram.branches || commits != diagram.commits) {
+            return layoutGitGraph(diagram.copy(branches = ordered, commits = commits), textMeasurer, config)
+        }
+        if (diagram.direction != FlowDirection.LR) return layoutVerticalGitGraph(diagram, textMeasurer, config)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val commitStyle = TextStyle(fontSize = 12.0)
         val tagStyle = TextStyle(fontSize = 11.0, color = SceneColor("#7c3aed"))
@@ -1304,8 +1310,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             max(
                 80.0,
                 max(
-                    textMeasurer.measure(commit.id, commitStyle).width,
-                    commit.tag?.let { textMeasurer.measure(it, tagStyle).width } ?: 0.0,
+                    max(textMeasurer.measure(commit.id, commitStyle).width, if (!commit.isMerge && !commit.isCherryPick) textMeasurer.measure(commit.message, commitStyle).width else 0.0),
+                    textMeasurer.measure(commit.tags.joinToString(", "), tagStyle).width,
                 ) + 28.0,
             )
         }
@@ -1316,9 +1322,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             centersX += (cursor + width / 2.0).xyCoordinate()
             cursor = (cursor + width + 20.0).xyCoordinate()
         }
-        val width = max(480.0, cursor + config.padding - 20.0).xyCoordinate()
+        val width = maxOf(480.0, cursor + config.padding - 20.0, textMeasurer.measure(diagram.title.orEmpty(), TextStyle(fontSize = 18.0, fontWeight = 600)).width + config.padding * 2).xyCoordinate()
         val laneGap = 92.0
-        val firstLaneY = config.padding + 52.0
+        val firstLaneY = config.padding + 52.0 + if (diagram.title == null) 0.0 else 28.0
         val height = firstLaneY + (diagram.branches.size - 1) * laneGap + 80.0
         val laneByName = diagram.branches.mapIndexed { index, branch -> branch.name to index }.toMap()
         val centerById = diagram.commits.mapIndexed { index, commit ->
@@ -1326,6 +1332,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }.toMap()
         val colors = listOf("#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#0891b2")
         val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
 
         diagram.branches.forEachIndexed { index, branch ->
             val y = firstLaneY + index * laneGap
@@ -1367,7 +1374,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawRect(SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0), cornerRadius = 2.0, fill = color, stroke = color)
                     commands += DrawRect(SceneRect(center.x - 6.0, center.y - 6.0, 12.0, 12.0), cornerRadius = 1.0, fill = SceneColor("#ffffff"), stroke = color, strokeWidth = 1.0)
                 }
-                commit.isMerge -> {
+                commit.isCherryPick -> {
+                    commands += DrawPolygon(listOf(ScenePoint(center.x, center.y - 10), ScenePoint(center.x + 10, center.y), ScenePoint(center.x, center.y + 10), ScenePoint(center.x - 10, center.y)), fill = color)
+                }
+                commit.isMerge && commit.type != GitGraphCommitType.REVERSE -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
                     commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"))
                 }
@@ -1379,7 +1389,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     }
                 }
             }
-            commit.tag?.let { tag ->
+            commit.tags.takeIf { it.isNotEmpty() }?.joinToString(", ")?.let { tag ->
                 val tagWidth = textMeasurer.measure(tag, tagStyle).width
                 val top = center.y - 34.0
                 val bottom = center.y - 18.0
@@ -1409,8 +1419,64 @@ public object SimpleMermaidLayout : DiagramLayout {
                 strokeWidth = 1.0,
             )
             commands += DrawText(commit.id, ScenePoint(center.x, center.y + 28.0), TextAnchor.MIDDLE, commitStyle)
+            if (commit.message.isNotEmpty() && !commit.isMerge && !commit.isCherryPick) commands += DrawText(commit.message, ScenePoint(center.x, center.y + 46), TextAnchor.MIDDLE, commitStyle)
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
+    }
+
+    private fun layoutVerticalGitGraph(diagram: GitGraphDiagram, measurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        val body = TextStyle(fontSize = 12.0)
+        val header = TextStyle(fontSize = 13.0, fontWeight = 600)
+        val labels = diagram.commits.flatMap { listOf(it.id, it.tags.joinToString(", "), if (!it.isMerge && !it.isCherryPick) it.message else "") }
+        val lane = maxOf(160.0, (labels.maxOfOrNull { measurer.measure(it, body).width } ?: 0.0) + 48,
+            (diagram.branches.maxOfOrNull { measurer.measure(it.name, header).width } ?: 0.0) + 32)
+        val width = maxOf(480.0, config.padding * 2 + lane * diagram.branches.size, measurer.measure(diagram.title.orEmpty(), TextStyle(fontSize = 18.0, fontWeight = 600)).width + config.padding * 2)
+        val height = maxOf(220.0, config.padding * 2 + 104 + diagram.commits.size * 84.0)
+        val reverse = diagram.direction == FlowDirection.BT
+        val first = if (reverse) height - config.padding - 64 else config.padding + 104
+        val lanes = diagram.branches.mapIndexed { i, branch -> branch.name to i }.toMap()
+        val centers = diagram.commits.mapIndexed { i, commit -> commit.id to ScenePoint(config.padding + lane * lanes.getValue(commit.branch) + 24,
+            first + (if (reverse) -1 else 1) * i * 84.0) }.toMap()
+        val colors = listOf("#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#0891b2")
+        fun color(branch: String) = SceneColor(colors[lanes.getValue(branch) % colors.size])
+        val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
+        diagram.branches.forEach { branch ->
+            val x = config.padding + lane * lanes.getValue(branch.name) + 24
+            val y = if (reverse) height - config.padding - 12 else config.padding + 48
+            val chip = measurer.measure(branch.name, header).width + 16
+            commands += DrawRect(SceneRect(x - 8, y - 16, chip, 22.0), cornerRadius = 4.0, fill = color(branch.name), stroke = color(branch.name))
+            commands += DrawText(branch.name, ScenePoint(x, y), style = header.copy(color = SceneColor("#ffffff")))
+            val start = branch.parentCommitId?.let { centers[it]?.y } ?: first
+            val own = diagram.commits.filter { it.branch == branch.name }.map { centers.getValue(it.id).y }
+            val end = if (reverse) own.minOrNull() ?: start else own.maxOrNull() ?: start
+            commands += DrawLine(ScenePoint(x, start), ScenePoint(x, end), stroke = color(branch.name), strokeWidth = 2.0)
+        }
+        diagram.commits.forEach { commit -> commit.parentIds.forEach { parent ->
+            commands += DrawLine(centers.getValue(parent), centers.getValue(commit.id), stroke = color(commit.branch), strokeWidth = 2.0)
+        } }
+        diagram.commits.forEach { commit ->
+            val center = centers.getValue(commit.id); val paint = color(commit.branch)
+            when {
+                commit.isCherryPick -> commands += DrawPolygon(listOf(ScenePoint(center.x, center.y - 10), ScenePoint(center.x + 10, center.y), ScenePoint(center.x, center.y + 10), ScenePoint(center.x - 10, center.y)), fill = paint)
+                commit.type == GitGraphCommitType.HIGHLIGHT -> {
+                    commands += DrawRect(SceneRect(center.x - 12, center.y - 10, 24.0, 20.0), fill = paint, stroke = paint)
+                    commands += DrawRect(SceneRect(center.x - 6, center.y - 6, 12.0, 12.0), fill = SceneColor("#ffffff"), stroke = paint)
+                }
+                else -> {
+                    commands += DrawEllipse(center, 9.0, 9.0, fill = paint, stroke = paint)
+                    if (commit.isMerge && commit.type != GitGraphCommitType.REVERSE) commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = paint)
+                    if (commit.type == GitGraphCommitType.REVERSE) {
+                        commands += DrawLine(ScenePoint(center.x - 5, center.y - 5), ScenePoint(center.x + 5, center.y + 5), stroke = SceneColor("#ffffff"))
+                        commands += DrawLine(ScenePoint(center.x + 5, center.y - 5), ScenePoint(center.x - 5, center.y + 5), stroke = SceneColor("#ffffff"))
+                    }
+                }
+            }
+            commands += DrawText(commit.id, ScenePoint(center.x + 16, center.y + 4), style = body)
+            if (commit.tags.isNotEmpty()) commands += DrawText(commit.tags.joinToString(", "), ScenePoint(center.x + 16, center.y - 14), style = body.copy(color = SceneColor("#7c3aed")))
+            if (commit.message.isNotEmpty() && !commit.isMerge && !commit.isCherryPick) commands += DrawText(commit.message, ScenePoint(center.x + 16, center.y + 22), style = body)
+        }
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun layoutPacket(diagram: PacketDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
