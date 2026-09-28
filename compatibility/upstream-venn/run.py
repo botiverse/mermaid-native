@@ -28,7 +28,7 @@ result=subprocess.run(['java','-cp',cp,'VennNativeBridge'],input=''.join(base64.
 models=[json.loads(x) for x in result.stdout.splitlines()];assert len(models)==len(sources)
 cache=w/'native-models.json';cache.write_text(json.dumps(list(zip(sources,models))))
 (w/'adapter.ts').write_text("""import {readFileSync} from 'node:fs';const models=new Map(JSON.parse(readFileSync(CACHE,'utf8')));
-export const parser={yy:null,parse(source){const d=models.get(source);if(!d)throw new Error('Missing Native result');if(d.error)throw new Error(d.error);const value=structuredClone(d);this.yy.getSubsetData=()=>value.subsets;this.yy.getTextData=()=>value.texts;this.yy.getStyleData=()=>value.styles;this.yy.getDiagramTitle=()=>value.title;return true;}};
+export const parser={yy:null,parse(source){const d=models.get(source);if(!d)throw new Error('Missing Native result');if(d.error)throw new Error(d.error);const value=structuredClone(d);this.yy.getSubsetData=()=>value.subsets;this.yy.getTextData=()=>value.texts.map(t=>({...t,label:t.label??undefined}));this.yy.getStyleData=()=>value.styles;this.yy.getDiagramTitle=()=>value.title;return true;}};
 export const parse=source=>parser.parse(source);export default {parser,parse};
 """.replace('CACHE',json.dumps(str(cache))))
 status=test('native');summary={'upstreamRevision':m['revision'],'nativeJarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'uniqueInputs':len(sources)}
