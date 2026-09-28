@@ -1,0 +1,10 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/git/gitGraph.spec.ts": "15284d1a16d0d6dee4c57550e10f29df6b3426bd2a9dd36ec811b9b6572a0834",
+    "packages/mermaid/src/diagrams/git/gitGraphParser.ts": "46d7b331b9c43e0ce45d2dba71e671b34670c9fe34a248a664786191d917f204",
+    "packages/parser/src/language/gitGraph/gitGraph.langium": "7983e2cb45fad0c62a81c6ebb40c942637ea7874cb6c324a99e84feae100b514",
+    "packages/mermaid/src/diagrams/git/gitGraphAst.ts": "6bea9f0f43982992ded7eec927cf543bb02933b305121d69bb78ad5edb0da90c",
+    "packages/mermaid/src/diagrams/git/gitGraphTypes.ts": "b023300eb4f4bcb7340f6cc741fefa5662f433e7e3a58097ec724435a06bd76a"
+  }
+}
