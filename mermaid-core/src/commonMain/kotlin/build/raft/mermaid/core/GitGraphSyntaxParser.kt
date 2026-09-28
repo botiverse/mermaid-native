@@ -100,7 +100,7 @@ public object GitGraphSyntaxParser {
                     val tags = mutableListOf<String>()
                     while (position < ts.size) {
                         val key = ts[position]
-                        if (!key.quoted && key.value in commands) break
+                        if (!key.quoted && key.value in commands) { report("Expected newline between gitGraph statements"); break }
                         position++
                         if (key.quoted && command == "commit") { message = key.value; continue }
                         val value = ts.getOrNull(position)

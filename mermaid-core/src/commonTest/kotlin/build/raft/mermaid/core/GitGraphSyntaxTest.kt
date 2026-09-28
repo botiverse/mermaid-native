@@ -7,12 +7,25 @@ import kotlin.test.assertTrue
 
 class GitGraphSyntaxTest {
     @Test
-    fun productionHistoryConsumesEveryStatementOnTheSameLine() {
+    fun recoveredSameLineStatementsRequireSeparatorsBeforeProductionResolution() {
         val source = """
             gitGraph
             commit id:"root" branch feature commit id:"feat" msg:"checkout main" checkout main commit id:"base" merge feature id:"merge"
         """.trimIndent()
-        val diagram = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        val recovered = GitGraphSyntaxParser.parse(source)
+        assertEquals(listOf("Commit", "Branch", "Commit", "Checkout", "Commit", "Merge"), recovered.statements.map { it.type })
+        assertTrue(recovered.diagnostics.isNotEmpty())
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source))
+        val valid = """
+            gitGraph
+            commit id:"root"
+            branch feature
+            commit id:"feat" msg:"checkout main"
+            checkout main
+            commit id:"base"
+            merge feature id:"merge"
+        """.trimIndent()
+        val diagram = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(valid)).diagram)
         assertEquals(listOf("root", "feat", "base", "merge"), diagram.commits.map { it.id })
         assertEquals(listOf("base", "feat"), diagram.commits.last().parentIds)
         assertEquals("checkout main", diagram.commits[1].message)
