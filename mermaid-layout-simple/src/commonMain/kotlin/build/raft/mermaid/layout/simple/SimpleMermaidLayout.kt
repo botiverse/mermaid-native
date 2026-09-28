@@ -1517,8 +1517,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val x = config.padding + (segmentStart - rowStart) * bitWidth
                 val y = config.padding + titleHeight + row * rowHeight
                 val segmentWidth = (segmentEnd - segmentStart + 1) * bitWidth
-                commands += DrawText("$segmentStart", ScenePoint(x, y + 10.0), TextAnchor.START, bitIndexStyle)
-                commands += DrawText("$segmentEnd", ScenePoint(x + segmentWidth, y + 10.0), TextAnchor.END, bitIndexStyle)
+                if (segmentStart == segmentEnd) {
+                    commands += DrawText("$segmentStart", ScenePoint(x + segmentWidth / 2.0, y + 10.0), TextAnchor.MIDDLE, bitIndexStyle)
+                } else {
+                    commands += DrawText("$segmentStart", ScenePoint(x + 4.0, y + 10.0), TextAnchor.START, bitIndexStyle)
+                    commands += DrawText("$segmentEnd", ScenePoint(x + segmentWidth - 4.0, y + 10.0), TextAnchor.END, bitIndexStyle)
+                }
                 commands += DrawRect(SceneRect(x, y + indexBand, segmentWidth, blockHeight), cornerRadius = 2.0, fill = SceneColor("#eff6ff"))
                 commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + indexBand + 23.0), TextAnchor.MIDDLE, labelStyle)
             }

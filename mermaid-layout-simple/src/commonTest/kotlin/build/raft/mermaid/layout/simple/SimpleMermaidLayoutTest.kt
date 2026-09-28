@@ -140,6 +140,19 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun packetAdjacentBitIndicesHaveAReadableGapAndSingleBitsAreNotDuplicated() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""packet
++8: "Version"
++8: "Flags"
++1: "Flag"
+""")).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val indices = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 9.0 }
+        assertEquals(8.0, indices.single { it.text == "8" }.origin.x - indices.single { it.text == "7" }.origin.x)
+        assertEquals(1, indices.count { it.text == "16" })
+        assertEquals(TextAnchor.MIDDLE, indices.single { it.text == "16" }.anchor)
+    }
+
     @Test
     fun emptyPacketAndRelativeMultirowFieldsUseActualPacketRenderer() {
         val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("packet")).diagram, FixedWidthTextMeasurer, LayoutConfig())
