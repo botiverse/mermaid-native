@@ -650,6 +650,40 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun xyHorizontalPlotUsesRealHorizontalBarsLabelsAndPalette() {
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "xychart horizontal\nx-axis [A,B]\ny-axis 0 --> 100\nbar \"Sales\" [20 \"First\", 80 \"Last\"]\nline [30,70]",
+        )).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val bars = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, bars.size)
+        assertEquals(bars[0].rect.x, bars[1].rect.x)
+        assertTrue(bars[1].rect.y > bars[0].rect.y)
+        assertTrue(bars[1].rect.width > bars[0].rect.width * 3)
+        assertEquals("#2563eb", bars.first().fill.value)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Sales", "First", "Last")))
+        val line = scene.commands.filterIsInstance<DrawPolyline>().single()
+        assertTrue(line.points[1].x > line.points[0].x && line.points[1].y > line.points[0].y)
+    }
+
+    @Test
+    fun xyNumericAxesRenderDescendingRangesAndEmptyChartsWithoutInvalidCoordinates() {
+        listOf("xychart", "xychart\nx-axis 45 --> 5\ny-axis 100 --> 0\nline [10,40,80]").forEach { source ->
+            val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+            val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+            scene.commands.filterIsInstance<DrawLine>().forEach { line ->
+                assertTrue(line.from.x.isFinite() && line.from.y.isFinite() && line.to.x.isFinite() && line.to.y.isFinite())
+            }
+            if(source.contains("45")) {
+                val line = scene.commands.filterIsInstance<DrawPolyline>().single()
+                assertTrue(line.points.last().x > line.points.first().x)
+                assertTrue(line.points.last().y > line.points.first().y)
+                assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "45" })
+            }
+        }
+    }
+
+    @Test
     fun xyChartProducesDeterministicAxesBarsAndLine() {
         val diagram = XyChartDiagram(
             title = "Sales",
