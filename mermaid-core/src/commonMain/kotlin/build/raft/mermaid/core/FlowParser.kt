@@ -62,7 +62,7 @@ internal class FlowParser(private val source:String) {
         val values=mutableListOf<String>();var start=0;var level=0
         text.forEachIndexed { i,c->if(c=='(')level++ else if(c==')')level--;if(c==',' && level==0){values+=text.substring(start,i).trim();start=i+1} }
         values+=text.drop(start).trim();requireFlow(level==0,"Unbalanced style value")
-        values.forEach { val key=it.substringBefore(':').trim();requireFlow(it.contains(':') && it.substringAfter(':').isNotBlank() && key in setOf("background","border","fill","stroke","color","stroke-width","font-size","font-weight","font-style","stroke-dasharray"),"Unsupported flowchart style property") }
+        values.forEach { requireFlow(it.isNotBlank() && (!it.contains(':') || it.substringAfter(':').isNotBlank()),"Empty flowchart style property") }
         return values
     }
     private fun styleDefinition(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { requireFlow(it.isNotBlank(),"Expected style name");definitions[it]=definitions[it].orEmpty()+values }}

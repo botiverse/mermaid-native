@@ -25,6 +25,9 @@ class FlowMetadataTest {
         assertEquals(setOf("A","B","C","D"),d.subgraphs.first { it.id=="inner" }.nodeIds.toSet())
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("graph LR\nsubgraph a\nsubgraph a\nend\nend"))
     }
+    @Test fun upstreamBareStyleTokensRemainData() {
+        assertEquals(listOf("red"),parse("A-->B\nstyle e red").nodes.last().styles)
+    }
     @Test fun groupMetadataDoesNotCreateNode() {
         val d=parse("subgraph one[Group]\nA-->B\nend\none@{view: collapsed}")
         assertTrue(d.subgraphs.single().collapsed)
