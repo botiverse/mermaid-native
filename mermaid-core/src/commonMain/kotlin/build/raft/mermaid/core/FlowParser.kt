@@ -37,7 +37,7 @@ internal class FlowParser(private val source:String) {
                     requireFlow(stack.isNotEmpty(),"Unexpected end")
                     val group=stack.removeAt(stack.lastIndex)
                     val existing=groups.firstOrNull { it.id==group.id };groups.removeAll { it.id==group.id }
-                    groups+=FlowSubgraph(group.id,group.label,((existing?.nodeIds ?: emptyList())+group.members).distinct(),group.direction ?: existing?.direction,stack.lastOrNull()?.id,group.labelType)
+                    groups+=FlowSubgraph(group.id,group.label,((existing?.nodeIds ?: emptyList())+group.members).distinct(),group.direction ?: existing?.direction,stack.lastOrNull()?.id,group.labelType,classes=existing?.classes.orEmpty())
                     stack.lastOrNull()?.members?.add(group.id)
                 }
                 text.startsWith("direction ") -> {val value=parseDirection(text.drop(10).trim());if(stack.isEmpty())direction=value else stack.last().direction=value}
@@ -67,7 +67,12 @@ internal class FlowParser(private val source:String) {
     }
     private fun styleDefinition(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { requireFlow(it.isNotBlank(),"Expected style name");definitions[it]=definitions[it].orEmpty()+values }}
     private fun nodeStyle(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { id->val old=nodes[id] ?: FlowNode(id,id,createdByStyle=true);nodes[id]=old.copy(styles=old.styles+values) }}
-    private fun cssClass(text:String){val names=text.takeWhile { !it.isWhitespace() };val css=text.drop(names.length).trim();requireFlow(css.isNotBlank(),"Expected CSS class");names.split(',').forEach { id->nodes[id]?.let { nodes[id]=it.copy(classes=it.classes+css) } }}
+    private fun cssClass(text:String){val names=text.takeWhile { !it.isWhitespace() };val css=text.drop(names.length).trim();requireFlow(css.isNotBlank(),"Expected CSS class");names.split(',').forEach { assignClass(it,css) }}
+    private fun assignClass(id:String,css:String) {
+        nodes[id]?.let { nodes[id]=it.copy(classes=it.classes+css) }
+        groups.indexOfFirst { it.id==id }.takeIf { it>=0 }?.let { i->groups[i]=groups[i].copy(classes=groups[i].classes+css) }
+        edges.indexOfFirst { it.id==id }.takeIf { it>=0 }?.let { i->edges[i]=edges[i].copy(classes=edges[i].classes+css) }
+    }
     private fun edgeStyle(text:String) {
         val targets=text.takeWhile { !it.isWhitespace() };var rest=text.drop(targets.length).trim()
         var curve:String?=null
@@ -169,7 +174,7 @@ internal class FlowParser(private val source:String) {
             }
             while(text.startsWith(":::",at)) {
                 at+=3;val begin=at;while(at<text.length && !text[at].isWhitespace() && !(arrowStart(at) && text[at] !in "ox") && text[at]!='&')at++
-                requireFlow(at>begin,"Expected CSS class name");val node=nodes.getValue(id);nodes[id]=node.copy(classes=node.classes+text.substring(begin,at))
+                requireFlow(at>begin,"Expected CSS class name");assignClass(id,text.substring(begin,at))
             }
             return id
         }

@@ -27,7 +27,7 @@ internal fun visibleFlow(diagram: FlowchartDiagram): FlowchartDiagram {
         diagram.subgraphs.filter { it.parentId == group.id }.forEach { hide(it,destination,seen) }
     }
     diagram.subgraphs.filter { it.collapsed && !collapsedAncestor(it) }.forEach {
-        replacements += FlowNode(it.id,it.label)
+        replacements += FlowNode(it.id,it.label,classes=it.classes)
         hide(it,it.id,mutableSetOf())
     }
     val surviving = diagram.subgraphs.filter { it.id !in hiddenGroups }.map { g ->

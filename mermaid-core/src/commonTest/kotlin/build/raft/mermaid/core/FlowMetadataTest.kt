@@ -33,4 +33,10 @@ class FlowMetadataTest {
         assertTrue(d.subgraphs.single().collapsed)
         assertEquals(listOf("A","B"),d.nodes.map { it.id })
     }
+    @Test fun inlineClassesOnGroupsAndEdgesRemainTypedWithoutPhantomNodes() {
+        val d=parse("subgraph one\nA\nend\none:::hot\nA e1@--> B\ne1:::hot\nclass one,e1 second")
+        assertEquals(listOf("A","B"),d.nodes.map { it.id })
+        assertEquals(listOf("hot","second"),d.subgraphs.single().classes)
+        assertEquals(listOf("hot","second"),d.edges.single().classes)
+    }
 }
