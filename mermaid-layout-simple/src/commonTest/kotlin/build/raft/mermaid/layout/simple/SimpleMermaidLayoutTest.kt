@@ -1226,6 +1226,7 @@ class SimpleMermaidLayoutTest {
             assertTrue(texts.map { it.text }.containsAll(listOf("Initial work", "v1, stable", "main", "feature")))
             texts.forEach { assertTrue(it.origin.x + FixedWidthTextMeasurer.measure(it.text, it.style).width <= rendered.width) }
             assertEquals("#2563eb", rendered.commands.filterIsInstance<DrawRect>().first().fill.value)
+            if (rendered == top) assertTrue(texts.first { it.text == "v1, stable" }.origin.y - texts.first { it.text == "main" }.origin.y >= 30.0)
         }
     }
 

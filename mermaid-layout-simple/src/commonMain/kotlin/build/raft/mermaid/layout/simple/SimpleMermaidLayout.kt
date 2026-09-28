@@ -1374,7 +1374,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commit.isCherryPick -> {
                     commands += DrawPolygon(listOf(ScenePoint(center.x, center.y - 10), ScenePoint(center.x + 10, center.y), ScenePoint(center.x, center.y + 10), ScenePoint(center.x - 10, center.y)), fill = color)
                 }
-                commit.isMerge -> {
+                commit.isMerge && commit.type != GitGraphCommitType.REVERSE -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
                     commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"))
                 }
@@ -1428,9 +1428,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         val lane = maxOf(160.0, (labels.maxOfOrNull { measurer.measure(it, body).width } ?: 0.0) + 48,
             (diagram.branches.maxOfOrNull { measurer.measure(it.name, header).width } ?: 0.0) + 32)
         val width = maxOf(480.0, config.padding * 2 + lane * diagram.branches.size, measurer.measure(diagram.title.orEmpty(), TextStyle(fontSize = 18.0, fontWeight = 600)).width + config.padding * 2)
-        val height = maxOf(220.0, config.padding * 2 + 72 + diagram.commits.size * 84.0)
+        val height = maxOf(220.0, config.padding * 2 + 104 + diagram.commits.size * 84.0)
         val reverse = diagram.direction == FlowDirection.BT
-        val first = if (reverse) height - config.padding - 64 else config.padding + 72
+        val first = if (reverse) height - config.padding - 64 else config.padding + 104
         val lanes = diagram.branches.mapIndexed { i, branch -> branch.name to i }.toMap()
         val centers = diagram.commits.mapIndexed { i, commit -> commit.id to ScenePoint(config.padding + lane * lanes.getValue(commit.branch) + 24,
             first + (if (reverse) -1 else 1) * i * 84.0) }.toMap()
@@ -1462,7 +1462,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 }
                 else -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = paint, stroke = paint)
-                    if (commit.isMerge) commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = paint)
+                    if (commit.isMerge && commit.type != GitGraphCommitType.REVERSE) commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = paint)
                     if (commit.type == GitGraphCommitType.REVERSE) {
                         commands += DrawLine(ScenePoint(center.x - 5, center.y - 5), ScenePoint(center.x + 5, center.y + 5), stroke = SceneColor("#ffffff"))
                         commands += DrawLine(ScenePoint(center.x + 5, center.y - 5), ScenePoint(center.x - 5, center.y + 5), stroke = SceneColor("#ffffff"))
