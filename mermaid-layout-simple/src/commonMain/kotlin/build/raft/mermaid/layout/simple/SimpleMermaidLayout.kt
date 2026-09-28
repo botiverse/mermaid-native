@@ -1632,6 +1632,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
 
         val commands = mutableListOf<DrawCommand>()
+        val tickLabels = mutableListOf<DrawText>()
         diagram.title?.let {
             commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
         }
@@ -1651,7 +1652,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     strokeWidth = 1.0,
                 )
             }
-            commands += DrawText(
+            tickLabels += DrawText(
                 (diagram.minimum + range * fraction).radarTickLabel(),
                 ScenePoint(centerX + 8.0, (centerY - ringRadius + 4.0).radarCoordinate()),
                 style = bodyStyle,
@@ -1697,6 +1698,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
+        commands += tickLabels
         // Legend row(s) below the chart, wrapped inside the padded content box.
         var legendX = config.padding
         var legendY = centerY + radius + 46.0

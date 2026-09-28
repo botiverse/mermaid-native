@@ -1782,6 +1782,9 @@ class SimpleMermaidLayoutTest {
         val marker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
         assertEquals(98.0, marker.points.first().y)
         assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == "#dbeafe" })
+        val lastCurve = scene.commands.indexOfLast { it is DrawPolygon }
+        assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "30" } > lastCurve)
+        assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "40" } > lastCurve)
     }
 
     @Test
