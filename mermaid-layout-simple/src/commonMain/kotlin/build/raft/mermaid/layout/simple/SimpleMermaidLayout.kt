@@ -1934,7 +1934,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         var cursor = config.padding; var previous: String? = null
         diagram.events.forEachIndexed { index, event ->
             val x = cursor + columns[index] / 2
-            if(event.section != null && event.section != previous) commands += DrawText(event.section, ScenePoint(x, axisY - 32), TextAnchor.MIDDLE, style.copy(fontWeight = 600))
+            if(event.section != null && event.section != previous) commands += DrawText(requireNotNull(event.section), ScenePoint(x, axisY - 32), TextAnchor.MIDDLE, style.copy(fontWeight = 600))
             commands += DrawText(event.period.trim(), ScenePoint(x, axisY - 14), TextAnchor.MIDDLE, style)
             commands += DrawPolygon(listOf(ScenePoint(x, axisY - 7), ScenePoint(x + 7, axisY), ScenePoint(x, axisY + 7), ScenePoint(x - 7, axisY)), fill = SceneColor("#2563eb"))
             event.labels.forEachIndexed { j, label -> commands += DrawText(label.trim(), ScenePoint(x, axisY + 24 + j * 18), TextAnchor.MIDDLE, style) }
