@@ -38,25 +38,25 @@ internal class TreeViewParser(private val source: String) {
             if (text.first() in "\"'") {
                 val end = text.indexOf(text.first(), 1)
                 if (end < 0) return fail("Unclosed treeView label", index + 1)
-                name = text.substring(1, end); rest = text.substring(end + 1)
+                name = TreeViewValueConverter.quotedName(text.substring(0, end + 1)); rest = text.substring(end + 1)
                 if (rest.isNotEmpty() && !rest.first().isWhitespace()) return fail("TreeView annotations require whitespace", index + 1)
             } else {
                 if (text.startsWith(":::") || text.startsWith("icon(") || text.startsWith("##")) return fail("TreeView annotations require a node", index + 1)
                 val split = Regex("\\s+(?=:::|icon\\(|##)").find(text)?.range?.first ?: text.length
-                name = text.substring(0, split).trimEnd(); rest = text.substring(split)
+                name = TreeViewValueConverter.bareName(text.substring(0, split)); rest = text.substring(split)
             }
             var className: String? = null; var icon: String? = null; var desc: String? = null
             while (rest.isNotBlank()) {
                 rest = rest.trimStart()
                 if (rest.startsWith("%%")) break
-                if (rest.startsWith("##")) { desc = rest.substring(2).trim(); break }
+                if (rest.startsWith("##")) { desc = TreeViewValueConverter.descriptionAnnotation(rest); break }
                 val clazz = Regex("^:::\\s*([A-Za-z_][A-Za-z0-9_-]*)(?=\\s|$)").find(rest)
-                if (clazz != null) { className = clazz.groupValues[1]; rest = rest.substring(clazz.value.length); continue }
+                if (clazz != null) { className = TreeViewValueConverter.classAnnotation(clazz.value); rest = rest.substring(clazz.value.length); continue }
                 val token = Regex("^icon\\(([A-Za-z0-9_-]*(?::[A-Za-z0-9_-]+)?)\\)(?=\\s|$)").find(rest)
-                if (token != null) { icon = token.groupValues[1]; rest = rest.substring(token.value.length); continue }
+                if (token != null) { icon = TreeViewValueConverter.iconAnnotation(token.value); rest = rest.substring(token.value.length); continue }
                 return fail("Invalid treeView annotation", index + 1)
             }
-            val indentation = raw.takeWhile { it == ' ' || it == '\t' }.length
+            val indentation = TreeViewValueConverter.indentation(raw.takeWhile { it == ' ' || it == '\t' })
             while (stack.isNotEmpty() && stack.last().first >= indentation) stack.removeAt(stack.lastIndex)
             val parent = stack.lastOrNull()?.second; val depth = parent?.let { nodes[it].depth + 1 } ?: 0
             val label = if (name == "/") "/" else name.removeSuffix("/")
