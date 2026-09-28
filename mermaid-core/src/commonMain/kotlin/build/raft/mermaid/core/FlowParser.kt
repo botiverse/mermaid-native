@@ -6,6 +6,7 @@ internal class FlowParser(private val source:String) {
     private val definitions=linkedMapOf<String,List<String>>()
     private val interactions=mutableListOf<FlowInteraction>()
     private var defaultEdgeStyles=emptyList<String>()
+    private var defaultInterpolate:String?=null
     private val edges=mutableListOf<FlowEdge>()
     private val groups=mutableListOf<FlowSubgraph>()
     private data class Group(val id:String,val label:String,val labelType:String="text",val members:MutableList<String> = mutableListOf(),var direction:FlowDirection?=null)
@@ -30,12 +31,13 @@ internal class FlowParser(private val source:String) {
                     val raw=text.drop(9).trim();val bracket=raw.indexOf('[')
                     val label=if(bracket>=0){requireFlow(raw.endsWith(']'),"Unclosed subgraph title");unquote(raw.substring(bracket+1,raw.length-1)).first}else unquote(raw).first
                     val id=if(bracket>=0)raw.take(bracket).trim() else if(label.any { it.isWhitespace() })"subGraph${groups.size+stack.size}" else label
-                    requireFlow(id.isNotBlank(),"Expected subgraph name");requireFlow(stack.none { it.id==id } && groups.none { it.id==id },"Duplicate or cyclic subgraph id");stack+=Group(id,label,if(unquote(if(bracket>=0)raw.substring(bracket+1,raw.length-1)else raw).second=="markdown")"markdown"else"text")
+                    requireFlow(id.isNotBlank(),"Expected subgraph name");requireFlow(stack.none { it.id==id },"Duplicate or cyclic subgraph id");stack+=Group(id,label,if(unquote(if(bracket>=0)raw.substring(bracket+1,raw.length-1)else raw).second=="markdown")"markdown"else"text")
                 }
                 text=="end" -> {
                     requireFlow(stack.isNotEmpty(),"Unexpected end")
                     val group=stack.removeAt(stack.lastIndex)
-                    groups+=FlowSubgraph(group.id,group.label,group.members.distinct(),group.direction,stack.lastOrNull()?.id,group.labelType)
+                    val existing=groups.firstOrNull { it.id==group.id };groups.removeAll { it.id==group.id }
+                    groups+=FlowSubgraph(group.id,group.label,((existing?.nodeIds ?: emptyList())+group.members).distinct(),group.direction ?: existing?.direction,stack.lastOrNull()?.id,group.labelType,classes=existing?.classes.orEmpty())
                     stack.lastOrNull()?.members?.add(group.id)
                 }
                 text.startsWith("direction ") -> {val value=parseDirection(text.drop(10).trim());if(stack.isEmpty())direction=value else stack.last().direction=value}
@@ -51,7 +53,7 @@ internal class FlowParser(private val source:String) {
             }
         }
         requireFlow(stack.isEmpty(),"Unclosed subgraph")
-        MermaidParseResult.Success(FlowchartDiagram(direction,nodes.values.toList(),edges.toList(),groups.toList(),accTitle,accDescription,definitions.toMap(),interactions.toList(),defaultEdgeStyles))
+        MermaidParseResult.Success(FlowchartDiagram(direction,nodes.values.toList(),edges.toList(),groups.toList(),accTitle,accDescription,definitions.toMap(),interactions.toList(),defaultEdgeStyles,defaultInterpolate))
     } catch(e:FlowSyntaxError) {
         val prefix=source.take(offset)
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(if(parsingHeader)MermaidDiagnosticCode.INVALID_HEADER else MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message?:"Unsupported flowchart syntax",SourceLocation(prefix.count { it=='\n' }+1,offset-prefix.lastIndexOf('\n')))))
@@ -60,13 +62,39 @@ internal class FlowParser(private val source:String) {
         val values=mutableListOf<String>();var start=0;var level=0
         text.forEachIndexed { i,c->if(c=='(')level++ else if(c==')')level--;if(c==',' && level==0){values+=text.substring(start,i).trim();start=i+1} }
         values+=text.drop(start).trim();requireFlow(level==0,"Unbalanced style value")
-        values.forEach { val key=it.substringBefore(':').trim();requireFlow(it.contains(':') && it.substringAfter(':').isNotBlank() && key in setOf("background","border","fill","stroke","color","stroke-width","font-size","font-weight","font-style","stroke-dasharray"),"Unsupported flowchart style property") }
+        values.forEach { requireFlow(it.isNotBlank() && (!it.contains(':') || it.substringAfter(':').isNotBlank()),"Empty flowchart style property") }
         return values
     }
     private fun styleDefinition(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { requireFlow(it.isNotBlank(),"Expected style name");definitions[it]=definitions[it].orEmpty()+values }}
     private fun nodeStyle(text:String){val names=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(names.length).trim());names.split(',').forEach { id->val old=nodes[id] ?: FlowNode(id,id,createdByStyle=true);nodes[id]=old.copy(styles=old.styles+values) }}
-    private fun cssClass(text:String){val names=text.takeWhile { !it.isWhitespace() };val css=text.drop(names.length).trim();requireFlow(css.isNotBlank(),"Expected CSS class");names.split(',').forEach { id->nodes[id]?.let { nodes[id]=it.copy(classes=it.classes+css) } }}
-    private fun edgeStyle(text:String){val targets=text.takeWhile { !it.isWhitespace() };val values=styles(text.drop(targets.length).trim());targets.split(',').forEach { value->if(value=="default")defaultEdgeStyles=defaultEdgeStyles+values else {val index=value.toIntOrNull()?:fail("Expected edge index");requireFlow(index in edges.indices,"Link style index out of bounds");edges[index]=edges[index].copy(styles=edges[index].styles+values)} }}
+    private fun cssClass(text:String){val names=text.takeWhile { !it.isWhitespace() };val css=text.drop(names.length).trim();requireFlow(css.isNotBlank(),"Expected CSS class");names.split(',').forEach { assignClass(it,css) }}
+    private fun assignClass(id:String,css:String) {
+        nodes[id]?.let { nodes[id]=it.copy(classes=it.classes+css) }
+        groups.indexOfFirst { it.id==id }.takeIf { it>=0 }?.let { i->groups[i]=groups[i].copy(classes=groups[i].classes+css) }
+        edges.indexOfFirst { it.id==id }.takeIf { it>=0 }?.let { i->edges[i]=edges[i].copy(classes=edges[i].classes+css) }
+    }
+    private fun edgeStyle(text:String) {
+        val targets=text.takeWhile { !it.isWhitespace() };var rest=text.drop(targets.length).trim()
+        var curve:String?=null
+        if(rest.startsWith("interpolate ")){rest=rest.drop(12).trim();curve=rest.takeWhile { !it.isWhitespace() };rest=rest.drop(curve.length).trim();requireFlow(curve.isNotEmpty(),"Expected interpolation")}
+        val values=if(rest.isEmpty())emptyList()else styles(rest)
+        requireFlow(curve!=null || values.isNotEmpty(),"Expected edge style")
+        targets.split(',').forEach { value->if(value=="default"){defaultEdgeStyles+=values;if(curve!=null)defaultInterpolate=curve}
+            else {val index=value.toIntOrNull()?:fail("Expected edge index");requireFlow(index in edges.indices,"Link style index out of bounds");edges[index]=edges[index].copy(styles=edges[index].styles+values,interpolate=curve ?: edges[index].interpolate)} }
+    }
+    private fun metadata(id:String,raw:String) {
+        val data=try { flowMetadata(raw) }catch(e:IllegalArgumentException){fail(e.message ?: "Invalid metadata")}
+        val edgeIndex=edges.indexOfFirst { it.id==id }
+        if(edgeIndex>=0){val edge=edges[edgeIndex];val animate=data["animate"]?.let { requireFlow(it=="true" || it=="false","Expected animate boolean");it=="true" };edges[edgeIndex]=edge.copy(interpolate=data["curve"] ?: edge.interpolate,animate=animate ?: edge.animate,animation=data["animation"] ?: edge.animation);return}
+        val groupIndex=groups.indexOfFirst { it.id==id }
+        if(groupIndex>=0){data["view"]?.let { requireFlow(it in setOf("collapsed","expanded"),"Unsupported group view");groups[groupIndex]=groups[groupIndex].copy(collapsed=it=="collapsed") };return}
+        val node=nodes[id] ?: FlowNode(id,id)
+        val shape=data["shape"]?.let { name->
+            requireFlow(name==name.lowercase() && '_' !in name,"No such shape: $name. Shape names should be lowercase.")
+            when(name){"rect","rectangle","process"->FlowNodeShape.RECTANGLE;"rounded","event"->FlowNodeShape.ROUNDED;"circle"->FlowNodeShape.CIRCLE;"dbl-circ","double-circle"->FlowNodeShape.DOUBLE_CIRCLE;"stadium","terminal"->FlowNodeShape.STADIUM;"diamond","diam","decision"->FlowNodeShape.DIAMOND;"hex","hexagon","prepare"->FlowNodeShape.HEXAGON;"cyl","cylinder","database"->FlowNodeShape.CYLINDER;"subproc","subprocess","subroutine"->FlowNodeShape.SUBROUTINE;"odd"->FlowNodeShape.ASYMMETRIC;"lean-r","lean-right","in-out"->FlowNodeShape.PARALLELOGRAM;"lean-l","lean-left","out-in"->FlowNodeShape.PARALLELOGRAM_ALT;"trap-b","trapezoid","priority"->FlowNodeShape.TRAPEZOID;"trap-t","inv-trapezoid","manual"->FlowNodeShape.TRAPEZOID_ALT;else->fail("No such shape: $name.")}
+        } ?: node.shape
+        nodes[id]=node.copy(shape=shape,label=data["label"]?.takeIf { it.isNotEmpty() } ?: node.label,labelType=data["labelType"] ?: node.labelType,metadata=node.metadata+data)
+    }
     private fun interaction(text:String){
         val id=text.takeWhile { !it.isWhitespace() };var rest=text.drop(id.length).trim();requireFlow(id.isNotBlank() && rest.isNotEmpty(),"Expected click target")
         val callback=!(rest.startsWith('"') || rest.startsWith("href "));if(rest.startsWith("href "))rest=rest.drop(5).trim()
@@ -113,7 +141,7 @@ internal class FlowParser(private val source:String) {
             var from=nodeList();val members=from.toMutableList()
             while(true){skip();if(at==text.length)break
                 val edge=link();val to=nodeList()
-                for((i,a) in from.withIndex())for((j,b) in to.withIndex())edges+=edge.copy(sourceId=a,targetId=b,id=edge.id.takeIf { i==from.lastIndex && j==0 })
+                for((i,a) in from.withIndex())for((j,b) in to.withIndex())edges+=edge.copy(sourceId=a,targetId=b,id=edge.id.takeIf { i==from.lastIndex && j==0 && edges.none { existing->existing.id==edge.id } })
                 members.addAll(0,to);from=to
             }
             stack.lastOrNull()?.members?.addAll(members)
@@ -138,10 +166,15 @@ internal class FlowParser(private val source:String) {
                 if(label.second=="text") {requireFlow('(' !in raw,"Unexpected token: got 'PS'");requireFlow(')' !in raw,"Unexpected token: got 'PE'")}
                 at+=shape.second.length
                 nodes[id]=(nodes[id] ?: FlowNode(id,id)).copy(label=label.first,shape=shape.third,labelType=label.second,borders=borders)
-            } else if(id !in nodes)nodes[id]=FlowNode(id,id)
+            } else if(id !in nodes && groups.none { it.id==id } && edges.none { it.id==id })nodes[id]=FlowNode(id,id)
+            skip()
+            if(text.startsWith("@{",at)){at+=2;val begin=at;var quote:Char?=null;var escaped=false
+                while(at<text.length){val c=text[at];if(escaped){escaped=false;at++;continue};if(c=='\\' && quote=='"'){escaped=true;at++;continue};if(quote!=null){if(c==quote)quote=null}else if(c=='"' || c=='\'')quote=c else if(c=='}')break;at++}
+                requireFlow(at<text.length,"Unclosed metadata");metadata(id,text.substring(begin,at++));skip()
+            }
             while(text.startsWith(":::",at)) {
                 at+=3;val begin=at;while(at<text.length && !text[at].isWhitespace() && !(arrowStart(at) && text[at] !in "ox") && text[at]!='&')at++
-                requireFlow(at>begin,"Expected CSS class name");val node=nodes.getValue(id);nodes[id]=node.copy(classes=node.classes+text.substring(begin,at))
+                requireFlow(at>begin,"Expected CSS class name");assignClass(id,text.substring(begin,at))
             }
             return id
         }

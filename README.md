@@ -71,3 +71,5 @@ This is an independent, non-official Mermaid-compatible implementation. New
 syntax needs a support-matrix entry, parser tests, a negative/unsupported case,
 and a fixture or differential vector before it is considered complete. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
