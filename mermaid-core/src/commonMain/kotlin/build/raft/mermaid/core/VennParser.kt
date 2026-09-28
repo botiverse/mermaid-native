@@ -14,6 +14,9 @@ internal class VennParser(private val source: String) {
             val line = index + 1; val text = raw.trim()
             if (text.isEmpty() || text.startsWith("%%")) return@forEachIndexed
             if (!header) { if (text != "venn-beta") return fail("Expected venn-beta", line); header = true; return@forEachIndexed }
+            // Only an indented text statement retains the preceding subset context.
+            // Blank/comment lines above remain transparent, like the upstream lexer.
+            if (raw.firstOrNull()?.isWhitespace() != true || !text.startsWith("text ")) current = null
             if (text.startsWith("title ")) { title = unquote(text.removePrefix("title ")); return@forEachIndexed }
             val subset = Regex("^(set|union)\\s+($list)(?:\\s*\\[([^]]*)])?(?:\\s*:\\s*([+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)))?$").matchEntire(text)
             if (subset != null) {

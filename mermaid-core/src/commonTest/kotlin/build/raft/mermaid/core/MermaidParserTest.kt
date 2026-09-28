@@ -2137,4 +2137,13 @@ class MermaidParserTest {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("wardley-beta\ncomponent A [0.5,0.5]\npipeline A {\ncomponent B [0.7] (buy)\n}"))
     }
 
+    @Test fun vennStyleEndsImplicitTextContextButBlankLinesDoNot() {
+        val bad = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("venn-beta\nset A\nset B\nstyle A fill:red\n  text A1"))
+        assertEquals(5, bad.diagnostics.single().location.line)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("venn-beta\nset A\n  style A fill:red\n  text A1"))
+        val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta\nset A\n\n  %% comment\n  text A1"))
+        assertEquals(listOf("A"), assertIs<VennDiagram>(result.diagram).texts.single().setIds)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("venn-beta\nset A\nstyle A fill:red\ntext A A1"))
+    }
+
 }

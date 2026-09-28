@@ -796,12 +796,6 @@ public object MermaidParser {
     private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
     private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"\\])?(?::([1-9][0-9]*))?$")
     private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
-    private val VENN_IDENTIFIER = Regex("(?:[A-Za-z_][A-Za-z0-9_-]*|\"[^\"\\r\\n]+\")")
-    private val VENN_TITLE = Regex("^title\\s+\"([^\"\\r\\n]+)\"$")
-    private val VENN_SET = Regex("^set\\s+($VENN_IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"])?(?:\\s*:\\s*(\\S+))?$")
-    private val VENN_UNION = Regex(
-        "^union\\s+($VENN_IDENTIFIER(?:\\s*,\\s*$VENN_IDENTIFIER){1,2})(?:\\[\"([^\"\\r\\n]+)\"])?(?:\\s*:\\s*(\\S+))?$",
-    )
     private val USECASE_DIRECTION = Regex("^direction\\s+(TD|TB|LR|RL)$", RegexOption.IGNORE_CASE)
     private const val USECASE_IDENTIFIER = "[A-Za-z0-9_]+"
     private val USECASE_ACTOR = Regex("^actor\\s+($USECASE_IDENTIFIER)(?:\\(\"([^\"\\r\\n]+)\"\\))?$")
@@ -815,44 +809,6 @@ public object MermaidParser {
 }
 
 
-
-private val INVALID_VENN_SIZE: Double = Double.NEGATIVE_INFINITY
-
-private fun String.unquoteVennId(): String = if (startsWith('"') && endsWith('"')) substring(1, lastIndex) else this
-
-private fun String.parseVennMembers(): List<String> {
-    val members = mutableListOf<String>()
-    var quoted = false
-    var start = 0
-    forEachIndexed { index, character ->
-        when (character) {
-            '"' -> quoted = !quoted
-            ',' -> if (!quoted) {
-                members += substring(start, index).trim()
-                start = index + 1
-            }
-        }
-    }
-    members += substring(start).trim()
-    return members
-}
-
-private fun String.parseVennSize(
-    statement: SourceStatement,
-    diagnostics: MutableList<MermaidDiagnostic>,
-): Double? {
-    if (isEmpty()) return null
-    val parsed = toDoubleOrNull()
-    if (parsed == null || !parsed.isFinite() || parsed <= 0.0) {
-        diagnostics += MermaidDiagnostic(
-            MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-            "Venn sizes must be finite and positive: ${statement.text}",
-            statement.location,
-        )
-        return INVALID_VENN_SIZE
-    }
-    return parsed
-}
 
 private fun String.parseSankeyCsvLine(): List<String>? {
     val fields = mutableListOf<String>()

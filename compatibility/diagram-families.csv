@@ -27,7 +27,7 @@ treeView,treeView,in_progress,partial,partial,partial,partial,Bounded treeView-b
 treemap,treemap,in_progress,partial,partial,partial,partial,Vertical slice supports two-space hierarchy sections, finite positive weighted leaves and cell values on sections and leaves.
 usecase,usecase,in_progress,partial,partial,partial,partial,Vertical slice supports explicit actors, ellipse/rectangle use cases and solid associations.
 userJourney,userJourney,in_progress,partial,partial,partial,partial,Vertical slice supports title sections scored tasks actor lists score dots and an actor legend.
-venn,venn,in_progress,partial,partial,partial,partial,Vertical slice supports two or three sets and pair/triple union labels with optional finite positive sizes and a top third set.
+venn,venn,in_progress,partial,partial,partial,partial,Supports empty through three-set diagrams with subset labels and positive sizes; text notes and bounded color styles preserve the existing circle geometry.
 wardley,wardley,in_progress,partial,partial,partial,partial,Bounded wardley-beta slice supporting a single title anchor and component declarations with unquoted names basic dependency links evolve arrows quoted notes Evolution/Visibility axes and Genesis-Commodity stages with OWM ordered coordinates.
 xyChart,xyChart,in_progress,partial,partial,partial,partial,Vertical slice supports categorical x-axis numeric y-axis line/bar series axis ticks and bar/line value labels.
 zenuml,zenuml,in_progress,partial,partial,partial,partial,Bounded zenuml slice supporting a single title bare and aliased participant declarations explicit-sender sync messages with empty parentheses and async labeled messages.
