@@ -37,6 +37,7 @@ import build.raft.mermaid.core.GitGraphCommitType
 import build.raft.mermaid.core.GitGraphDiagram
 import build.raft.mermaid.core.RequirementDiagram
 import build.raft.mermaid.core.RequirementRelationshipKind
+import build.raft.mermaid.core.KanbanMetadata
 import build.raft.mermaid.core.KanbanDiagram
 import build.raft.mermaid.core.PacketDiagram
 import build.raft.mermaid.core.BlockDiagram
@@ -1254,37 +1255,46 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val titleStyle = TextStyle(fontSize = 14.0, fontWeight = 600)
         val cardStyle = TextStyle(fontSize = 12.0)
+        val detailStyle = TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))
+        fun details(metadata: KanbanMetadata): String = listOfNotNull(
+            metadata.priority, metadata.assigned?.let { "@$it" }, metadata.ticket, metadata.icon,
+        ).joinToString(" · ")
         val gap = 16.0
-        val headerHeight = 40.0
-        val cardHeight = 48.0
         val cardGap = 16.0
+        val headerHeights = diagram.columns.map { if (details(it.metadata).isEmpty()) 40.0 else 58.0 }
+        val cardHeights = diagram.columns.map { column -> column.cards.map { if (details(it.metadata).isEmpty()) 48.0 else 68.0 } }
         val widths = diagram.columns.map { column ->
-            max(180.0, max(
+            max(180.0, maxOf(
                 textMeasurer.measure(column.title, titleStyle).width,
-                column.cards.maxOf { textMeasurer.measure(it.label, cardStyle).width },
-            ) + 32.0).xyCoordinate()
+                textMeasurer.measure(details(column.metadata), detailStyle).width,
+                column.cards.maxOfOrNull { max(textMeasurer.measure(it.label, cardStyle).width, textMeasurer.measure(details(it.metadata), detailStyle).width) } ?: 0.0,
+            ) + 44.0).xyCoordinate()
         }
-        val columnHeights = diagram.columns.map { column ->
-            headerHeight + 12.0 + column.cards.size * (cardHeight + cardGap) + 8.0
+        val columnHeights = diagram.columns.mapIndexed { index, column ->
+            headerHeights[index] + 12.0 + cardHeights[index].sum() + column.cards.size * cardGap + 8.0
         }
-        val height = (config.padding * 2 + (columnHeights.maxOrNull() ?: (headerHeight + 24.0))).xyCoordinate()
-        val width = (config.padding * 2 + widths.sum() + gap * (widths.size - 1)).xyCoordinate()
+        val height = (config.padding * 2 + (columnHeights.maxOrNull() ?: 64.0)).xyCoordinate()
+        val width = (config.padding * 2 + widths.sum() + gap * (widths.size - 1).coerceAtLeast(0)).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
         var x = config.padding
         diagram.columns.forEachIndexed { index, column ->
             val columnWidth = widths[index]
-            val columnHeight = columnHeights[index]
-            commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeight), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
+            val headerHeight = headerHeights[index]
+            commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeights[index]), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
             commands += DrawText(column.title, ScenePoint(x + columnWidth / 2.0, config.padding + 26.0), TextAnchor.MIDDLE, titleStyle)
-            commands += DrawLine(
-                ScenePoint(x + 12.0, config.padding + headerHeight),
-                ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight),
-                stroke = SceneColor("#cbd5e1"),
-            )
+            details(column.metadata).takeIf { it.isNotEmpty() }?.let {
+                commands += DrawText(it, ScenePoint(x + columnWidth / 2.0, config.padding + 44.0), TextAnchor.MIDDLE, detailStyle)
+            }
+            commands += DrawLine(ScenePoint(x + 12.0, config.padding + headerHeight), ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight), stroke = SceneColor("#cbd5e1"))
+            var y = config.padding + headerHeight + 12.0
             column.cards.forEachIndexed { cardIndex, card ->
-                val y = config.padding + headerHeight + 12.0 + cardIndex * (cardHeight + cardGap)
+                val cardHeight = cardHeights[index][cardIndex]
                 commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, cardHeight), cornerRadius = 6.0, fill = SceneColor("#ffffff"))
                 commands += DrawText(card.label, ScenePoint(x + 22.0, y + 29.0), style = cardStyle)
+                details(card.metadata).takeIf { it.isNotEmpty() }?.let {
+                    commands += DrawText(it, ScenePoint(x + 22.0, y + 49.0), style = detailStyle)
+                }
+                y += cardHeight + cardGap
             }
             x += columnWidth + gap
         }

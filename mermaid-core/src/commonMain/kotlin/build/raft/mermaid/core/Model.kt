@@ -542,8 +542,15 @@ public data class RequirementRelationship(
 public enum class RequirementRelationshipKind { CONTAINS, COPIES, DERIVES, SATISFIES, VERIFIES, REFINES, TRACES }
 
 public data class KanbanDiagram(val columns: List<KanbanColumn>) : MermaidDiagram
-public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>)
-public data class KanbanCard(val id: String, val label: String)
+public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>, val metadata: KanbanMetadata = KanbanMetadata())
+public data class KanbanCard(val id: String, val label: String, val metadata: KanbanMetadata = KanbanMetadata())
+public data class KanbanMetadata(
+    val icon: String? = null,
+    val cssClasses: String? = null,
+    val assigned: String? = null,
+    val ticket: String? = null,
+    val priority: String? = null,
+)
 
 /** Minimal platform-neutral model for the Mermaid packet family. */
 public data class PacketDiagram(
