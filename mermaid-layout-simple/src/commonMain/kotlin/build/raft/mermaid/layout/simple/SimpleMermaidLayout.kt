@@ -1297,7 +1297,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene {
         val ordered = diagram.branches.sortedBy { it.order }
-        if (ordered != diagram.branches) return layoutGitGraph(diagram.copy(branches = ordered), textMeasurer, config)
+        val commits = diagram.commits.sortedBy { it.sequence }
+        if (ordered != diagram.branches || commits != diagram.commits) {
+            return layoutGitGraph(diagram.copy(branches = ordered, commits = commits), textMeasurer, config)
+        }
         if (diagram.direction != FlowDirection.LR) return layoutVerticalGitGraph(diagram, textMeasurer, config)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val commitStyle = TextStyle(fontSize = 12.0)

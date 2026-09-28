@@ -32,16 +32,16 @@ internal class GitGraphParser(private val source: String) {
             val lines = source.replace("\r\n", "\n").lines()
             val headerIndex = lines.indexOfFirst { it.isNotBlank() && !it.trimStart().startsWith("%%") }
             require(headerIndex >= 0)
-            val header = Regex("gitGraph(?:\\s+(LR|TB|BT))?\\s*:?").matchEntire(lines[headerIndex].trim()) ?: error("Invalid gitGraph header")
+            val header = Regex("gitGraph(?:\\s+(LR|TB|BT)\\s*:|\\s*:)?").matchEntire(lines[headerIndex].trim()) ?: error("Invalid gitGraph header")
             val direction = header.groupValues[1].ifEmpty { "LR" }.let(FlowDirection::valueOf)
             val branches = linkedMapOf("main" to GitGraphBranch("main", null))
             val heads = linkedMapOf<String, String?>("main" to null)
             val commits = linkedMapOf<String, GitGraphCommit>()
             val warnings = mutableListOf<String>()
-            var current = "main"; var next = 1
+            var current = "main"; var next = 1; var sequence = 0
             var title: String? = null; var accTitle: String? = null; var accDescription: String? = null
             fun autoId(): String { while ("commit-$next" in commits) next++; return "commit-${next++}" }
-            fun add(commit: GitGraphCommit) { commits[commit.id] = commit; heads[current] = commit.id }
+            fun add(commit: GitGraphCommit) { commits[commit.id] = commit.copy(sequence = sequence++); heads[current] = commit.id }
             fun branchName(token: Token): String {
                 require(token.quoted || Regex("\\w([-./\\w]*[-\\w])?").matches(token.value)) { "Invalid branch name" }
                 return token.value
@@ -50,8 +50,8 @@ internal class GitGraphParser(private val source: String) {
             while (i < lines.size) {
                 lineNumber = i + 1; val line = lines[i++].trim()
                 if (line.isBlank() || line.startsWith("%%")) continue
-                if (line.startsWith("title ")) { title = line.substring(6).substringBefore("%%").trim(); continue }
-                if (line.startsWith("accTitle:")) { accTitle = line.substringAfter(':').substringBefore("%%").trim(); continue }
+                if (Regex("^title(?:[\\t ]|$)").containsMatchIn(line)) { title = line.drop(5).substringBefore("%%").trim(); continue }
+                if (Regex("^accTitle[\\t ]*:").containsMatchIn(line)) { accTitle = line.substringAfter(':').substringBefore("%%").trim(); continue }
                 if (line.startsWith("accDescr")) {
                     if ('{' in line) {
                         val content = StringBuilder(line.substringAfter('{'))

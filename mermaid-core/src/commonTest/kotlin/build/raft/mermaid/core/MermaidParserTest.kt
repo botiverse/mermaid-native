@@ -1505,9 +1505,9 @@ class MermaidParserTest {
                 branches = listOf(GitGraphBranch("main", null), GitGraphBranch("develop", "base")),
                 commits = listOf(
                     GitGraphCommit("base", "main", emptyList(), tag = "v1"),
-                    GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT),
-                    GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE),
-                    GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2", isMerge = true, message = "merged branch develop into main", customId = true),
+                    GitGraphCommit("feature", "develop", listOf("base"), GitGraphCommitType.HIGHLIGHT, sequence = 1),
+                    GitGraphCommit("release", "main", listOf("base"), GitGraphCommitType.REVERSE, sequence = 2),
+                    GitGraphCommit("merge", "main", listOf("release", "feature"), tag = "v2", isMerge = true, message = "merged branch develop into main", customId = true, sequence = 3),
                 ),
             ),
             result.diagram,
@@ -1562,7 +1562,7 @@ class MermaidParserTest {
     @Test
     fun gitGraphResolvesCherryPickAndValidatesMergeParents() {
         val source = """
-            gitGraph BT
+            gitGraph BT:
             commit id: "base"
             branch develop
             commit id: "work" msg: "Feature"
@@ -1595,6 +1595,17 @@ class MermaidParserTest {
         )).diagram)
         assertEquals("replacement", duplicate.commits.single().message)
         assertEquals(listOf("Commit ID same already exists"), duplicate.warnings)
+    }
+
+    @Test
+    fun gitGraphRequiresDirectionColonAndPreservesReplacementSequence() {
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gitGraph TB\ncommit"))
+        val chart = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "gitGraph TB:\ntitle\tHistory\ncommit id: \"first\"\ncommit id: \"second\"\ncommit id: \"first\"",
+        )).diagram)
+        assertEquals("History", chart.title)
+        assertEquals(listOf("first", "second"), chart.commits.map { it.id })
+        assertEquals(listOf(2, 1), chart.commits.map { it.sequence })
     }
 
     @Test
