@@ -13,8 +13,7 @@ internal fun sequenceLayout(
 ): LayoutScene {
     val style = TextStyle()
     val lineHeight = 18.0
-    fun lines(text: String, wrap: Boolean? = null): List<String> = text.replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), "\n")
-        .split('\n').flatMap { line ->
+    fun lines(text: String, wrap: Boolean? = null): List<String> = MermaidText.splitBreaks(text).flatMap { it.split('\n') }.flatMap { line ->
             if (wrap != true) listOf(line) else buildList {
                 var current = ""
                 line.split(Regex("\\s+")).forEach { word ->
