@@ -140,7 +140,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is RadarChartDiagram -> layoutRadar(diagram, textMeasurer, config)
         is UserJourneyDiagram -> layoutUserJourney(diagram, textMeasurer, config)
         is GitGraphDiagram -> layoutGitGraph(diagram, textMeasurer, config)
-        is RequirementDiagram -> layoutRequirement(diagram, textMeasurer, config)
+        is RequirementDiagram -> layoutRequirementGraph(diagram, textMeasurer, config)
         is KanbanDiagram -> layoutKanban(diagram, textMeasurer, config)
         is PacketDiagram -> layoutPacket(diagram, textMeasurer, config)
         is BlockDiagram -> layoutBlock(diagram, textMeasurer, config)
@@ -1742,132 +1742,6 @@ public object SimpleMermaidLayout : DiagramLayout {
                 legendX += 28.0 + textMeasurer.measure(actor, body).width + 16.0
             }
         }
-        return LayoutScene(width, height, commands)
-    }
-
-    private fun layoutRequirement(
-        diagram: RequirementDiagram,
-        textMeasurer: TextMeasurer,
-        config: LayoutConfig,
-    ): LayoutScene {
-        val body = TextStyle(fontSize = 12.0)
-        val heading = TextStyle(fontSize = 14.0, fontWeight = 600)
-        val headingLines = diagram.requirements.map { "requirement ${it.name}" } +
-            diagram.elements.map { "element ${it.name}" }
-        val bodyLines = diagram.requirements.flatMap { requirement ->
-            listOf(
-                "id: ${requirement.id}",
-                "text: ${requirement.text}",
-                "risk: ${requirement.risk.name.lowercase()}",
-                "verify: ${requirement.verifyMethod.name.lowercase()}",
-            )
-        } + diagram.elements.flatMap { element ->
-            listOf("type: ${element.type}", "docref: ${element.docRef}")
-        }
-        val accessibilityLines = listOfNotNull(diagram.accessibilityTitle, diagram.accessibilityDescription)
-        val measuredHeadingWidth = headingLines.maxOfOrNull { textMeasurer.measure(it, heading).width } ?: 0.0
-        val measuredBodyWidth = (bodyLines + accessibilityLines).maxOfOrNull { textMeasurer.measure(it, body).width } ?: 0.0
-        val cardWidth = max(270.0, max(measuredHeadingWidth, measuredBodyWidth) + 24.0)
-        val requirementHeight = 132.0
-        val elementHeight = 96.0
-        val columnGap = 150.0
-        val rowGap = 28.0
-        val accessibilityOffset = if (diagram.accessibilityTitle != null || diagram.accessibilityDescription != null) 48.0 else 0.0
-        val requirementX = config.padding
-        val elementX = config.padding + cardWidth + columnGap
-        val rects = linkedMapOf<String, SceneRect>()
-        diagram.requirements.forEachIndexed { index, requirement ->
-            rects[requirement.name] = SceneRect(requirementX, config.padding + accessibilityOffset + index * (requirementHeight + rowGap), cardWidth, requirementHeight)
-        }
-        diagram.elements.forEachIndexed { index, element ->
-            rects[element.name] = SceneRect(elementX, config.padding + accessibilityOffset + index * (elementHeight + rowGap), cardWidth, elementHeight)
-        }
-        val commands = mutableListOf<DrawCommand>()
-        diagram.accessibilityTitle?.let { title ->
-            commands += DrawText("accTitle: $title", ScenePoint(requirementX, config.padding + 18.0), style = body)
-        }
-        diagram.accessibilityDescription?.let { description ->
-            commands += DrawText("accDescr: $description", ScenePoint(requirementX, config.padding + 34.0), style = body)
-        }
-        val missingRelationshipNames = diagram.relationships
-            .flatMap { listOf(it.from, it.to) }
-            .filterNot(rects::containsKey)
-            .distinct()
-        missingRelationshipNames.forEachIndexed { index, name ->
-            rects[name] = SceneRect(requirementX, config.padding + (diagram.requirements.size + index) * (elementHeight + rowGap), cardWidth, elementHeight)
-        }
-        var relationshipRightExtent = rects.values.maxOfOrNull { it.x + it.width } ?: (config.padding + cardWidth)
-        diagram.relationships.forEach { relationship ->
-            val from = rects.getValue(relationship.from)
-            val to = rects.getValue(relationship.to)
-            val sameColumn = from.x == to.x
-            val leftward = from.x > to.x
-            val start = ScenePoint(if (leftward) from.x else from.x + from.width, from.y + from.height / 2.0)
-            val end = ScenePoint(if (leftward || sameColumn) to.x + to.width else to.x, to.y + to.height / 2.0)
-            val label = when (relationship.kind) {
-                RequirementRelationshipKind.CONTAINS -> "contains"
-                RequirementRelationshipKind.SATISFIES -> "satisfies"
-                RequirementRelationshipKind.VERIFIES -> "verifies"
-            }
-            val labelPosition = if (sameColumn) {
-                val outerX = max(from.x + from.width, to.x + to.width) + 36.0
-                commands += DrawPolyline(
-                    listOf(
-                        start,
-                        ScenePoint(outerX, start.y),
-                        ScenePoint(outerX, end.y),
-                        end,
-                    ),
-                )
-                relationshipRightExtent = max(
-                    relationshipRightExtent,
-                    outerX + 8.0 + textMeasurer.measure(label, body).width,
-                )
-                ScenePoint(outerX + 8.0, (start.y + end.y) / 2.0 - 4.0)
-            } else {
-                commands += DrawLine(start, end)
-                ScenePoint((start.x + end.x) / 2.0, (start.y + end.y) / 2.0 - 8.0)
-            }
-            val direction = if (leftward || sameColumn) -1.0 else 1.0
-            commands += DrawPolygon(
-                listOf(
-                    end,
-                    ScenePoint(end.x - direction * 9.0, end.y - 5.0),
-                    ScenePoint(end.x - direction * 9.0, end.y + 5.0),
-                ),
-                fill = SceneColor("#111827"),
-            )
-            commands += DrawText(
-                label,
-                labelPosition,
-                if (sameColumn) TextAnchor.START else TextAnchor.MIDDLE,
-                body,
-            )
-        }
-        diagram.requirements.forEach { requirement ->
-            val rect = rects.getValue(requirement.name)
-            commands += DrawRect(rect, cornerRadius = 4.0)
-            commands += DrawText("requirement ${requirement.name}", ScenePoint(rect.x + 12.0, rect.y + 22.0), style = heading)
-            commands += DrawLine(ScenePoint(rect.x, rect.y + 32.0), ScenePoint(rect.x + rect.width, rect.y + 32.0))
-            listOf(
-                "id: ${requirement.id}",
-                "text: ${requirement.text}",
-                "risk: ${requirement.risk.name.lowercase()}",
-                "verify: ${requirement.verifyMethod.name.lowercase()}",
-            ).forEachIndexed { index, line ->
-                commands += DrawText(line, ScenePoint(rect.x + 12.0, rect.y + 52.0 + index * 18.0), style = body)
-            }
-        }
-        diagram.elements.forEach { element ->
-            val rect = rects.getValue(element.name)
-            commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor("#eff6ff"))
-            commands += DrawText("element ${element.name}", ScenePoint(rect.x + 12.0, rect.y + 22.0), style = heading)
-            commands += DrawLine(ScenePoint(rect.x, rect.y + 32.0), ScenePoint(rect.x + rect.width, rect.y + 32.0))
-            commands += DrawText("type: ${element.type}", ScenePoint(rect.x + 12.0, rect.y + 54.0), style = body)
-            commands += DrawText("docref: ${element.docRef}", ScenePoint(rect.x + 12.0, rect.y + 74.0), style = body)
-        }
-        val width = relationshipRightExtent + config.padding
-        val height = rects.values.maxOf { it.y + it.height } + config.padding
         return LayoutScene(width, height, commands)
     }
 
