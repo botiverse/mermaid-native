@@ -1179,7 +1179,7 @@ class MermaidParserTest {
     @Test
     fun semicolonDiagnosticReportsPhysicalColumn() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("flowchart TD; A-->B; click A callback"),
+            MermaidParser.parse("flowchart TD; A-->B;   click A callback invalid"),
         )
 
         assertEquals(SourceLocation(line = 1, column = 22), failure.diagnostics.single().location)
