@@ -19,4 +19,33 @@ class FlowMetadataLayoutTest {
         assertEquals(2,scene.commands.filterIsInstance<DrawRect>().size)
         assertEquals(1,scene.commands.filterIsInstance<DrawLine>().size)
     }
+    @Test fun collapsedPipelineFollowsEdgesInEveryDirection() {
+        for (direction in listOf("LR", "RL", "TB", "BT")) {
+            val d = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+                flowchart $direction
+                subgraph order[Order service]
+                A[Validate] --> B[Save]
+                end
+                C[Customer] --> A
+                B --> D[Receipt]
+                order@{view: collapsed}
+            """.trimIndent())).diagram
+            val scene = SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig())
+            val labels = scene.commands.filterIsInstance<DrawText>().associateBy { it.text }
+            assertEquals(setOf("Customer", "Order service", "Receipt"), labels.keys)
+            val positions = listOf("Customer", "Order service", "Receipt").map {
+                val label = labels.getValue(it)
+                if (direction == "LR" || direction == "RL") label.x else label.y
+            }
+            val forward = direction == "LR" || direction == "TB"
+            assertTrue(positions.zipWithNext().all { (a, b) -> if (forward) a < b else a > b }, "$direction: $positions")
+        }
+    }
+    @Test fun collapsedCycleKeepsAllVisibleNodesAndEdges() {
+        val d = assertIs<MermaidParseResult.Success>(MermaidParser.parse("graph LR\nsubgraph group[Group]\nA-->B\nend\nC-->A\nB-->C\ngroup@{view: collapsed}")).diagram
+        val scene = SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(setOf("C", "Group"), scene.commands.filterIsInstance<DrawText>().map { it.text }.toSet())
+        assertEquals(2, scene.commands.filterIsInstance<DrawLine>().size)
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
 }

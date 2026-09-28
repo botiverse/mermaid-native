@@ -33,10 +33,24 @@ internal fun visibleFlow(diagram: FlowchartDiagram): FlowchartDiagram {
     val surviving = diagram.subgraphs.filter { it.id !in hiddenGroups }.map { g ->
         g.copy(nodeIds = (g.nodeIds.map { redirects[it] ?: it } + diagram.subgraphs.filter { it.parentId==g.id && it.collapsed }.map { it.id }).distinct())
     }
-    return diagram.copy(nodes=diagram.nodes.filter { it.id !in redirects }+replacements,subgraphs=surviving,
-        edges=diagram.edges.mapNotNull { edge ->
-            val from=redirects[edge.sourceId] ?: edge.sourceId
-            val to=redirects[edge.targetId] ?: edge.targetId
-            if(from==to && (edge.sourceId in redirects || edge.targetId in redirects))null else edge.copy(sourceId=from,targetId=to)
-        })
+    val nodes = diagram.nodes.filter { it.id !in redirects } + replacements
+    val edges = diagram.edges.mapNotNull { edge ->
+        val from = redirects[edge.sourceId] ?: edge.sourceId
+        val to = redirects[edge.targetId] ?: edge.targetId
+        if (from == to && (edge.sourceId in redirects || edge.targetId in redirects)) null
+        else edge.copy(sourceId = from, targetId = to)
+    }
+    // Replacement nodes are appended above; place them by visible dependencies, not
+    // their synthetic declaration position. Preserve declaration order for ties and cycles.
+    val remaining = nodes.toMutableList()
+    val ordered = mutableListOf<FlowNode>()
+    while (remaining.isNotEmpty()) {
+        val ids = remaining.map { it.id }.toSet()
+        val next = remaining.firstOrNull { node ->
+            edges.none { it.targetId == node.id && it.sourceId != node.id && it.sourceId in ids }
+        } ?: break
+        ordered += next
+        remaining.remove(next)
+    }
+    return diagram.copy(nodes = ordered + remaining, subgraphs = surviving, edges = edges)
 }
