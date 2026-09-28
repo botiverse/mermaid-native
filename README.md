@@ -85,3 +85,5 @@ Metadata shape names currently cover the existing rectangle, rounded, circle/dou
 ### Gantt grammar and dates
 
 Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
+
+Gantt bars retain a separate render duration for excluded trailing dates while dependencies use the fully adjusted end. Calendar include/exclude tokens accept both the configured date format and ISO dates. Milestones require an explicit start (and may use `0d`); shorthand that treated a non-date ID as an omitted field is rejected. Long spans use a bounded plot width and sampled date ticks, with room for the last label.

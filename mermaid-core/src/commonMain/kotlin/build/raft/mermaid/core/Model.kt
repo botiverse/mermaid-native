@@ -387,6 +387,7 @@ public data class GanttTask(
     val status: GanttTaskStatus = GanttTaskStatus.TODO,
     val statuses: Set<GanttTaskStatus> = if(status==GanttTaskStatus.TODO)emptySet()else setOf(status),
     val milestone: Boolean = durationDays==0,
+    val renderDurationDays: Int = durationDays,
 )
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 

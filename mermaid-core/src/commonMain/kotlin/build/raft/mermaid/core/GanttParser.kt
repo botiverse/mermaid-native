@@ -73,14 +73,15 @@ internal class GanttParser(private val source:String) {
             }
             // Upstream advances from the day after start, including the end boundary.
             // Explicit ISO end dates stay fixed; computed duration/until ends may extend.
+            var renderEnd:Int?=null
             if(excludes.isNotEmpty() && parseIsoDay(task.end)==null){
-                var cursor=start+1;val limit=end+10000
-                while(cursor<=end){if(excluded(cursor))end++;requireGantt(end<=limit,"Excluded calendar has no working days");cursor++}
+                var cursor=start+1;val limit=end+10000;var previousExcluded=false
+                while(cursor<=end){if(!previousExcluded)renderEnd=end;previousExcluded=excluded(cursor);if(previousExcluded)end++;requireGantt(end<=limit,"Excluded calendar has no working days");cursor++}
             }
             requireGantt(end>=start,"Gantt end precedes start")
             val statuses=task.tags.mapNotNull { when(it){"done"->GanttTaskStatus.DONE;"active"->GanttTaskStatus.ACTIVE;"crit"->GanttTaskStatus.CRITICAL;else->null} }.toSet()
             val status=listOf(GanttTaskStatus.CRITICAL,GanttTaskStatus.DONE,GanttTaskStatus.ACTIVE).firstOrNull { it in statuses } ?: GanttTaskStatus.TODO
-            val result=GanttTask(task.name,task.id,start,end-start,status,statuses,"milestone" in task.tags)
+            val result=GanttTask(task.name,task.id,start,end-start,status,statuses,"milestone" in task.tags,(renderEnd?:end)-start)
             active.remove(id);resolved[id]=result;return result
         }
         val tasks=pending.map { resolve(it.id) }
@@ -91,7 +92,6 @@ internal class GanttParser(private val source:String) {
         val tokens=text.drop(colon+1).split(',').map { it.trim() }.toMutableList();val tags=mutableSetOf<String>()
         while(tokens.firstOrNull() in setOf("done","active","crit","milestone"))tags+=tokens.removeAt(0)
         requireGantt(tokens.size in 1..3 && tokens.none(String::isEmpty),"Invalid Gantt task fields")
-        if("milestone" in tags && tokens.size==2 && date(tokens[0])==null && date(tokens[1])!=null)tokens+="0d"
         val id=if(tokens.size==3)tokens.removeAt(0)else "task${++generated}"
         if(sectionNames.isEmpty())sectionNames+=""
         pending+=Pending(text.take(colon).trim(),id,if(tokens.size==2)tokens[0]else null,tokens.last(),sectionNames.lastIndex,tags,line)
@@ -102,9 +102,9 @@ internal class GanttParser(private val source:String) {
         else -> null
     }
     private fun excluded(day:Int):Boolean {
-        if(includes.any { date(it)==day })return false
+        if(includes.any { (date(it)?:parseIsoDay(it))==day })return false
         val weekdayIndex=(day+6)%7
-        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;in days->weekdayIndex==days.indexOf(token);else->date(token)==day} }
+        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;in days->weekdayIndex==days.indexOf(token);else->(date(token)?:parseIsoDay(token))==day} }
     }
     private fun click(text:String) {
         val id=text.takeWhile { !it.isWhitespace() };val rest=text.drop(id.length).trim()
