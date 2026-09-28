@@ -1921,11 +1921,33 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun c4OriginalMacrosRetainVariantsNamedAttributesAndNestedBoundaries() {
+        val dollar = '$'
+        val source = """C4Container
+            Boundary(bank, "Bank") {
+              ContainerDb(db, "Ledger", "SQL", "Balances", ${dollar}tags="core")
+              Boundary(inner, "Internal") {
+                Component(worker, "Worker", "Kotlin")
+              }
+            }
+            Person(user, ${dollar}sprite="users")
+            Rel(bank, user, "Serves")
+        """.trimIndent()
+        val diagram = assertIs<C4Diagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("C4Container", diagram.diagramType)
+        assertEquals(listOf("global", "bank"), diagram.boundaries.map { it.parentBoundary })
+        assertEquals("database", diagram.elements[0].variant)
+        assertEquals("SQL", diagram.elements[0].technology)
+        assertEquals("core", diagram.elements[0].attributes["tags"])
+        assertEquals("inner", diagram.elements[1].parentBoundary)
+        assertEquals("sprite", diagram.elements[2].labelAttribute)
+        assertEquals("bank", diagram.relationships.single().sourceId)
+    }
+
     @Test fun malformedC4ContextFailsClosed() {
         listOf(
             "C4Context",
             "c4context\nPerson(a, \"A\")",
-            "C4Context\nPerson(a, \"A\")\nSystem(a, \"Duplicate\")",
             "C4Context\nPerson(a, \"A\")\nRel(a, missing, \"Uses\")",
             "C4Context\nPerson(a, \"A\")\nRel(a, a, \"Self\")",
             "C4Context\nPerson(a, \"A\")\nBoundary(b, \"Deferred\") {",

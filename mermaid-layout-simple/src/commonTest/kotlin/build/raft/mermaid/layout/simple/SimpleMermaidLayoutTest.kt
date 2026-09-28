@@ -140,6 +140,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test fun c4NestedBoundariesContainCardsAndServeAsRelationshipEndpoints() {
+        val source = "C4Container\nBoundary(bank, \"Bank\") {\nContainerDb(db, \"Ledger\", \"SQL\")\nBoundary(inner, \"Internal\") {\nComponent(worker, \"Worker\", \"Kotlin\")\n}\n}\nPerson(user, \"Customer\")\nRel(bank, user, \"Serves\")"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(5, boxes.size)
+        val outer = boxes.first().rect
+        val nested = boxes[1].rect
+        assertTrue(nested.x > outer.x && nested.y > outer.y)
+        assertTrue(nested.x + nested.width < outer.x + outer.width)
+        assertTrue(nested.y + nested.height < outer.y + outer.height)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "[SQL]" })
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "[Component]" })
+        val edge = scene.commands.filterIsInstance<DrawLine>().single()
+        assertEquals(outer.x, edge.from.x)
+        assertTrue(scene.width.isFinite() && scene.height.isFinite())
+    }
+
     @Test fun mindmapOriginalShapesDrawDistinctGeometryWithMeasuredIconText() {
         val source = "mindmap\nroot(Root)\n cloud)Cloud(\n ::icon(star)\n bang))Burst((\n hex{{Hexagon}}"
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
