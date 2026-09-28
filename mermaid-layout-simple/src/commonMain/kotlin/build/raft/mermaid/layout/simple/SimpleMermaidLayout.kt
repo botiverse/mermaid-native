@@ -2017,7 +2017,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText("$section: ${task.name}", ScenePoint(config.padding, y + 13.0), style = body)
             val x = (config.padding + labelWidth + (task.startDay - minDay) * scale).xyCoordinate()
             val fill = when (task.status) { GanttTaskStatus.DONE -> "#16a34a"; GanttTaskStatus.ACTIVE -> "#2563eb"; GanttTaskStatus.CRITICAL -> "#dc2626"; GanttTaskStatus.TODO -> "#94a3b8" }
-            commands += DrawRect(SceneRect(x, y, task.durationDays * scale, 22.0), cornerRadius = 4.0, fill = SceneColor(fill))
+            if(task.milestone) {
+                val center=x+task.durationDays*scale/2
+                commands+=DrawPolygon(listOf(ScenePoint(center,y),ScenePoint(center+11,y+11),ScenePoint(center,y+22),ScenePoint(center-11,y+11)),fill=SceneColor(fill))
+            }else commands += DrawRect(SceneRect(x, y, task.durationDays * scale, 22.0), cornerRadius = 4.0, fill = SceneColor(fill))
             row++
         }
         return LayoutScene(width, height, commands)
