@@ -2043,4 +2043,13 @@ class MermaidParserTest {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("treeView-beta\n├── src/\n    mixed.ts"))
     }
 
+    @Test fun treeViewRejectsMetadataAfterNodesWithoutSwallowingContent() {
+        for (suffix in listOf("title X", "  title X", "accTitle: X", "  accDescr { X }")) {
+            val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("treeView-beta\nroot/\n$suffix"))
+            assertEquals(3, failure.diagnostics.single().location.line)
+            assertEquals("TreeView metadata must appear before nodes", failure.diagnostics.single().message)
+        }
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("TREEVIEW-BETA\nroot/"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta\ntitle X\nroot/\n  titleFile.ts"))
+    }
 }
