@@ -2,7 +2,7 @@ package build.raft.mermaid.layout.simple
 import build.raft.mermaid.core.*
 import build.raft.mermaid.layout.*
 
-internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram) {
+internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram,defaults:List<String> = listOf("fill:#eeeeee","stroke:#999999")) {
     private val raw=(listOf("default")+node.classes).flatMap { diagram.classDefinitions[it].orEmpty() }+node.styles
     private val normalized=raw.flatMap { item ->
         val key=item.substringBefore(':').trim();val value=item.substringAfter(':').trim()
@@ -13,7 +13,7 @@ internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram) {
             else->listOf(item)
         }
     }
-    private val resolved=ClassStyle(ClassDefinition(node.id,styles=listOf("fill:#eeeeee","stroke:#999999")+normalized),ClassDiagram(emptyList(),emptyList()))
+    private val resolved=ClassStyle(ClassDefinition(node.id,styles=defaults+normalized),ClassDiagram(emptyList(),emptyList()))
     val text=resolved.text
     val lineHeight=resolved.lineHeight
     private val dashed=raw.lastOrNull { it.substringBefore(':').trim()=="stroke-dasharray" }?.substringAfter(':')?.trim()?.let { it!="0" && it!="none" }==true
