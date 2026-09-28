@@ -79,11 +79,22 @@ export const parser={yy:null,parse(source){
  const db=this.yy;
  db.setDirection(model.direction);
  const shapes={RECTANGLE:'square',ROUNDED:'round',STADIUM:'stadium',CIRCLE:'circle',DOUBLE_CIRCLE:'doublecircle',DIAMOND:'diamond',PARALLELOGRAM:'lean_right',PARALLELOGRAM_ALT:'lean_left',TRAPEZOID:'trapezoid',TRAPEZOID_ALT:'inv_trapezoid',SUBROUTINE:'subroutine',CYLINDER:'cylinder',HEXAGON:'hexagon',ASYMMETRIC:'odd',ELLIPSE:'ellipse'};
- for(const n of model.nodes)db.addVertex(n.id,{text:n.label,type:n.labelType},n.borders===null?shapes[n.shape]:'rect',undefined,undefined,undefined,n.borders===null?{}:{borders:n.borders});
+ for(const [id,styles] of Object.entries(model.definitions))db.addClass(id,styles);
+ for(const n of model.nodes){
+  if(n.createdByStyle)db.addVertex(n.id,undefined,undefined,n.styles);
+  db.addVertex(n.id,{text:n.label,type:n.labelType},n.borders===null?shapes[n.shape]:'rect',n.createdByStyle?undefined:n.styles,n.classes,undefined,n.borders===null?{}:{borders:n.borders});
+ }
  if(model.accTitle!==null)db.setAccTitle(model.accTitle);
  if(model.accDescription!==null)db.setAccDescription(model.accDescription);
  for(const e of model.edges){const markers={NONE:'open',POINT:'point',CIRCLE:'circle',CROSS:'cross'};const type=(e.fromMarker!=='NONE'?'double_':'')+'arrow_'+markers[e.toMarker];
  db.addLink([e.from],[e.to],{type,stroke:{NORMAL:'normal',THICK:'thick',DOTTED:'dotted',INVISIBLE:'invisible'}[e.style],length:e.length,...(e.id===null?{}:{id:e.id+'@'}),...(e.label===null?{}:{text:{text:e.label,type:e.labelType}})});}
+ if(model.defaultEdgeStyles.length)db.updateLink(['default'],model.defaultEdgeStyles);
+ model.edges.forEach((e,index)=>{if(e.styles.length)db.updateLink([index],e.styles)});
+ for(const i of model.interactions){
+  if(i.callback){if(i.arguments===null)db.setClickEvent(i.nodeId,i.value);else db.setClickEvent(i.nodeId,i.value,i.arguments);}
+  else {if(i.target===null)db.setLink(i.nodeId,i.value);else db.setLink(i.nodeId,i.value,i.target);}
+  if(i.tooltip!==null)db.setTooltip(i.nodeId,i.tooltip);
+ }
  for(const g of model.subgraphs)db.addSubGraph({text:g.id},g.nodes.concat(g.direction===null?[]:[{stmt:'dir',value:g.direction}]),{text:g.label,type:g.labelType});
  return true;
 }};

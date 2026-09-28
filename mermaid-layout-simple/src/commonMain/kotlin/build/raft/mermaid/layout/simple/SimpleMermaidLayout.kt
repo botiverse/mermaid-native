@@ -2566,8 +2566,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene {
         val style = TextStyle()
+        val nodeStyles=diagram.nodes.associate { it.id to FlowStyle(it,diagram) }
         val sizes = diagram.nodes.associate { node ->
-            val text = textMeasurer.measure(node.label, style)
+            val nodeStyle=nodeStyles.getValue(node.id)
+            val lines=classNoteLines(node.label)
+            val text=SceneSize(lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width },max(nodeStyle.text.fontSize,lines.size*nodeStyle.lineHeight-8))
             val width=max(80.0,text.width+32.0)
             val height=max(40.0,text.height+20.0)
             node.id to if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else SceneSize(width,height)
@@ -2597,16 +2600,17 @@ public object SimpleMermaidLayout : DiagramLayout {
             val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEach
             val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEach
             val anchors = edgeAnchors(source, target, horizontal)
+            val edgeStyle=flowEdgeStyle(edge,diagram)
             commands += DrawLine(
                 anchors.first,
                 anchors.second,
-                stroke = edgeStroke,
-                strokeWidth = if (edge.style == FlowEdgeStyle.THICK) 3.0 else 1.5,
+                stroke = edgeStyle.stroke,
+                strokeWidth = edgeStyle.strokeWidth,
                 pattern = if (edge.style == FlowEdgeStyle.DOTTED) StrokePattern.DASHED else StrokePattern.SOLID,
             )
-            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = arrowFill)
-            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second)
-            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first)
+            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = edgeStyle.stroke)
+            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second,edgeStyle.stroke,edgeStyle.strokeWidth)
+            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first,edgeStyle.stroke,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
                 val mid = ScenePoint(
                     (anchors.first.x + anchors.second.x) / 2.0,
@@ -2617,6 +2621,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.nodes.forEach { node ->
             val rect = rects.getValue(node.id)
+            val nodeStyle=nodeStyles.getValue(node.id)
+            val glyphStart=commands.size
             when (node.shape) {
                 FlowNodeShape.RECTANGLE -> {
                     commands += DrawRect(rect,cornerRadius=if(node.borders==null)5.0 else 0.0,fill=SceneColor("#eeeeee"),stroke=SceneColor(if(node.borders==null)"#999999"else"none"),strokeWidth=1.5)
@@ -2644,12 +2650,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
                 FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT, FlowNodeShape.SUBROUTINE, FlowNodeShape.CYLINDER, FlowNodeShape.HEXAGON, FlowNodeShape.ASYMMETRIC -> commands += flowSpecialShape(node.shape, rect)
             }
-            commands += DrawText(
-                text = node.label,
-                origin = ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + style.fontSize * 0.35),
-                anchor = TextAnchor.MIDDLE,
-                style = style,
-            )
+            val painted=commands.subList(glyphStart,commands.size).toList().flatMap(nodeStyle::paint)
+            while(commands.size>glyphStart)commands.removeAt(commands.lastIndex)
+            commands+=painted
+            val lines=classNoteLines(node.label)
+            lines.forEachIndexed { index,line -> commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*nodeStyle.lineHeight+nodeStyle.text.fontSize*0.35),TextAnchor.MIDDLE,nodeStyle.text) }
+
         }
         return LayoutScene(width, height, commands)
     }

@@ -31,7 +31,15 @@ Native visual or interaction equivalence.
 This batch draws actual endpoint kinds, open/invisible lines, additional node
 shapes, partial rectangle borders, nested group bounds, local direction and
 minimum edge spacing. Native layout tests and production-browser evidence are
-separate gates. CSS/style declarations, dynamic node/edge metadata, callbacks,
+separate gates. Dynamic node/edge metadata,
 link interpolation, rich Markdown/HTML rendering and advanced graph routing
 remain follow-up work; unsupported declarations fail explicitly. The separately
 implemented swimlane family is not routed through this Flowchart adapter.
+
+The style extension retains class definitions, ordered node styles, edge styles
+and typed callback/link metadata. The renderer applies node fill, stroke, border
+width and font size/weight/color with measured geometry and edge stroke/width.
+Callback arguments remain data; Native hosts do not execute callbacks or bind
+links yet. Italic font rendering and exact dash arrays (including ellipse dashes)
+are not implemented. FlowDB warnings/URL policy are upstream behavior, not Native
+coverage. Frozen original-suite and multiplatform results are pending.

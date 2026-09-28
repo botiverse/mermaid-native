@@ -1169,7 +1169,7 @@ class MermaidParserTest {
     @Test
     fun unsupportedBodySyntaxFailsWithoutPartialSuccess() {
         val failure = assertIs<MermaidParseResult.Failure>(
-            MermaidParser.parse("flowchart TD\nA-->B\nclick A callback"),
+            MermaidParser.parse("flowchart TD\nA-->B\nclick A call broken("),
         )
 
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, failure.diagnostics.single().code)
