@@ -2444,11 +2444,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val groupIds=diagram.states.filter { it.childIds.isNotEmpty() }.map { it.id }.toSet()
         val paintDiagram=FlowchartDiagram(diagram.direction,emptyList(),emptyList(),classDefinitions=diagram.classDefinitions)
         val paints=diagram.states.associate { state->state.id to FlowStyle(build.raft.mermaid.core.FlowNode(state.id,state.label,styles=state.styles,classes=state.classes),paintDiagram,
-            if(state.id in groupIds)listOf("fill:#f7f7f7","stroke:#999999","stroke-width:1")else listOf("fill:#eeeeee","stroke:#999999","stroke-width:1")) }
+            if(state.id in groupIds)listOf("fill:#f7f7f7","stroke:#999999","stroke-width:1")else if(state.kind==StateNodeKind.NOTE)listOf("fill:#fff5ad","stroke:#aaaa33","stroke-width:1")else listOf("fill:#eeeeee","stroke:#999999","stroke-width:1")) }
         val sizes=diagram.states.associate { state->
             val paint=paints.getValue(state.id)
-            val lines=listOf(state.label)+state.description?.let(::classNoteLines).orEmpty()
-            state.id to if(state.kind!=StateNodeKind.STATE)SceneSize(STATE_TERMINAL_SIZE,STATE_TERMINAL_SIZE) else SceneSize(max(88.0,lines.maxOf { textMeasurer.measure(it,paint.text).width }+32),max(40.0,lines.size*paint.lineHeight+18))
+            val lines=classNoteLines(state.label)+state.description?.let(::classNoteLines).orEmpty()
+            state.id to if(state.kind !in listOf(StateNodeKind.STATE, StateNodeKind.NOTE))SceneSize(STATE_TERMINAL_SIZE,STATE_TERMINAL_SIZE) else SceneSize(max(88.0,lines.maxOf { textMeasurer.measure(it,paint.text).width }+32),max(40.0,lines.size*paint.lineHeight+18))
         }
         val groupDefinitions=diagram.classDefinitions.toMutableMap()
         val groupClasses=diagram.states.filter { it.id in groupIds }.associate { state->
@@ -2456,23 +2456,55 @@ public object SimpleMermaidLayout : DiagramLayout {
                 var key="__state_inline_${state.id}";while(key in groupDefinitions)key+="_"
                 groupDefinitions[key]=state.styles;listOf(key)
             }
-            state.id to state.classes+extra
+            state.id to listOf("default")+state.classes+extra
+        }
+        val dividerIds = diagram.states.filter { it.kind == StateNodeKind.DIVIDER }.map { it.id }.toSet()
+        val regionIds = mutableMapOf<String,List<String>>()
+        val regionChildren = linkedMapOf<String,List<String>>()
+        val regionParent = mutableMapOf<String,String>()
+        val occupied = nodeIds.toMutableSet()
+        diagram.states.filter { state -> state.childIds.any { it in dividerIds } }.forEach { state ->
+            val regions = mutableListOf(mutableListOf<String>())
+            state.childIds.forEach { id -> if(id in dividerIds)regions.add(mutableListOf()) else regions.last().add(id) }
+            regionIds[state.id] = regions.mapIndexed { index, children ->
+                var id = "__region_${state.id}_$index"
+                while (!occupied.add(id)) id += "_"
+                regionChildren[id] = children
+                regionParent[id] = state.id
+                id
+            }
+        }
+        val parentsForPlacement = mutableMapOf<String,String>()
+        diagram.states.forEach { state -> state.childIds.forEach { parentsForPlacement[it] = state.id } }
+        regionChildren.forEach { (region,children) -> children.forEach { parentsForPlacement[it] = region } }
+        val groups = diagram.states.filter { it.id in groupIds }.map { state ->
+            val effectiveDirection = state.direction ?: diagram.direction
+            val layoutDirection = if(state.id in regionIds) {
+                if(effectiveDirection in listOf(FlowDirection.LR,FlowDirection.RL))FlowDirection.TB else FlowDirection.LR
+            } else state.direction
+            build.raft.mermaid.core.FlowSubgraph(state.id,state.label,regionIds[state.id] ?: state.childIds.filter { it in nodeIds && it !in dividerIds },layoutDirection,
+                parentsForPlacement[state.id],classes=groupClasses.getValue(state.id))
+        } + regionChildren.map { (id,children) ->
+            val parent = regionParent.getValue(id)
+            build.raft.mermaid.core.FlowSubgraph(id,"",children,diagram.states.first { it.id == parent }.direction ?: diagram.direction,parent)
         }
         val flow=FlowchartDiagram(diagram.direction,
-            diagram.states.filter { it.id !in groupIds }.map { build.raft.mermaid.core.FlowNode(it.id,it.label) },
-            emptyList(),diagram.states.filter { it.id in groupIds }.map { state->
-                build.raft.mermaid.core.FlowSubgraph(state.id,state.label,state.childIds.filter { it in nodeIds },state.direction,
-                    diagram.states.firstOrNull { state.id in it.childIds }?.id,classes=groupClasses.getValue(state.id))
-            },classDefinitions=groupDefinitions)
-        val placement=FlowPlacement(flow,sizes.filterKeys { it !in groupIds },config,textMeasurer).place()
+            diagram.states.filter { it.id !in groupIds && it.id !in dividerIds }.map { build.raft.mermaid.core.FlowNode(it.id,it.label) },
+            emptyList(),groups,classDefinitions=groupDefinitions)
+        val placement=FlowPlacement(flow,sizes.filterKeys { it !in groupIds && it !in dividerIds },config,textMeasurer,regionChildren.keys).place()
+
         val initialRects=placement.nodes+placement.groups
+        val selfLoops=diagram.transitions.filter { it.from==it.to }.groupBy { it.from }
+        val selfLoopIds=selfLoops.keys
+        val loopWidths=selfLoops.mapValues { (_,edges)->max(24.0,edges.maxOf { textMeasurer.measure(it.label,style).width }+28) }
         val noteRects=diagram.notes.mapNotNull { note->initialRects[note.targetId]?.let { target->
             val lines=classNoteLines(note.text);val w=lines.maxOf { textMeasurer.measure(it,style).width }+20;val h=lines.size*22.0+12
-            note to SceneRect(if(note.position==StateNotePosition.LEFT_OF)target.x-w-10 else target.x+target.width+10,target.y,w,h)
+            note to SceneRect(if(note.position==StateNotePosition.LEFT_OF)target.x-w-10 else target.x+target.width+(loopWidths[note.targetId] ?: 0.0)+10,target.y,w,h)
         }}
         val dx=max(0.0,config.padding-(noteRects.minOfOrNull { it.second.x } ?: config.padding))
         val rects=initialRects.mapValues { (_,r)->r.copy(x=r.x+dx) }
-        val width=max(placement.width,noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
+        val selfLoopWidth=selfLoopIds.maxOfOrNull { id -> initialRects[id]?.let { it.x+it.width+loopWidths.getValue(id)+config.padding } ?: 0.0 } ?: 0.0
+        val width=max(max(placement.width,selfLoopWidth),noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
         val height=max(placement.height,noteRects.maxOfOrNull { it.second.y+it.second.height+config.padding } ?: 0.0)
         val statesById = diagram.states.associateBy { it.id }
         val parents = diagram.states.flatMap { state -> state.childIds.map { it to state.id } }.groupBy({ it.first }, { it.second }).mapValues { it.value.first() }
@@ -2493,9 +2525,36 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands+=DrawText(state.label,ScenePoint(rect.x+rect.width/2,rect.y+6+paint.text.fontSize),TextAnchor.MIDDLE,paint.text)
         }
 
+        regionIds.forEach { (parent,regions) ->
+            val outer = rects.getValue(parent)
+            val direction = statesById.getValue(parent).direction ?: diagram.direction
+            regions.zipWithNext().forEach { (first,second) ->
+                val a = rects.getValue(first); val b = rects.getValue(second)
+                val horizontalRegions = direction !in listOf(FlowDirection.LR,FlowDirection.RL)
+                val from: ScenePoint; val to: ScenePoint
+                if (horizontalRegions) {
+                    val x = (a.x+a.width+b.x)/2
+                    from=ScenePoint(x,outer.y+32);to=ScenePoint(x,outer.y+outer.height-8)
+                } else {
+                    val y = (a.y+a.height+b.y)/2
+                    from=ScenePoint(outer.x+8,y);to=ScenePoint(outer.x+outer.width-8,y)
+                }
+                commands += DrawLine(from,to,stroke=SceneColor("#999999"),strokeWidth=1.0,pattern=StrokePattern.DASHED)
+            }
+        }
         diagram.transitions.forEach { transition ->
             val source = rects[transition.from] ?: return@forEach
             val target = rects[transition.to] ?: return@forEach
+            if(transition.from==transition.to) {
+                val from=ScenePoint(source.x+source.width,source.y+source.height*0.35)
+                val to=ScenePoint(source.x+source.width,source.y+source.height*0.75)
+                val right=source.x+source.width+24
+                val points=listOf(from,ScenePoint(right,from.y),ScenePoint(right,to.y),to)
+                commands+=DrawPolyline(points,stroke=SceneColor("#666666"),strokeWidth=1.0)
+                commands+=arrowHead(points[points.lastIndex-1],to,fill=SceneColor("#333333"))
+                if(transition.label.isNotEmpty())commands+=DrawText(transition.label,ScenePoint(right+4,(from.y+to.y)/2),style=style)
+                return@forEach
+            }
             val targetAncestors = ancestors(transition.to).toSet()
             val commonParent = ancestors(transition.from).firstOrNull { it in targetAncestors }
             val direction = statesById[commonParent]?.direction ?: diagram.direction
@@ -2511,11 +2570,11 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
-        diagram.states.filter { it.id !in groupIds }.forEach { state ->
+        diagram.states.filter { it.id !in groupIds && it.id !in dividerIds }.forEach { state ->
             val rect = rects.getValue(state.id)
             val paint=paints.getValue(state.id);val begin=commands.size
             when (state.kind) {
-                StateNodeKind.STATE -> {
+                StateNodeKind.STATE, StateNodeKind.NOTE -> {
                     commands += DrawRect(
                         rect = rect,
                         cornerRadius = 5.0,
@@ -2523,10 +2582,11 @@ public object SimpleMermaidLayout : DiagramLayout {
                         stroke = SceneColor("#999999"),
                         strokeWidth = 1.0,
                     )
-                    val lines=listOf(state.label)+state.description?.let(::classNoteLines).orEmpty()
+                    val lines=classNoteLines(state.label)+state.description?.let(::classNoteLines).orEmpty()
                     lines.forEachIndexed { index,line->commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*paint.lineHeight+paint.text.fontSize*0.35),TextAnchor.MIDDLE,paint.text) }
 
                 }
+                StateNodeKind.DIVIDER -> Unit
                 StateNodeKind.START -> {
                     val radius = rect.width / 2.0
                     commands += DrawEllipse(
@@ -2580,7 +2640,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     )
                 }
             }
-            if(state.kind==StateNodeKind.STATE || state.classes.isNotEmpty() || state.styles.isNotEmpty()) {
+            if(state.kind in listOf(StateNodeKind.STATE,StateNodeKind.NOTE) || state.classes.isNotEmpty() || state.styles.isNotEmpty()) {
                 val drawn=commands.subList(begin,commands.size).toList();commands.subList(begin,commands.size).clear();drawn.forEach { commands+=paint.paint(it) }
             }
         }

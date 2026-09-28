@@ -182,7 +182,7 @@ public data class StateNode(
     val styles: List<String> = emptyList(),
 )
 
-public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN }
+public enum class StateNodeKind { STATE, START, END, CHOICE, FORK, JOIN, DIVIDER, NOTE }
 
 public data class StateNote(
     val targetId: String,
