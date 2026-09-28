@@ -331,28 +331,41 @@ public data class EntityRelationship(
 
 public enum class EntityCardinality { ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE, MD_PARENT }
 
-/** Minimal platform-neutral model for the Mermaid xychart family. */
+/** Typed XY chart data, including declared axis ranges and point labels. */
 public data class XyChartDiagram(
     val title: String? = null,
     val xAxis: XyAxis,
     val yAxis: NumericAxis,
     val series: List<XySeries>,
+    val orientation: XyOrientation? = null,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
+
+public enum class XyOrientation { VERTICAL, HORIZONTAL }
 
 public data class XyAxis(
     val title: String? = null,
-    val categories: List<String>,
+    val categories: List<String> = emptyList(),
+    val range: NumericAxis? = null,
+    val titleType: String = "text",
+    val categoryTypes: List<String> = emptyList(),
 )
 
 public data class NumericAxis(
     val title: String? = null,
     val minimum: Double,
     val maximum: Double,
+    val explicitRange: Boolean = true,
+    val titleType: String = "text",
 )
 
 public data class XySeries(
     val kind: XySeriesKind,
     val values: List<Double>,
+    val title: String = "",
+    val labels: List<String> = emptyList(),
+    val titleType: String = "text",
 )
 
 public enum class XySeriesKind { LINE, BAR }
