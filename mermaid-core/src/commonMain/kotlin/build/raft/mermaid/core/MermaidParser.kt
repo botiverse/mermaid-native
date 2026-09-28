@@ -34,7 +34,7 @@ public object MermaidParser {
             header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> PacketParser(source).parse()
             header.text.equals("block", ignoreCase = true) || header.text.equals("block-beta", ignoreCase = true) -> parseBlock(statements)
             header.text.equals("sankey", ignoreCase = true) || header.text.equals("sankey-beta", ignoreCase = true) -> parseSankey(source)
-            header.text.equals("treemap-beta", ignoreCase = true) -> parseTreemap(source)
+            (header.text.equals("treemap-beta", ignoreCase = true) || header.text.equals("treemap", ignoreCase = true)) -> TreemapParser(source).parse()
             header.text.equals("venn-beta", ignoreCase = true) -> parseVenn(source)
             header.text.equals("usecase-beta", ignoreCase = true) || header.text.equals("usecaseDiagram", ignoreCase = true) -> parseUsecase(source)
             header.text.equals("architecture-beta", ignoreCase = true) -> parseArchitecture(source)
@@ -423,7 +423,6 @@ public object MermaidParser {
     private fun parseSankey(source: String): MermaidParseResult {
         val nodes = linkedMapOf<String, SankeyNode>()
         val links = mutableListOf<SankeyLink>()
-        val linkIds = mutableSetOf<Pair<String, String>>()
         val diagnostics = mutableListOf<MermaidDiagnostic>()
         val lines = source.lineSequence().mapIndexedNotNull { index, raw ->
             val trimmed = raw.trim()
@@ -447,91 +446,13 @@ public object MermaidParser {
                 diagnostics += unsupported(statement, "sankey values must be finite and positive")
                 return@forEach
             }
-            if (sourceLabel == targetLabel || !linkIds.add(sourceLabel to targetLabel)) {
-                diagnostics += unsupported(statement, "sankey self-links and duplicate links are not supported")
-                return@forEach
-            }
             nodes.getOrPut(sourceLabel) { SankeyNode(sourceLabel, sourceLabel) }
             nodes.getOrPut(targetLabel) { SankeyNode(targetLabel, targetLabel) }
             links += SankeyLink(sourceLabel, targetLabel, value)
         }
         if (links.isEmpty()) diagnostics += unsupported(lines.first(), "sankey requires at least one link")
-        if (diagnostics.isEmpty() && sankeyHasCycle(nodes.keys, links)) {
-            diagnostics += unsupported(lines.first(), "Cyclic sankey links are not supported")
-        }
         return if (diagnostics.isEmpty()) {
             MermaidParseResult.Success(SankeyDiagram(nodes.values.toList(), links))
-        } else MermaidParseResult.Failure(diagnostics)
-    }
-
-    private fun parseTreemap(source: String): MermaidParseResult {
-        val lines = source.toMindmapLines()
-        val roots = mutableListOf<MutableTreemapNode>()
-        val stack = mutableListOf<MutableTreemapNode>()
-        val labels = mutableSetOf<String>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        if (lines.firstOrNull()?.text != "treemap-beta") {
-            return failure(
-                MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
-                "Treemap requires the exact treemap-beta header",
-                lines.firstOrNull()?.location ?: SourceLocation(1, 1),
-            )
-        }
-        lines.drop(1).forEach { line ->
-            val statement = SourceStatement(line.text, line.location)
-            val match = TREEMAP_NODE.matchEntire(line.text)
-            if (line.hasTab || line.indent % 2 != 0 || match == null) {
-                diagnostics += unsupported(statement, "Unsupported treemap syntax or indentation")
-                return@forEach
-            }
-            val depth = line.indent / 2
-            if (depth > stack.size) {
-                diagnostics += unsupported(statement, "Treemap indentation cannot jump levels")
-                return@forEach
-            }
-            val label = match.groupValues[1].trim()
-            val rawValue = match.groupValues[2]
-            val value = rawValue.takeIf { it.isNotEmpty() }?.toDoubleOrNull()
-            if (label.isEmpty() || !labels.add(label)) {
-                diagnostics += unsupported(statement, "Treemap labels must be unique and non-empty")
-                return@forEach
-            }
-            if (rawValue.isNotEmpty() && (value == null || !value.isFinite() || value <= 0.0)) {
-                diagnostics += unsupported(statement, "Treemap leaf values must be finite and positive")
-                return@forEach
-            }
-            val node = MutableTreemapNode(label, value, location = line.location)
-            if (depth == 0) {
-                roots += node
-            } else {
-                val parent = stack[depth - 1]
-                if (parent.value != null) {
-                    diagnostics += unsupported(statement, "Treemap leaves cannot have children")
-                    return@forEach
-                }
-                parent.children += node
-            }
-            while (stack.size > depth) stack.removeAt(stack.lastIndex)
-            stack += node
-        }
-        fun validate(node: MutableTreemapNode): Double? {
-            if (node.value == null && node.children.isEmpty()) {
-                diagnostics += unsupported(SourceStatement(node.label, node.location), "Treemap sections require children")
-            }
-            val weight = node.value ?: node.children.mapNotNull(::validate).sum()
-            if (!weight.isFinite()) {
-                diagnostics += unsupported(SourceStatement(node.label, node.location), "Treemap section weights must have a finite sum")
-                return null
-            }
-            return weight
-        }
-        roots.forEach(::validate)
-        roots.filter { it.value != null }.forEach {
-            diagnostics += unsupported(SourceStatement(it.label, it.location), "Treemap roots must be sections")
-        }
-        if (roots.isEmpty()) diagnostics += unsupported(SourceStatement("treemap-beta", SourceLocation(1, 1)), "Treemap requires at least one root section")
-        return if (diagnostics.isEmpty()) {
-            MermaidParseResult.Success(TreemapDiagram(roots.map(MutableTreemapNode::freeze)))
         } else MermaidParseResult.Failure(diagnostics)
     }
 
@@ -1225,7 +1146,6 @@ public object MermaidParser {
     private val BLOCK_COLUMNS = Regex("^columns\\s+([0-9]+)$", RegexOption.IGNORE_CASE)
     private val BLOCK_NODE = Regex("^($IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"\\])?(?::([1-9][0-9]*))?$")
     private val BLOCK_EDGE = Regex("^($IDENTIFIER)\\s*-->\\s*($IDENTIFIER)$")
-    private val TREEMAP_NODE = Regex("^\"([^\"\\r\\n]+)\"(?:\\s*:\\s*(\\S+))?$")
     private val VENN_IDENTIFIER = Regex("(?:[A-Za-z_][A-Za-z0-9_-]*|\"[^\"\\r\\n]+\")")
     private val VENN_TITLE = Regex("^title\\s+\"([^\"\\r\\n]+)\"$")
     private val VENN_SET = Regex("^set\\s+($VENN_IDENTIFIER)(?:\\[\"([^\"\\r\\n]+)\"])?(?:\\s*:\\s*(\\S+))?$")
@@ -1332,36 +1252,6 @@ private fun String.parseSankeyCsvLine(): List<String>? {
     if (quoted) return null
     fields += current.toString()
     return fields
-}
-
-private fun sankeyHasCycle(nodeIds: Set<String>, links: List<SankeyLink>): Boolean {
-    val indegree = nodeIds.associateWith { 0 }.toMutableMap()
-    val outgoing = nodeIds.associateWith { mutableListOf<String>() }
-    links.forEach { link ->
-        indegree[link.targetId] = indegree.getValue(link.targetId) + 1
-        outgoing.getValue(link.sourceId) += link.targetId
-    }
-    val queue = ArrayDeque(indegree.filterValues { it == 0 }.keys)
-    var visited = 0
-    while (queue.isNotEmpty()) {
-        val node = queue.removeFirst()
-        visited += 1
-        outgoing.getValue(node).forEach { target ->
-            val next = indegree.getValue(target) - 1
-            indegree[target] = next
-            if (next == 0) queue.addLast(target)
-        }
-    }
-    return visited != nodeIds.size
-}
-
-private data class MutableTreemapNode(
-    val label: String,
-    val value: Double?,
-    val children: MutableList<MutableTreemapNode> = mutableListOf(),
-    val location: SourceLocation,
-) {
-    fun freeze(): TreemapNode = TreemapNode(label, value, children.map(MutableTreemapNode::freeze))
 }
 
 internal fun parseIsoDay(value: String): Int? {

@@ -1769,18 +1769,23 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun sankeyPreservesParallelLinksAndCyclicIdentifiers() {
+        val source = "sankey\n__proto__,A,0.597\nA,__proto__,0.403\nA,__proto__,0.2\nA,A,0.1"
+        val diagram = assertIs<SankeyDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals(listOf("__proto__", "A"), diagram.nodes.map { it.id })
+        assertEquals(4, diagram.links.size)
+        assertEquals(listOf(0.597, 0.403, 0.2, 0.1), diagram.links.map { it.value })
+    }
+
     @Test fun malformedSankeyFailsClosed() {
         listOf(
             "sankey",
             "sankey\nA,B",
             "sankey\nA,B,1,extra",
             "sankey\nA,,1",
-            "sankey\nA,A,1",
             "sankey\nA,B,0",
             "sankey\nA,B,NaN",
             "sankey\nA,B,Infinity",
-            "sankey\nA,B,1\nA,B,2",
-            "sankey\nA,B,1\nB,A,1",
             "sankey\nA,\"unterminated,1",
             "sankey\nA,\"B\" tail,1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
@@ -1794,21 +1799,26 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun treemapAcceptsOriginalRowsMetadataAndClasses() {
+        val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red;\n\"Root\"\n \"Leaf\", 100:::hot\n\"Empty\""
+        val d = assertIs<TreemapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Portfolio", d.title)
+        assertEquals("Access", d.accessibilityTitle)
+        assertEquals("Allocation", d.accessibilityDescription)
+        assertEquals("hot", d.roots[0].children.single().classSelector)
+        assertEquals(100.0, d.roots[0].children.single().value)
+        assertEquals("fill:red", d.classes["hot"])
+        assertEquals("Empty", d.roots[1].label)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap"))
+    }
+
     @Test fun malformedTreemapFailsClosed() {
         listOf(
-            "treemap-beta",
-            "treemap-beta\n\"Root leaf\": 1",
-            "treemap-beta\n\"Empty\"",
-            "treemap-beta\n  \"Jump\": 1",
-            "treemap-beta\n\"Root\"\n \"Bad indent\": 1",
-            "treemap-beta\n\"Root\"\n\t\"Tab\": 1",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 0",
             "treemap-beta\n\"Root\"\n  \"Leaf\": NaN",
             "treemap-beta\n\"Root\"\n  \"A\": 1.7976931348623157E308\n  \"B\": 1.7976931348623157E308",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n  \"Leaf\": 2",
             "treemap-beta\n\"Root\"\n  \"Leaf\": 1\n    \"Child\": 1",
-            "treemap-beta\n\"Root\":::class1\n  \"Leaf\": 1",
-            "treemap-beta\n\"Root\"\n  \"Leaf\": 1\nclassDef class1 fill:red",
             "treemap-beta;\n\"Root\"\n  \"Leaf\": 1",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }

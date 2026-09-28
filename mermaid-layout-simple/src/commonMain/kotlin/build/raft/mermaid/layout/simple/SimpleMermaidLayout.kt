@@ -1125,15 +1125,26 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutTreemap(diagram: TreemapDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val valueStyle = TextStyle(fontSize = 11.0)
-        val maxLabelWidth = diagram.roots.flattenTreemap().maxOf { textMeasurer.measure(it.label, labelStyle).width }
-        val width = max(720.0, maxLabelWidth + config.padding * 2 + 32.0).xyCoordinate()
-        val height = 420.0
+        val maxLabelWidth = diagram.roots.flattenTreemap().maxOfOrNull { textMeasurer.measure(it.label, labelStyle).width } ?: 0.0
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val width = maxOf(720.0, maxLabelWidth + config.padding * 2 + 32.0, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2).xyCoordinate()
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
+        val height = 420.0 + titleOffset
         val commands = mutableListOf<DrawCommand>()
-        val content = SceneRect(config.padding, config.padding, width - config.padding * 2, height - config.padding * 2)
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
+        val content = SceneRect(config.padding, config.padding + titleOffset, width - config.padding * 2, height - config.padding * 2 - titleOffset)
 
         fun render(node: TreemapNode, rect: SceneRect, depth: Int) {
-            val fill = TREEMAP_COLORS[depth % TREEMAP_COLORS.size]
-            commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = SceneColor("#334155"), strokeWidth = 1.0)
+            val styles = diagram.classes[node.classSelector ?: diagram.classAssignments[node.label]].orEmpty()
+            val properties = Regex("([a-z-]+)\\s*:\\s*([^,;\\s]+)").findAll(styles).associate { it.groupValues[1] to it.groupValues[2] }
+            fun color(key: String, fallback: SceneColor): SceneColor {
+                val value = properties[key] ?: return fallback
+                val named = mapOf("red" to "#ff0000", "blue" to "#0000ff", "green" to "#008000", "white" to "#ffffff", "black" to "#000000", "yellow" to "#ffff00", "transparent" to "transparent")
+                return if (Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").matches(value)) SceneColor(value) else named[value]?.let(::SceneColor) ?: fallback
+            }
+            val fill = color("fill", TREEMAP_COLORS[depth % TREEMAP_COLORS.size])
+            val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(20.0) ?: 1.0
+            commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = color("stroke", SceneColor("#334155")), strokeWidth = strokeWidth)
             val valueText = (node.value ?: if (node.children.isNotEmpty()) node.treemapWeight() else null)?.canonicalNumber()
             if (node.children.isEmpty()) {
                 commands += DrawText(
@@ -1198,7 +1209,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             render(root, SceneRect(x, content.y, rootWidth, content.height), 0)
             x += rootWidth + gap
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle ?: diagram.title, diagram.accessibilityDescription)
     }
 
     private fun layoutSankey(diagram: SankeyDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
@@ -1231,11 +1242,24 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if (next == 0) queue.addLast(target)
             }
         }
+        // Only cyclic components remain after Kahn traversal. Assign bounded depths,
+        // then route edges that return to an earlier layer through separate top lanes.
+        val visited = mutableSetOf<String>()
+        fun placeCycle(id: String) {
+            if (!visited.add(id)) return
+            for (target in adjacent.getValue(id)) if (indegree.getValue(target) > 0 && target !in visited) {
+                depths[target] = max(depths.getValue(target), depths.getValue(id) + 1)
+                placeCycle(target)
+            }
+        }
+        diagram.nodes.filter { indegree.getValue(it.id) > 0 }.forEach { placeCycle(it.id) }
+        val feedbackCount = diagram.links.count { depths.getValue(it.targetId) <= depths.getValue(it.sourceId) }
+        val feedbackSpace = feedbackCount * 22.0
         val groupedLayers = diagram.nodes.groupBy { depths.getValue(it.id) }
         val layers = groupedLayers.keys.sorted().associateWith { groupedLayers.getValue(it) }
         val placements = linkedMapOf<String, SceneRect>()
         layers.forEach { (depth, nodes) ->
-            var y = config.padding
+            var y = config.padding + feedbackSpace
             nodes.forEach { node ->
                 placements[node.id] = SceneRect(
                     x = (config.padding + depth * (nodeWidth + layerGap)).xyCoordinate(),
@@ -1246,20 +1270,30 @@ public object SimpleMermaidLayout : DiagramLayout {
                 y += nodeHeights.getValue(node.id) + nodeGap
             }
         }
-        val width = (config.padding * 2 + layers.size * nodeWidth + max(0, layers.size - 1) * layerGap).xyCoordinate()
-        val height = (config.padding * 2 + layers.values.maxOf { nodes ->
+        val width = (config.padding * 2 + (depths.values.maxOrNull()!! + 1) * nodeWidth + depths.values.maxOrNull()!! * layerGap).xyCoordinate()
+        val height = (config.padding * 2 + feedbackSpace + layers.values.maxOf { nodes ->
             nodes.sumOf { nodeHeights.getValue(it.id) } + max(0, nodes.size - 1) * nodeGap
         }).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
+        var feedbackIndex = 0
         diagram.links.forEach { link ->
             val source = placements.getValue(link.sourceId)
             val target = placements.getValue(link.targetId)
-            commands += DrawLine(
-                ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
-                ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
-                stroke = SceneColor("#60a5fa"),
-                strokeWidth = max(1.5, link.value / maxValue * 12.0).xyCoordinate(),
-            )
+            val strokeWidth = max(1.5, link.value / maxValue * 12.0).xyCoordinate()
+            if (depths.getValue(link.targetId) <= depths.getValue(link.sourceId)) {
+                val laneY = config.padding + 8.0 + feedbackIndex++ * 22.0
+                val self = link.sourceId == link.targetId
+                val fromX = source.x + source.width * if (self) 0.7 else 0.5
+                val toX = target.x + target.width * if (self) 0.3 else 0.5
+                commands += DrawPolyline(listOf(ScenePoint(fromX, source.y), ScenePoint(fromX, laneY), ScenePoint(toX, laneY), ScenePoint(toX, target.y)),
+                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth)
+            } else {
+                commands += DrawLine(
+                    ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
+                    ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
+                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth,
+                )
+            }
         }
         diagram.nodes.forEach { node ->
             val rect = placements.getValue(node.id)
@@ -3484,7 +3518,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     private val VENN_COLORS = listOf("#60a5fa", "#34d399", "#fbbf24")
     private val VENN_STROKES = listOf("#2563eb", "#059669", "#d97706")
 
-    private fun TreemapNode.treemapWeight(): Double = value ?: children.sumOf { it.treemapWeight() }
+    private fun TreemapNode.treemapWeight(): Double = value ?: if (children.isEmpty()) 1.0 else children.sumOf { it.treemapWeight() }
     private fun List<TreemapNode>.flattenTreemap(): List<TreemapNode> = flatMap { listOf(it) + it.children.flattenTreemap() }
     private fun treemapGap(axisExtent: Double, itemCount: Int, preferred: Double): Double =
         if (itemCount <= 1) 0.0 else preferred.coerceAtMost(axisExtent / (itemCount - 1))

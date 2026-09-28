@@ -150,6 +150,34 @@ class SimpleMermaidLayoutTest {
         assertEquals(SimpleMermaidLayout.layout(normal, FixedWidthTextMeasurer, LayoutConfig()), SimpleMermaidLayout.layout(emptyDecoration.diagram, FixedWidthTextMeasurer, LayoutConfig()))
     }
 
+    @Test fun treemapEmptySectionsAndClassesRenderFiniteGeometry() {
+        val source = "treemap\ntitle Portfolio\naccTitle: Access\naccDescr: Allocation\nclassDef hot fill:red,stroke:#123456,stroke-width:2px\n\"First\":::hot\n\"Second\""
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals("Access", scene.accessibilityTitle)
+        assertEquals("Allocation", scene.accessibilityDescription)
+        val boxes = scene.commands.filterIsInstance<DrawRect>()
+        assertEquals(2, boxes.size)
+        assertEquals("#ff0000", boxes[0].fill?.value)
+        assertEquals("#123456", boxes[0].stroke?.value)
+        assertEquals(2.0, boxes[0].strokeWidth)
+        for (box in boxes) assertTrue(box.rect.width.isFinite() && box.rect.width > 0.0 && box.rect.y >= 68.0)
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("treemap")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.commands.isEmpty() && empty.width.isFinite())
+    }
+
+    @Test fun sankeyFeedbackLinksHaveDistinctFiniteLanes() {
+        val source = "sankey\n__proto__,A,0.597\nA,__proto__,0.403\nA,__proto__,0.2\nA,A,0.1"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val loops = scene.commands.filterIsInstance<DrawPolyline>()
+        assertEquals(3, loops.size)
+        assertEquals(3, loops.map { it.points[1].y }.distinct().size)
+        for (edge in loops) for (point in edge.points) {
+            assertTrue(point.x.isFinite() && point.y.isFinite())
+            assertTrue(point.x in 0.0..scene.width && point.y in 0.0..scene.height)
+        }
+        assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
+    }
+
     @Test fun c4NestedBoundariesContainCardsAndServeAsRelationshipEndpoints() {
         val source = "C4Container\nBoundary(bank, \"Bank\") {\nContainerDb(db, \"Ledger\", \"SQL\")\nBoundary(inner, \"Internal\") {\nComponent(worker, \"Worker\", \"Kotlin\")\n}\n}\nPerson(user, \"Customer\")\nRel(bank, user, \"Serves\")"
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())

@@ -584,11 +584,19 @@ public data class SankeyNode(val id: String, val label: String)
 public data class SankeyLink(val sourceId: String, val targetId: String, val value: Double)
 
 /** Minimal platform-neutral model for the Mermaid treemap family. */
-public data class TreemapDiagram(val roots: List<TreemapNode>) : MermaidDiagram
+public data class TreemapDiagram(
+    val roots: List<TreemapNode>,
+    val title: String? = null,
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
+    val classes: Map<String, String> = emptyMap(),
+    val classAssignments: Map<String, String> = emptyMap(),
+) : MermaidDiagram
 public data class TreemapNode(
     val label: String,
     val value: Double? = null,
     val children: List<TreemapNode> = emptyList(),
+    val classSelector: String? = null,
 )
 
 /** Minimal platform-neutral model for the Mermaid venn family. */
