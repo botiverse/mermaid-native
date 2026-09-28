@@ -2,7 +2,7 @@ package build.raft.mermaid.core
 
 /** Block grammar consumed by the shared model and renderer; no browser database dependency. */
 internal class BlockParser(private val source: String) {
-    private data class Group(val id: String, val label: String, val span: Int = 1, var columns: Int = -1, var columnsDeclared: Boolean = false, val children: MutableList<Any> = mutableListOf())
+    private data class Group(val id: String, val label: String, val span: Int = 1, var columns: Int = -1, var columnsDeclared: Boolean = false, var warningColumns: Int = -1, val children: MutableList<Any> = mutableListOf())
     private val root = Group("root", "")
     private val stack = mutableListOf(root)
     private val nodes = linkedMapOf<String, BlockNode>()
@@ -52,7 +52,8 @@ internal class BlockParser(private val source: String) {
                 }
                 keyword == "columns" -> {
                     val count = if (body == "auto") -1 else body.toIntOrNull()?.takeIf { it in 1..512 } ?: reject("Block columns must be auto or 1..512")
-                    if (!stack.last().columnsDeclared) { stack.last().columns = count; stack.last().columnsDeclared = true }
+                    if (!stack.last().columnsDeclared) { stack.last().warningColumns = count; stack.last().columnsDeclared = true }
+                    stack.last().columns = count
                 }
                 keyword == "classDef" -> { val (ids, value) = targetsAndValue(); for (id in ids) classes[id] = value.split(',').map { it.trim() } }
                 keyword == "class" -> { val (ids, value) = targetsAndValue(); for (id in ids) assigned.getOrPut(id) { mutableListOf() }.addAll(value.split(',').map { it.trim() }) }
@@ -73,7 +74,7 @@ internal class BlockParser(private val source: String) {
         val warnings = mutableListOf<String>()
         fun materialize(group: Group): List<BlockNode> = group.children.map { child ->
             val node = if (child is Group) decorate(BlockNode(child.id, child.label, child.span, "composite", materialize(child), child.columns)) else decorate(nodes.getValue(child as String))
-            if (group.columns > 0 && node.columnSpan > group.columns) warnings += "Block ${node.id} width ${node.columnSpan} exceeds configured column width ${group.columns}"
+            if (group.warningColumns > 0 && node.columnSpan > group.warningColumns) warnings += "Block ${node.id} width ${node.columnSpan} exceeds configured column width ${group.warningColumns}"
             node
         }
         val result = materialize(root)
