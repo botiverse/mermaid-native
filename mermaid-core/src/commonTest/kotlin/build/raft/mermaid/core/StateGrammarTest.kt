@@ -25,4 +25,10 @@ class StateGrammarTest {
     @Test fun unclosedAndCyclicCompositesFailExplicitly() {
         listOf("state A { B","state A { state A { B } }","state invalid name { X }").forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\n$it")) }
     }
+    @Test fun identicalAliasAndImplicitReferencesRetainDeclarationIdentity() {
+        val d=parse("state \"as\" as as\nas --> Other")
+        assertTrue(d.states.first { it.id=="as" }.explicitLabel)
+        assertTrue(d.states.first { it.id=="as" }.declared)
+        assertFalse(d.states.first { it.id=="Other" }.declared)
+    }
 }
