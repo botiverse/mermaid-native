@@ -1737,6 +1737,17 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun quadrantPointClassAndInlineStylesReachActualGeometry() {
+        val source = "quadrantChart\naccTitle: Portfolio\nclassDef special radius:10,color:#ff0000\nCampaign:::special: [0.5,0.5] color:#00ff00,stroke-color:#ff00ff,stroke-width:2px"
+        val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val marker = scene.commands.filterIsInstance<DrawPolygon>().single()
+        assertEquals("#00ff00", marker.fill.value)
+        assertEquals(20.0, marker.points.maxOf { it.y } - marker.points.minOf { it.y })
+        assertTrue(scene.commands.filterIsInstance<DrawPolyline>().any { it.stroke.value == "#ff00ff" && it.strokeWidth == 2.0 })
+        assertEquals("Portfolio", scene.accessibilityTitle)
+    }
+
+    @Test
     fun quadrantChartProducesDeterministicAxesAndPoints() {
         val diagram = QuadrantChartDiagram(
             "Portfolio",

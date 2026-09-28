@@ -420,9 +420,29 @@ public data class QuadrantChartDiagram(
     val yAxis: QuadrantAxis,
     val quadrantLabels: List<String?>,
     val points: List<QuadrantPoint>,
+    val classes: Map<String, List<String>> = emptyMap(),
+    val quadrantLabelTypes: List<String> = List(4) { "text" },
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
-public data class QuadrantAxis(val lowLabel: String, val highLabel: String)
-public data class QuadrantPoint(val label: String, val x: Double, val y: Double)
+public data class QuadrantAxis(
+    val lowLabel: String,
+    val highLabel: String,
+    val lowDefined: Boolean = true,
+    val highDefined: Boolean = true,
+    val lowType: String = "text",
+    val highType: String = "text",
+)
+public data class QuadrantPoint(
+    val label: String,
+    val x: Double,
+    val y: Double,
+    val labelType: String = "text",
+    val className: String = "",
+    val styles: List<String> = emptyList(),
+    val sourceX: String = x.toString(),
+    val sourceY: String = y.toString(),
+)
 
 /** Minimal platform-neutral model for the Mermaid user journey family. */
 public data class UserJourneyDiagram(

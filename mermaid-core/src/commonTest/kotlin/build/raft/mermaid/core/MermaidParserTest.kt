@@ -1366,6 +1366,20 @@ class MermaidParserTest {
     }
 
     @Test
+    fun quadrantOriginalOptionalAxesAndQuotedStylesAreRetained() {
+        val empty = assertIs<QuadrantChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("quadrantChart")).diagram)
+        assertFalse(empty.xAxis.lowDefined)
+        val source = "quadrantChart\nx-axis Low -->\nquadrant-1 First\nquadrant-1 Last  \nclassDef constructor radius:10,color:#ff0000\n\"产品 [A]\":::constructor: [0.20, 1] stroke-width:2px"
+        val parsed = assertIs<QuadrantChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Low ⟶ ", parsed.xAxis.lowLabel)
+        assertFalse(parsed.xAxis.highDefined)
+        assertEquals("Last  ", parsed.quadrantLabels[0])
+        assertEquals("constructor", parsed.points.single().className)
+        assertEquals("0.20", parsed.points.single().sourceX)
+        assertEquals(listOf("radius:10", "color:#ff0000"), parsed.classes["constructor"])
+    }
+
+    @Test
     fun parsesQuadrantChartAxesLabelsAndPoints() {
         val result = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
             quadrantChart
@@ -1383,7 +1397,7 @@ class MermaidParserTest {
                 QuadrantAxis("Low reach", "High reach"),
                 QuadrantAxis("Low engagement", "High engagement"),
                 listOf("Expand", "Promote", null, null),
-                listOf(QuadrantPoint("Campaign A", 0.3, 0.6), QuadrantPoint("Campaign B", 1.0, 0.0)),
+                listOf(QuadrantPoint("Campaign A", 0.3, 0.6), QuadrantPoint("Campaign B", 1.0, 0.0, sourceX = "1", sourceY = "0")),
             ),
             result.diagram,
         )
@@ -1456,11 +1470,8 @@ class MermaidParserTest {
     @Test
     fun malformedQuadrantChartFailsClosed() {
         listOf(
-            "quadrantChart\nx-axis Low --> High\nCampaign: [0.2, 0.3]",
             "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nCampaign: [1.1, 0.3]",
             "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nCampaign: [NaN, 0.3]",
-            "quadrantChart\nx-axis Low --> High\nx-axis Again --> High\ny-axis Low --> High\nCampaign: [0.2, 0.3]",
-            "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nquadrant-1 One\nquadrant-1 Two\nCampaign: [0.2, 0.3]",
             "quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nclick Campaign\nCampaign: [0.2, 0.3]",
         ).forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse(it), it) }
     }
