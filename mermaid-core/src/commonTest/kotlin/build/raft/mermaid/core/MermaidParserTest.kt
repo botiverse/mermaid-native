@@ -529,6 +529,7 @@ class MermaidParserTest {
                     RadarCurve("bob", "bob", listOf(62.0, 84.0, 55.0)),
                 ),
                 maximum = 100.0,
+                options = listOf(RadarOption("max", number = 100.0)),
             ),
             result.diagram,
         )
@@ -565,65 +566,58 @@ class MermaidParserTest {
         )
         val diagnostic = result.diagnostics.single()
         assertEquals(3, diagnostic.location.line)
-        assertEquals(1, diagnostic.location.column)
+        assertEquals(12, diagnostic.location.column)
+    }
+
+    @Test
+    fun radarRetainsNamedEntriesOptionsAndInlineMetadata() {
+        val source = """
+            radar-beta: title Measurements
+            accTitle: Radar access
+            accDescr { Detailed
+              description }
+            axis a["A, quoted"], b
+            curve one { b: 20, a 50 }, two { 1, 2 }
+            min 10, max 50, ticks 4, showLegend false, graticule polygon
+        """.trimIndent()
+        val chart = assertIs<RadarChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Measurements", chart.title)
+        assertEquals("Radar access", chart.accessibilityTitle)
+        assertEquals("Detailed\ndescription", chart.accessibilityDescription)
+        assertEquals("A, quoted", chart.axes.first().label)
+        assertEquals(listOf(RadarEntry(20.0, "b"), RadarEntry(50.0, "a")), chart.curves.first().entries)
+        assertEquals(10.0, chart.minimum)
+        assertEquals(50.0, chart.maximum)
+        assertEquals(false, chart.options.first { it.name == "showLegend" }.flag)
+    }
+
+    @Test
+    fun radarAllowsEmptyDocumentsAndGrammarWithoutRenderingRestrictions() {
+        listOf(
+            "radar-beta", "radar-beta :", "radar-beta\naxis a, a",
+            "radar-beta\naxis a, b\ncurve x{1}, x{2, 3, 4}",
+            "radar-beta\naxis a\ncurve x{60}\nmax 50",
+            "radar-beta\naxis a[\"\"]\ncurve x{0}\nmax 0",
+        ).forEach { assertIs<MermaidParseResult.Success>(MermaidParser.parse(it), it) }
     }
 
     @Test
     fun malformedRadarFailsClosed() {
         listOf(
-            // Empty or wrong header.
-            "radar-beta",
             "RadarBeta\naxis a, b, c",
-            // Too few axes for polar geometry.
-            "radar-beta\naxis a, b\ncurve x{1, 2}",
-            // Missing curves.
-            "radar-beta\naxis a, b, c",
-            // Duplicate ids.
-            "radar-beta\naxis a, b, a\ncurve x{1, 2, 3}",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\ncurve x{4, 5, 6}",
-            // Curve/axis count mismatch.
-            "radar-beta\naxis a, b, c\ncurve x{1, 2}",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3, 4}",
-            // Invalid values.
             "radar-beta\naxis a, b, c\ncurve x{-1, 2, 3}",
             "radar-beta\naxis a, b, c\ncurve x{1, two, 3}",
-            "radar-beta\naxis a, b, c\nmax 50\ncurve x{10, 60, 20}",
-            // Invalid max.
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax -5",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 0",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax abc",
-            // Strict numeric lexicon: no scientific notation, signs, or bare fractions.
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 1e2",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax +50",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax .5",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmax 5.",
-            "radar-beta\naxis a, b, c\ncurve x{-0, 2, 3}",
-            "radar-beta\naxis a, b, c\ncurve x{NaN, 2, 3}",
-            "radar-beta\naxis a, b, c\ncurve x{Infinity, 2, 3}",
-            // Malformed comma structure inside the value list.
-            "radar-beta\naxis a, b, c\ncurve x{1,,3}",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3,}",
-            // Malformed quotes, brackets, and braces.
-            "radar-beta\naxis m\"Math\", s, e\ncurve x{1, 2, 3}",
-            "radar-beta\naxis m[\"Math, s, e\ncurve x{1, 2, 3}",
-            "radar-beta\naxis a, b, c\ncurve alice[\"Alice\"] 1, 2, 3",
-            "radar-beta\naxis a, b, c\ncurve alice{1, 2, 3",
-            // Empty axis entries and whitespace-only title.
-            "radar-beta\naxis a,,b,c\ncurve x{1, 2, 3, 4}",
-            "radar-beta\ntitle   \naxis a, b, c\ncurve x{1, 2, 3}",
-            // Explicitly unsupported official options fail closed by name.
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\ngraticule circle",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nticks 5",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nshowLegend false",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nmin 10",
-            // Duplicate title.
-            "radar-beta\ntitle One\ntitle Two\naxis a, b, c\ncurve x{1, 2, 3}",
-            // Malformed declarations.
-            "radar-beta\naxis a[\"\"], b, c\ncurve x{1, 2, 3}",
-            "radar-beta\naxis m[\"A,B\"], s, e\ncurve x{1, 2, 3}",
-            "radar-beta\naxis a, b, c\ncurve x 1, 2, 3",
-            "radar-beta\naxis a, b, c\ncurve x{1, 2, 3}\nstyle x fill:red",
-            "radar-beta\naccTitle: unsupported\naxis a, b, c\ncurve x{1, 2, 3}",
+            "radar-beta\naxis a, b, c\nmax -5",
+            "radar-beta\nmax abc", "radar-beta\nmax 1e2",
+            "radar-beta\nmax +50", "radar-beta\nmax .5", "radar-beta\nmax 5.",
+            "radar-beta\ncurve x{-0, 2, 3}", "radar-beta\ncurve x{NaN, 2, 3}",
+            "radar-beta\ncurve x{Infinity, 2, 3}",
+            "radar-beta\ncurve x{1,,3}", "radar-beta\ncurve x{1, 2, 3,}",
+            "radar-beta\naxis m\"Math\", s, e", "radar-beta\naxis m[\"Math, s, e",
+            "radar-beta\ncurve alice[\"Alice\"] 1, 2, 3", "radar-beta\ncurve alice{1, 2, 3",
+            "radar-beta\naxis a,,b,c", "radar-beta\ncurve x 1, 2, 3",
+            "radar-beta\nstyle x fill:red", "radar-beta\nshowLegend maybe",
+            "radar-beta\ngraticule square", "radar-beta\naccDescr {unclosed",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
     }
 

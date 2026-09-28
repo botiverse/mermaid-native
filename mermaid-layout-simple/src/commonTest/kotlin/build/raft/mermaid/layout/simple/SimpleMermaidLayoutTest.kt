@@ -1771,6 +1771,43 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun radarNamedEntriesUseAxisIdentityAndOptionsReachActualDrawing() {
+        val source = "radar-beta\naxis a, b, c\ncurve Sample{c 20, a 50, b 35}\nmin 20, max 50, ticks 3, graticule polygon, showLegend false"
+        val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(3, scene.commands.filterIsInstance<DrawPolyline>().count { it.stroke.value == "#d4d4d4" })
+        assertTrue(scene.commands.filterIsInstance<DrawEllipse>().isEmpty())
+        assertTrue(scene.commands.filterIsInstance<DrawText>().none { it.text == "Sample" })
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("30", "40", "50")))
+        val marker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
+        assertEquals(98.0, marker.points.first().y)
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == "#dbeafe" })
+        val lastCurve = scene.commands.indexOfLast { it is DrawPolygon }
+        assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "30" } > lastCurve)
+        assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "40" } > lastCurve)
+    }
+
+    @Test
+    fun radarCapsActualGridAtOriginalLimitAndUsesFirstNamedEntry() {
+        for ((requested, expected) in listOf(0 to 0, 12 to 12, 32 to 32, 33 to 32, 1000000 to 32)) {
+            val source = "radar-beta\naxis a,b,c\ncurve c{a 50, a 0, b 35, c 20}\nmin 20\nmax 50\nticks $requested"
+            val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+            assertEquals(expected, scene.commands.filterIsInstance<DrawEllipse>().size)
+            val firstMarker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
+            assertEquals(98.0, firstMarker.points.first().y)
+        }
+    }
+
+    @Test
+    fun radarEmptyAndShortAxisGraphsRenderWithoutInvalidGeometry() {
+        for (source in listOf("radar-beta", "radar-beta\ncurve c{1}", "radar-beta\naxis a\ncurve c{0}\nmax 0", "radar-beta\naxis a,b\ncurve c{1,2,3}")) {
+            val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+            assertTrue(scene.width.isFinite() && scene.height.isFinite())
+            scene.commands.filterIsInstance<DrawPolygon>().flatMap { it.points }.forEach { assertTrue(it.x.isFinite() && it.y.isFinite()) }
+        }
+    }
+
+    @Test
     fun radarProducesDeterministicWebCurvesTicksAndLegend() {
         val diagram = RadarChartDiagram(
             "Skills",

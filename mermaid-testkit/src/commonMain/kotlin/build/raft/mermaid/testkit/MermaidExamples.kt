@@ -47,6 +47,7 @@ import build.raft.mermaid.core.GanttTaskStatus
 import build.raft.mermaid.core.QuadrantAxis
 import build.raft.mermaid.core.QuadrantChartDiagram
 import build.raft.mermaid.core.QuadrantPoint
+import build.raft.mermaid.core.RadarOption
 import build.raft.mermaid.core.RadarAxis
 import build.raft.mermaid.core.RadarChartDiagram
 import build.raft.mermaid.core.RadarCurve
@@ -852,6 +853,7 @@ public object MermaidExamples {
                 RadarCurve("bob", "Bob", listOf(62.0, 84.0, 55.0)),
             ),
             maximum = 100.0,
+            options = listOf(RadarOption("max", number = 100.0)),
         ),
     )
 

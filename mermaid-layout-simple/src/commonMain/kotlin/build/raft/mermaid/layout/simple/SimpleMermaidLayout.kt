@@ -1598,7 +1598,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val bodyStyle = TextStyle(fontSize = 12.0)
         val radius = 170.0
         val labelRadius = radius + 26.0
-        val ringFractions = listOf(0.2, 0.4, 0.6, 0.8, 1.0)
+        val ticks = (diagram.options.lastOrNull { it.name == "ticks" }?.number?.toInt() ?: 5).coerceIn(0, 32)
+        val ringFractions = (1..ticks).map { it.toDouble() / ticks }
+        val polygonGrid = diagram.options.lastOrNull { it.name == "graticule" }?.text == "polygon"
+        val showLegend = diagram.options.lastOrNull { it.name == "showLegend" }?.flag != false
+        val range = (diagram.maximum - diagram.minimum).takeIf { it.isFinite() && it > 0.0 } ?: 1.0
         val axisCount = diagram.axes.size
         val axisAngles = List(axisCount) { index -> -PI / 2.0 + 2.0 * PI * index / axisCount }
 
@@ -1607,7 +1611,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         // A single legend item wider than the default box also widens the canvas.
         val curveLabelSizes = diagram.curves.map { textMeasurer.measure(it.label, bodyStyle) }
         val widestLegendItem = curveLabelSizes.maxOfOrNull { 18.0 + it.width + 28.0 } ?: 0.0
-        val baseWidth = max(640.0, widestLegendItem + 2.0 * config.padding)
+        val baseWidth = maxOf(640.0, widestLegendItem + 2.0 * config.padding, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2)
         var extraLeft = 0.0
         var extraRight = 0.0
         axisAngles.forEachIndexed { index, angle ->
@@ -1628,22 +1632,28 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
 
         val commands = mutableListOf<DrawCommand>()
+        val tickLabels = mutableListOf<DrawText>()
         diagram.title?.let {
             commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
         }
-        // Official radar uses circular graticule rings, not axis polygons.
+        // Circular rings are the default; polygon is an explicit diagram option.
         ringFractions.forEach { fraction ->
             val ringRadius = radius * fraction
-            commands += DrawEllipse(
-                ScenePoint(centerX, centerY),
-                ringRadius,
-                ringRadius,
-                fillOpacity = 0.0,
-                stroke = SceneColor("#d4d4d4"),
-                strokeWidth = 1.0,
-            )
-            commands += DrawText(
-                (diagram.maximum * fraction).radarTickLabel(),
+            if (polygonGrid && axisCount >= 3) {
+                val points = diagram.axes.indices.map { vertex(it, fraction) }
+                commands += DrawPolyline(points + points.first(), stroke = SceneColor("#d4d4d4"), strokeWidth = 1.0)
+            } else {
+                commands += DrawEllipse(
+                    ScenePoint(centerX, centerY),
+                    ringRadius,
+                    ringRadius,
+                    fillOpacity = 0.0,
+                    stroke = SceneColor("#d4d4d4"),
+                    strokeWidth = 1.0,
+                )
+            }
+            tickLabels += DrawText(
+                (diagram.minimum + range * fraction).radarTickLabel(),
                 ScenePoint(centerX + 8.0, (centerY - ringRadius + 4.0).radarCoordinate()),
                 style = bodyStyle,
             )
@@ -1666,10 +1676,14 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.curves.forEachIndexed { curveIndex, curve ->
             val fill = RADAR_CURVE_FILLS[curveIndex % RADAR_CURVE_FILLS.size]
             val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
-            val points = curve.values.mapIndexed { axisIndex, value ->
-                vertex(axisIndex, (value / diagram.maximum).coerceIn(0.0, 1.0))
+            val points = diagram.axes.mapIndexed { axisIndex, axis ->
+                val value = if (curve.entries.any { it.axis != null }) {
+                    curve.entries.firstOrNull { it.axis == axis.id }?.value ?: diagram.minimum
+                } else curve.values.getOrElse(axisIndex) { diagram.minimum }
+                vertex(axisIndex, ((value - diagram.minimum) / range).coerceIn(0.0, 1.0))
             }
-            val curvePoints = closedCurveSamples(points)
+            if (points.isEmpty()) return@forEachIndexed
+            val curvePoints = if (points.size >= 3) closedCurveSamples(points) else points
             commands += DrawPolygon(curvePoints, fill = SceneColor(fill))
             commands += DrawPolyline(curvePoints + curvePoints.first(), stroke = SceneColor(stroke), strokeWidth = 2.0)
             points.forEach { point ->
@@ -1684,10 +1698,11 @@ public object SimpleMermaidLayout : DiagramLayout {
                 )
             }
         }
+        commands += tickLabels
         // Legend row(s) below the chart, wrapped inside the padded content box.
         var legendX = config.padding
         var legendY = centerY + radius + 46.0
-        diagram.curves.forEachIndexed { curveIndex, curve ->
+        if (showLegend) diagram.curves.forEachIndexed { curveIndex, curve ->
             val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
             val itemWidth = 18.0 + textMeasurer.measure(curve.label, bodyStyle).width + 28.0
             if (legendX > config.padding && legendX + itemWidth > width - config.padding) {
@@ -1704,7 +1719,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             legendX += itemWidth
         }
         val height = max(520.0, legendY + 12.0 + config.padding)
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun layoutUserJourney(
