@@ -35,7 +35,7 @@ class FlowMetadataLayoutTest {
             assertEquals(setOf("Customer", "Order service", "Receipt"), labels.keys)
             val positions = listOf("Customer", "Order service", "Receipt").map {
                 val label = labels.getValue(it)
-                if (direction == "LR" || direction == "RL") label.x else label.y
+                if (direction == "LR" || direction == "RL") label.origin.x else label.origin.y
             }
             val forward = direction == "LR" || direction == "TB"
             assertTrue(positions.zipWithNext().all { (a, b) -> if (forward) a < b else a > b }, "$direction: $positions")
