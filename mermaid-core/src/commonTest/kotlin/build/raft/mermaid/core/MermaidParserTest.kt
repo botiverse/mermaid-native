@@ -1944,6 +1944,18 @@ class MermaidParserTest {
         assertEquals("bank", diagram.relationships.single().sourceId)
     }
 
+    @Test fun c4NamedDescriptionAndTechnologyReachProductFields() {
+        val dollar = '$'
+        val source = """C4Container
+            System_Ext(bank, "Bank", ${dollar}descr="Card processing")
+            Container(api, "API", ${dollar}techn="HTTP", ${dollar}descr="Orders")
+        """.trimIndent()
+        val diagram = assertIs<C4Diagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Card processing", diagram.elements[0].description)
+        assertEquals("HTTP", diagram.elements[1].technology)
+        assertEquals("Orders", diagram.elements[1].description)
+    }
+
     @Test fun malformedC4ContextFailsClosed() {
         listOf(
             "C4Context",
