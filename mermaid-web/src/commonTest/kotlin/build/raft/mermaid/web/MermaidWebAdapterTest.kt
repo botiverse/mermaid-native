@@ -80,8 +80,9 @@ class MermaidWebAdapterTest {
         assertContains(result.svg, "Support")
         assertContains(result.svg, "Ticket")
         assertContains(result.svg, "Resolve")
+        assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source + "\nclick A callback")))
         val unsupported = assertIs<MermaidWebResult.Failure>(
-            MermaidWebAdapter.render(MermaidWebRequest(source + "\nclick A callback")),
+            MermaidWebAdapter.render(MermaidWebRequest(source + "\nclick A call broken(")),
         )
         assertEquals(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, unsupported.diagnostics.single().code)
     }
