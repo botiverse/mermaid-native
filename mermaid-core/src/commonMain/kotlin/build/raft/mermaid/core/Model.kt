@@ -839,3 +839,6 @@ public enum class SequenceNotePosition {
     RIGHT_OF,
     OVER,
 }
+
+/** Native build identity for the Mermaid info diagram. */
+public data class InfoDiagram(val showInfo: Boolean = false, val version: String = MERMAID_NATIVE_VERSION) : MermaidDiagram

@@ -53,6 +53,7 @@ public object MermaidParser {
                 "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
                 header.location,
             )
+            Regex("^info(?:\\s.*)?$").matches(header.text) -> parseInfo(source)
             header.text.takeWhile { !it.isWhitespace() }.lowercase() in setOf("flowchart", "graph", "flowchart-elk") -> FlowParser(source).parse()
             header.text.startsWith("flowchart", ignoreCase = true) ||
                 header.text.startsWith("graph", ignoreCase = true) -> failure(
@@ -568,6 +569,13 @@ public object MermaidParser {
         if (actors.isEmpty() || nodes.isEmpty()) diagnostics += unsupported(statements.first(), "Usecase requires actors and use cases")
         return if (diagnostics.isEmpty()) MermaidParseResult.Success(UsecaseDiagram(direction, actors.values.toList(), nodes.values.toList(), relationships))
         else MermaidParseResult.Failure(diagnostics)
+    }
+
+    private fun parseInfo(source: String): MermaidParseResult {
+        val input = source.lines().filterNot { it.trim().startsWith("%%") }.joinToString("\n").trim()
+        val match = Regex("^info(?:\\s+(showInfo))?\\s*$").matchEntire(input)
+            ?: return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Expected info with optional showInfo", SourceLocation(1, 1))
+        return MermaidParseResult.Success(InfoDiagram(match.groupValues[1].isNotEmpty()))
     }
 
     private fun parseArchitecture(source: String): MermaidParseResult = ArchitectureParser(source).parseValidated()
