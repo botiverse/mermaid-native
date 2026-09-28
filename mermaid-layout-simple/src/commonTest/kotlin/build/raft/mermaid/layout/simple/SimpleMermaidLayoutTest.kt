@@ -667,6 +667,18 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
+    fun timelineNextSectionClearsThePreviousMultilineEvent() {
+        val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "timeline TD\nsection Planning\n2024: Launch: First users\nsection Research\nsection Delivery\n2025: Scale",
+        )).diagram
+        val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
+        val texts = scene.commands.filterIsInstance<DrawText>()
+        val lastEvent = texts.single { it.text == "First users" }
+        val nextSection = texts.single { it.text == "Research" }
+        assertTrue(nextSection.origin.y - nextSection.style.fontSize >= lastEvent.origin.y + 12.0)
+    }
+
+    @Test
     fun timelineEmptySectionsRenderWithoutCrashing() {
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
             "timeline\nsection Planning\nsection Delivery",
