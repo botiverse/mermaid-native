@@ -31,4 +31,8 @@ class StateGrammarTest {
         assertTrue(d.states.first { it.id=="as" }.declared)
         assertFalse(d.states.first { it.id=="Other" }.declared)
     }
+    @Test fun leadingCommentsPreserveHeaderAndInvalidScaleFails() {
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("%% comment\nstateDiagram-v2\nA"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\nscale nonsense\nA"))
+    }
 }

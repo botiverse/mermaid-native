@@ -14,8 +14,9 @@ internal class StateParser(private val source: String) {
     private var description: String? = null
 
     fun parse(): MermaidParseResult = try {
-        val header = read()
-        requireState(header in listOf("stateDiagram", "stateDiagram-v2"), "Expected stateDiagram header")
+        var header = read()
+        while (header.isEmpty() && at < source.length) header = read()
+        requireState(header.lowercase() in listOf("statediagram", "statediagram-v2"), "Expected stateDiagram header")
         while (at < source.length) {
             val text = read()
             if (text.isEmpty()) continue
@@ -31,7 +32,8 @@ internal class StateParser(private val source: String) {
                     val value=text.substringAfter(' ').trim();val parsed=FlowDirection.entries.firstOrNull { it.name==value } ?: fail("Invalid state direction")
                     if(stack.isEmpty()) direction=parsed else nodes[stack.last()]=nodes.getValue(stack.last()).copy(direction=parsed)
                 }
-                text == "hide empty description" || text.startsWith("scale ") -> Unit // Upstream grammar emits no state statement for these directives.
+                text == "hide empty description" -> Unit
+                text.startsWith("scale ") -> requireState(text.removePrefix("scale ").trim().removeSuffix("width").trim().let { it.isNotEmpty() && it.all(Char::isDigit) },"Expected numeric scale width") // Upstream grammar emits no state statement for these directives.
                 text.startsWith("note ") -> note(text)
                 text.endsWith('{') -> {
                     val declaration=text.dropLast(1).trim();requireState(declaration.startsWith("state "),"Expected composite state")
