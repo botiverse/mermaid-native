@@ -248,18 +248,23 @@ public object SimpleMermaidLayout : DiagramLayout {
         val nodes = treeViewNodesWithOfficialRoot(diagram.nodes)
         val labelStyle = TextStyle(fontSize = 13.0)
         val directoryStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val rowHeight = 36.0
+        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
+        val detailStyle = TextStyle(fontSize = 11.0, color = SceneColor("#64748b"))
+        val titleOffset = if (diagram.title == null) 0.0 else 44.0
+        fun detail(node: TreeViewNode): String = listOfNotNull(node.iconAnnotation?.takeIf { it.isNotBlank() && it != "none" }, node.description?.takeIf { it.isNotBlank() }).joinToString(" · ")
+        val rowHeight = if (nodes.any { detail(it).isNotEmpty() }) 52.0 else 36.0
         val indent = 42.0
         val nodeRadius = 5.0
-        val maxLabelRight = nodes.maxOf { node ->
-            config.padding + node.depth * indent + 18.0 + textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width
+        val maxLabelRight = nodes.maxOfOrNull { node ->
+            config.padding + node.depth * indent + 18.0 + max(textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width, textMeasurer.measure(detail(node), detailStyle).width)
         }
-        val width = max(360.0, maxLabelRight + config.padding)
-        val height = max(180.0, config.padding * 2.0 + nodes.size * rowHeight)
+        val width = maxOf(360.0, (maxLabelRight ?: 0.0) + config.padding, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2)
+        val height = max(180.0, config.padding * 2.0 + nodes.size * rowHeight) + titleOffset
         val points = nodes.mapIndexed { index, node ->
-            ScenePoint(config.padding + node.depth * indent, config.padding + index * rowHeight + rowHeight / 2.0)
+            ScenePoint(config.padding + node.depth * indent, config.padding + titleOffset + index * rowHeight + rowHeight / 2.0)
         }
         val commands = mutableListOf<DrawCommand>()
+        diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
         nodes.forEachIndexed { index, node ->
             val point = points[index]
             node.parentIndex?.let { parentIndex ->
@@ -279,9 +284,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         nodes.forEachIndexed { index, node ->
             val point = points[index]
             commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
+            if (detail(node).isNotEmpty()) commands += DrawText(detail(node), ScenePoint(point.x + 14.0, point.y + 21.0), style = detailStyle)
             commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
 
     /**

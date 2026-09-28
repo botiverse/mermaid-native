@@ -2123,4 +2123,14 @@ class SimpleMermaidLayoutTest {
     ): SequenceMessage = SequenceMessage(from, to, label, lineStyle, SequenceArrowHead.FILLED)
 
     private fun SceneRect.valid(): Boolean = width > 0.0 && height > 0.0
+    @Test fun treeViewEmptyAndMeasuredAnnotationsStayFinite() {
+        fun render(source: String) = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(render("treeView-beta").commands.isEmpty())
+        val scene = render("treeView-beta\ntitle Project\naccTitle: Accessible\naccDescr: Files\nroot/\n  file.ts icon(logos:react) ## Entry point with long description")
+        assertEquals("Accessible", scene.accessibilityTitle); assertEquals("Files", scene.accessibilityDescription)
+        val detail = scene.commands.filterIsInstance<DrawText>().single { it.text.contains("Entry point") }
+        assertTrue(detail.origin.x + FixedWidthTextMeasurer.measure(detail.text, detail.style).width <= scene.width)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "Project" })
+    }
+
 }
