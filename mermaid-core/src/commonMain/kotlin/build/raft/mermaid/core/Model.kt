@@ -769,6 +769,8 @@ public data class RailroadChoice(val children: List<RailroadNode>) : RailroadNod
 public data class RailroadOptional(val child: RailroadNode) : RailroadNode
 public data class RailroadOneOrMore(val child: RailroadNode) : RailroadNode
 public data class RailroadZeroOrMore(val child: RailroadNode) : RailroadNode
+/** A finite or lower-bounded repeat; max == null denotes no upper bound. */
+public data class RailroadRepetition(val child: RailroadNode, val min: Int, val max: Int? = null) : RailroadNode
 
 /** Bounded platform-neutral model for the Mermaid zenuml family. */
 public data class ZenumlDiagram(

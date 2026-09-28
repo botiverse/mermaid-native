@@ -82,6 +82,7 @@ import build.raft.mermaid.core.RailroadOneOrMore
 import build.raft.mermaid.core.RailroadOptional
 import build.raft.mermaid.core.RailroadSequence
 import build.raft.mermaid.core.RailroadTerminal
+import build.raft.mermaid.core.RailroadRepetition
 import build.raft.mermaid.core.RailroadZeroOrMore
 import build.raft.mermaid.layout.DiagramLayout
 import build.raft.mermaid.layout.DrawCommand
@@ -390,6 +391,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val height = yOffset + branches.last().height
                 RailroadBox(width, height, branchCenters.first(), commands.toList().also { commands.clear() }.toMutableList())
             }
+            is RailroadRepetition -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 42.0, arrowHead = true, bottomBypass = node.min == 0,
+                repeatLabel = if (node.min == node.max) "${node.min} times" else "${node.min}..${node.max ?: "∞"} times")
             is RailroadOptional -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 20.0, arrowHead = false, bottomBypass = false)
             is RailroadOneOrMore -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 22.0, arrowHead = true, bottomBypass = false)
             is RailroadZeroOrMore -> railroadWrapped(node.child, textMeasurer, commands, loopTop = 22.0, arrowHead = true, bottomBypass = true)
@@ -402,13 +405,21 @@ public object SimpleMermaidLayout : DiagramLayout {
         loopTop: Double,
         arrowHead: Boolean,
         bottomBypass: Boolean,
+        repeatLabel: String? = null,
     ): RailroadBox {
         val inner = buildRailroadBox(child, textMeasurer, mutableListOf())
         val bottomGap = if (bottomBypass) 18.0 else 0.0
-        val width = inner.width
+        val labelStyle = TextStyle(fontSize = 10.0)
+        val width = max(inner.width, repeatLabel?.let { textMeasurer.measure(it, labelStyle).width + 12.0 } ?: 0.0)
         val height = loopTop + inner.height + bottomGap
         val center = loopTop + inner.center
-        commands += inner.commands.map { command -> command.offsetBy(0.0, loopTop) }
+        val offsetX = (width - inner.width) / 2.0
+        commands += inner.commands.map { command -> command.offsetBy(offsetX, loopTop) }
+        if (offsetX > 0.0) {
+            commands += DrawLine(ScenePoint(0.0, center), ScenePoint(offsetX, center))
+            commands += DrawLine(ScenePoint(offsetX + inner.width, center), ScenePoint(width, center))
+        }
+        repeatLabel?.let { commands += DrawText(it, ScenePoint(width / 2.0, 11.0), TextAnchor.MIDDLE, labelStyle) }
         commands += DrawPolyline(
             listOf(
                 ScenePoint(0.0, center),

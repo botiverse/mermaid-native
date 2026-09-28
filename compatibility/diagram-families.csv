@@ -2,7 +2,7 @@ family,syntax_doc,status,parser,typed_ast,layout,svg_render,notes
 architecture,architecture,in_progress,partial,partial,partial,partial,Vertical slice supports flat groups services geometric cloud/database/server icons and explicit-port markerless or right-directed edges.
 block,block,in_progress,partial,partial,partial,partial,Bounded block/block-beta slice: columns, double-quoted rectangular labels, spans, and directed edges.
 c4,c4,in_progress,partial,partial,partial,partial,Vertical slice supports C4Context person/system elements with person heads stereotypes and Rel/BiRel protocol labels.
-class,classDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports class declarations members compartment separators and hollow UML inheritance.
+class,classDiagram,in_progress,partial,partial,partial,partial,Class declarations and relationships with shared member formatting; nested generics and static underline/abstract italic reach SVG Canvas and Kuikly.
 cynefin,cynefin,in_progress,partial,partial,partial,partial,Canonical Cynefin domains/transitions and accessibility metadata; 15 original integration assertions through Native; existing deterministic measured quadrant/ellipse layout.
 entityRelationshipDiagram,entityRelationshipDiagram,in_progress,partial,partial,partial,partial,Supports aliases and attribute keys; ER classes/styles and accessibility; nested groups and local directions; identifying relations and cardinality markers. Original ER parser and subgraph suites pass; full upstream visual coverage remains incomplete.
 eventmodeling,eventmodeling,in_progress,partial,partial,partial,partial,Bounded eventmodeling frames with five entity kinds, inferred flow, explicit multi-source relations, deterministic measured SVG.
@@ -16,7 +16,7 @@ packet,packet,in_progress,partial,partial,partial,partial,Vertical slice support
 pie,pie,in_progress,partial,partial,partial,partial,Vertical slice supports title accessibility text showData slice percents and bracket values.
 quadrantChart,quadrantChart,in_progress,partial,partial,partial,partial,Vertical slice supports title axes quadrant labels finite normalized points and colored quadrant fills.
 radar,radar,in_progress,partial,partial,partial,partial,Bounded radar-beta slice supporting a single title multi-entry axis declarations with quoted labels curves with per-axis values and an optional max with circular polar graticule filled curves and SVG golden.
-railroad,railroad,in_progress,partial,partial,partial,partial,railroad-beta and railroad-ebnf-beta lower into shared Railroad nodes: titles and named sequence/choice/optional/repetition/terminal/nonterminal/special rules; PEG and ABNF remain pending.
+railroad,railroad,in_progress,partial,partial,partial,partial,railroad-beta plus EBNF/PEG/ABNF lower into shared Railroad nodes; grammar titles and named sequence/choice/optional/repetition rules with bounded repeat annotations.
 requirementDiagram,requirementDiagram,in_progress,partial,partial,partial,partial,Bounded requirementDiagram slice: requirement/element blocks, quoted ids, text/risk/verifymethod, and satisfies/verifies relationships.
 sankey,sankey,in_progress,partial,partial,partial,partial,Vertical slice supports acyclic positive weighted CSV links including quoted commas escaped quotes and node values on labels.
 sequenceDiagram,sequenceDiagram,in_progress,partial,partial,partial,partial,Vertical slice supports the declared sequence subset with top and bottom actor boxes and filled arrowheads.
