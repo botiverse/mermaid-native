@@ -88,7 +88,7 @@ internal class FlowParser(private val source:String) {
         fun nodeList():List<String>{val values=mutableListOf(node());while(true){skip();if(text.getOrNull(at)!='&')break;at++;values+=node()};return values}
         fun node():String {
             skip();val start=at
-            while(at<text.length && !text[at].isWhitespace() && text[at] !in "[](){}<>|@\"" && !text.startsWith(":::",at) && !arrowStart(at))at++
+            while(at<text.length && !text[at].isWhitespace() && text[at] !in "[](){}<>|@\"" && !text.startsWith(":::",at) && !(arrowStart(at) && text[at] !in "ox"))at++
             requireFlow(at>start,"Expected flowchart node")
             val id=text.substring(start,at);requireFlow(id.substringBefore('.').substringBefore('-').substringBefore('/') !in RESERVED,"Reserved flowchart keyword")
             skip();val candidates=SHAPES.filter { text.startsWith(it.first,at) };val longest=candidates.maxOfOrNull { it.first.length };val shape=candidates.filter { it.first.length==longest }.minByOrNull { text.indexOf(it.second,at+it.first.length).let { end -> if(end<0)Int.MAX_VALUE else end } }

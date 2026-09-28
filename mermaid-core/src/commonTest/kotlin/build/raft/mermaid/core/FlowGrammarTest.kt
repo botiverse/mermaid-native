@@ -42,6 +42,13 @@ class FlowGrammarTest {
         assertEquals(3,d.edges.single().length)
         assertEquals(listOf("&node","node&","A"),parse("graph LR;&node --> node& --> A").nodes.map { it.id })
     }
+    @Test fun trailingMarkerLettersRemainPartOfBareNodeIds() {
+        val d=parse("graph LR;Todo-->Done;Inbox==>Y;Foo-.->Bar;Todo-->Inbox")
+        assertEquals(listOf("Todo","Done","Inbox","Y","Foo","Bar"),d.nodes.map { it.id })
+        assertEquals(listOf("Todo","Inbox","Foo","Todo"),d.edges.map { it.sourceId })
+        assertTrue(d.edges.all { it.fromMarker==FlowMarker.NONE })
+        assertEquals(FlowMarker.CIRCLE,parse("graph LR;A[Alpha]o--o B").edges.single().fromMarker)
+    }
     @Test fun unclosedShapesGroupsAndLabelsAreRejected() {
         listOf("A[broken","subgraph Open\nA","A -- label B","A -->|oops B","graph.node","A[bad ( text]","A[bad \"text\" mix]").forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse("graph TD\n$it")) }
     }
