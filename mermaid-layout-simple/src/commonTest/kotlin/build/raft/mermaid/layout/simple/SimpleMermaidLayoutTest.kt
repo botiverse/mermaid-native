@@ -2204,4 +2204,37 @@ class SimpleMermaidLayoutTest {
         assertTrue(labels.containsAll(listOf("Discovery", "Delivery", "buy", "1. Critical", "Campfire")))
     }
 
+    @Test fun usecaseBoundariesNotesStylesAndMarkersReachMeasuredLayout() {
+        val source = """
+            usecase-beta
+            accTitle: Authentication
+            systemBoundary Auth
+            actor User
+            Login(Sign in)
+            Report[Report]
+            end
+            style Login fill:#dbeafe
+            User --> Login
+            Login ..> : include Report
+            note for Login "Session required"
+            json Payload@{"ok":true}
+        """.trimIndent()
+        val d = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val scene = SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(scene, SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig()))
+        assertEquals("Authentication", scene.accessibilityTitle)
+        assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Auth", "Session required", "«include»", "Payload")))
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.pattern == StrokePattern.DASHED })
+        val rects = scene.commands.filterIsInstance<DrawRect>()
+        assertTrue(rects.all { it.rect.x >= 0 && it.rect.y >= 0 && it.rect.x + it.rect.width <= scene.width && it.rect.y + it.rect.height <= scene.height })
+        val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("usecase-beta")).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        assertTrue(empty.commands.isEmpty()); assertTrue(empty.width.isFinite() && empty.height.isFinite())
+        val longActor = "U".repeat(260)
+        val loopSource = "usecase-beta\nsystemBoundary B\nactor U(\"$longActor\")\nA(Action)\nend\nA ..> : include A"
+        val loopScene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(loopSource)).diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val boundary = loopScene.commands.filterIsInstance<DrawRect>().first { it.cornerRadius == 8.0 }.rect
+        assertTrue(loopScene.commands.filterIsInstance<DrawText>().filter { it.text.all { c -> c == 'U' } }.all { it.origin.y < boundary.y + boundary.height })
+        assertTrue(loopScene.commands.filterIsInstance<DrawPolyline>().any { it.points.distinct().size >= 4 })
+    }
+
 }

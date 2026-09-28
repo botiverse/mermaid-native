@@ -1884,17 +1884,45 @@ class MermaidParserTest {
 
     @Test fun malformedUsecaseFailsClosed() {
         listOf(
-            "usecase-beta",
-            "usecase-beta\nactor User\nactor User\nLogin(\"Login\")",
-            "usecase-beta\nactor User\nLogin(\"Login\")\nUnknown --> Login",
-            "usecase-beta\nactor User\nLogin(\"Login\")\nUser ..> Login",
-            "usecase-beta\nactor User\nLogin(\"Login\")\nsystemBoundary \"App\"",
-            "usecase-beta\nactor User\nLogin(\"Login\")\nstyle Login fill:red",
-            "usecase-beta\nactor User-name\nLogin(\"Login\")",
-            "usecase-beta\ndirection LR\ndirection TD\nactor User\nLogin(\"Login\")",
-            "usecase-beta\ndirection BT\nactor User\nLogin(\"Login\")",
-            "usecase-beta;\nactor User\nLogin(\"Login\")",
+            "usecase-beta\nactor User-name",
+            "usecase-beta\nA ..> B",
+            "usecase-beta\nsystemBoundary App\nA",
+            "usecase-beta\nsystemBoundary App\nA --> B\nend",
+            "usecase-beta\nnote for Missing \"text\"",
+            "usecase-beta\nA <<>>",
+            "usecase-beta;\nactor User",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+
+    @Test fun canonicalUsecaseEmptyForwardReferencesAndRichStatementsReachConsumer() {
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("usecase-beta"))
+        val forward = assertIs<UsecaseDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("usecase-beta\nUser --> Login\nactor User\nactor User")).diagram)
+        assertEquals(listOf("User"), forward.actors.map { it.id })
+        assertEquals(listOf("Login"), forward.useCases.map { it.id })
+        val source = """
+            usecase-beta
+            accTitle: Authentication
+            systemBoundary Auth[Authentication]@{ type: package }
+            actor User@{ type: hollow } <<Human>>
+            Login(Sign in):::critical
+            end
+            json Payload@{"ok":true}
+            User --> Login
+            Login dependency@..> : include Login
+            note for Login "Session required"
+            classDef critical fill:#dbeafe
+            style Login stroke:#2563eb
+        """.trimIndent()
+        val d = assertIs<UsecaseDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertEquals("Auth", d.attributes["Login"]?.parentId)
+        assertEquals("Human", d.attributes["User"]?.stereotype)
+        assertEquals("package", d.attributes["Auth"]?.properties?.get("type"))
+        assertEquals("dependency", d.relationships.last().id)
+        assertTrue(d.relationships.last().dashed)
+        assertEquals("Session required", d.notes.single().label)
+        assertEquals("{\"ok\":true}", d.jsonNodes.single().source)
+        assertEquals("Authentication", d.accTitle)
+        assertIs<MermaidParseResult.Success>(UsecaseParser("usecase-beta\nnote for Missing \"text\"").parse())
     }
 
     @Test fun architectureMetadataQuotesAndEmptyGrammarReachProduct() {

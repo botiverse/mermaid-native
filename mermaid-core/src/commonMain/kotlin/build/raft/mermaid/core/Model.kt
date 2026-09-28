@@ -624,11 +624,31 @@ public data class UsecaseDiagram(
     val actors: List<UsecaseActor>,
     val useCases: List<UsecaseNode>,
     val relationships: List<UsecaseRelationship>,
+    val boundaries: List<UsecaseBoundary> = emptyList(),
+    val notes: List<UsecaseNote> = emptyList(),
+    val jsonNodes: List<UsecaseJsonNode> = emptyList(),
+    val attributes: Map<String, UsecaseAttributes> = emptyMap(),
+    val classDefs: Map<String, Map<String, String>> = emptyMap(),
+    val accTitle: String? = null,
+    val accDescription: String? = null,
 ) : MermaidDiagram
 public data class UsecaseActor(val id: String, val label: String)
 public enum class UsecaseShape { ELLIPSE, RECTANGLE }
 public data class UsecaseNode(val id: String, val label: String, val shape: UsecaseShape)
-public data class UsecaseRelationship(val sourceId: String, val targetId: String, val label: String? = null)
+public data class UsecaseRelationship(
+    val sourceId: String, val targetId: String, val label: String? = null,
+    val id: String? = null, val startMarker: String = "none", val endMarker: String = "arrow", val dashed: Boolean = false,
+)
+public data class UsecaseBoundary(val id: String, val label: String)
+public data class UsecaseNote(val targetId: String, val label: String)
+public data class UsecaseJsonNode(val id: String, val source: String)
+public data class UsecaseAttributes(
+    val properties: Map<String, String> = emptyMap(),
+    val stereotype: String? = null,
+    val classes: List<String> = emptyList(),
+    val styles: Map<String, String> = emptyMap(),
+    val parentId: String? = null,
+)
 
 public data class ArchitectureDiagram(
     val groups: List<ArchitectureGroup>,

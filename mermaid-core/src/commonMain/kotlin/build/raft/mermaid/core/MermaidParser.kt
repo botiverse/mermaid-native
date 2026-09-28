@@ -226,63 +226,7 @@ public object MermaidParser {
 
     private fun parseVenn(source: String): MermaidParseResult = VennParser(source).parse()
 
-    private fun parseUsecase(source: String): MermaidParseResult {
-        val physicalLines = source.toMindmapLines()
-        if (physicalLines.firstOrNull()?.text !in setOf("usecase-beta", "usecaseDiagram")) {
-            return failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Usecase requires the usecase-beta or usecaseDiagram header", physicalLines.firstOrNull()?.location ?: SourceLocation(1, 1))
-        }
-        val statements = source.toStatements()
-        val actors = linkedMapOf<String, UsecaseActor>()
-        val nodes = linkedMapOf<String, UsecaseNode>()
-        val relationships = mutableListOf<UsecaseRelationship>()
-        val diagnostics = mutableListOf<MermaidDiagnostic>()
-        var direction = FlowDirection.TB
-        var hasDirection = false
-        statements.drop(1).forEach { statement ->
-            USECASE_DIRECTION.matchEntire(statement.text)?.let {
-                if (hasDirection) diagnostics += unsupported(statement, "Duplicate usecase direction")
-                else {
-                    direction = FlowDirection.valueOf(it.groupValues[1].uppercase())
-                    hasDirection = true
-                }
-                return@forEach
-            }
-            USECASE_ACTOR.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1]
-                val label = match.groupValues[2].ifEmpty { id }
-                if (id in actors || id in nodes) diagnostics += unsupported(statement, "Duplicate usecase identifier")
-                else actors[id] = UsecaseActor(id, label)
-                return@forEach
-            }
-            USECASE_ELLIPSE.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1]
-                val label = match.groupValues[2].ifEmpty { id }
-                if (id in actors || id in nodes) diagnostics += unsupported(statement, "Duplicate usecase identifier")
-                else nodes[id] = UsecaseNode(id, label, UsecaseShape.ELLIPSE)
-                return@forEach
-            }
-            USECASE_RECTANGLE.matchEntire(statement.text)?.let { match ->
-                val id = match.groupValues[1]
-                val label = match.groupValues[2]
-                if (id in actors || id in nodes) diagnostics += unsupported(statement, "Duplicate usecase identifier")
-                else nodes[id] = UsecaseNode(id, label, UsecaseShape.RECTANGLE)
-                return@forEach
-            }
-            USECASE_EDGE.matchEntire(statement.text)?.let { match ->
-                val source = match.groupValues[1]
-                val target = match.groupValues[3]
-                if (source in actors || source in nodes) {
-                    if (target !in actors && target !in nodes) nodes[target] = UsecaseNode(target, target, UsecaseShape.ELLIPSE)
-                    relationships += UsecaseRelationship(source, target, match.groupValues[2].ifEmpty { null })
-                } else diagnostics += unsupported(statement, "Usecase relationship source must be declared")
-                return@forEach
-            }
-            diagnostics += unsupported(statement, "Unsupported usecase syntax")
-        }
-        if (actors.isEmpty() || nodes.isEmpty()) diagnostics += unsupported(statements.first(), "Usecase requires actors and use cases")
-        return if (diagnostics.isEmpty()) MermaidParseResult.Success(UsecaseDiagram(direction, actors.values.toList(), nodes.values.toList(), relationships))
-        else MermaidParseResult.Failure(diagnostics)
-    }
+    private fun parseUsecase(source: String): MermaidParseResult = UsecaseParser(source).parseValidated()
 
     private fun parseInfo(source: String): MermaidParseResult {
         val input = source.lines().filterNot { it.trim().startsWith("%%") }.joinToString("\n").trim()
@@ -793,12 +737,6 @@ public object MermaidParser {
     private const val MINDMAP_INDENT = 2
 
     private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
-    private val USECASE_DIRECTION = Regex("^direction\\s+(TD|TB|LR|RL)$", RegexOption.IGNORE_CASE)
-    private const val USECASE_IDENTIFIER = "[A-Za-z0-9_]+"
-    private val USECASE_ACTOR = Regex("^actor\\s+($USECASE_IDENTIFIER)(?:\\(\"([^\"\\r\\n]+)\"\\))?$")
-    private val USECASE_ELLIPSE = Regex("^($USECASE_IDENTIFIER)\\(\"([^\"\\r\\n]+)\"\\)$")
-    private val USECASE_RECTANGLE = Regex("^($USECASE_IDENTIFIER)\\[([^]\\r\\n]+)]$")
-    private val USECASE_EDGE = Regex("^($USECASE_IDENTIFIER)(?:\\s+--\\s+\"([^\"\\r\\n]+)\"\\s+-->|\\s+-->)\\s+($USECASE_IDENTIFIER)$")
     private const val C4_IDENTIFIER = "[A-Za-z0-9_]+"
     private val C4_TITLE = Regex("^title\\s+(.+)$")
     private val C4_ELEMENT = Regex("^(Person|Person_Ext|System|System_Ext)\\(($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
