@@ -19,4 +19,14 @@ class StateStylesTest {
         assertEquals(7,d.states.size)
         assertTrue(d.states.any { it.id=="%inline" })
     }
+    @Test fun literalBracesSurviveDescriptionsTransitionLabelsAndInlineNotes() {
+        val result=assertIs<MermaidParseResult.Success>(MermaidParser.parse("stateDiagram-v2\nA: map {x}\nA --> B: {ok}\nnote right of A: use {x}"))
+        val d=assertIs<StateDiagram>(result.diagram)
+        assertEquals("map {x}",d.states.single { it.id=="A" }.description)
+        assertEquals("{ok}",d.transitions.single().label)
+        assertEquals("use {x}",d.notes.single().text)
+    }
+    @Test fun indirectCompositeCyclesFailExplicitly() {
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\nstate A { B }\nstate B { A }"))
+    }
 }

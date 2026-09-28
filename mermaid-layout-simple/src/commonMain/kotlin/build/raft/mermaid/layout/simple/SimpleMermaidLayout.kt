@@ -2479,7 +2479,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val width=max(placement.width,noteRects.maxOfOrNull { it.second.x+it.second.width+config.padding } ?: 0.0)+dx
         val height=max(placement.height,noteRects.maxOfOrNull { it.second.y+it.second.height+config.padding } ?: 0.0)
         val statesById = diagram.states.associateBy { it.id }
-        val parents = diagram.states.flatMap { state -> state.childIds.map { it to state.id } }.toMap()
+        val parents = diagram.states.flatMap { state -> state.childIds.map { it to state.id } }.groupBy({ it.first }, { it.second }).mapValues { it.value.first() }
         fun ancestors(id: String): List<String> {
             val result = mutableListOf<String>()
             var parent = parents[id]

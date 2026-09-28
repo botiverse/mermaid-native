@@ -63,6 +63,14 @@ internal class StateParser(private val source: String) {
             }
         }
         requireState(stack.isEmpty(),"Unclosed composite state")
+        val visiting=mutableSetOf<String>();val visited=mutableSetOf<String>()
+        fun validateHierarchy(id:String) {
+            if(id in visited)return
+            requireState(visiting.add(id),"Cyclic composite state")
+            nodes[id]?.childIds?.forEach(::validateHierarchy)
+            visiting.remove(id);visited.add(id)
+        }
+        nodes.keys.forEach(::validateHierarchy)
         MermaidParseResult.Success(StateDiagram(direction,nodes.values.toList(),transitions.toList(),notes.toList(),title,description,definitions.toMap()))
     } catch(e:StateSyntaxError) {
         val prefix=source.take(statementAt)
@@ -137,8 +145,9 @@ internal class StateParser(private val source: String) {
             if(!quote){
                 if(at>begin && source.startsWith("class ",at) && source[at-1].isWhitespace() && "-->" in source.substring(begin,at) && descriptionColon(source.substring(begin,at))<0)return source.substring(begin,at).trim()
                 if(source.startsWith("%%",at)){val result=source.substring(begin,at).trim();while(at<source.length && source[at]!='\n')at++;return result}
-                if(c=='{' ){at++;return source.substring(begin,at).trim()}
-                if(c=='}')return source.substring(begin,at).trim()
+                val literalText = descriptionColon(source.substring(begin,at)) >= 0
+                if(c=='{' && !literalText){at++;return source.substring(begin,at).trim()}
+                if(c=='}' && !literalText)return source.substring(begin,at).trim()
                 if(c=='\n' || c==';'){val result=source.substring(begin,at).trim();at++;return result}
             };at++
         }
