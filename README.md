@@ -85,3 +85,5 @@ Metadata shape names currently cover the existing rectangle, rounded, circle/dou
 ### Gantt grammar and dates
 
 Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
+
+XY charts accept both original headers, optional axes/metadata, numeric ranges in either direction, orientation, named series and point labels. Native draws horizontal bars/lines and numeric axes while retaining the existing vertical colors and value labels. Markdown text types are retained in the model; rich inline Markdown and host interactions are not claimed. Original parser assertion integration is being validated; direct XY database/builder tests remain outside this parser boundary.
