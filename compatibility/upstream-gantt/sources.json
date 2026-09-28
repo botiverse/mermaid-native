@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/gantt/parser/gantt.spec.js": "06ef0875cafae49b45c14d11cd3cff897a5a99dfdf33f919b4c3f1288054a6b1",
+    "packages/mermaid/src/diagrams/gantt/parser/gantt.jison": "14d325aa626a7fa220c341a75faecc712d0121203e0f88db6c11e68f0bc7e82f",
+    "packages/mermaid/src/diagrams/gantt/ganttDb.js": "b185ef0fa9d54977ca623e936b06dc39f4783b640bd3fb33dbf4a9996d90b4f6"
+  }
+}
