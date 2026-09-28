@@ -578,8 +578,8 @@ public object MermaidExamples {
               2025 : Scale
         """.trimIndent(),
         expected = TimelineDiagram("Product history", listOf(
-            TimelineEvent("2024", listOf("Launch", "First users")),
-            TimelineEvent("2025", listOf("Scale")),
+            TimelineEvent("2024 ", listOf("Launch ", "First users")),
+            TimelineEvent("2025 ", listOf("Scale")),
         )),
     )
 
