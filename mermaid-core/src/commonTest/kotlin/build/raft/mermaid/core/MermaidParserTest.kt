@@ -2034,4 +2034,13 @@ class MermaidParserTest {
         val bad = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("railroad-beta\n/* unclosed"))
         assertEquals(2, bad.diagnostics.single().location.line)
     }
+    @Test fun treeViewBoxDrawingProductMatchesIndentAndPreservesErrorLines() {
+        val box = "treeView-beta\n├── src/\n│   ├── index.ts icon(logos:typescript) ## entry\n│   └── app.ts\n│\n└── README.md"
+        val indent = "treeView-beta\n    src/\n        index.ts icon(logos:typescript) ## entry\n        app.ts\n    README.md"
+        assertEquals(MermaidParser.parse(indent), MermaidParser.parse(box))
+        val error = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("treeView-beta\n├── src/\n│\n└── file icon(bad value)"))
+        assertEquals(4, error.diagnostics.single().location.line)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("treeView-beta\n├── src/\n    mixed.ts"))
+    }
+
 }

@@ -1,0 +1,7 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/treeView/boxDrawingPreprocessor.spec.ts": "02fd5be60ea0a3677764fa894ba0063e9dfe9d782a2f88c6a1251adaac723502",
+    "packages/mermaid/src/diagrams/treeView/parser.spec.ts": "472d4a58ea4965fcd9288a14fe8504e2f41e412ee3f0aa9c214af035b31a1faf"
+  }
+}
