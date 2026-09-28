@@ -2,85 +2,33 @@ package build.raft.mermaid.core
 
 /** Git history is resolved in the shared model, before any renderer or adapter consumes it. */
 internal class GitGraphParser(private val source: String) {
-    private data class Token(val value: String, val quoted: Boolean)
-    private fun tokens(line: String): List<Token> {
-        val result = mutableListOf<Token>(); var i = 0
-        while (i < line.length) {
-            if (line[i].isWhitespace()) { i++; continue }
-            if (line.startsWith("%%", i)) break
-            val quote = line[i]
-            if (quote == '"' || quote == '\'') {
-                i++; val value = StringBuilder(); var closed = false
-                while (i < line.length) {
-                    val c = line[i++]
-                    if (c == quote) { closed = true; break }
-                    if (c == '\\') { require(i < line.length); value.append(line[i++]) } else value.append(c)
-                }
-                require(closed) { "Unclosed gitGraph string" }; result += Token(value.toString(), true)
-            } else {
-                val start = i
-                while (i < line.length && !line[i].isWhitespace() && line[i] != ':' && line[i] != '"' && line[i] != '\'') i++
-                if (i < line.length && line[i] == ':') i++
-                require(i > start); result += Token(line.substring(start, i), false)
-            }
-        }
-        return result
-    }
     fun parse(): MermaidParseResult {
         var lineNumber = 1
         return try {
-            val lines = source.replace("\r\n", "\n").lines()
-            val headerIndex = lines.indexOfFirst { it.isNotBlank() && !it.trimStart().startsWith("%%") }
-            require(headerIndex >= 0)
-            val header = Regex("gitGraph(?:\\s+(LR|TB|BT)\\s*:|\\s*:)?").matchEntire(lines[headerIndex].trim()) ?: error("Invalid gitGraph header")
-            val direction = header.groupValues[1].ifEmpty { "LR" }.let(FlowDirection::valueOf)
+            val syntax = GitGraphSyntaxParser.parse(source)
+            if (syntax.diagnostics.isNotEmpty()) return MermaidParseResult.Failure(syntax.diagnostics)
+            val direction = syntax.direction
             val branches = linkedMapOf("main" to GitGraphBranch("main", null))
             val heads = linkedMapOf<String, String?>("main" to null)
             val commits = linkedMapOf<String, GitGraphCommit>()
             val warnings = mutableListOf<String>()
             var current = "main"; var next = 1; var sequence = 0
-            var title: String? = null; var accTitle: String? = null; var accDescription: String? = null
+            val title = syntax.title; val accTitle = syntax.accTitle; val accDescription = syntax.accDescription
             fun autoId(): String { while ("commit-$next" in commits) next++; return "commit-${next++}" }
             fun add(commit: GitGraphCommit) { commits[commit.id] = commit.copy(sequence = sequence++); heads[current] = commit.id }
-            fun branchName(token: Token): String {
-                require(token.quoted || Regex("\\w([-./\\w]*[-\\w])?").matches(token.value)) { "Invalid branch name" }
-                return token.value
-            }
-            var i = headerIndex + 1
-            while (i < lines.size) {
-                lineNumber = i + 1; val line = lines[i++].trim()
-                if (line.isBlank() || line.startsWith("%%")) continue
-                if (Regex("^title(?:[\\t ]|$)").containsMatchIn(line)) { title = line.drop(5).substringBefore("%%").trim(); continue }
-                if (Regex("^accTitle[\\t ]*:").containsMatchIn(line)) { accTitle = line.substringAfter(':').substringBefore("%%").trim(); continue }
-                if (line.startsWith("accDescr")) {
-                    if ('{' in line) {
-                        val content = StringBuilder(line.substringAfter('{'))
-                        while ('}' !in content && i < lines.size) content.append('\n').append(lines[i++])
-                        require('}' in content) { "Unclosed accessibility description" }
-                        accDescription = content.toString().substringBefore('}').trim().replace(Regex("\\n\\s+"), "\n")
-                    } else { require(':' in line); accDescription = line.substringAfter(':').substringBefore("%%").trim() }
-                    continue
+            for (statement in syntax.statements) {
+                lineNumber = statement.line
+                val command = when (statement.type) {
+                    "Commit" -> "commit"
+                    "Branch" -> "branch"
+                    "Checkout" -> "checkout"
+                    "Merge" -> "merge"
+                    "CherryPicking" -> "cherry-pick"
+                    else -> error("Unsupported gitGraph statement")
                 }
-                val ts = tokens(line); if (ts.isEmpty()) continue
-                val command = ts[0].value
-                var position = 1
-                val branch = if (command in setOf("branch", "checkout", "switch", "merge")) branchName(ts.getOrNull(position++) ?: error("Expected branch")) else null
-                var id: String? = null; var message = ""; var kind: GitGraphCommitType? = null; var parent: String? = null; var order = 0
-                val tags = mutableListOf<String>()
-                while (position < ts.size) {
-                    val key = ts[position++]
-                    if (key.quoted && command == "commit") { message = key.value; continue }
-                    val value = ts.getOrNull(position++) ?: error("Expected value after ${key.value}")
-                    when (key.value) {
-                        "id:" -> { require(value.quoted && command in setOf("commit", "merge", "cherry-pick")); id = value.value }
-                        "msg:" -> { require(value.quoted && command == "commit"); message = value.value }
-                        "tag:" -> { require(value.quoted && command in setOf("commit", "merge", "cherry-pick")); tags += value.value }
-                        "type:" -> { require(!value.quoted && command in setOf("commit", "merge")); kind = GitGraphCommitType.valueOf(value.value) }
-                        "parent:" -> { require(value.quoted && command == "cherry-pick"); parent = value.value }
-                        "order:" -> { require(!value.quoted && command == "branch"); order = value.value.toInt().also { require(it >= 0) } }
-                        else -> error("Unsupported gitGraph attribute ${key.value}")
-                    }
-                }
+                val branch = statement.name ?: statement.branch
+                val id = statement.id; val message = statement.message.orEmpty(); val kind = statement.commitType
+                val parent = statement.parent; val order = statement.order ?: 0; val tags = statement.tags
                 val head = heads[current]
                 when (command) {
                     "commit" -> {
