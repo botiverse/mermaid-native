@@ -2206,11 +2206,12 @@ class MermaidParserTest {
             term = ["-"] digit+ ;
             digit = "0" | "1" ;
             special = ? digit class ? ;
+            combined = "prefix" ? character class ? ;
         """.trimIndent()))
         val diagram = assertIs<RailroadDiagram>(result.diagram)
         assertEquals("Expressions", diagram.title)
         assertEquals("Grammar", diagram.accTitle)
-        assertEquals(4, diagram.rules.size)
+        assertEquals(5, diagram.rules.size)
         val expression = assertIs<RailroadSequence>(diagram.rules[0].definition)
         assertIs<RailroadZeroOrMore>(expression.children[1])
         assertEquals(RailroadSpecial("digit class"), diagram.rules[3].definition)

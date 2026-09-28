@@ -71,12 +71,19 @@ internal class EbnfParser(private val source: String) {
             else -> RailroadNonTerminal(identifier())
         }
     }
+    private fun specialAhead(): Boolean {
+        if (source.getOrNull(pos) != '?') return false
+        val end = source.indexOf('?', pos + 1)
+        if (end < 0) return false
+        val body = source.substring(pos + 1, end)
+        return body.isNotBlank() && ';' !in body
+    }
     private fun term(): RailroadNode {
         var node = primary()
         while (true) {
             skip()
             node = when (source.getOrNull(pos)) {
-                '?' -> { pos++; RailroadOptional(node) }
+                '?' -> { if (specialAhead()) return node; pos++; RailroadOptional(node) }
                 '*' -> { pos++; RailroadZeroOrMore(node) }
                 '+' -> { pos++; RailroadOneOrMore(node) }
                 '-' -> { pos++; RailroadSequence(listOf(node, RailroadTerminal("-"), primary())) }
