@@ -17,7 +17,7 @@ Response : b, after a, 5ms
 Other : c, 20, 10ms
 Decimal : d, after c, 0.005s
 """)
-        val bars = result.commands.filterIsInstance<DrawRect>()
+        val bars = result.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 }
         assertEquals(4, bars.size)
         assertEquals(bars[0].rect.width / 4, bars[1].rect.width, 0.000001)
         assertEquals(bars[0].rect.x + bars[0].rect.width, bars[1].rect.x, 0.000001)
@@ -29,15 +29,15 @@ Decimal : d, after c, 0.005s
         assertTrue(ticks.zipWithNext().all { (a, b) -> b.origin.x - a.origin.x >= measurer.measure(a.text, a.style).width })
     }
 
-    @Test fun dayOnlyDiagramsRetainCalendarAxisAndPalette() {
+    @Test fun dayAndSubdayDiagramsShareStylesWhileKeepingTheirOwnTimeAxis() {
         val result = scene("gantt\nsection Work\nA : done, a, 2024-01-01, 2d\nB : b, after a, 1d")
-        val bars = result.commands.filterIsInstance<DrawRect>()
-        assertEquals(SceneColor("#16a34a"), bars[0].fill)
-        assertEquals(SceneColor("#94a3b8"), bars[1].fill)
+        val bars = result.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 }
+        assertEquals(SceneColor("#dcebe3"), bars[0].fill)
+        assertEquals(SceneColor("#e8e8ed"), bars[1].fill)
         assertEquals(bars[0].rect.width / 2, bars[1].rect.width, .000001)
         assertTrue(result.commands.filterIsInstance<DrawText>().any { it.text == "2024-01-01" })
         assertFalse(result.commands.filterIsInstance<DrawText>().any { it.text.contains("00:00:") })
         val subday = scene("gantt\nTask : a, 2024-01-01, 2h")
-        assertTrue(subday.commands.filterIsInstance<DrawText>().any { it.text == "2024-01-01 00:00:00.000" })
+        assertTrue(subday.commands.filterIsInstance<DrawText>().any { it.text == "00:00:00.000" })
     }
 }

@@ -1089,9 +1089,20 @@ onUnmounted(() => {
 }
 
 .zoomable-surface {
+  width: 100%;
+  min-width: 0;
   transform-origin: center center;
   transition: transform 0.05s linear;
   will-change: transform;
+}
+
+/* Fit the initial render inside its panel before applying user zoom. Without
+ * a bounded flex child Native SVGs lose their left edge and Official shrinks. */
+:deep(.zoomable-surface svg) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
 }
 
 .diagram-preview-canvas {

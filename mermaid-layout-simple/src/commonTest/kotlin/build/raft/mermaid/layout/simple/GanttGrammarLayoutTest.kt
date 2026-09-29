@@ -6,7 +6,7 @@ class GanttGrammarLayoutTest {
     @Test fun actualBarsMeetAtExclusiveDependencyBoundaryAndMilestoneIsVisible() {
         val d=assertIs<MermaidParseResult.Success>(MermaidParser.parse("gantt\nsection Work\nBuild:a,2024-01-01,2024-01-03\nShip:b,after a,1d\nRelease:milestone,release,after b,0d")).diagram
         val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
-        val bars=scene.commands.filterIsInstance<DrawRect>()
+        val bars=scene.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 }
         assertEquals(bars[0].rect.x+bars[0].rect.width,bars[1].rect.x)
         assertEquals(1,scene.commands.filterIsInstance<DrawPolygon>().count { it.points.size==4 })
     }
