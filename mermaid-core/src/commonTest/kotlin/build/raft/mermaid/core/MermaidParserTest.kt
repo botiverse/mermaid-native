@@ -2056,7 +2056,7 @@ class MermaidParserTest {
             "architecture-beta\nservice db(database)[Database]\ndb:R --> L:missing",
             "architecture-beta\nservice db(database)[Database]\ndb:R --> L:db",
             "architecture-beta\nservice db(database)[Database]\ndb:R ..> L:db",
-            "architecture-beta\ngroup api(cloud)[API]\ngroup child(cloud)[Child] in api\nservice db(database)[Database] in api",
+            "architecture-beta\ngroup api(cloud)[API]\ngroup child(cloud)[Child] in child\nservice db(database)[Database] in api",
             "architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in api\nstyle db fill:red",
             "architecture-beta;\nservice db(database)[Database]",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }

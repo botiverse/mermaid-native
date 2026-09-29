@@ -677,8 +677,12 @@ public data class ArchitectureDiagram(
     val title: String? = null,
     val accTitle: String? = null,
     val accDescription: String? = null,
+    val junctions: List<ArchitectureJunction> = emptyList(),
+    val layoutHints: List<ArchitectureLayoutHint> = emptyList(),
 ) : MermaidDiagram
-public data class ArchitectureGroup(val id: String, val icon: String, val label: String)
+public data class ArchitectureGroup(val id: String, val icon: String, val label: String, val parentId: String? = null)
+public data class ArchitectureJunction(val id: String, val groupId: String? = null)
+public data class ArchitectureLayoutHint(val direction: String, val members: List<String>)
 public data class ArchitectureService(val id: String, val icon: String, val label: String, val groupId: String? = null)
 public enum class ArchitecturePort { TOP, BOTTOM, LEFT, RIGHT }
 public data class ArchitectureEdge(
