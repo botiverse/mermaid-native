@@ -105,7 +105,7 @@ internal fun sequenceLayout(
     val lifelines = mutableListOf<DrawCommand>()
     val bars = mutableListOf<DrawCommand>()
     val foreground = mutableListOf<DrawCommand>()
-    val ink = SceneColor("#333333")
+    val ink = SceneColor(DiagramPalette.INK)
     fun drawLines(target: MutableList<DrawCommand>, text: List<String>, x: Double, baseline: Double, anchor: TextAnchor) {
         text.forEachIndexed { i,line -> target += DrawText(line,ScenePoint(x,baseline+i*lineHeight),anchor,style) }
     }
@@ -116,13 +116,13 @@ internal fun sequenceLayout(
         boxBackgrounds += DrawRect(SceneRect(left,top,right-left,actorBottom+actorHeight-top+12),fill=sequenceRegionColor(box.color),stroke=SceneColor("none"))
         drawLines(foreground,lines(box.label),(left+right)/2,top+18,TextAnchor.MIDDLE)
     }
-    diagram.actors.forEach { actor -> lifelines += DrawLine(ScenePoint(centers.getValue(actor.id),(createdAt[actor.id] ?: actorTop)+actorHeight), ScenePoint(centers.getValue(actor.id),destroyedAt[actor.id] ?: actorBottom), SceneColor("#999999"),1.0) }
+    diagram.actors.forEach { actor -> lifelines += DrawLine(ScenePoint(centers.getValue(actor.id),(createdAt[actor.id] ?: actorTop)+actorHeight), ScenePoint(centers.getValue(actor.id),destroyedAt[actor.id] ?: actorBottom), SceneColor(DiagramPalette.FAINT),1.0) }
     val starts = mutableMapOf<String, MutableList<Double>>()
     val frames = mutableListOf<Pair<Int,SequenceFragment>>()
     var sequence = 1.0; var step = 1.0; var numbered = false
     var lastSignalY = messageTop
     fun activationBar(id: String, start: Double, end: Double, depth: Int) {
-        bars += DrawRect(SceneRect(centers.getValue(id)-4+depth*4,start,8.0,max(8.0,end-start)),fill=SceneColor("#f4f4f4"),stroke=SceneColor("#666666"),strokeWidth=1.0)
+        bars += DrawRect(SceneRect(centers.getValue(id)-4+depth*4,start,8.0,max(8.0,end-start)),fill=SceneColor(DiagramPalette.SURFACE),stroke=SceneColor(DiagramPalette.SECONDARY),strokeWidth=1.0)
     }
     diagram.events.forEachIndexed { index,event ->
         val eventY = positions[index]
@@ -167,7 +167,7 @@ internal fun sequenceLayout(
             }
             is SequenceNote -> {
                 val (x,w)=noteBounds(event); val text=lines(event.text,event.wrap); val h=max(28.0,text.size*lineHeight+10)
-                foreground += DrawRect(SceneRect(x,eventY-12,w,h),3.0,SceneColor("#fff5ad"),SceneColor("#aaaa33"))
+                foreground += DrawRect(SceneRect(x,eventY-12,w,h),3.0,SceneColor(DiagramPalette.AMBER_SURFACE),SceneColor(DiagramPalette.AMBER))
                 drawLines(foreground,text,x+w/2,eventY-12+(h-(text.size-1)*lineHeight)/2+style.fontSize*.35,TextAnchor.MIDDLE)
             }
             is SequenceFragment -> when(event.boundary){
@@ -182,7 +182,7 @@ internal fun sequenceLayout(
                         val x=config.padding+frames.size*4; val top=positions[startIndex]-20
                         val fill=if(start.kind==SequenceFragmentKind.RECT) sequenceRegionColor(start.label) else SceneColor("none")
                         // Insert by start position so outer backgrounds remain behind nested regions.
-                        backgrounds.add(0,DrawRect(SceneRect(x,top,max(0.0,width-x-config.padding),eventY-top),fill=fill,stroke=SceneColor("#999999"),strokeWidth=1.0))
+                        backgrounds.add(0,DrawRect(SceneRect(x,top,max(0.0,width-x-config.padding),eventY-top),fill=fill,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.0))
                         if(start.kind!=SequenceFragmentKind.RECT) {
                             drawLines(foreground,listOf(start.kind.name.lowercase()),x+8,top+16,TextAnchor.START)
                             drawLines(foreground,lines(start.label,start.wrap),x+92,top+16,TextAnchor.START)
@@ -218,5 +218,5 @@ private fun sequenceRegionColor(text: String): SceneColor {
         val alpha=rgb.groupValues[4].toDoubleOrNull()?.coerceIn(0.0,1.0)
         return SceneColor("#"+parts.joinToString(""){it.toString(16).padStart(2,'0')}+(alpha?.let { (it*255).toInt().toString(16).padStart(2,'0') } ?: ""))
     }
-    return SceneColor(NAMED_COLORS[value] ?: if(value=="transparent") "none" else if(value.startsWith('#') && value.length in listOf(4,5,7,9) && value.drop(1).all { it in "0123456789abcdef" }) value else "#f1f5f9")
+    return SceneColor(NAMED_COLORS[value] ?: if(value=="transparent") "none" else if(value.startsWith('#') && value.length in listOf(4,5,7,9) && value.drop(1).all { it in "0123456789abcdef" }) value else DiagramPalette.SURFACE)
 }

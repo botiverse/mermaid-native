@@ -2,7 +2,7 @@ package build.raft.mermaid.layout.simple
 import build.raft.mermaid.core.*
 import build.raft.mermaid.layout.*
 
-internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram,defaults:List<String> = listOf("fill:#eeeeee","stroke:#999999")) {
+internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram,defaults:List<String> = listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.OUTLINE}")) {
     private val raw=(listOf("default")+node.classes).flatMap { diagram.classDefinitions[it].orEmpty() }+node.styles
     private val normalized=raw.flatMap { item ->
         val key=item.substringBefore(':').trim();val value=item.substringAfter(':').trim()
@@ -27,7 +27,7 @@ internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram,defaults:List<St
         else->listOf(command)
     }
 }
-internal fun flowEdgeStyle(edge:FlowEdge,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition("edge",styles=listOf("stroke:#666666","stroke-width:"+if(edge.style==FlowEdgeStyle.THICK)"3"else"1.5")+flowEdgeStyles(edge,diagram)),ClassDiagram(emptyList(),emptyList()))
+internal fun flowEdgeStyle(edge:FlowEdge,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition("edge",styles=listOf("stroke:${DiagramPalette.SECONDARY}","stroke-width:"+if(edge.style==FlowEdgeStyle.THICK)"3"else"1.5")+flowEdgeStyles(edge,diagram)),ClassDiagram(emptyList(),emptyList()))
 
 internal fun flowEdgeStyles(edge:FlowEdge,diagram:FlowchartDiagram)=diagram.defaultEdgeStyles+edge.classes.flatMap { diagram.classDefinitions[it].orEmpty() }+edge.styles
-internal fun flowGroupStyle(group:FlowSubgraph,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition(group.id,styles=listOf("fill:#f7f7f7","stroke:#aaaaaa","stroke-width:1")+group.classes.flatMap { diagram.classDefinitions[it].orEmpty() }),ClassDiagram(emptyList(),emptyList()))
+internal fun flowGroupStyle(group:FlowSubgraph,diagram:FlowchartDiagram)=ClassStyle(ClassDefinition(group.id,styles=listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.FAINT}","stroke-width:1")+group.classes.flatMap { diagram.classDefinitions[it].orEmpty() }),ClassDiagram(emptyList(),emptyList()))

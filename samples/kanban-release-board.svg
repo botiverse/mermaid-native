@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="424.8" height="236" viewBox="0 0 424.8 236" role="img">
-  <rect x="24" y="24" width="180.8" height="188" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
-  <text x="114.4" y="50" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">Todo</text>
-  <line x1="36" y1="64" x2="192.8" y2="64" stroke="#cbd5e1" stroke-width="1.5" fill="none"/>
-  <rect x="34" y="76" width="160.8" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="46" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Write &amp; review spec</text>
-  <rect x="34" y="140" width="160.8" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="46" y="169" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Add tests</text>
-  <rect x="220.8" y="24" width="180" height="124" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
-  <text x="310.8" y="50" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#111827">Done</text>
-  <line x1="232.8" y1="64" x2="388.8" y2="64" stroke="#cbd5e1" stroke-width="1.5" fill="none"/>
-  <rect x="230.8" y="76" width="160" height="48" rx="6" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="242.8" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Ship release</text>
+  <rect x="24" y="24" width="180.8" height="188" rx="8" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="114.4" y="50" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#27272a">Todo</text>
+  <line x1="36" y1="64" x2="192.8" y2="64" stroke="#d4d4d8" stroke-width="1.5" fill="none"/>
+  <rect x="34" y="76" width="160.8" height="48" rx="6" fill="#ffffff" stroke="#858590" stroke-width="1.5"/>
+  <text x="46" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">Write &amp; review spec</text>
+  <rect x="34" y="140" width="160.8" height="48" rx="6" fill="#ffffff" stroke="#858590" stroke-width="1.5"/>
+  <text x="46" y="169" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">Add tests</text>
+  <rect x="220.8" y="24" width="180" height="124" rx="8" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="310.8" y="50" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#27272a">Done</text>
+  <line x1="232.8" y1="64" x2="388.8" y2="64" stroke="#d4d4d8" stroke-width="1.5" fill="none"/>
+  <rect x="230.8" y="76" width="160" height="48" rx="6" fill="#ffffff" stroke="#858590" stroke-width="1.5"/>
+  <text x="242.8" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">Ship release</text>
 </svg>

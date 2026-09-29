@@ -16,7 +16,7 @@ class RequirementGrammarLayoutTest {
     }
     @Test fun actualStyleMeasuresLargeHeadingsAndPaintsOriginalElementDefault(){
         val s=scene("requirementDiagram\nrequirement LongRequirementTitle:::big {\ntext: Summary\n}\nelement client {\n}\nclassDef big fill:#dbeafe,stroke:#2563eb,font-size:30px\nstyle LongRequirementTitle stroke-width:3px")
-        val rects=s.commands.filterIsInstance<DrawRect>();val heading=s.commands.filterIsInstance<DrawText>().first { it.text.startsWith("requirement ") };assertEquals(32.0,heading.style.fontSize);assertTrue(rects[0].rect.width>=FixedWidthTextMeasurer.measure(heading.text,heading.style).width+24);assertEquals("#dbeafe",rects[0].fill.value);assertEquals(3.0,rects[0].strokeWidth);assertEquals("#eff6ff",rects[1].fill.value)
+        val rects=s.commands.filterIsInstance<DrawRect>();val heading=s.commands.filterIsInstance<DrawText>().first { it.text.startsWith("requirement ") };assertEquals(32.0,heading.style.fontSize);assertTrue(rects[0].rect.width>=FixedWidthTextMeasurer.measure(heading.text,heading.style).width+24);assertEquals("#dbeafe",rects[0].fill.value);assertEquals(3.0,rects[0].strokeWidth);assertEquals(DiagramPalette.BLUE_SURFACE,rects[1].fill.value)
     }
     @Test fun emptyDiagramAndSelfLoopHaveFiniteSceneBounds(){assertTrue(scene("requirementDiagram").width>0);val s=scene("requirementDiagram\nA - traces -> A");val loop=s.commands.filterIsInstance<DrawPolyline>().single();assertEquals(4,loop.points.size);assertTrue(loop.points[0].y!=loop.points[3].y);assertTrue(loop.points.all { it.x>=0&&it.x<=s.width&&it.y>=0&&it.y<=s.height })}
 }

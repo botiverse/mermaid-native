@@ -13,10 +13,10 @@ internal fun layoutGanttTimeline(
     dateLabel: (Int) -> String,
 ): LayoutScene {
     // Inspired by beautiful-mermaid's zinc text/surface hierarchy, with semantic status accents.
-    val ink = SceneColor("#27272a")
-    val muted = SceneColor("#71717a")
-    val border = SceneColor("#e4e4e7")
-    val grid = SceneColor("#f0f0f2")
+    val ink = SceneColor(DiagramPalette.INK)
+    val muted = SceneColor(DiagramPalette.MUTED)
+    val border = SceneColor(DiagramPalette.GRID)
+    val grid = SceneColor(DiagramPalette.GRID_FAINT)
     val body = TextStyle(fontSize = 13.0, color = ink)
     val heading = TextStyle(fontSize = 12.0, fontWeight = 600, color = ink)
     val tickStyle = TextStyle(fontSize = 11.0, color = muted)
@@ -112,7 +112,7 @@ internal fun layoutGanttTimeline(
             val sectionLines = lines(section.name, heading, labelTextWidth)
             val headerHeight = maxOf(32.0, sectionLines.size * 17.0 + 14.0)
             content += DrawRect(SceneRect(padding, y, right - padding + 12, headerHeight), 4.0,
-                fill = SceneColor("#f7f7f8"), strokeWidth = 0.0)
+                fill = SceneColor(DiagramPalette.SURFACE), strokeWidth = 0.0)
             sectionLines.forEachIndexed { i, line -> content += DrawText(line, ScenePoint(padding + 12, y + 21 + i * 17), style = heading) }
             y += headerHeight
         }
@@ -121,10 +121,10 @@ internal fun layoutGanttTimeline(
             val rowHeight = maxOf(42.0, labelLines.size * 18.0 + 18.0)
             val centerY = y + rowHeight / 2
             val (fill, accent) = when (task.status) {
-                GanttTaskStatus.DONE -> "#dcebe3" to "#537966"
-                GanttTaskStatus.ACTIVE -> "#dce6f5" to "#526f9f"
-                GanttTaskStatus.CRITICAL -> "#f4dfe1" to "#a66069"
-                GanttTaskStatus.TODO -> "#e8e8ed" to "#858590"
+                GanttTaskStatus.DONE -> DiagramPalette.GREEN_SURFACE to DiagramPalette.GREEN
+                GanttTaskStatus.ACTIVE -> DiagramPalette.BLUE_SURFACE to DiagramPalette.BLUE
+                GanttTaskStatus.CRITICAL -> DiagramPalette.RED_SURFACE to DiagramPalette.RED
+                GanttTaskStatus.TODO -> DiagramPalette.NEUTRAL_SURFACE to DiagramPalette.OUTLINE
             }
             content += DrawEllipse(ScenePoint(padding + 14, centerY), 3.0, 3.0,
                 fill = SceneColor(accent), strokeWidth = 0.0)

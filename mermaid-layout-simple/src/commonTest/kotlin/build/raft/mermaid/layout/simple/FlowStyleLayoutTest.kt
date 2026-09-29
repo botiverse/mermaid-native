@@ -13,7 +13,7 @@ class FlowStyleLayoutTest {
         val label=scene.commands.filterIsInstance<DrawText>().first { it.text=="Wide" }
         assertEquals(21.0,label.style.fontSize)
         assertEquals("#0000ff",label.style.color.value)
-        assertEquals("#eeeeee",boxes[1].fill.value)
+        assertEquals(DiagramPalette.SURFACE,boxes[1].fill.value)
     }
     @Test fun edgeOverridesAndDashedNodeBordersReachDrawCommands() {
         val scene=layout("A:::dashed --> B\nclassDef dashed stroke-dasharray:4\nlinkStyle 0 stroke:#ff0000,stroke-width:4px")

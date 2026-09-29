@@ -18,7 +18,7 @@ class StateRegionsLayoutTest {
     }
     @Test fun floatingNoteActuallyRendersMultilineYellowBox() {
         val scene=layout("note \"First<br/>Second\" as N1")
-        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#fff5ad" })
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value==DiagramPalette.AMBER_SURFACE })
         assertEquals(listOf("First","Second"),scene.commands.filterIsInstance<DrawText>().map { it.text })
     }
     @Test fun compositeAndLeafSelfLoopsHaveVisiblePathsWithinScene() {

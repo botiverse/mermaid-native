@@ -1,5 +1,7 @@
 package build.raft.mermaid.layout.simple
 
+import build.raft.mermaid.layout.DiagramPalette
+
 import build.raft.mermaid.core.EntityDefinition
 import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.layout.SceneColor
@@ -16,14 +18,14 @@ internal class EntityRelationshipStyle(entity: EntityDefinition, diagram: Entity
     }
     private val fontSize = properties["font-size"]?.lowercase()?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 && it <= 512.0 }
     private val weight = properties["font-weight"]?.lowercase()?.let { if (it == "bold") 700 else if (it == "normal") 400 else it.toIntOrNull() }?.takeIf { it in 1..1000 }
-    val title = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 600, color = color("color", "#111827"))
-    val name = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 400, color = color("color", "#111827"))
-    val type = TextStyle(fontSize = fontSize ?: 12.0, fontWeight = weight ?: 400, color = color("color", "#64748b"))
-    val key = TextStyle(fontSize = fontSize ?: 11.0, fontWeight = weight ?: 600, color = color("color", "#111827"))
+    val title = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 600, color = color("color", DiagramPalette.INK))
+    val name = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 400, color = color("color", DiagramPalette.INK))
+    val type = TextStyle(fontSize = fontSize ?: 12.0, fontWeight = weight ?: 400, color = color("color", DiagramPalette.MUTED))
+    val key = TextStyle(fontSize = fontSize ?: 11.0, fontWeight = weight ?: 600, color = color("color", DiagramPalette.INK))
     val rowHeight = maxOf(22.0, (fontSize ?: 14.0) + 8.0)
     val headerHeight = maxOf(28.0, (fontSize ?: 14.0) + 14.0)
-    val fill = color("fill", "#ffffff")
-    val stroke = color("stroke", "#334155")
+    val fill = color("fill", DiagramPalette.SURFACE)
+    val stroke = color("stroke", DiagramPalette.OUTLINE)
     val strokeWidth = properties["stroke-width"]?.lowercase()?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: 1.5
     val ruleStrokeWidth = if ("stroke-width" in properties) strokeWidth else 1.0
 }

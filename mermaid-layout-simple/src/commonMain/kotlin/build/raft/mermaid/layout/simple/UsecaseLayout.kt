@@ -58,8 +58,8 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     fun properties(id: String): Map<String, String> { val attrs = d.attributes[id]; return (listOf("default") + attrs?.classes.orEmpty()).flatMap { d.classDefs[it].orEmpty().entries }.associate { it.key to it.value } + attrs?.styles.orEmpty() }
     fun color(id: String, key: String, default: String): SceneColor { val value = properties(id)[key]?.lowercase(); val hex = value != null && value.startsWith('#') && value.length in listOf(4,5,7,9) && value.drop(1).all { it in "0123456789abcdef" }; return SceneColor(if (hex) value!! else value?.let { NAMED_COLORS[it] } ?: if (value == "transparent") "#00000000" else default) }
     for ((boundary, box) in groupBoxes) {
-        commands += DrawRect(box, 8.0, fill = color(boundary.id, "fill", "#f8fafc"), stroke = color(boundary.id, "stroke", "#94a3b8"))
-        if (d.attributes[boundary.id]?.properties?.get("type") == "package") commands += DrawRect(SceneRect(box.x + 12.0, box.y - 10.0, minOf(box.width - 24.0, 180.0), 20.0), fill = SceneColor("#f8fafc"), stroke = SceneColor("#94a3b8"))
+        commands += DrawRect(box, 8.0, fill = color(boundary.id, "fill", DiagramPalette.SURFACE), stroke = color(boundary.id, "stroke", DiagramPalette.FAINT))
+        if (d.attributes[boundary.id]?.properties?.get("type") == "package") commands += DrawRect(SceneRect(box.x + 12.0, box.y - 10.0, minOf(box.width - 24.0, 180.0), 20.0), fill = SceneColor(DiagramPalette.SURFACE), stroke = SceneColor(DiagramPalette.FAINT))
         wrapped(boundary.label).forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(box.x + 16.0, box.y + 25.0 + i * 18.0), style = textStyle) }
     }
     fun actorHalfWidth(id: String) = if (d.actors.first { it.id == id }.type == UsecaseActorType.NORMAL) 20.0 else 28.0
@@ -72,8 +72,8 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     fun marker(kind: String, from: ScenePoint, to: ScenePoint) {
         if (kind == "generalization") {
             val triangle = flowMarker(FlowMarker.POINT, from, to).filterIsInstance<DrawPolygon>().single()
-            commands += triangle.copy(fill = SceneColor("#ffffff")); commands += DrawPolyline(triangle.points + triangle.points.first(), stroke = SceneColor("#475569"))
-        } else commands += flowMarker(when(kind) { "arrow" -> FlowMarker.POINT; "circle" -> FlowMarker.CIRCLE; "cross" -> FlowMarker.CROSS; else -> FlowMarker.NONE }, from, to, SceneColor("#475569"))
+            commands += triangle.copy(fill = SceneColor(DiagramPalette.CANVAS)); commands += DrawPolyline(triangle.points + triangle.points.first(), stroke = SceneColor(DiagramPalette.SECONDARY))
+        } else commands += flowMarker(when(kind) { "arrow" -> FlowMarker.POINT; "circle" -> FlowMarker.CIRCLE; "cross" -> FlowMarker.CROSS; else -> FlowMarker.NONE }, from, to, SceneColor(DiagramPalette.SECONDARY))
     }
     val byId = items.associateBy { it.id }
     for (edge in d.relationships) {
@@ -92,10 +92,10 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         edge.label?.let { commands += DrawText(if (edge.type == UsecaseRelationshipType.INCLUDE || edge.type == UsecaseRelationshipType.EXTEND) "«$it»" else it, ScenePoint((from.x + to.x) / 2, (from.y + to.y) / 2 - 10), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0)) }
     }
     for (item in items) {
-        val p = points.getValue(item.id); val fill = color(item.id, "fill", "#eff6ff"); val stroke = color(item.id, "stroke", "#2563eb")
+        val p = points.getValue(item.id); val fill = color(item.id, "fill", DiagramPalette.BLUE_SURFACE); val stroke = color(item.id, "stroke", DiagramPalette.BLUE)
         val table = tables[item.id]
         if (table != null) {
-            commands += table.draw(p, fill, stroke, color(item.id, "color", "#111827"))
+            commands += table.draw(p, fill, stroke, color(item.id, "color", DiagramPalette.INK))
             continue
         }
         if (item.actor) {
@@ -103,14 +103,14 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         } else if (item.ellipse) commands += DrawEllipse(p, nodeW / 2, nodeH / 2, fill = fill, stroke = stroke)
         else commands += DrawRect(SceneRect(p.x - nodeW / 2, p.y - nodeH / 2, nodeW, nodeH), 4.0, fill = fill, stroke = stroke)
         val rows = lines.getValue(item.id)
-        rows.forEachIndexed { index, line -> commands += DrawText(line, ScenePoint(p.x, if (item.actor) p.y + 56 + index * 20 else p.y - (rows.size - 1) * 10 + 5 + index * 20), anchor = TextAnchor.MIDDLE, style = textStyle.copy(color = color(item.id, "color", "#111827"))) }
+        rows.forEachIndexed { index, line -> commands += DrawText(line, ScenePoint(p.x, if (item.actor) p.y + 56 + index * 20 else p.y - (rows.size - 1) * 10 + 5 + index * 20), anchor = TextAnchor.MIDDLE, style = textStyle.copy(color = color(item.id, "color", DiagramPalette.INK))) }
     }
     var noteY = config.padding
     for (note in d.notes) {
         val rows = wrapped(note.label); val target = points[note.targetId] ?: continue
         noteY = maxOf(noteY, target.y - 30); val height = maxOf(60.0, rows.size * 20.0 + 24.0); val x = graphW + 24.0
         commands += DrawLine(target, ScenePoint(x, noteY + height / 2), pattern = StrokePattern.DASHED)
-        commands += DrawRect(SceneRect(x, noteY, noteW, height), 4.0, fill = SceneColor("#fef3c7"), stroke = SceneColor("#d97706"))
+        commands += DrawRect(SceneRect(x, noteY, noteW, height), 4.0, fill = SceneColor(DiagramPalette.AMBER_SURFACE), stroke = SceneColor(DiagramPalette.AMBER))
         rows.forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(x + 14, noteY + 24 + i * 20), style = textStyle) }
         noteY += height + 20
     }

@@ -7,7 +7,7 @@ class ClassGrammarLayoutTest {
     private fun layout(text:String):LayoutScene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\n$text")).diagram,FixedWidthTextMeasurer,LayoutConfig())
     @Test fun namespacesContainChildrenAndDirectionMovesRealBoxes() {
         val scene=layout("direction LR\nnamespace Outer {\nnamespace Inner { class A }\nclass B\n}\nclass C\nA --> C")
-        val groups=scene.commands.filterIsInstance<DrawRect>().filter { it.fill.value=="#f1f5f9" }
+        val groups=scene.commands.filterIsInstance<DrawRect>().filter { it.fill.value==DiagramPalette.SURFACE && it.stroke.value==DiagramPalette.FAINT }
         assertEquals(2,groups.size)
         val outer=groups[0].rect;val inner=groups[1].rect
         assertTrue(inner.x>outer.x && inner.y>outer.y && inner.x+inner.width<outer.x+outer.width && inner.y+inner.height<outer.y+outer.height)
@@ -23,8 +23,8 @@ class ClassGrammarLayoutTest {
     }
     @Test fun notesAreMeasuredAndActuallyDrawnInsideTheirNamespace() {
         val scene=layout("namespace Team {\nclass A\nnote for A \"long note text\\nsecond line\"\n}")
-        val note=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value=="#fff7d6" }.rect
-        val group=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value=="#f1f5f9" }.rect
+        val note=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value==DiagramPalette.AMBER_SURFACE }.rect
+        val group=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value==DiagramPalette.SURFACE && it.stroke.value==DiagramPalette.FAINT }.rect
         assertTrue(note.x>=group.x && note.y>=group.y && note.x+note.width<=group.x+group.width && note.y+note.height<=group.y+group.height)
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text=="second line" })
         assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.pattern==StrokePattern.DASHED })

@@ -7,6 +7,14 @@ This is an independent, non-official implementation. Compatibility is declared
 per diagram family and syntax feature; unsupported syntax fails with typed
 diagnostics rather than silently rendering a different diagram.
 
+## Default appearance
+
+All diagram families share `DiagramPalette`: zinc text and neutral surfaces, subtle
+borders, and muted blue, green, rose, amber, purple and cyan accents. Titles retain
+their stronger type hierarchy; category colors, status differences and Journey
+scores remain distinct. Source-authored styles and named CSS colors keep their
+literal values. The palette is shared by native scene commands and SVG output.
+
 ## Modules
 
 - `mermaid-core`: parser, typed AST, and diagnostics.
@@ -82,7 +90,7 @@ State diagrams support bare identifiers, aliases, repeated descriptions, nested 
 
 Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
 
-Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards, blue elements, line spacing and stroke palette remain unchanged. The pinned original Requirement parser suite passes43/43; this does not establish complete DB or visual parity.
+Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards and line spacing remain; elements use the shared blue accent and neutral stroke palette. The pinned original Requirement parser suite passes43/43; this does not establish complete DB or visual parity.
 
 ### Gantt grammar and dates
 

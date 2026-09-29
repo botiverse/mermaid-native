@@ -19,7 +19,7 @@ public data class TextStyle(
     val fontSize: Double = 14.0,
     val fontFamily: String = "sans-serif",
     val fontWeight: Int = 400,
-    val color: SceneColor = SceneColor("#111827"),
+    val color: SceneColor = SceneColor(DiagramPalette.INK),
     val italic: Boolean = false,
 )
 
@@ -32,8 +32,8 @@ public sealed interface DrawCommand
 public data class DrawRect(
     val rect: SceneRect,
     val cornerRadius: Double = 0.0,
-    val fill: SceneColor = SceneColor("#ffffff"),
-    val stroke: SceneColor = SceneColor("#334155"),
+    val fill: SceneColor = SceneColor(DiagramPalette.SURFACE),
+    val stroke: SceneColor = SceneColor(DiagramPalette.OUTLINE),
     val strokeWidth: Double = 1.5,
 ) : DrawCommand
 
@@ -41,30 +41,30 @@ public data class DrawEllipse(
     val center: ScenePoint,
     val radiusX: Double,
     val radiusY: Double,
-    val fill: SceneColor = SceneColor("#ffffff"),
+    val fill: SceneColor = SceneColor(DiagramPalette.SURFACE),
     val fillOpacity: Double = 1.0,
-    val stroke: SceneColor = SceneColor("#334155"),
+    val stroke: SceneColor = SceneColor(DiagramPalette.OUTLINE),
     val strokeWidth: Double = 1.5,
 ) : DrawCommand
 
 public data class DrawLine(
     val from: ScenePoint,
     val to: ScenePoint,
-    val stroke: SceneColor = SceneColor("#475569"),
+    val stroke: SceneColor = SceneColor(DiagramPalette.SECONDARY),
     val strokeWidth: Double = 1.5,
     val pattern: StrokePattern = StrokePattern.SOLID,
 ) : DrawCommand
 
 public data class DrawPolyline(
     val points: List<ScenePoint>,
-    val stroke: SceneColor = SceneColor("#475569"),
+    val stroke: SceneColor = SceneColor(DiagramPalette.SECONDARY),
     val strokeWidth: Double = 1.5,
     val pattern: StrokePattern = StrokePattern.SOLID,
 ) : DrawCommand
 
 public data class DrawPolygon(
     val points: List<ScenePoint>,
-    val fill: SceneColor = SceneColor("#475569"),
+    val fill: SceneColor = SceneColor(DiagramPalette.SECONDARY),
 ) : DrawCommand
 
 public data class DrawText(

@@ -21,6 +21,6 @@ class SwimlaneGrammarLayoutTest {
         val path=scene.commands.filterIsInstance<DrawPolyline>().single()
         assertEquals(4,path.points.distinct().size)
         assertTrue(path.points.all { it.x in 0.0..scene.width && it.y in 0.0..scene.height })
-        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.stroke.value=="#2563eb" })
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.stroke.value==DiagramPalette.BLUE })
     }
 }

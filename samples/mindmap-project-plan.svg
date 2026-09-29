@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="545.2" height="316" viewBox="0 0 545.2 316" role="img">
-  <line x1="168.8" y1="154" x2="224.8" y2="80" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="332.4" y1="80" x2="388.4" y2="45" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="332.4" y1="80" x2="388.4" y2="115" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="168.8" y1="154" x2="224.8" y2="228" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <line x1="324" y1="228" x2="388.4" y2="228" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <ellipse cx="96.4" cy="154" rx="72.4" ry="72.4" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
-  <ellipse cx="96.4" cy="154" rx="68.4" ry="68.4" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
-  <text x="96.4" y="158.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Project plan</text>
-  <rect x="224.8" y="59" width="107.6" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="278.6" y="84.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Discovery</text>
-  <rect x="388.4" y="24" width="132.8" height="42" rx="2" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="454.79999999999995" y="49.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Requirements</text>
-  <rect x="388.4" y="94" width="99.2" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="438" y="119.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Research</text>
-  <rect x="224.8" y="207" width="99.2" height="42" rx="12" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
-  <text x="274.40000000000003" y="232.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Delivery</text>
-  <ellipse cx="452.4" cy="228" rx="64" ry="64" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
-  <ellipse cx="452.4" cy="228" rx="60" ry="60" fill="#ffffff" fill-opacity="1" stroke="#334155" stroke-width="1.5"/>
-  <text x="452.4" y="232.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#111827">Native SVG</text>
+  <line x1="168.8" y1="154" x2="224.8" y2="80" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <line x1="332.4" y1="80" x2="388.4" y2="45" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <line x1="332.4" y1="80" x2="388.4" y2="115" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <line x1="168.8" y1="154" x2="224.8" y2="228" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <line x1="324" y1="228" x2="388.4" y2="228" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <ellipse cx="96.4" cy="154" rx="72.4" ry="72.4" fill="#f7f7f8" fill-opacity="1" stroke="#858590" stroke-width="1.5"/>
+  <ellipse cx="96.4" cy="154" rx="68.4" ry="68.4" fill="#f7f7f8" fill-opacity="1" stroke="#858590" stroke-width="1.5"/>
+  <text x="96.4" y="158.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Project plan</text>
+  <rect x="224.8" y="59" width="107.6" height="42" rx="12" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="278.6" y="84.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Discovery</text>
+  <rect x="388.4" y="24" width="132.8" height="42" rx="2" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="454.79999999999995" y="49.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Requirements</text>
+  <rect x="388.4" y="94" width="99.2" height="42" rx="12" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="438" y="119.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Research</text>
+  <rect x="224.8" y="207" width="99.2" height="42" rx="12" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
+  <text x="274.40000000000003" y="232.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Delivery</text>
+  <ellipse cx="452.4" cy="228" rx="64" ry="64" fill="#f7f7f8" fill-opacity="1" stroke="#858590" stroke-width="1.5"/>
+  <ellipse cx="452.4" cy="228" rx="60" ry="60" fill="#f7f7f8" fill-opacity="1" stroke="#858590" stroke-width="1.5"/>
+  <text x="452.4" y="232.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Native SVG</text>
 </svg>

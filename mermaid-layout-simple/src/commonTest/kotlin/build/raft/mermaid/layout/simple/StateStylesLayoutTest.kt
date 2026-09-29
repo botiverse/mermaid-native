@@ -8,6 +8,6 @@ class StateStylesLayoutTest {
         val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
         assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#ffcccc" && it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text=="Long description" && it.style.fontSize==24.0 })
-        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#eeeeee" })
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value==DiagramPalette.SURFACE })
     }
 }
