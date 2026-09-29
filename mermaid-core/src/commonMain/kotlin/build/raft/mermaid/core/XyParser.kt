@@ -89,7 +89,7 @@ internal class XyParser(private val source: String) {
                 }
             }
             if(!y.explicitRange) {
-                val values = series.flatMap { if(x.categories.isNotEmpty()) it.values.take(x.categories.size) else it.values }
+                val values = series.flatMap { it.valuesFor(x).filterNotNull() }
                 val low = values.minOrNull() ?: 0.0; val high = values.maxOrNull() ?: 1.0
                 y = y.copy(minimum = low, maximum = if(low == high) high + 1.0 else high)
             }

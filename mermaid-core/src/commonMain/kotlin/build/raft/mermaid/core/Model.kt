@@ -366,7 +366,14 @@ public data class XySeries(
     val title: String = "",
     val labels: List<String> = emptyList(),
     val titleType: String = "text",
-)
+) {
+    /** Visible band slots retain absent values without inventing zero-valued points. */
+    public fun valuesFor(axis: XyAxis): List<Double?> =
+        if (axis.categories.isEmpty()) values else axis.categories.indices.map { values.getOrNull(it) }
+
+    /** Keep parser text intact while matching the title used by the legend. */
+    public val displayTitle: String get() = title.trim()
+}
 
 public enum class XySeriesKind { LINE, BAR }
 

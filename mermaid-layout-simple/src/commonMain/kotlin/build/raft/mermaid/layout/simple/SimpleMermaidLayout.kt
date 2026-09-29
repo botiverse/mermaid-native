@@ -2337,10 +2337,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         var row = 0
         var width = 640.0
         diagram.series.forEachIndexed { index, series ->
-            if (series.title.isEmpty()) return@forEachIndexed
-            val measured = measurer.measure(series.title, style)
+            if (series.displayTitle.isEmpty()) return@forEachIndexed
+            val measured = measurer.measure(series.displayTitle, style)
             if (x > left && x + measured.width > 640.0 - config.padding) { row++; x = left }
-            commands += DrawText(series.title, ScenePoint(x, config.padding + 44.0 + row * 24.0),
+            commands += DrawText(series.displayTitle, ScenePoint(x, config.padding + 44.0 + row * 24.0),
                 style = style.copy(color = SceneColor(XY_COLORS[index % XY_COLORS.size])))
             width = maxOf(width, x + measured.width + config.padding)
             x += measured.width + 24.0
@@ -2401,7 +2401,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val barWidth = (step * 0.64 / max(1, barSeries.size)).coerceAtMost(36.0)
         var barIndex = 0
         diagram.series.forEachIndexed { seriesIndex, original ->
-            val series = if(categories.isNotEmpty()) original.copy(values = original.values.take(categories.size)) else original
+            val series = original.copy(values = original.valuesFor(diagram.xAxis).filterNotNull())
             val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
             when (series.kind) {
                 XySeriesKind.BAR -> {
@@ -2486,7 +2486,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val thickness = minOf(36.0, step * 0.64 / maxOf(1, bars)); var barIndex = 0
         val zero = x(0.0.coerceIn(minOf(diagram.yAxis.minimum, diagram.yAxis.maximum), maxOf(diagram.yAxis.minimum, diagram.yAxis.maximum)))
         diagram.series.forEachIndexed { seriesIndex, series ->
-            val values = if(categories.isNotEmpty()) series.values.take(categories.size) else series.values
+            val values = series.valuesFor(diagram.xAxis).filterNotNull()
             val color = SceneColor(XY_COLORS[seriesIndex % XY_COLORS.size])
             if(series.kind == XySeriesKind.LINE) commands += DrawPolyline(values.mapIndexed { i, value -> ScenePoint(x(value), y(i, values.size)) }, stroke = color, strokeWidth = 2.0)
             values.forEachIndexed { i, value ->
