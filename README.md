@@ -124,3 +124,7 @@ Radar accepts empty documents, colon headers, metadata, repeated axes/curves, mu
 ### Cynefin domain model assertions
 
 Seven pinned upstream database assertions replay through production Kotlin parsing for domain blocks/items, transition labels and self-loop filtering; see `compatibility/upstream-cynefin-model/README.md`. JavaScript only translates setter inputs and projects the returned model. The remaining lifecycle/configuration and boundary/seed tests are not counted as Native coverage.
+
+### TreeView hierarchy model assertions
+
+Twelve pinned upstream database assertions replay through production Kotlin for nested/sibling nodes, annotations and diagram/accessibility metadata. The bridge projects Kotlin parent indices into the original nested shape; the renderer consumes those same indices. Lifecycle, generated IDs/counts, configuration, CSS painting and external icon resolution are outside this admission; see `compatibility/upstream-treeview-model/README.md`.
