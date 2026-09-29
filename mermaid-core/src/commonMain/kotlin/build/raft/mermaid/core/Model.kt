@@ -408,6 +408,9 @@ public data class GanttTask(
     val startEpochMillis: Long = (startDay.toLong() - 719528L) * 86_400_000L,
     val durationMillis: Long = durationDays.toLong() * 86_400_000L,
     val renderDurationMillis: Long = renderDurationDays.toLong() * 86_400_000L,
+    /** Calendar-adjusted end used for rendering; absent when no calendar adjustment applies. */
+    val renderEndEpochMillis: Long? = null,
+    val manualEndTime: Boolean = false,
 )
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 
