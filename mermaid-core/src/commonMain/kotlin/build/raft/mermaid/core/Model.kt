@@ -518,7 +518,11 @@ public data class RequirementDiagram(
     val accessibilityDescription: String? = null,
     val direction: FlowDirection? = null,
     val classDefinitions: Map<String,List<String>> = emptyMap(),
-) : MermaidDiagram
+) : MermaidDiagram {
+    /** Resolve inherited declarations before direct styles, as consumed by requirement drawing. */
+    public fun resolvedStyles(classes: List<String>, styles: List<String>): List<String> =
+        classes.flatMap { classDefinitions[it].orEmpty() } + styles
+}
 
 public data class RequirementDefinition(
     val name: String,
