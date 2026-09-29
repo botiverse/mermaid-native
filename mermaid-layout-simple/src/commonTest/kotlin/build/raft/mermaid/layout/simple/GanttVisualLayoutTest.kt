@@ -53,6 +53,19 @@ class GanttVisualLayoutTest {
         assertTrue(labelLines.last().origin.y < texts.single { it.text == "Next" }.origin.y - 18)
     }
 
+    @Test fun fallbackMetricsKeepFullwidthLabelsOutOfTheTimeline() {
+        val label = "完成中文产品需求说明与交互设计验证".repeat(4)
+        val result = scene("gantt\nsection 产品设计与交付\n$label:a,2024-01-01,2d\n交付:b,after a,1d")
+        val firstBar = result.commands.filterIsInstance<DrawRect>().first { it.rect.height == 24.0 }
+        val labelLines = result.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 13.0 && it.text != "交付" }
+        assertEquals(label, labelLines.joinToString("") { it.text })
+        labelLines.forEach { line ->
+            // Each glyph in this fixture occupies a full em in the SVG host.
+            assertTrue(line.origin.x + line.text.length * line.style.fontSize < firstBar.rect.x - 12)
+        }
+        assertTrue(labelLines.size >= 4)
+    }
+
     @Test fun negativeEpochCrossingMidnightAndTinyIntervalsKeepExactGeometry() {
         val result = scene("gantt\ndateFormat x\nBefore:a,-20,20ms\nAfter:b,after a,5ms")
         val bars = result.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 }

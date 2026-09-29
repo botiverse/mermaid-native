@@ -22,6 +22,24 @@ internal fun layoutGanttTimeline(
     val tickStyle = TextStyle(fontSize = 11.0, color = muted)
     val titleStyle = TextStyle(fontSize = 20.0, fontWeight = 600, color = ink)
     val padding = maxOf(16.0, config.padding)
+    fun textWidth(text: String, style: TextStyle): Double {
+        val measured = measurer.measure(text, style).width
+        if (measurer !== FixedWidthTextMeasurer) return measured
+        // The deterministic fallback budgets 0.6 em per UTF-16 unit. CJK/fullwidth
+        // glyphs occupy a full em; budget that width before wrapping Web/SVG labels.
+        val extra = text.sumOf { char ->
+            val code = char.code
+            when {
+                code in 0x1100..0x115f || code in 0x2e80..0xa4cf || code in 0xac00..0xd7a3 ||
+                    code in 0xf900..0xfaff || code in 0xfe10..0xfe19 || code in 0xfe30..0xfe6f ||
+                    code in 0xff01..0xff60 || code in 0xffe0..0xffe6 -> 0.4
+                char in "MW@" -> 0.4
+                char in "mw" -> 0.25
+                else -> 0.0
+            }
+        }
+        return measured + extra * style.fontSize
+    }
     val tasks = diagram.sections.flatMap { it.tasks }
     val dayMillis = 86_400_000L
     val first = tasks.minOfOrNull { it.startEpochMillis } ?: 0L
@@ -39,7 +57,7 @@ internal fun layoutGanttTimeline(
         (0..4).map { first + (span.toDouble() * it / 4).toLong() }.distinct()
     } else {
         val days = (span / dayMillis).toInt()
-        val labelWidth = measurer.measure(dateLabel(day(first)), tickStyle).width
+        val labelWidth = textWidth(dateLabel(day(first)), tickStyle)
         val intervals = maxOf(1, floor(plotWidth / (labelWidth + 16.0)).toInt())
         val step = maxOf(1, ceil(days.toDouble() / intervals).toInt())
         ((0..days step step).map { first + it * dayMillis } + (first + span)).distinct().toMutableList().also { list ->
@@ -49,11 +67,11 @@ internal fun layoutGanttTimeline(
         }
     }
     val showDateAboveClock = precise && (diagram.dateFormat !in setOf("x", "X") || day(first) != day(last))
-    val tickWidth = ticks.maxOf { measurer.measure(if (precise) clock(it) else dateLabel(day(it)), tickStyle).width }
-    val fullTickWidth = if (showDateAboveClock) maxOf(tickWidth, ticks.maxOf { measurer.measure(dateLabel(day(it)), tickStyle).width }) else tickWidth
+    val tickWidth = ticks.maxOf { textWidth(if (precise) clock(it) else dateLabel(day(it)), tickStyle) }
+    val fullTickWidth = if (showDateAboveClock) maxOf(tickWidth, ticks.maxOf { textWidth(dateLabel(day(it)), tickStyle) }) else tickWidth
     val labelTextWidth = maxOf(128.0, minOf(220.0,
-        maxOf(tasks.maxOfOrNull { measurer.measure(it.name, body).width } ?: 0.0,
-            diagram.sections.maxOfOrNull { measurer.measure(it.name, heading).width } ?: 0.0)))
+        maxOf(tasks.maxOfOrNull { textWidth(it.name, body) } ?: 0.0,
+            diagram.sections.maxOfOrNull { textWidth(it.name, heading) } ?: 0.0)))
     val labelColumn = labelTextWidth + 42.0
     val left = padding + labelColumn + fullTickWidth / 2
     val right = left + plotWidth
@@ -68,7 +86,7 @@ internal fun layoutGanttTimeline(
         while (i < line.length) {
             val end = if (line[i].isHighSurrogate() && i + 1 < line.length && line[i + 1].isLowSurrogate()) i + 2 else i + 1
             val next = line.substring(i, end)
-            if (current.isNotEmpty() && measurer.measure(current + next, style).width > limit) {
+            if (current.isNotEmpty() && textWidth(current + next, style) > limit) {
                 val breakAt = current.indexOfLast { it.isWhitespace() }
                 if (breakAt > 0) {
                     result += current.substring(0, breakAt + 1)
