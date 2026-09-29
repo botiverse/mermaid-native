@@ -9,8 +9,8 @@ internal class GanttParser(private val source:String) {
     private var format="YYYY-MM-DD"
     private var accTitle:String?=null
     private var accDescription:String?=null
-    private val excludes=mutableListOf<String>()
-    private val includes=mutableListOf<String>()
+    private val excludes=linkedSetOf<String>()
+    private val includes=linkedSetOf<String>()
     private var inclusive=false
     private var today:String?=null
     private var axis:String?=null
@@ -39,8 +39,8 @@ internal class GanttParser(private val source:String) {
                 }
                 text.startsWith("section ")->sectionNames+=value()
                 text=="inclusiveEndDates"->inclusive=true
-                text.startsWith("excludes ")->excludes+=value().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
-                text.startsWith("includes ")->includes+=value().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
+                text.startsWith("excludes ")->excludes+=value().lowercase().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
+                text.startsWith("includes ")->includes+=value().lowercase().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
                 text.startsWith("todayMarker ")->today=value()
                 text.startsWith("axisFormat ")->axis=value()
                 text.startsWith("tickInterval ")->tick=value()
