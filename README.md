@@ -120,3 +120,7 @@ The default LR layout keeps Native's branch colors, commit markers and tag flags
 ### Radar grammar and rendering
 
 Radar accepts empty documents, colon headers, metadata, repeated axes/curves, multiline numeric or named entries and typed min/max/ticks/showLegend/graticule options. The model preserves grammar entries independently of rendering: named entries map by axis ID, positional entries map in order, and missing axis values use the minimum. Values outside the visible domain clamp to its bounds. Empty or short-axis graphs remain finite. Default circular rings, soft fills and diamond markers are preserved; explicit polygon graticules and hidden legends affect actual drawing. Tick count is bounded to 0–32 for rendering; dense grids retain every ring while thinning numeric labels to readable spacing. Without an explicit `max`, the scale uses the largest plotted value rather than a minimum ceiling of 100. The actual model, option resolution and radius calculation are checked by 15 unchanged upstream assertions; see `compatibility/upstream-radar-model/README.md`. Recovery ASTs and arbitrary renderer theme directives are not claimed.
+
+### Cynefin domain model assertions
+
+Seven pinned upstream database assertions replay through production Kotlin parsing for domain blocks/items, transition labels and self-loop filtering; see `compatibility/upstream-cynefin-model/README.md`. JavaScript only translates setter inputs and projects the returned model. The remaining lifecycle/configuration and boundary/seed tests are not counted as Native coverage.
