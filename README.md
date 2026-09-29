@@ -82,6 +82,8 @@ and a fixture or differential vector before it is considered complete. See
 
 ### Swimlane grammar and rendering
 
+Architecture diagrams support nested groups, junction connections and `align row` / `align column` hints. Nested frames enclose child content, and cross-group alignment moves entire subtrees to keep containers separate. Cyclic containment and invalid parent/member references fail before rendering. Layout is deterministic; upstream Cytoscape/fcose solver configuration is not implemented.
+
 `swimlane-beta` consumes the same typed flow grammar as upstream, including implicit nodes and labeled or nested subgraphs. The model retains the full `FlowchartDiagram` alongside the legacy lanes. Plain lane diagrams preserve the existing lane renderer; diagrams using richer shapes, styles, nested or collapsed groups use the actual Flow renderer so these features are not silently discarded. Complex graph routing remains bounded by the deterministic layout.
 
 ### State grammar and rendering

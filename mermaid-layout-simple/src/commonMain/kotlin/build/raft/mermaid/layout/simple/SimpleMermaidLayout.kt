@@ -887,24 +887,26 @@ public object SimpleMermaidLayout : DiagramLayout {
         val groupIconWidth = diagram.groups.maxOfOrNull { architectureIconReserve(it.icon, textMeasurer, iconStyle) } ?: 0.0
         val nodeWidth = max(150.0, max(serviceLabelWidth, serviceIconWidth) + 42.0)
         val columnWidth = max(nodeWidth + 32.0, groupLabelWidth + groupIconWidth + 60.0)
+        val geometry = if(diagram.junctions.isNotEmpty() || diagram.layoutHints.isNotEmpty() || diagram.groups.any { it.parentId!=null }) architectureGeometry(diagram,nodeWidth,columnWidth,config.padding,titleOffset) else null
+        val junctionIds = diagram.junctions.map { it.id }.toSet()
         val hasStandalone = diagram.services.any { it.groupId == null }
         val columns = diagram.groups.map { it.id } + if (hasStandalone) listOf<String?>(null) else emptyList()
         val columnIndex = columns.withIndex().associate { it.value to it.index }
-        val servicePoints = diagram.services.map { service ->
+        val servicePoints = geometry?.points ?: diagram.services.map { service ->
             val localIndex = diagram.services.filter { it.groupId == service.groupId }.indexOf(service)
             val index = columnIndex.getValue(service.groupId)
             service.id to ScenePoint(config.padding + index * (columnWidth + 40.0) + columnWidth / 2.0, config.padding + titleOffset + 80.0 + localIndex * 120.0)
         }.toMap()
-        val groupRects = diagram.groups.mapIndexed { index, group ->
+        val groupRects = geometry?.groups ?: diagram.groups.mapIndexed { index, group ->
             val members = diagram.services.filter { it.groupId == group.id }
             group.id to SceneRect(config.padding + index * (columnWidth + 40.0), config.padding + titleOffset, columnWidth, max(140.0, members.size * 120.0 + 56.0))
         }.toMap()
         val maxRows = columns.maxOfOrNull { column -> diagram.services.count { it.groupId == column } } ?: 0
-        val width = maxOf(720.0, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2, config.padding * 2 + columns.size * columnWidth + (columns.size - 1) * 40.0)
-        val height = max(420.0, config.padding * 2 + maxRows * 120.0 + 56.0) + titleOffset
+        val width = maxOf(geometry?.width ?: (config.padding * 2 + columns.size * columnWidth + (columns.size - 1) * 40.0), 720.0, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2)
+        val height = geometry?.height ?: (max(420.0, config.padding * 2 + maxRows * 120.0 + 56.0) + titleOffset)
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
-        diagram.groups.forEach { group ->
+        (if(geometry==null)diagram.groups else diagram.groups.sortedBy { groupDepth(it.id,diagram.groups) }).forEach { group ->
             val rect = groupRects.getValue(group.id)
             commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor(DiagramPalette.SURFACE), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.5)
             commands += DrawText(group.label, ScenePoint(rect.x + 14.0, rect.y + 24.0), style = groupStyle)
@@ -918,8 +920,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.edges.forEach { edge ->
             val from = servicePoints.getValue(edge.sourceId)
             val to = servicePoints.getValue(edge.targetId)
-            val start = architecturePortPoint(from, edge.sourcePort, nodeWidth / 2.0, 38.0)
-            val end = architecturePortPoint(to, edge.targetPort, nodeWidth / 2.0, 38.0)
+            val start = architecturePortPoint(from, edge.sourcePort, if(edge.sourceId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.sourceId in junctionIds)4.0 else 38.0)
+            val end = architecturePortPoint(to, edge.targetPort, if(edge.targetId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.targetId in junctionIds)4.0 else 38.0)
             val startVector = architecturePortVector(edge.sourcePort)
             val endVector = architecturePortVector(edge.targetPort)
             val startOutside = ScenePoint(start.x + startVector.x * 12.0, start.y + startVector.y * 12.0)
@@ -945,6 +947,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             )
             commands += DrawText(service.label, point.copy(y = point.y + 13.0).canonical(), anchor = TextAnchor.MIDDLE, style = textStyle)
         }
+        diagram.junctions.forEach { junction -> commands += DrawEllipse(servicePoints.getValue(junction.id),4.0,4.0,fill=SceneColor(DiagramPalette.SECONDARY),stroke=SceneColor(DiagramPalette.SECONDARY)) }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
 
