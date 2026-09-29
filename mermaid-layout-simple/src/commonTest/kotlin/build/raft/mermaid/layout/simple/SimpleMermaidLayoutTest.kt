@@ -1905,9 +1905,9 @@ class SimpleMermaidLayoutTest {
         ))))
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        val bars = first.commands.filterIsInstance<DrawRect>()
-        assertEquals(listOf(136.0, 204.0), bars.map { it.rect.width })
-        assertEquals(listOf("#16a34a", "#2563eb"), bars.map { it.fill.value })
+        val bars = first.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 }
+        assertEquals(listOf(256.0, 384.0), bars.map { it.rect.width })
+        assertEquals(listOf("#dcebe3", "#dce6f5"), bars.map { it.fill.value })
     }
 
     @Test
@@ -1941,7 +1941,7 @@ class SimpleMermaidLayoutTest {
             listOf("2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24"),
             labels.filter { it.startsWith("2026-") },
         )
-        assertTrue(labels.containsAll(listOf("Plan", "Build: Parser", "Build: Renderer")))
+        assertTrue(labels.containsAll(listOf("Plan", "Build", "Parser", "Renderer")))
         assertTrue(scene.commands.filterIsInstance<DrawLine>().size >= 7)
     }
 

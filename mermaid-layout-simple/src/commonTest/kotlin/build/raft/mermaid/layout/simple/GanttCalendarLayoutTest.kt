@@ -6,7 +6,7 @@ class GanttCalendarLayoutTest {
     private fun scene(s:String)=SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(s)).diagram,FixedWidthTextMeasurer,LayoutConfig())
     @Test fun paintStopsBeforeExcludedTailWhileDependencyStartsAfterIt(){
         val s=scene("gantt\nexcludes weekends\nDesign:d,2026-09-24,2d\nBuild:b,after d,2d")
-        val r=s.commands.filterIsInstance<DrawRect>();assertEquals(2,r.size);assertTrue(r[0].rect.x+r[0].rect.width<r[1].rect.x);assertEquals(r[0].rect.width,r[1].rect.width)
+        val r=s.commands.filterIsInstance<DrawRect>().filter { it.rect.height == 24.0 };assertEquals(2,r.size);assertTrue(r[0].rect.x+r[0].rect.width<r[1].rect.x);assertEquals(r[0].rect.width,r[1].rect.width)
     }
     @Test fun longSpansUseBoundedTicksAndKeepFinalDateLabelInsideScene(){
         val s=scene("gantt\nLong:a,2024-01-01,100000d")
