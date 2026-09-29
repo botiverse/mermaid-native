@@ -3272,7 +3272,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             listOf(node to depth) + node.children.flatMap { flatten(it, depth + 1) }
 
         fun subtreeWidth(node: IshikawaNode): Double =
-            flatten(node).maxOf { (entry, _) -> textMeasurer.measure(entry.text, style).width }
+            flatten(node).maxOf { (entry, depth) -> textMeasurer.measure(entry.text, style).width + max(0, depth - 1) * 54.0 }
 
         val upperCauses = causes.filterIndexed { index, _ -> index % 2 == 0 }
         val lowerCauses = causes.filterIndexed { index, _ -> index % 2 == 1 }
@@ -3300,7 +3300,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         val tail = 40.0
         // Cause labels are END-anchored and extend leftward from their sub-bone,
         // so each slot reserves the full measured subtree width before the bone.
-        val contentWidths = causes.map { subtreeWidth(it) }
+        val contentWidths = causes.mapIndexed { index, cause ->
+            subtreeWidth(cause) + (if (index % 2 == 0) upperLen else lowerLen) * boneSlope
+        }
         val slots = contentWidths.map { it + slotPadding + slotGap }
         val width = config.padding * 2.0 + slots.sum() - (if (causes.isEmpty()) slotGap else 0.0) + tail + headWidth
         val spineY = config.padding + labelBoxHeight + upperLen
@@ -3362,26 +3364,38 @@ public object SimpleMermaidLayout : DiagramLayout {
                 TextAnchor.MIDDLE,
                 causeStyle,
             )
-            val entries = flatten(cause).drop(1)
-                .mapIndexed { entryIndex, pair -> Triple(pair.first, pair.second, entryIndex) }
-                .sortedWith(compareBy({ it.second }, { it.third }))
-            val usable = max(rowHeight, sideLen - labelBoxHeight)
-            entries.forEachIndexed { _, (entry, depth, orderIndex) ->
-                val y = spineY + side * min((orderIndex + 1) * rowHeight, usable)
-                val t = abs(y - spineY) / sideLen
-                val boneX = slotCenter - t * sideLen * boneSlope
-                val stub = 20.0 + depth * 14.0
-                val stubStart = ScenePoint(boneX, y)
-                val stubEnd = ScenePoint(boneX - stub, y)
-                commands += DrawLine(stubStart, stubEnd, stroke = subBoneColor)
-                commands += arrowHead(stubEnd, stubStart, subBoneColor)
-                commands += DrawText(
-                    entry.text,
-                    ScenePoint(boneX - stub - 6.0, y + style.fontSize * 0.4),
-                    anchor = TextAnchor.END,
-                    style = style,
-                )
+            var orderIndex = 0
+            fun drawChildren(parent: IshikawaNode, parentBranch: Pair<ScenePoint, ScenePoint>?) {
+                parent.children.forEach { entry ->
+                    val y = spineY + side * (++orderIndex) * rowHeight
+                    val target = if (parentBranch == null) {
+                        // Direct causes meet the category bone.
+                        ScenePoint(slotCenter - abs(y - spineY) * boneSlope, y)
+                    } else {
+                        // A nested cause meets its parent's own branch, never the
+                        // category bone. Keep the branch visible beside its label.
+                        val (start, end) = parentBranch
+                        ScenePoint((start.x + end.x) / 2.0, start.y)
+                    }
+                    val right = if (parentBranch == null) target else ScenePoint(parentBranch.second.x - 20.0, y)
+                    val left = ScenePoint(right.x - 34.0, y)
+                    commands += DrawLine(right, left, stroke = subBoneColor)
+                    if (parentBranch == null) {
+                        commands += arrowHead(left, target, subBoneColor)
+                    } else {
+                        commands += DrawLine(right, target, stroke = subBoneColor)
+                        commands += arrowHead(right, target, subBoneColor)
+                    }
+                    commands += DrawText(
+                        entry.text,
+                        ScenePoint(left.x - 6.0, y + style.fontSize * 0.4),
+                        anchor = TextAnchor.END,
+                        style = style,
+                    )
+                    drawChildren(entry, right to left)
+                }
             }
+            drawChildren(cause, null)
         }
         return LayoutScene(width, height, commands)
     }

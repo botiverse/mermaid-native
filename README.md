@@ -80,9 +80,13 @@ syntax needs a support-matrix entry, parser tests, a negative/unsupported case,
 and a fixture or differential vector before it is considered complete. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Swimlane grammar and rendering
-
+### Architecture grammar and rendering
 Architecture diagrams support nested groups, junction connections and `align row` / `align column` hints. Nested frames enclose child content, and cross-group alignment moves entire subtrees to keep containers separate. Cyclic containment and invalid parent/member references fail before rendering. Layout is deterministic; upstream Cytoscape/fcose solver configuration is not implemented.
+
+### Ishikawa hierarchy
+Ishikawa nested causes connect to their immediate parent branch. For example, `Dirty lens` under `LENS` points to the LENS branch, while LENS connects to its Equipment category. Measured horizontal space includes nesting depth so child labels remain inside the scene.
+
+### Swimlane grammar and rendering
 
 `swimlane-beta` consumes the same typed flow grammar as upstream, including implicit nodes and labeled or nested subgraphs. The model retains the full `FlowchartDiagram` alongside the legacy lanes. Plain lane diagrams preserve the existing lane renderer; diagrams using richer shapes, styles, nested or collapsed groups use the actual Flow renderer so these features are not silently discarded. Complex graph routing remains bounded by the deterministic layout.
 
