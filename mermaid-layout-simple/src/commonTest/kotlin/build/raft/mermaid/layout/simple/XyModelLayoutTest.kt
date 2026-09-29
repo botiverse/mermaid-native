@@ -50,4 +50,22 @@ class XyModelLayoutTest {
             }
         }
     }
+    @Test fun valueLabelsAvoidFilledBarsRegardlessOfSeriesOrder() {
+        for (orientation in listOf("vertical", "horizontal")) {
+            for (series in listOf("bar [45]\nline [40]", "line [40]\nbar [45]")) {
+                val output = scene("xychart-beta $orientation\nx-axis [Q2]\ny-axis 0 --> 100\n$series")
+                val bars = output.commands.filterIsInstance<DrawRect>().map { it.rect }
+                val labels = output.commands.filterIsInstance<DrawText>().filter { it.style.fontWeight == 600 }
+                assertEquals(2, labels.size)
+                for (label in labels) {
+                    val size = FixedWidthTextMeasurer.measure(label.text, label.style)
+                    val left = label.origin.x - if (label.anchor == TextAnchor.MIDDLE) size.width / 2 else 0.0
+                    assertTrue(bars.none { bar ->
+                        left < bar.x + bar.width && left + size.width > bar.x &&
+                            label.origin.y - size.height < bar.y + bar.height && label.origin.y > bar.y
+                    }, "$orientation $series ${label.text}")
+                }
+            }
+        }
+    }
 }
