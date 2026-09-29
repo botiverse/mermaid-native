@@ -103,7 +103,13 @@ internal class RadarParser(private val source: String) {
                 else -> error("Unsupported radar statement: $keyword")
             }
         }
-        val maximum = options.lastOrNull { it.name == "max" }?.number ?: maxOf(100.0, curves.flatMap { it.values }.maxOrNull() ?: 0.0)
+        // Infer the scale from values that will actually be drawn, in declared axis order.
+        val plottedValues = curves.flatMap { curve ->
+            if (curve.entries.any { it.axis != null }) {
+                axes.mapNotNull { axis -> curve.entries.firstOrNull { it.axis == axis.id }?.value }
+            } else curve.values
+        }
+        val maximum = options.lastOrNull { it.name == "max" }?.number ?: (plottedValues.maxOrNull() ?: 0.0)
         val minimum = options.lastOrNull { it.name == "min" }?.number ?: 0.0
         MermaidParseResult.Success(RadarChartDiagram(title, axes, curves, maximum, minimum, options, accTitle, accDescription))
     } catch (error: IllegalArgumentException) {

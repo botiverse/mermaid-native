@@ -835,7 +835,30 @@ public data class RadarChartDiagram(
     val options: List<RadarOption> = emptyList(),
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
-) : MermaidDiagram
+) : MermaidDiagram {
+    /** Resolved options consumed by the renderer; raw options remain available to grammar clients. */
+    public val resolvedOptions: RadarResolvedOptions
+        get() = RadarResolvedOptions(
+            ticks = (options.lastOrNull { it.name == "ticks" }?.number ?: 5.0).coerceIn(0.0, 32.0).toInt(),
+            maximum = options.lastOrNull { it.name == "max" }?.number,
+            minimum = minimum,
+            showLegend = options.lastOrNull { it.name == "showLegend" }?.flag != false,
+            graticule = options.lastOrNull { it.name == "graticule" }?.text ?: "circle",
+        )
+
+    /** Place named values on their declared axes, preserving the first matching entry. */
+    public fun axisValues(curve: RadarCurve): List<Double> = if (curve.entries.any { it.axis != null }) {
+        axes.map { axis -> curve.entries.firstOrNull { it.axis == axis.id }?.value ?: minimum }
+    } else curve.values
+}
+
+public data class RadarResolvedOptions(
+    val ticks: Int,
+    val maximum: Double?,
+    val minimum: Double,
+    val showLegend: Boolean,
+    val graticule: String,
+)
 
 public data class RadarAxis(val id: String, val label: String)
 
