@@ -637,7 +637,7 @@ class MermaidParserTest {
     }
 
     @Test
-    fun radarDefaultsToMax100AndAcceptsSplitAxisStatements() {
+    fun radarDefaultsToDataMaximumAndAcceptsSplitAxisStatements() {
         val result = assertIs<MermaidParseResult.Success>(
             MermaidParser.parse("radar-beta\naxis a, b, c\naxis d[\"Depth\"], a2[\"Depth\"], f\ncurve one{1, 2, 3, 4, 5, 6}")
         )
@@ -647,7 +647,7 @@ class MermaidParserTest {
         // The same label under different ids is allowed.
         assertEquals("Depth", diagram.axes[4].label)
         assertEquals("a2", diagram.axes[4].id)
-        assertEquals(100.0, diagram.maximum)
+        assertEquals(6.0, diagram.maximum)
     }
 
     @Test

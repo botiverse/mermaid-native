@@ -1883,10 +1883,11 @@ public object SimpleMermaidLayout : DiagramLayout {
         val bodyStyle = TextStyle(fontSize = 12.0)
         val radius = 170.0
         val labelRadius = radius + 26.0
-        val ticks = (diagram.options.lastOrNull { it.name == "ticks" }?.number?.toInt() ?: 5).coerceIn(0, 32)
+        val options = diagram.resolvedOptions
+        val ticks = options.ticks
         val ringFractions = (1..ticks).map { it.toDouble() / ticks }
-        val polygonGrid = diagram.options.lastOrNull { it.name == "graticule" }?.text == "polygon"
-        val showLegend = diagram.options.lastOrNull { it.name == "showLegend" }?.flag != false
+        val polygonGrid = options.graticule == "polygon"
+        val showLegend = options.showLegend
         val range = (diagram.maximum - diagram.minimum).takeIf { it.isFinite() && it > 0.0 } ?: 1.0
         val axisCount = diagram.axes.size
         val axisAngles = List(axisCount) { index -> -PI / 2.0 + 2.0 * PI * index / axisCount }
@@ -1961,11 +1962,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.curves.forEachIndexed { curveIndex, curve ->
             val fill = RADAR_CURVE_FILLS[curveIndex % RADAR_CURVE_FILLS.size]
             val stroke = RADAR_CURVE_STROKES[curveIndex % RADAR_CURVE_STROKES.size]
-            val points = diagram.axes.mapIndexed { axisIndex, axis ->
-                val value = if (curve.entries.any { it.axis != null }) {
-                    curve.entries.firstOrNull { it.axis == axis.id }?.value ?: diagram.minimum
-                } else curve.values.getOrElse(axisIndex) { diagram.minimum }
-                vertex(axisIndex, ((value - diagram.minimum) / range).coerceIn(0.0, 1.0))
+            val values = diagram.axisValues(curve)
+            val points = diagram.axes.indices.map { axisIndex ->
+                val value = values.getOrElse(axisIndex) { diagram.minimum }
+                vertex(axisIndex, RadarGeometry.relativeRadius(value, diagram.minimum, diagram.maximum, 1.0))
             }
             if (points.isEmpty()) return@forEachIndexed
             val curvePoints = if (points.size >= 3) closedCurveSamples(points) else points
