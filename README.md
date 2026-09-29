@@ -96,7 +96,9 @@ State diagrams support bare identifiers, aliases, repeated descriptions, nested 
 
 Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
 
-Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards and line spacing remain; elements use the shared blue accent and neutral stroke palette. The pinned original Requirement parser suite passes43/43; this does not establish complete DB or visual parity.
+### Requirement grammar, model and rendering
+
+Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards and line spacing remain; elements use the shared blue accent and neutral stroke palette. The pinned original Requirement parser suite passes43/43, with 9 additional original model/style assertions replayed through production Kotlin. Accessibility titles and descriptions remain SVG metadata and do not add source labels or change card geometry. DOM edge IDs and full DB/visual parity are not claimed; see `compatibility/upstream-requirement-model/README.md`.
 
 ### Gantt grammar and dates
 
