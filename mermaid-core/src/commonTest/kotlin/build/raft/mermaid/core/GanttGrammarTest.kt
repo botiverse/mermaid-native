@@ -35,8 +35,8 @@ class GanttGrammarTest {
         val fixed=parse("excludes weekends\nFixed:a,2026-09-24,2026-09-26").sections.single().tasks.single()
         assertEquals(2,fixed.durationDays)
     }
-    @Test fun dependencyCyclesAndUnknownReferencesFail() {
+    @Test fun dependencyCyclesAndUnknownEndReferencesFail() {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\nA:a,after b,1d\nB:b,after a,1d"))
-        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\nA:a,after unknown,1d"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gantt\nA:a,2024-01-01,until unknown"))
     }
 }
