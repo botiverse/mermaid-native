@@ -404,6 +404,10 @@ public data class GanttTask(
     val statuses: Set<GanttTaskStatus> = if(status==GanttTaskStatus.TODO)emptySet()else setOf(status),
     val milestone: Boolean = durationDays==0,
     val renderDurationDays: Int = durationDays,
+    /** UTC epoch milliseconds; date-only inputs use midnight for deterministic calendar geometry. */
+    val startEpochMillis: Long = (startDay.toLong() - 719528L) * 86_400_000L,
+    val durationMillis: Long = durationDays.toLong() * 86_400_000L,
+    val renderDurationMillis: Long = renderDurationDays.toLong() * 86_400_000L,
 )
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 

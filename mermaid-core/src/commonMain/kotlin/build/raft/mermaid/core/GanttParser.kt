@@ -56,32 +56,50 @@ internal class GanttParser(private val source:String) {
         fun resolve(id:String):GanttTask {
             resolved[id]?.let { return it };val task=byId[id] ?: fail("Unknown Gantt dependency $id")
             line=task.line;requireGantt(active.add(id),"Cyclic Gantt dependency")
-            fun reference(text:String,end:Boolean):Int {
+            fun reference(text:String,end:Boolean):Long {
                 val ids=text.substringAfter(' ').trim().split(Regex("\\s+"));requireGantt(ids.isNotEmpty(),"Expected Gantt dependency")
-                return ids.map { dependency -> val d=resolve(dependency);if(end)d.startDay+d.durationDays else d.startDay }.let { if(end)it.max()else it.min() }
+                return ids.map { dependency -> val d=resolve(dependency);if(end)d.startEpochMillis+d.durationMillis else d.startEpochMillis }.let { if(end)it.max()else it.min() }
             }
             val start=when {
-                task.start==null -> pending.indexOf(task).takeIf { it>0 }?.let { val p=resolve(pending[it-1].id);p.startDay+p.durationDays } ?: fail("First Gantt task requires start date")
+                task.start==null -> pending.indexOf(task).takeIf { it>0 }?.let { val p=resolve(pending[it-1].id);p.startEpochMillis+p.durationMillis } ?: fail("First Gantt task requires start date")
                 task.start.startsWith("after ")->reference(task.start,true)
                 else -> date(task.start) ?: fail("Invalid Gantt start date")
             }
-            val duration=Regex("^(\\d+)([dw])$").matchEntire(task.end)
+            val duration=GanttDuration.parse(task.end).takeIf { it.amount.isFinite() }
             var end=when {
                 task.end.startsWith("until ")->reference(task.end,false)
-                duration!=null->{var count=duration.groupValues[1].toIntOrNull() ?: fail("Invalid Gantt duration");if(duration.groupValues[2]=="w")count*=7;requireGantt(count in 0..100000,"Gantt duration out of range");start+count}
-                else -> (date(task.end) ?: fail("Invalid Gantt end date")) + if(inclusive)1 else 0
+                duration!=null->{
+                    val unitMillis = when(duration.unit) { "ms" -> 1L; "s" -> 1000L; "m" -> 60_000L; "h" -> 3_600_000L; "d" -> GANTT_DAY_MILLIS; "w" -> 7 * GANTT_DAY_MILLIS; else -> fail("Calendar month/year durations are not supported") }
+                    val millis = when(duration.unit) {
+                        "d" -> kotlin.math.floor(duration.amount + .5) * GANTT_DAY_MILLIS
+                        "w" -> kotlin.math.floor(duration.amount * 7 + .5) * GANTT_DAY_MILLIS
+                        else -> duration.amount * unitMillis
+                    }
+                    requireGantt(millis.isFinite() && millis >= 0 && millis <= 100000.0 * GANTT_DAY_MILLIS,"Gantt duration out of range")
+                    start + millis.toLong()
+                }
+                else -> (date(task.end) ?: fail("Invalid Gantt end date")) + if(inclusive)GANTT_DAY_MILLIS else 0L
             }
             // Upstream advances from the day after start, including the end boundary.
             // Explicit ISO end dates stay fixed; computed duration/until ends may extend.
-            var renderEnd:Int?=null
-            if(excludes.isNotEmpty() && parseIsoDay(task.end)==null){
-                var cursor=start+1;val limit=end+10000;var previousExcluded=false
-                while(cursor<=end){if(!previousExcluded)renderEnd=end;previousExcluded=excluded(cursor);if(previousExcluded)end++;requireGantt(end<=limit,"Excluded calendar has no working days");cursor++}
+            var renderEnd:Long?=null
+            if(excludes.isNotEmpty() && (duration != null || task.end.startsWith("until "))){
+                var cursor=start+GANTT_DAY_MILLIS;val limit=end+10000*GANTT_DAY_MILLIS;var previousExcluded=false
+                while(cursor<=end){if(!previousExcluded)renderEnd=end;previousExcluded=excluded(ganttFloorDay(cursor));if(previousExcluded)end+=GANTT_DAY_MILLIS;requireGantt(end<=limit,"Excluded calendar has no working days");cursor+=GANTT_DAY_MILLIS}
             }
             requireGantt(end>=start,"Gantt end precedes start")
             val statuses=task.tags.mapNotNull { when(it){"done"->GanttTaskStatus.DONE;"active"->GanttTaskStatus.ACTIVE;"crit"->GanttTaskStatus.CRITICAL;else->null} }.toSet()
             val status=listOf(GanttTaskStatus.CRITICAL,GanttTaskStatus.DONE,GanttTaskStatus.ACTIVE).firstOrNull { it in statuses } ?: GanttTaskStatus.TODO
-            val result=GanttTask(task.name,task.id,start,end-start,status,statuses,"milestone" in task.tags,(renderEnd?:end)-start)
+            val durationMillis = end - start
+            val renderDurationMillis = (renderEnd ?: end) - start
+            val result = GanttTask(
+                name = task.name, id = task.id, startDay = ganttFloorDay(start),
+                durationDays = (durationMillis / GANTT_DAY_MILLIS).toInt(),
+                status = status, statuses = statuses, milestone = "milestone" in task.tags,
+                renderDurationDays = (renderDurationMillis / GANTT_DAY_MILLIS).toInt(),
+                startEpochMillis = start, durationMillis = durationMillis,
+                renderDurationMillis = renderDurationMillis,
+            )
             active.remove(id);resolved[id]=result;return result
         }
         val tasks=pending.map { resolve(it.id) }
@@ -96,15 +114,17 @@ internal class GanttParser(private val source:String) {
         if(sectionNames.isEmpty())sectionNames+=""
         pending+=Pending(text.take(colon).trim(),id,if(tokens.size==2)tokens[0]else null,tokens.last(),sectionNames.lastIndex,tags,line)
     }
-    private fun date(text:String):Int? = when(format){
-        "YYYY-MM-DD","yyyy-mm-dd"->parseIsoDay(text)
-        "DD-MM-YYYY"->text.split('-').takeIf { it.size==3 }?.let { parseIsoDay("${it[2]}-${it[1]}-${it[0]}") }
+    private fun date(text:String):Long? = when(format){
+        "YYYY-MM-DD","yyyy-mm-dd" -> parseIsoDay(text)?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
+        "DD-MM-YYYY" -> text.split('-').takeIf { it.size==3 }?.let { parseIsoDay("${it[2]}-${it[1]}-${it[0]}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
+        "x", "X" -> text.toDoubleOrNull()?.let { it * if(format == "X") 1000 else 1 }?.takeIf { it.isFinite() && it >= -62167219200000.0 && it <= 253402300799999.0 }?.toLong()
         else -> null
     }
+    private fun calendarDay(text: String): Int? = date(text)?.let(::ganttFloorDay) ?: parseIsoDay(text)
     private fun excluded(day:Int):Boolean {
-        if(includes.any { (date(it)?:parseIsoDay(it))==day })return false
+        if(includes.any { calendarDay(it)==day })return false
         val weekdayIndex=(day+6)%7
-        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;in days->weekdayIndex==days.indexOf(token);else->(date(token)?:parseIsoDay(token))==day} }
+        return excludes.any { token->when(token){"weekends"->weekdayIndex==days.indexOf(weekend) || weekdayIndex==(days.indexOf(weekend)+1)%7;in days->weekdayIndex==days.indexOf(token);else->calendarDay(token)==day} }
     }
     private fun click(text:String) {
         val id=text.takeWhile { !it.isWhitespace() };val rest=text.drop(id.length).trim()
