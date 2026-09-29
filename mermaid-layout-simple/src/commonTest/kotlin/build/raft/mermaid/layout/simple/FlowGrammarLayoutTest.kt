@@ -20,7 +20,7 @@ class FlowGrammarLayoutTest {
         val scene=layout("subgraph Outer[Outer group]\nsubgraph Inner[Inner group]\ndirection TB\nA --> B\nend\nend")
         val labels=scene.commands.filterIsInstance<DrawText>().associateBy { it.text }
         assertTrue(labels.getValue("B").origin.y>labels.getValue("A").origin.y)
-        val groups=scene.commands.filterIsInstance<DrawRect>().filter { it.fill.value=="#f7f7f7" }
+        val groups=scene.commands.filterIsInstance<DrawRect>().filter { it.fill.value==DiagramPalette.SURFACE && it.stroke.value==DiagramPalette.FAINT }
         assertEquals(2,groups.size)
         val outer=groups[0].rect;val inner=groups[1].rect
         assertTrue(inner.x>=outer.x && inner.y>=outer.y && inner.x+inner.width<=outer.x+outer.width && inner.y+inner.height<=outer.y+outer.height)

@@ -25,7 +25,7 @@ internal fun layoutRequirementGraph(diagram:RequirementDiagram,measurer:TextMeas
     }
     val nodes=cards.map { FlowNode(it.id,it.heading,classes=it.classes.filterNot { c->c=="default" },styles=it.styles) }
     val flow=FlowchartDiagram(diagram.direction?:FlowDirection.TB,nodes,diagram.relationships.map { FlowEdge(it.from,it.to) },classDefinitions=diagram.classDefinitions)
-    val paints=cards.associate { c->c.id to FlowStyle(nodes.first { it.id==c.id },flow,listOf("fill:"+if(c.element)"#eff6ff"else"#ffffff","stroke:#334155","stroke-width:1.5","font-size:12px")) }
+    val paints=cards.associate { c->c.id to FlowStyle(nodes.first { it.id==c.id },flow,listOf("fill:"+if(c.element)DiagramPalette.BLUE_SURFACE else DiagramPalette.CANVAS,"stroke:${DiagramPalette.SECONDARY}","stroke-width:1.5","font-size:12px")) }
     val headings=cards.associate { c->c.id to paints.getValue(c.id).text.copy(fontSize=paints.getValue(c.id).text.fontSize+2,fontWeight=600) }
     val widths=cards.associate { c->c.id to max(270.0,max(measurer.measure(c.heading,headings.getValue(c.id)).width,c.lines.maxOfOrNull { measurer.measure(it,paints.getValue(c.id).text).width }?:0.0)+24) }
     val uniformWidth=widths.values.maxOrNull()?:270.0
@@ -46,7 +46,7 @@ internal fun layoutRequirementGraph(diagram:RequirementDiagram,measurer:TextMeas
             commands+=DrawPolyline(listOf(start,ScenePoint(outer,start.y),ScenePoint(outer,end.y),end));labelAt=ScenePoint(outer+8,(start.y+end.y)/2);arrow=ScenePoint(1.0,0.0);right=max(right,labelAt.x+measurer.measure(label,body).width)
         }else if(horizontal){val sign=if(b.x>a.x)1.0 else -1.0;start=ScenePoint(if(sign>0)a.x+a.width else a.x,a.y+a.height/2);end=ScenePoint(if(sign>0)b.x else b.x+b.width,b.y+b.height/2);commands+=DrawLine(start,end);labelAt=ScenePoint((start.x+end.x)/2,(start.y+end.y)/2-8);arrow=ScenePoint(-sign,0.0)
         }else{val sign=if(b.y>a.y)1.0 else -1.0;start=ScenePoint(a.x+a.width/2,if(sign>0)a.y+a.height else a.y);end=ScenePoint(b.x+b.width/2,if(sign>0)b.y else b.y+b.height);commands+=DrawLine(start,end);labelAt=ScenePoint((start.x+end.x)/2+8,(start.y+end.y)/2);arrow=ScenePoint(0.0,-sign);right=max(right,labelAt.x+measurer.measure(label,body).width)}
-        commands+=DrawPolygon(listOf(end,ScenePoint(end.x+arrow.x*9+arrow.y*5,end.y+arrow.y*9-arrow.x*5),ScenePoint(end.x+arrow.x*9-arrow.y*5,end.y+arrow.y*9+arrow.x*5)),fill=SceneColor("#111827"))
+        commands+=DrawPolygon(listOf(end,ScenePoint(end.x+arrow.x*9+arrow.y*5,end.y+arrow.y*9-arrow.x*5),ScenePoint(end.x+arrow.x*9-arrow.y*5,end.y+arrow.y*9+arrow.x*5)),fill=SceneColor(DiagramPalette.INK))
         commands+=DrawText(label,labelAt,if(horizontal&&e.from!=e.to)TextAnchor.MIDDLE else TextAnchor.START,body)
     }
     for(c in cards){val r=rects.getValue(c.id);val paint=paints.getValue(c.id);val heading=headings.getValue(c.id);val separator=r.y+heading.fontSize+18

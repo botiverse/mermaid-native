@@ -7,8 +7,8 @@ import build.raft.mermaid.layout.*
 /** Participant stereotypes share measured labels while preserving their distinct native outlines. */
 internal fun sequenceParticipant(actor: SequenceActor, x: Double, y: Double, width: Double, height: Double,
     labels: List<String>, style: TextStyle, lineHeight: Double): List<DrawCommand> = buildList {
-    val fill=SceneColor("#eaeaea")
-    val stroke=SceneColor("#666666")
+    val fill=SceneColor(DiagramPalette.SURFACE)
+    val stroke=SceneColor(DiagramPalette.OUTLINE)
     fun line(x1: Double,y1: Double,x2: Double,y2: Double) { add(DrawLine(ScenePoint(x+x1,y+y1),ScenePoint(x+x2,y+y2),stroke=stroke)) }
     fun ellipse(dx: Double,dy: Double,rx: Double,ry: Double) { add(DrawEllipse(ScenePoint(x+dx,y+dy),rx,ry,fill=fill,stroke=stroke)) }
     fun rect(dx: Double,dy: Double,w: Double,h: Double) { add(DrawRect(SceneRect(x+dx,y+dy,w,h),fill=fill,stroke=stroke)) }

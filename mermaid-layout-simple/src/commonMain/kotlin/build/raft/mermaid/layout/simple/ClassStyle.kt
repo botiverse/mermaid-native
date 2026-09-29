@@ -17,9 +17,9 @@ internal class ClassStyle(klass:ClassDefinition,diagram:ClassDiagram) {
         return SceneColor(if(hex || value=="none")value else if(value=="transparent")"#00000000" else NAMED_COLORS[value] ?: fallback)
     }
     val fontSize=values["font-size"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it>0 && it<=512 } ?: 14.0
-    val text=TextStyle(fontSize=fontSize,fontWeight=values["font-weight"]?.let { if(it=="bold")700 else if(it=="normal")400 else it.toIntOrNull() }?.takeIf { it in 1..1000 } ?: 400,color=color("color","#111827"))
+    val text=TextStyle(fontSize=fontSize,fontWeight=values["font-weight"]?.let { if(it=="bold")700 else if(it=="normal")400 else it.toIntOrNull() }?.takeIf { it in 1..1000 } ?: 400,color=color("color",DiagramPalette.INK))
     val lineHeight=maxOf(22.0,fontSize+8)
-    val fill=color("fill","#ffffff")
-    val stroke=color("stroke","#334155")
+    val fill=color("fill",DiagramPalette.SURFACE)
+    val stroke=color("stroke",DiagramPalette.OUTLINE)
     val strokeWidth=values["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it>=0 } ?: 1.5
 }

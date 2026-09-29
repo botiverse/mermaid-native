@@ -1,5 +1,7 @@
 package build.raft.mermaid.layout.simple
 
+import build.raft.mermaid.layout.DiagramPalette
+
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdgeStyle
 import build.raft.mermaid.core.FlowchartDiagram
@@ -168,7 +170,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutInfo(diagram: build.raft.mermaid.core.InfoDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val label = "Mermaid Native v${diagram.version}"
-        val style = TextStyle(fontSize = 24.0, fontWeight = 600, color = SceneColor("#334155"))
+        val style = TextStyle(fontSize = 24.0, fontWeight = 600, color = SceneColor(DiagramPalette.SECONDARY))
         val measured = textMeasurer.measure(label, style)
         val width = max(400.0, measured.width + config.padding * 2)
         val height = max(100.0, measured.height + config.padding * 2)
@@ -263,7 +265,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val labelStyle = TextStyle(fontSize = 13.0)
         val directoryStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val detailStyle = TextStyle(fontSize = 11.0, color = SceneColor("#64748b"))
+        val detailStyle = TextStyle(fontSize = 11.0, color = SceneColor(DiagramPalette.MUTED))
         val titleOffset = if (diagram.title == null) 0.0 else 44.0
         fun detail(node: TreeViewNode): String = listOfNotNull(node.iconAnnotation?.takeIf { it.isNotBlank() && it != "none" }, node.description?.takeIf { it.isNotBlank() }).joinToString(" · ")
         val rowHeight = if (nodes.any { detail(it).isNotEmpty() }) 52.0 else 36.0
@@ -289,7 +291,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(parent.x, point.y),
                         ScenePoint(point.x - nodeRadius, point.y),
                     ).map { it.canonical() },
-                    stroke = SceneColor("#94a3b8"),
+                    stroke = SceneColor(DiagramPalette.FAINT),
                     strokeWidth = 1.5,
                 )
             }
@@ -297,7 +299,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         // Paint every connector before node bodies, including later siblings' trunks.
         nodes.forEachIndexed { index, node ->
             val point = points[index]
-            commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor("#f59e0b") else SceneColor("#3b82f6"), stroke = SceneColor("#475569"), strokeWidth = 1.0)
+            commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor(DiagramPalette.AMBER) else SceneColor(DiagramPalette.BLUE), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
             if (detail(node).isNotEmpty()) commands += DrawText(detail(node), ScenePoint(point.x + 14.0, point.y + 21.0), style = detailStyle)
             commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
@@ -350,9 +352,9 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun buildRailroadBox(node: RailroadNode, textMeasurer: TextMeasurer, commands: MutableList<DrawCommand>): RailroadBox =
         when (node) {
-            is RailroadTerminal -> railroadLabelBox(node.label, cornerRadius = 0.0, fill = SceneColor("#ffffff"), textMeasurer, commands)
-            is RailroadNonTerminal -> railroadLabelBox(node.label, cornerRadius = null, fill = SceneColor("#e2e8f0"), textMeasurer, commands)
-            is RailroadSpecial -> railroadLabelBox(node.text, cornerRadius = null, fill = SceneColor("#f8fafc"), textMeasurer, commands)
+            is RailroadTerminal -> railroadLabelBox(node.label, cornerRadius = 0.0, fill = SceneColor(DiagramPalette.CANVAS), textMeasurer, commands)
+            is RailroadNonTerminal -> railroadLabelBox(node.label, cornerRadius = null, fill = SceneColor(DiagramPalette.SURFACE_STRONG), textMeasurer, commands)
+            is RailroadSpecial -> railroadLabelBox(node.text, cornerRadius = null, fill = SceneColor(DiagramPalette.SURFACE), textMeasurer, commands)
             is RailroadSequence -> {
                 val children = node.children.map { child -> buildRailroadBox(child, textMeasurer, mutableListOf()) }
                 val gap = 18.0
@@ -567,12 +569,12 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.lanes.forEachIndexed { _, lane ->
             val rect = laneRects.getValue(lane.id)
-            commands += DrawRect(rect.canonical(), 0.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#707070"), strokeWidth = 1.0)
+            commands += DrawRect(rect.canonical(), 0.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.0)
             commands += DrawRect(
                 SceneRect(rect.x, rect.y, titleRail, rect.height).canonical(),
                 0.0,
-                fill = SceneColor("#fcfcfc"),
-                stroke = SceneColor("#707070"),
+                fill = SceneColor(DiagramPalette.SURFACE),
+                stroke = SceneColor(DiagramPalette.MUTED),
                 strokeWidth = 1.0,
             )
             commands += DrawText(lane.label, ScenePoint(rect.x + titleRail + 16.0, rect.y + 25.0).canonical(), style = laneStyle)
@@ -588,8 +590,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val to = swimlaneBoundaryPoint(fromCenter, lower, shape, nodeWidth, nodeHeight)
                 val right = fromCenter.x + nodeWidth / 2 + 16.0
                 val points = listOf(from, ScenePoint(right, from.y), ScenePoint(right, to.y), to)
-                commands += DrawPolyline(points, stroke = SceneColor("#666666"), strokeWidth = 1.0)
-                commands += arrowHead(points[points.lastIndex - 1], to, fill = SceneColor("#333333"))
+                commands += DrawPolyline(points, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
+                commands += arrowHead(points[points.lastIndex - 1], to, fill = SceneColor(DiagramPalette.INK))
                 edge.label?.let { label ->
                     commands += DrawText(label, ScenePoint(fromCenter.x, fromCenter.y - nodeHeight / 2 - 8), TextAnchor.MIDDLE, edgeStyle)
                 }
@@ -597,8 +599,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             val from = swimlaneBoundaryPoint(fromCenter, toCenter, nodeById.getValue(edge.sourceId).shape, nodeWidth, nodeHeight)
             val to = swimlaneBoundaryPoint(toCenter, fromCenter, nodeById.getValue(edge.targetId).shape, nodeWidth, nodeHeight)
-            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#666666"), strokeWidth = 1.0)
-            commands += arrowHead(from, to, fill = SceneColor("#333333"))
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
+            commands += arrowHead(from, to, fill = SceneColor(DiagramPalette.INK))
             edge.label?.let { label ->
                 commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, edgeStyle)
             }
@@ -606,9 +608,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.lanes.flatMap { it.nodes }.forEach { node ->
             val point = nodePoints.getValue(node.id)
             when (node.shape) {
-                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
-                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 12.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
-                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
+                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 12.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
+                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
                 SwimlaneNodeShape.DECISION -> {
                     val diamond = listOf(
                         ScenePoint(point.x, point.y - nodeHeight / 2.0),
@@ -616,10 +618,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(point.x, point.y + nodeHeight / 2.0),
                         ScenePoint(point.x - nodeWidth / 2.0, point.y),
                     ).map { it.canonical() }
-                    commands += DrawPolygon(diamond, fill = SceneColor("#fef3c7"))
-                    commands += DrawPolyline(diamond + diamond.first(), stroke = SceneColor("#d97706"), strokeWidth = 1.5)
+                    commands += DrawPolygon(diamond, fill = SceneColor(DiagramPalette.AMBER_SURFACE))
+                    commands += DrawPolyline(diamond + diamond.first(), stroke = SceneColor(DiagramPalette.AMBER), strokeWidth = 1.5)
                 }
-                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor("#dcfce7"), stroke = SceneColor("#15803d"), strokeWidth = 1.5)
+                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor(DiagramPalette.GREEN_SURFACE), stroke = SceneColor(DiagramPalette.GREEN), strokeWidth = 1.5)
             }
             commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), TextAnchor.MIDDLE, nodeStyle)
         }
@@ -637,7 +639,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val domainStyle = TextStyle(fontSize = 16.0, fontWeight = 600)
-        val descriptionStyle = TextStyle(fontSize = 11.0, color = SceneColor("#64748b"))
+        val descriptionStyle = TextStyle(fontSize = 11.0, color = SceneColor(DiagramPalette.MUTED))
         val itemStyle = TextStyle(fontSize = 12.0)
         val titleStyle = TextStyle(fontSize = 20.0, fontWeight = 600)
         val itemsByDomain = diagram.domains.associate { it.domain to it.items }
@@ -664,26 +666,26 @@ public object SimpleMermaidLayout : DiagramLayout {
             CynefinDomain.CONFUSION to ScenePoint(left + quadrantWidth + quadrantGap / 2.0, top + quadrantHeight + quadrantGap / 2.0),
         )
         val fills = mapOf(
-            CynefinDomain.COMPLEX to SceneColor("#dbeafe"),
-            CynefinDomain.COMPLICATED to SceneColor("#dcfce7"),
-            CynefinDomain.CLEAR to SceneColor("#fef3c7"),
-            CynefinDomain.CHAOTIC to SceneColor("#fee2e2"),
-            CynefinDomain.CONFUSION to SceneColor("#ede9fe"),
+            CynefinDomain.COMPLEX to SceneColor(DiagramPalette.BLUE_SURFACE),
+            CynefinDomain.COMPLICATED to SceneColor(DiagramPalette.GREEN_SURFACE),
+            CynefinDomain.CLEAR to SceneColor(DiagramPalette.AMBER_SURFACE),
+            CynefinDomain.CHAOTIC to SceneColor(DiagramPalette.RED_SURFACE),
+            CynefinDomain.CONFUSION to SceneColor(DiagramPalette.PURPLE_SURFACE),
         )
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
         listOf(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, CynefinDomain.CHAOTIC, CynefinDomain.CLEAR).forEach { domain ->
             val center = centers.getValue(domain)
-            commands += DrawRect(SceneRect(center.x - quadrantWidth / 2.0, center.y - quadrantHeight / 2.0, quadrantWidth, quadrantHeight), 0.0, fill = fills.getValue(domain), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
+            commands += DrawRect(SceneRect(center.x - quadrantWidth / 2.0, center.y - quadrantHeight / 2.0, quadrantWidth, quadrantHeight), 0.0, fill = fills.getValue(domain), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.5)
         }
         val confusionCenter = centers.getValue(CynefinDomain.CONFUSION)
-        commands += DrawEllipse(confusionCenter, 92.0, 66.0, fill = fills.getValue(CynefinDomain.CONFUSION), stroke = SceneColor("#6d28d9"), strokeWidth = 1.5)
+        commands += DrawEllipse(confusionCenter, 92.0, 66.0, fill = fills.getValue(CynefinDomain.CONFUSION), stroke = SceneColor(DiagramPalette.PURPLE), strokeWidth = 1.5)
         diagram.transitions.forEach { transition ->
             val from = centers.getValue(transition.from)
             val to = centers.getValue(transition.to)
             val start = cynefinBoundaryPoint(from, to, transition.from == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
             val end = cynefinBoundaryPoint(to, from, transition.to == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
-            commands += DrawLine(start.canonical(), end.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += DrawLine(start.canonical(), end.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
             commands += arrowHead(start, end)
             transition.label?.let { label -> commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, TextStyle(fontSize = 11.0)) }
         }
@@ -738,7 +740,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 10.0)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val stereotypeStyle = TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))
+        val stereotypeStyle = TextStyle(fontSize = 10.0, color = SceneColor(DiagramPalette.MUTED))
         val contentWidth = diagram.elements.maxOf { element ->
             max(
                 max(textMeasurer.measure(element.label, style).width, element.description?.let { description -> textMeasurer.measure(description, bodyStyle).width } ?: 0.0),
@@ -761,7 +763,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val toCenter = points.getValue(relationship.targetId)
             val from = usecaseBoundaryPoint(fromCenter, toCenter, cardWidth / 2.0, cardHeight / 2.0, false)
             val to = usecaseBoundaryPoint(toCenter, fromCenter, cardWidth / 2.0, cardHeight / 2.0, false)
-            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
             val mid = ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0)
             commands += DrawText(relationship.label, mid.copy(y = mid.y - 10.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
             relationship.technology?.let { technology ->
@@ -772,8 +774,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.elements.forEach { element ->
             val point = points.getValue(element.id)
-            val fill = if (element.external) SceneColor("#fef3c7") else if (element.kind == C4ElementKind.PERSON) SceneColor("#dcfce7") else SceneColor("#dbeafe")
-            val stroke = SceneColor("#2563eb")
+            val fill = if (element.external) SceneColor(DiagramPalette.AMBER_SURFACE) else if (element.kind == C4ElementKind.PERSON) SceneColor(DiagramPalette.GREEN_SURFACE) else SceneColor(DiagramPalette.BLUE_SURFACE)
+            val stroke = SceneColor(DiagramPalette.BLUE)
             commands += DrawRect(SceneRect(point.x - cardWidth / 2.0, point.y - cardHeight / 2.0, cardWidth, cardHeight).canonical(), 8.0, fill = fill, stroke = stroke, strokeWidth = 1.5)
             if (element.kind == C4ElementKind.PERSON) {
                 commands += DrawEllipse(ScenePoint(point.x, point.y - cardHeight / 2.0).canonical(), 10.0, 10.0, fill = fill, stroke = stroke, strokeWidth = 1.5)
@@ -800,7 +802,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val bodyStyle = TextStyle(fontSize = 10.0)
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val groupStyle = TextStyle(fontSize = 13.0, fontWeight = 600, color = SceneColor("#475569"))
+        val groupStyle = TextStyle(fontSize = 13.0, fontWeight = 600, color = SceneColor(DiagramPalette.SECONDARY))
         val elements = diagram.elements.associateBy { it.id }
         val boundaries = diagram.boundaries.associateBy { it.id }
         val childElements = diagram.elements.groupBy { it.parentBoundary }
@@ -845,7 +847,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 20.0), style = titleStyle) }
         for ((id, rect) in rects) if (id in boundaries) {
-            commands += DrawRect(rect, 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#94a3b8"))
+            commands += DrawRect(rect, 8.0, fill = SceneColor(DiagramPalette.SURFACE), stroke = SceneColor(DiagramPalette.FAINT))
             commands += DrawText(boundaries.getValue(id).label, ScenePoint(rect.x + 16.0, rect.y + 24.0), style = groupStyle)
         }
         diagram.relationships.forEach { rel ->
@@ -862,9 +864,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         for ((id, rect) in rects) {
             val element = elements[id] ?: continue
             val cx = rect.x + rect.width / 2.0; val cy = rect.y + rect.height / 2.0
-            val fill = if (element.external) SceneColor("#fef3c7") else if (element.kind == C4ElementKind.PERSON) SceneColor("#dcfce7") else SceneColor("#dbeafe")
-            commands += DrawRect(rect, 8.0, fill, SceneColor("#2563eb"))
-            if (element.kind == C4ElementKind.PERSON) commands += DrawEllipse(ScenePoint(cx, rect.y), 10.0, 10.0, fill = fill, stroke = SceneColor("#2563eb"))
+            val fill = if (element.external) SceneColor(DiagramPalette.AMBER_SURFACE) else if (element.kind == C4ElementKind.PERSON) SceneColor(DiagramPalette.GREEN_SURFACE) else SceneColor(DiagramPalette.BLUE_SURFACE)
+            commands += DrawRect(rect, 8.0, fill, SceneColor(DiagramPalette.BLUE))
+            if (element.kind == C4ElementKind.PERSON) commands += DrawEllipse(ScenePoint(cx, rect.y), 10.0, 10.0, fill = fill, stroke = SceneColor(DiagramPalette.BLUE))
             commands += DrawText(element.label, ScenePoint(cx, cy - 16.0), TextAnchor.MIDDLE, labelStyle)
             commands += DrawText(c4Stereotype(element), ScenePoint(cx, cy + 2.0), TextAnchor.MIDDLE, bodyStyle)
             element.description?.let { commands += DrawText(it, ScenePoint(cx, cy + 20.0), TextAnchor.MIDDLE, bodyStyle) }
@@ -878,7 +880,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val titleOffset = if (diagram.title == null) 0.0 else 44.0
         val textStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val groupStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
-        val iconStyle = TextStyle(fontSize = 10.0, color = SceneColor("#475569"))
+        val iconStyle = TextStyle(fontSize = 10.0, color = SceneColor(DiagramPalette.SECONDARY))
         val serviceLabelWidth = diagram.services.maxOfOrNull { textMeasurer.measure(it.label, textStyle).width } ?: 0.0
         val serviceIconWidth = diagram.services.maxOfOrNull { architectureIconReserve(it.icon, textMeasurer, iconStyle) } ?: 0.0
         val groupLabelWidth = diagram.groups.maxOfOrNull { textMeasurer.measure(it.label, groupStyle).width } ?: 0.0
@@ -904,7 +906,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
         diagram.groups.forEach { group ->
             val rect = groupRects.getValue(group.id)
-            commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor("#f8fafc"), stroke = SceneColor("#64748b"), strokeWidth = 1.5)
+            commands += DrawRect(rect.canonical(), 8.0, fill = SceneColor(DiagramPalette.SURFACE), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.5)
             commands += DrawText(group.label, ScenePoint(rect.x + 14.0, rect.y + 24.0), style = groupStyle)
             commands += architectureIconCommands(
                 icon = group.icon,
@@ -926,7 +928,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val points = listOf(start, startOutside, bridge, endOutside, end).map { it.canonical() }.fold(emptyList<ScenePoint>()) { result, point ->
                 if (result.lastOrNull() == point) result else result + point
             }
-            commands += DrawPolyline(points, stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += DrawPolyline(points, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
             if (edge.directed) {
                 val arrow = arrowHead(endOutside, end)
                 commands += arrow.copy(points = arrow.points.map { it.canonical() })
@@ -934,7 +936,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.services.forEach { service ->
             val point = servicePoints.getValue(service.id)
-            commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 6.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+            commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 6.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
             commands += architectureIconCommands(
                 icon = service.icon,
                 center = if (isKnownArchitectureIcon(service.icon)) point.copy(y = point.y - 14.0).canonical() else point.copy(y = point.y - 11.0).canonical(),
@@ -975,8 +977,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         unknownStyle: TextStyle,
     ): List<DrawCommand> {
         val origin = center.canonical()
-        val fill = SceneColor("#ffffff")
-        val stroke = SceneColor("#475569")
+        val fill = SceneColor(DiagramPalette.CANVAS)
+        val stroke = SceneColor(DiagramPalette.SECONDARY)
         return when (icon.lowercase()) {
             "" -> emptyList()
             "cloud" -> architectureCloudIcon(origin, fill, stroke)
@@ -1045,7 +1047,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 halfHeight = if (relationship.targetId in actorIds) 38.0 else 38.0,
                 ellipse = toNode?.shape == UsecaseShape.ELLIPSE,
             )
-            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
             commands += arrowHead(from, to)
             relationship.label?.let { label ->
                 commands += DrawText(label, ScenePoint((fromCenter.x + toCenter.x) / 2.0, (fromCenter.y + toCenter.y) / 2.0 - 8.0).canonical(), anchor = TextAnchor.MIDDLE, style = TextStyle(fontSize = 11.0))
@@ -1053,7 +1055,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.actors.forEachIndexed { index, actor ->
             val point = actorPoints[index]
-            commands += DrawEllipse(ScenePoint(point.x, point.y - 20.0).canonical(), 10.0, 10.0, fill = SceneColor("#ffffff"), strokeWidth = 1.5)
+            commands += DrawEllipse(ScenePoint(point.x, point.y - 20.0).canonical(), 10.0, 10.0, fill = SceneColor(DiagramPalette.CANVAS), strokeWidth = 1.5)
             commands += DrawLine(ScenePoint(point.x, point.y - 10.0), ScenePoint(point.x, point.y + 20.0))
             commands += DrawLine(ScenePoint(point.x - 15.0, point.y), ScenePoint(point.x + 15.0, point.y))
             commands += DrawLine(ScenePoint(point.x, point.y + 20.0), ScenePoint(point.x - 13.0, point.y + 38.0))
@@ -1063,9 +1065,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.useCases.forEachIndexed { index, node ->
             val point = usecasePoints[index]
             if (node.shape == UsecaseShape.ELLIPSE) {
-                commands += DrawEllipse(point.canonical(), nodeWidth / 2.0, 38.0, fill = SceneColor("#eff6ff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                commands += DrawEllipse(point.canonical(), nodeWidth / 2.0, 38.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
             } else {
-                commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 4.0, fill = SceneColor("#eff6ff"), stroke = SceneColor("#2563eb"), strokeWidth = 1.5)
+                commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - 38.0, nodeWidth, 76.0).canonical(), 4.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
             }
             commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), anchor = TextAnchor.MIDDLE, style = style)
         }
@@ -1096,7 +1098,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutVenn(diagram: VennDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val unionStyle = TextStyle(fontSize = 12.0, fontWeight = 600, color = SceneColor("#334155"))
+        val unionStyle = TextStyle(fontSize = 12.0, fontWeight = 600, color = SceneColor(DiagramPalette.SECONDARY))
         val labels = diagram.sets.map { it.label } + diagram.unions.mapNotNull { it.label } + diagram.texts.map { it.label ?: it.id }
         val measuredWidth = max(
             (labels.maxOfOrNull { textMeasurer.measure(it, labelStyle).width } ?: 0.0),
@@ -1155,7 +1157,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val dy = center.y - centroid.y
             val length = sqrt(dx * dx + dy * dy).coerceAtLeast(1.0)
             val labelPoint = ScenePoint(center.x + dx / length * radius * 0.48, center.y + dy / length * radius * 0.48 + 4.0)
-            commands += DrawText(set.label, labelPoint.canonical(), anchor = TextAnchor.MIDDLE, style = labelStyle.copy(color = color(style["color"], "#111827")))
+            commands += DrawText(set.label, labelPoint.canonical(), anchor = TextAnchor.MIDDLE, style = labelStyle.copy(color = color(style["color"], DiagramPalette.INK)))
         }
         val centerById = diagram.sets.mapIndexed { index, set -> set.id to centers[index] }.toMap()
         diagram.unions.forEach { union ->
@@ -1165,7 +1167,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     memberCenters.sumOf { it.x } / memberCenters.size,
                     memberCenters.sumOf { it.y } / memberCenters.size + 4.0,
                 )
-                commands += DrawText(label, point.canonical(), anchor = TextAnchor.MIDDLE, style = unionStyle.copy(color = color(properties(union.setIds)["color"], "#334155")))
+                commands += DrawText(label, point.canonical(), anchor = TextAnchor.MIDDLE, style = unionStyle.copy(color = color(properties(union.setIds)["color"], DiagramPalette.SECONDARY)))
             }
         }
         val rows = mutableMapOf<List<String>, Int>()
@@ -1173,7 +1175,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val centersForText = text.setIds.mapNotNull { centerById[it] }
             if (centersForText.isNotEmpty()) {
                 val key = text.setIds.sorted(); val row = rows[key] ?: 0; rows[key] = row + 1
-                val style = TextStyle(fontSize = 12.0, color = color(properties(listOf(text.id))["color"], "#334155"))
+                val style = TextStyle(fontSize = 12.0, color = color(properties(listOf(text.id))["color"], DiagramPalette.SECONDARY))
                 val label = text.label ?: text.id; val measured = textMeasurer.measure(label, style)
                 val x = centersForText.sumOf { it.x } / centersForText.size
                 val y = centersForText.sumOf { it.y } / centersForText.size + 26.0 + row * (measured.height + 6.0)
@@ -1205,7 +1207,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             val fill = color("fill", TREEMAP_COLORS[depth % TREEMAP_COLORS.size])
             val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(20.0) ?: 1.0
-            commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = color("stroke", SceneColor("#334155")), strokeWidth = strokeWidth)
+            commands += DrawRect(rect.canonical(), cornerRadius = 3.0, fill = fill, stroke = color("stroke", SceneColor(DiagramPalette.SECONDARY)), strokeWidth = strokeWidth)
             val valueText = (node.value ?: if (node.children.isNotEmpty()) node.treemapWeight() else null)?.canonicalNumber()
             if (node.children.isEmpty()) {
                 commands += DrawText(
@@ -1347,18 +1349,18 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val fromX = source.x + source.width * if (self) 0.7 else 0.5
                 val toX = target.x + target.width * if (self) 0.3 else 0.5
                 commands += DrawPolyline(listOf(ScenePoint(fromX, source.y), ScenePoint(fromX, laneY), ScenePoint(toX, laneY), ScenePoint(toX, target.y)),
-                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth)
+                    stroke = SceneColor(DiagramPalette.BLUE_SURFACE), strokeWidth = strokeWidth)
             } else {
                 commands += DrawLine(
                     ScenePoint((source.x + source.width).xyCoordinate(), (source.y + source.height / 2).xyCoordinate()),
                     ScenePoint(target.x.xyCoordinate(), (target.y + target.height / 2).xyCoordinate()),
-                    stroke = SceneColor("#60a5fa"), strokeWidth = strokeWidth,
+                    stroke = SceneColor(DiagramPalette.BLUE_SURFACE), strokeWidth = strokeWidth,
                 )
             }
         }
         diagram.nodes.forEach { node ->
             val rect = placements.getValue(node.id)
-            commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor("#dbeafe"), stroke = SceneColor("#2563eb"))
+            commands += DrawRect(rect, cornerRadius = 4.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE), stroke = SceneColor(DiagramPalette.BLUE))
             commands += DrawText(
                 nodeCaption(node.label, node.id),
                 ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2 + 4.0),
@@ -1402,7 +1404,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
                 }.toMap()
                 fun color(key: String, fallback: String) = SceneColor(properties[key]?.takeIf { Regex("#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Z]+").matches(it) } ?: fallback)
-                val fill = color("fill", "#f8fafc"); val stroke = color("stroke", "#334155")
+                val fill = color("fill", DiagramPalette.SURFACE); val stroke = color("stroke", DiagramPalette.SECONDARY)
                 val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: 1.5
                 if (node.type == "block_arrow") {
                     val cx = rect.x + rect.width / 2; val cy = rect.y + rect.height / 2; val tip = 16.0
@@ -1419,7 +1421,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawPolygon(points, fill)
                     commands += DrawPolyline(points + points.first(), stroke, strokeWidth)
                 } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
-                if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", "#111827")))
+                if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", DiagramPalette.INK)))
                 if (node.type == "composite") draw(node.children, plans.getValue(node.id), rect.x + 16.0, rect.y + if (node.label.isEmpty()) 16.0 else 40.0)
             }
         }
@@ -1491,7 +1493,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.nodes.forEach { node ->
             val rect = placements.getValue(node.id)
-            commands += DrawRect(rect, cornerRadius = 6.0, fill = SceneColor("#f8fafc"))
+            commands += DrawRect(rect, cornerRadius = 6.0, fill = SceneColor(DiagramPalette.SURFACE))
             commands += DrawText(
                 node.label,
                 ScenePoint(rect.x + rect.width / 2, rect.y + 38.0),
@@ -1505,7 +1507,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val titleStyle = TextStyle(fontSize = 14.0, fontWeight = 600)
         val cardStyle = TextStyle(fontSize = 12.0)
-        val detailStyle = TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))
+        val detailStyle = TextStyle(fontSize = 10.0, color = SceneColor(DiagramPalette.MUTED))
         fun details(metadata: KanbanMetadata): String = listOfNotNull(
             metadata.priority, metadata.assigned?.let { "@$it" }, metadata.ticket, metadata.icon,
         ).joinToString(" · ")
@@ -1530,16 +1532,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.columns.forEachIndexed { index, column ->
             val columnWidth = widths[index]
             val headerHeight = headerHeights[index]
-            commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeights[index]), cornerRadius = 8.0, fill = SceneColor("#f1f5f9"))
+            commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeights[index]), cornerRadius = 8.0, fill = SceneColor(DiagramPalette.SURFACE))
             commands += DrawText(column.title, ScenePoint(x + columnWidth / 2.0, config.padding + 26.0), TextAnchor.MIDDLE, titleStyle)
             details(column.metadata).takeIf { it.isNotEmpty() }?.let {
                 commands += DrawText(it, ScenePoint(x + columnWidth / 2.0, config.padding + 44.0), TextAnchor.MIDDLE, detailStyle)
             }
-            commands += DrawLine(ScenePoint(x + 12.0, config.padding + headerHeight), ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight), stroke = SceneColor("#cbd5e1"))
+            commands += DrawLine(ScenePoint(x + 12.0, config.padding + headerHeight), ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight), stroke = SceneColor(DiagramPalette.BORDER))
             var y = config.padding + headerHeight + 12.0
             column.cards.forEachIndexed { cardIndex, card ->
                 val cardHeight = cardHeights[index][cardIndex]
-                commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, cardHeight), cornerRadius = 6.0, fill = SceneColor("#ffffff"))
+                commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, cardHeight), cornerRadius = 6.0, fill = SceneColor(DiagramPalette.CANVAS))
                 commands += DrawText(card.label, ScenePoint(x + 22.0, y + 29.0), style = cardStyle)
                 details(card.metadata).takeIf { it.isNotEmpty() }?.let {
                     commands += DrawText(it, ScenePoint(x + 22.0, y + 49.0), style = detailStyle)
@@ -1564,7 +1566,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         if (diagram.direction != FlowDirection.LR) return layoutVerticalGitGraph(diagram, textMeasurer, config)
         val labelStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
         val commitStyle = TextStyle(fontSize = 12.0)
-        val tagStyle = TextStyle(fontSize = 11.0, color = SceneColor("#7c3aed"))
+        val tagStyle = TextStyle(fontSize = 11.0, color = SceneColor(DiagramPalette.PURPLE))
         val labelWidth = (diagram.branches.maxOf { textMeasurer.measure(it.name, labelStyle).width } + 36.0).xyCoordinate()
         val columnWidths = diagram.commits.map { commit ->
             max(
@@ -1590,7 +1592,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val centerById = diagram.commits.mapIndexed { index, commit ->
             commit.id to ScenePoint(centersX[index], firstLaneY + laneByName.getValue(commit.branch) * laneGap)
         }.toMap()
-        val colors = listOf("#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#0891b2")
+        val colors = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.AMBER, DiagramPalette.PURPLE, DiagramPalette.CYAN)
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
 
@@ -1613,7 +1615,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(
                 branch.name,
                 ScenePoint(config.padding + 6.0, y + 4.0),
-                style = labelStyle.copy(color = SceneColor("#ffffff")),
+                style = labelStyle.copy(color = SceneColor(DiagramPalette.CANVAS)),
             )
             commands += DrawLine(ScenePoint(branchStartX, y), ScenePoint(branchEndX, y), stroke = color, strokeWidth = 2.0)
         }
@@ -1632,20 +1634,20 @@ public object SimpleMermaidLayout : DiagramLayout {
             when {
                 commit.type == GitGraphCommitType.HIGHLIGHT -> {
                     commands += DrawRect(SceneRect(center.x - 12.0, center.y - 10.0, 24.0, 20.0), cornerRadius = 2.0, fill = color, stroke = color)
-                    commands += DrawRect(SceneRect(center.x - 6.0, center.y - 6.0, 12.0, 12.0), cornerRadius = 1.0, fill = SceneColor("#ffffff"), stroke = color, strokeWidth = 1.0)
+                    commands += DrawRect(SceneRect(center.x - 6.0, center.y - 6.0, 12.0, 12.0), cornerRadius = 1.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = color, strokeWidth = 1.0)
                 }
                 commit.isCherryPick -> {
                     commands += DrawPolygon(listOf(ScenePoint(center.x, center.y - 10), ScenePoint(center.x + 10, center.y), ScenePoint(center.x, center.y + 10), ScenePoint(center.x - 10, center.y)), fill = color)
                 }
                 commit.isMerge && commit.type != GitGraphCommitType.REVERSE -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
-                    commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = SceneColor("#ffffff"))
+                    commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.CANVAS))
                 }
                 else -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = color, stroke = color)
                     if (commit.type == GitGraphCommitType.REVERSE) {
-                        commands += DrawLine(ScenePoint(center.x - 5.0, center.y - 5.0), ScenePoint(center.x + 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
-                        commands += DrawLine(ScenePoint(center.x + 5.0, center.y - 5.0), ScenePoint(center.x - 5.0, center.y + 5.0), stroke = SceneColor("#ffffff"), strokeWidth = 2.0)
+                        commands += DrawLine(ScenePoint(center.x - 5.0, center.y - 5.0), ScenePoint(center.x + 5.0, center.y + 5.0), stroke = SceneColor(DiagramPalette.CANVAS), strokeWidth = 2.0)
+                        commands += DrawLine(ScenePoint(center.x + 5.0, center.y - 5.0), ScenePoint(center.x - 5.0, center.y + 5.0), stroke = SceneColor(DiagramPalette.CANVAS), strokeWidth = 2.0)
                     }
                 }
             }
@@ -1665,17 +1667,17 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(right, bottom),
                         ScenePoint(left, bottom),
                     ),
-                    fill = SceneColor("#ede9fe"),
+                    fill = SceneColor(DiagramPalette.PURPLE_SURFACE),
                 )
-                commands += DrawEllipse(ScenePoint(tipX + 8.0, center.y - 24.0), 2.0, 2.0, fill = SceneColor("#7c3aed"), stroke = SceneColor("#7c3aed"))
+                commands += DrawEllipse(ScenePoint(tipX + 8.0, center.y - 24.0), 2.0, 2.0, fill = SceneColor(DiagramPalette.PURPLE), stroke = SceneColor(DiagramPalette.PURPLE))
                 commands += DrawText(tag, ScenePoint(center.x, center.y - 20.0), TextAnchor.MIDDLE, tagStyle)
             }
             val idWidth = textMeasurer.measure(commit.id, commitStyle).width
             commands += DrawRect(
                 SceneRect(center.x - idWidth / 2.0 - 6.0, center.y + 16.0, idWidth + 12.0, 16.0),
                 cornerRadius = 3.0,
-                fill = SceneColor("#f8fafc"),
-                stroke = SceneColor("#cbd5e1"),
+                fill = SceneColor(DiagramPalette.SURFACE),
+                stroke = SceneColor(DiagramPalette.BORDER),
                 strokeWidth = 1.0,
             )
             commands += DrawText(commit.id, ScenePoint(center.x, center.y + 28.0), TextAnchor.MIDDLE, commitStyle)
@@ -1697,7 +1699,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val lanes = diagram.branches.mapIndexed { i, branch -> branch.name to i }.toMap()
         val centers = diagram.commits.mapIndexed { i, commit -> commit.id to ScenePoint(config.padding + lane * lanes.getValue(commit.branch) + 24,
             first + (if (reverse) -1 else 1) * i * 84.0) }.toMap()
-        val colors = listOf("#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#0891b2")
+        val colors = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.AMBER, DiagramPalette.PURPLE, DiagramPalette.CYAN)
         fun color(branch: String) = SceneColor(colors[lanes.getValue(branch) % colors.size])
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 18), style = TextStyle(fontSize = 18.0, fontWeight = 600)) }
@@ -1706,7 +1708,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val y = if (reverse) height - config.padding - 12 else config.padding + 48
             val chip = measurer.measure(branch.name, header).width + 16
             commands += DrawRect(SceneRect(x - 8, y - 16, chip, 22.0), cornerRadius = 4.0, fill = color(branch.name), stroke = color(branch.name))
-            commands += DrawText(branch.name, ScenePoint(x, y), style = header.copy(color = SceneColor("#ffffff")))
+            commands += DrawText(branch.name, ScenePoint(x, y), style = header.copy(color = SceneColor(DiagramPalette.CANVAS)))
             val start = branch.parentCommitId?.let { centers[it]?.y } ?: first
             val own = diagram.commits.filter { it.branch == branch.name }.map { centers.getValue(it.id).y }
             val end = if (reverse) own.minOrNull() ?: start else own.maxOrNull() ?: start
@@ -1721,19 +1723,19 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commit.isCherryPick -> commands += DrawPolygon(listOf(ScenePoint(center.x, center.y - 10), ScenePoint(center.x + 10, center.y), ScenePoint(center.x, center.y + 10), ScenePoint(center.x - 10, center.y)), fill = paint)
                 commit.type == GitGraphCommitType.HIGHLIGHT -> {
                     commands += DrawRect(SceneRect(center.x - 12, center.y - 10, 24.0, 20.0), fill = paint, stroke = paint)
-                    commands += DrawRect(SceneRect(center.x - 6, center.y - 6, 12.0, 12.0), fill = SceneColor("#ffffff"), stroke = paint)
+                    commands += DrawRect(SceneRect(center.x - 6, center.y - 6, 12.0, 12.0), fill = SceneColor(DiagramPalette.CANVAS), stroke = paint)
                 }
                 else -> {
                     commands += DrawEllipse(center, 9.0, 9.0, fill = paint, stroke = paint)
-                    if (commit.isMerge && commit.type != GitGraphCommitType.REVERSE) commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor("#ffffff"), stroke = paint)
+                    if (commit.isMerge && commit.type != GitGraphCommitType.REVERSE) commands += DrawEllipse(center, 5.0, 5.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = paint)
                     if (commit.type == GitGraphCommitType.REVERSE) {
-                        commands += DrawLine(ScenePoint(center.x - 5, center.y - 5), ScenePoint(center.x + 5, center.y + 5), stroke = SceneColor("#ffffff"))
-                        commands += DrawLine(ScenePoint(center.x + 5, center.y - 5), ScenePoint(center.x - 5, center.y + 5), stroke = SceneColor("#ffffff"))
+                        commands += DrawLine(ScenePoint(center.x - 5, center.y - 5), ScenePoint(center.x + 5, center.y + 5), stroke = SceneColor(DiagramPalette.CANVAS))
+                        commands += DrawLine(ScenePoint(center.x + 5, center.y - 5), ScenePoint(center.x - 5, center.y + 5), stroke = SceneColor(DiagramPalette.CANVAS))
                     }
                 }
             }
             commands += DrawText(commit.id, ScenePoint(center.x + 16, center.y + 4), style = body)
-            if (commit.tags.isNotEmpty()) commands += DrawText(commit.tags.joinToString(", "), ScenePoint(center.x + 16, center.y - 14), style = body.copy(color = SceneColor("#7c3aed")))
+            if (commit.tags.isNotEmpty()) commands += DrawText(commit.tags.joinToString(", "), ScenePoint(center.x + 16, center.y - 14), style = body.copy(color = SceneColor(DiagramPalette.PURPLE)))
             if (commit.message.isNotEmpty() && !commit.isMerge && !commit.isCherryPick) commands += DrawText(commit.message, ScenePoint(center.x + 16, center.y + 22), style = body)
         }
         return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
@@ -1783,7 +1785,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawText("$segmentStart", ScenePoint(x + 4.0, y + 10.0), TextAnchor.START, bitIndexStyle)
                     commands += DrawText("$segmentEnd", ScenePoint(x + segmentWidth - 4.0, y + 10.0), TextAnchor.END, bitIndexStyle)
                 }
-                commands += DrawRect(SceneRect(x, y + indexBand, segmentWidth, blockHeight), cornerRadius = 2.0, fill = SceneColor("#eff6ff"))
+                commands += DrawRect(SceneRect(x, y + indexBand, segmentWidth, blockHeight), cornerRadius = 2.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE))
                 commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + indexBand + 23.0), TextAnchor.MIDDLE, labelStyle)
             }
         }
@@ -1805,10 +1807,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(width / 2.0, 26.0), TextAnchor.MIDDLE, TextStyle(fontSize = 18.0, fontWeight = 600)) }
         val fills = listOf(
-            SceneColor("#dbeafe"),
-            SceneColor("#dcfce7"),
-            SceneColor("#fef3c7"),
-            SceneColor("#fce7f3"),
+            SceneColor(DiagramPalette.BLUE_SURFACE),
+            SceneColor(DiagramPalette.GREEN_SURFACE),
+            SceneColor(DiagramPalette.AMBER_SURFACE),
+            SceneColor(DiagramPalette.ROSE_SURFACE),
         )
         val quadrantRects = listOf(
             SceneRect(midX, top, right - midX, midY - top),
@@ -1829,7 +1831,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 ScenePoint(left, bottom),
                 ScenePoint(left, top),
             ),
-            stroke = SceneColor("#334155"),
+            stroke = SceneColor(DiagramPalette.SECONDARY),
         )
         commands += DrawText(diagram.xAxis.lowLabel.trim(), ScenePoint(left, bottom + 22.0), style = body)
         commands += DrawText(diagram.xAxis.highLabel.trim(), ScenePoint(right, bottom + 22.0), TextAnchor.END, body)
@@ -1856,9 +1858,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             }?.let { if (it.startsWith('#')) it else "#$it" } ?: fallback)
             val radius = number("radius", 5.0)
             val vertices = listOf(ScenePoint(x, y - radius), ScenePoint(x + radius, y), ScenePoint(x, y + radius), ScenePoint(x - radius, y))
-            commands += DrawPolygon(vertices, fill = color("color", "#2563eb"))
+            commands += DrawPolygon(vertices, fill = color("color", DiagramPalette.BLUE))
             if ("stroke-color" in properties || "stroke-width" in properties) {
-                commands += DrawPolyline(vertices + vertices.first(), stroke = color("stroke-color", "#334155"), strokeWidth = number("stroke-width", 1.0))
+                commands += DrawPolyline(vertices + vertices.first(), stroke = color("stroke-color", DiagramPalette.SECONDARY), strokeWidth = number("stroke-width", 1.0))
             }
             val labelWidth = textMeasurer.measure(point.label.trim(), body).width
             val anchor = if (x + radius + 3.0 + labelWidth <= width - config.padding) TextAnchor.START else TextAnchor.END
@@ -1921,14 +1923,14 @@ public object SimpleMermaidLayout : DiagramLayout {
             val ringRadius = radius * fraction
             if (polygonGrid && axisCount >= 3) {
                 val points = diagram.axes.indices.map { vertex(it, fraction) }
-                commands += DrawPolyline(points + points.first(), stroke = SceneColor("#d4d4d4"), strokeWidth = 1.0)
+                commands += DrawPolyline(points + points.first(), stroke = SceneColor(DiagramPalette.BORDER), strokeWidth = 1.0)
             } else {
                 commands += DrawEllipse(
                     ScenePoint(centerX, centerY),
                     ringRadius,
                     ringRadius,
                     fillOpacity = 0.0,
-                    stroke = SceneColor("#d4d4d4"),
+                    stroke = SceneColor(DiagramPalette.BORDER),
                     strokeWidth = 1.0,
                 )
             }
@@ -2048,7 +2050,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawRect(
                     SceneRect(config.padding, y, sectionWidth - 12.0, cardHeight),
                     cornerRadius = 8.0,
-                    fill = SceneColor("#e2e8f0"),
+                    fill = SceneColor(DiagramPalette.SURFACE_STRONG),
                 )
                 commands += DrawText(
                     section.name,
@@ -2075,8 +2077,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(x + 16.0 + index * 14.0, y + 64.0),
                         5.0,
                         5.0,
-                        fill = SceneColor(if (index < task.score) "#334155" else "#ffffff"),
-                        stroke = SceneColor("#334155"),
+                        fill = SceneColor(if (index < task.score) DiagramPalette.SECONDARY else DiagramPalette.CANVAS),
+                        stroke = SceneColor(DiagramPalette.SECONDARY),
                         strokeWidth = 1.0,
                     )
                 }
@@ -2087,7 +2089,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         4.0,
                         4.0,
                         fill = SceneColor(color),
-                        stroke = SceneColor("#334155"),
+                        stroke = SceneColor(DiagramPalette.SECONDARY),
                         strokeWidth = 1.0,
                     )
                 }
@@ -2103,7 +2105,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     6.0,
                     6.0,
                     fill = SceneColor(color),
-                    stroke = SceneColor("#334155"),
+                    stroke = SceneColor(DiagramPalette.SECONDARY),
                     strokeWidth = 1.0,
                 )
                 commands += DrawText(actor, ScenePoint(legendX + 16.0, legendY + 4.0), style = body)
@@ -2163,12 +2165,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawLine(
                     ScenePoint(config.padding, y - 12.0),
                     ScenePoint(width - config.padding, y - 12.0),
-                    stroke = SceneColor("#cbd5e1"),
+                    stroke = SceneColor(DiagramPalette.BORDER),
                 )
             }
             val event = entry.event ?: return@forEach
             commands += DrawText(event.period.trim(), ScenePoint(config.padding, y + 5.0), style = body)
-            commands += DrawPolygon(listOf(ScenePoint(axisX, y), ScenePoint(axisX + 7.0, y + 7.0), ScenePoint(axisX, y + 14.0), ScenePoint(axisX - 7.0, y + 7.0)), fill = SceneColor("#2563eb"))
+            commands += DrawPolygon(listOf(ScenePoint(axisX, y), ScenePoint(axisX + 7.0, y + 7.0), ScenePoint(axisX, y + 14.0), ScenePoint(axisX - 7.0, y + 7.0)), fill = SceneColor(DiagramPalette.BLUE))
             event.labels.forEachIndexed { labelIndex, label ->
                 commands += DrawText(label.trim(), ScenePoint(axisX + 18.0, y + 11.0 + labelIndex * eventLineHeight), style = body)
             }
@@ -2196,7 +2198,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             cursor += columns[index]
             val event = entry.event ?: return@forEachIndexed
             commands += DrawText(event.period.trim(), ScenePoint(x, axisY - 14), TextAnchor.MIDDLE, style)
-            commands += DrawPolygon(listOf(ScenePoint(x, axisY - 7), ScenePoint(x + 7, axisY), ScenePoint(x, axisY + 7), ScenePoint(x - 7, axisY)), fill = SceneColor("#2563eb"))
+            commands += DrawPolygon(listOf(ScenePoint(x, axisY - 7), ScenePoint(x + 7, axisY), ScenePoint(x, axisY + 7), ScenePoint(x - 7, axisY)), fill = SceneColor(DiagramPalette.BLUE))
             event.labels.forEachIndexed { j, label -> commands += DrawText(label.trim(), ScenePoint(x, axisY + 24 + j * 18), TextAnchor.MIDDLE, style) }
         }
         return LayoutScene(width, height, commands)
@@ -2296,8 +2298,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                         else 0.94 + 0.06 * kotlin.math.cos(8.0 * angle)
                     ScenePoint(cx + rect.width / 2.0 * radius * kotlin.math.cos(angle), cy + rect.height / 2.0 * radius * kotlin.math.sin(angle))
                 }
-                commands += DrawPolygon(points, SceneColor("#ffffff"))
-                commands += DrawPolyline(points + points.first(), stroke = SceneColor("#334155"))
+                commands += DrawPolygon(points, SceneColor(DiagramPalette.CANVAS))
+                commands += DrawPolyline(points + points.first(), stroke = SceneColor(DiagramPalette.SECONDARY))
             } else {
                 val radius = if (node.shape == MindmapNodeShape.RECTANGLE) 2.0 else 12.0
                 commands += DrawRect(rect, cornerRadius = radius)
@@ -2308,7 +2310,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 TextAnchor.MIDDLE,
                 style,
             )
-            node.icon?.takeIf { it.isNotBlank() }?.let { icon -> commands += DrawText(icon, ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor("#64748b"))) }
+            node.icon?.takeIf { it.isNotBlank() }?.let { icon -> commands += DrawText(icon, ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0 + 14.0), TextAnchor.MIDDLE, TextStyle(fontSize = 10.0, color = SceneColor(DiagramPalette.MUTED))) }
         }
         val width = rects.values.maxOf { it.x + it.width } + config.padding
         val height = maxOf(
@@ -2670,7 +2672,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.namespaces.forEach { ns ->
             val rect=placement.namespaces.getValue(ns.id)
-            commands += DrawRect(rect,cornerRadius=4.0,fill=SceneColor("#f1f5f9"),stroke=SceneColor("#94a3b8"))
+            commands += DrawRect(rect,cornerRadius=4.0,fill=SceneColor(DiagramPalette.SURFACE),stroke=SceneColor(DiagramPalette.FAINT))
             commands += DrawText(ns.label,ScenePoint(rect.x+12,rect.y+19),style=TextStyle(fontWeight=600))
         }
         diagram.relationships.forEach { relation ->
@@ -2694,7 +2696,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     ClassMarker.COMPOSITION -> commands += diamondMarker(tip,other,true)
                     ClassMarker.AGGREGATION -> commands += diamondMarker(tip,other,false)
                     ClassMarker.ARROW -> commands += arrowHead(other,tip)
-                    ClassMarker.LOLLIPOP -> commands += DrawEllipse(tip,5.0,5.0,fill=SceneColor("#ffffff"),stroke=SceneColor("#475569"))
+                    ClassMarker.LOLLIPOP -> commands += DrawEllipse(tip,5.0,5.0,fill=SceneColor(DiagramPalette.CANVAS),stroke=SceneColor(DiagramPalette.SECONDARY))
                     ClassMarker.NONE -> Unit
                 }
             }
@@ -2715,7 +2717,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             note.classId?.let { id -> rects[id.substringBefore('~')] }?.let { owner ->
                 commands += DrawLine(ScenePoint(owner.x+owner.width/2,owner.y+owner.height),ScenePoint(rect.x+rect.width/2,rect.y),pattern=StrokePattern.DASHED)
             }
-            commands += DrawRect(rect,fill=SceneColor("#fff7d6"),stroke=SceneColor("#c5a84c"))
+            commands += DrawRect(rect,fill=SceneColor(DiagramPalette.AMBER_SURFACE),stroke=SceneColor(DiagramPalette.AMBER))
             classNoteLines(note.text).forEachIndexed { lineIndex,line -> commands += DrawText(line,ScenePoint(rect.x+12,rect.y+20+lineIndex*22),style=style) }
         }
         diagram.classes.forEach { klass ->
@@ -2773,7 +2775,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
     private fun hollowArrowHead(from: ScenePoint, to: ScenePoint): DrawPolyline {
         val points = arrowHead(from, to).points
-        return DrawPolyline(points + points.first(), stroke = SceneColor("#475569"), strokeWidth = 1.5)
+        return DrawPolyline(points + points.first(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
     }
 
     private fun diamondMarker(from: ScenePoint, to: ScenePoint, filled: Boolean): DrawPolygon {
@@ -2793,7 +2795,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 ScenePoint(cx - ux * 4.0, cy - uy * 4.0),
                 ScenePoint(cx - px * 4.0, cy - py * 4.0),
             ),
-            fill = if (filled) SceneColor("#475569") else SceneColor("#ffffff"),
+            fill = if (filled) SceneColor(DiagramPalette.SECONDARY) else SceneColor(DiagramPalette.CANVAS),
         )
     }
 
@@ -2807,7 +2809,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val groupIds=diagram.states.filter { it.childIds.isNotEmpty() }.map { it.id }.toSet()
         val paintDiagram=FlowchartDiagram(diagram.direction,emptyList(),emptyList(),classDefinitions=diagram.classDefinitions)
         val paints=diagram.states.associate { state->state.id to FlowStyle(build.raft.mermaid.core.FlowNode(state.id,state.label,styles=state.styles,classes=state.classes),paintDiagram,
-            if(state.id in groupIds)listOf("fill:#f7f7f7","stroke:#999999","stroke-width:1")else if(state.kind==StateNodeKind.NOTE)listOf("fill:#fff5ad","stroke:#aaaa33","stroke-width:1")else listOf("fill:#eeeeee","stroke:#999999","stroke-width:1")) }
+            if(state.id in groupIds)listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.FAINT}","stroke-width:1")else if(state.kind==StateNodeKind.NOTE)listOf("fill:${DiagramPalette.AMBER_SURFACE}","stroke:${DiagramPalette.AMBER}","stroke-width:1")else listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.OUTLINE}","stroke-width:1")) }
         val sizes=diagram.states.associate { state->
             val paint=paints.getValue(state.id)
             val lines=classNoteLines(state.label)+state.description?.let(::classNoteLines).orEmpty()
@@ -2884,7 +2886,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>()
         diagram.states.filter { it.id in groupIds }.sortedBy { rects[it.id]?.y }.forEach { state->
             val rect=rects.getValue(state.id);val paint=paints.getValue(state.id)
-            commands+=paint.paint(DrawRect(rect,cornerRadius=5.0,fill=SceneColor("#f7f7f7"),stroke=SceneColor("#999999"),strokeWidth=1.0))
+            commands+=paint.paint(DrawRect(rect,cornerRadius=5.0,fill=SceneColor(DiagramPalette.SURFACE),stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.0))
             commands+=DrawText(state.label,ScenePoint(rect.x+rect.width/2,rect.y+6+paint.text.fontSize),TextAnchor.MIDDLE,paint.text)
         }
 
@@ -2902,7 +2904,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     val y = (a.y+a.height+b.y)/2
                     from=ScenePoint(outer.x+8,y);to=ScenePoint(outer.x+outer.width-8,y)
                 }
-                commands += DrawLine(from,to,stroke=SceneColor("#999999"),strokeWidth=1.0,pattern=StrokePattern.DASHED)
+                commands += DrawLine(from,to,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.0,pattern=StrokePattern.DASHED)
             }
         }
         diagram.transitions.forEach { transition ->
@@ -2913,8 +2915,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val to=ScenePoint(source.x+source.width,source.y+source.height*0.75)
                 val right=source.x+source.width+24
                 val points=listOf(from,ScenePoint(right,from.y),ScenePoint(right,to.y),to)
-                commands+=DrawPolyline(points,stroke=SceneColor("#666666"),strokeWidth=1.0)
-                commands+=arrowHead(points[points.lastIndex-1],to,fill=SceneColor("#333333"))
+                commands+=DrawPolyline(points,stroke=SceneColor(DiagramPalette.SECONDARY),strokeWidth=1.0)
+                commands+=arrowHead(points[points.lastIndex-1],to,fill=SceneColor(DiagramPalette.INK))
                 if(transition.label.isNotEmpty())commands+=DrawText(transition.label,ScenePoint(right+4,(from.y+to.y)/2),style=style)
                 return@forEach
             }
@@ -2922,8 +2924,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             val commonParent = ancestors(transition.from).firstOrNull { it in targetAncestors }
             val direction = statesById[commonParent]?.direction ?: diagram.direction
             val anchors = edgeAnchors(source, target, direction in listOf(FlowDirection.LR, FlowDirection.RL))
-            commands += DrawLine(anchors.first, anchors.second, stroke = SceneColor("#666666"), strokeWidth = 1.0)
-            commands += arrowHead(anchors.first, anchors.second, fill = SceneColor("#333333"))
+            commands += DrawLine(anchors.first, anchors.second, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
+            commands += arrowHead(anchors.first, anchors.second, fill = SceneColor(DiagramPalette.INK))
             if (transition.label.isNotEmpty()) {
                 commands += DrawText(
                     transition.label,
@@ -2941,8 +2943,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawRect(
                         rect = rect,
                         cornerRadius = 5.0,
-                        fill = SceneColor("#eeeeee"),
-                        stroke = SceneColor("#999999"),
+                        fill = SceneColor(DiagramPalette.SURFACE_STRONG),
+                        stroke = SceneColor(DiagramPalette.FAINT),
                         strokeWidth = 1.0,
                     )
                     val lines=classNoteLines(state.label)+state.description?.let(::classNoteLines).orEmpty()
@@ -2956,8 +2958,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                         center = ScenePoint(rect.x + radius, rect.y + radius),
                         radiusX = radius,
                         radiusY = radius,
-                        fill = SceneColor("#222222"),
-                        stroke = SceneColor("#222222"),
+                        fill = SceneColor(DiagramPalette.INK),
+                        stroke = SceneColor(DiagramPalette.INK),
                         strokeWidth = 1.0,
                     )
                 }
@@ -2968,8 +2970,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                         center = center,
                         radiusX = radius,
                         radiusY = radius,
-                        fill = SceneColor("#ffffff"),
-                        stroke = SceneColor("#222222"),
+                        fill = SceneColor(DiagramPalette.CANVAS),
+                        stroke = SceneColor(DiagramPalette.INK),
                         strokeWidth = 1.5,
                     )
                     val inner = radius * 5.0 / 14.0
@@ -2977,8 +2979,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                         center = center,
                         radiusX = inner,
                         radiusY = inner,
-                        fill = SceneColor("#222222"),
-                        stroke = SceneColor("#222222"),
+                        fill = SceneColor(DiagramPalette.INK),
+                        stroke = SceneColor(DiagramPalette.INK),
                         strokeWidth = 1.0,
                     )
                 }
@@ -2992,14 +2994,14 @@ public object SimpleMermaidLayout : DiagramLayout {
                             ScenePoint(cx, rect.y + rect.height),
                             ScenePoint(rect.x, cy),
                         ),
-                        fill = SceneColor("#ffffff"),
+                        fill = SceneColor(DiagramPalette.CANVAS),
                     )
                 }
                 StateNodeKind.FORK, StateNodeKind.JOIN -> {
                     commands += DrawRect(
                         rect = SceneRect(rect.x, rect.y + rect.height / 2.0 - 3.0, rect.width, 6.0),
-                        fill = SceneColor("#333333"),
-                        stroke = SceneColor("#333333"),
+                        fill = SceneColor(DiagramPalette.INK),
+                        stroke = SceneColor(DiagramPalette.INK),
                     )
                 }
             }
@@ -3010,7 +3012,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
         noteRects.forEach { (note,initial)->
             val rect=initial.copy(x=initial.x+dx)
-            commands+=DrawRect(rect,cornerRadius=3.0,fill=SceneColor("#fff5ad"),stroke=SceneColor("#aaaa33"))
+            commands+=DrawRect(rect,cornerRadius=3.0,fill=SceneColor(DiagramPalette.AMBER_SURFACE),stroke=SceneColor(DiagramPalette.AMBER))
             classNoteLines(note.text).forEachIndexed { index,line->commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+20+index*22),TextAnchor.MIDDLE,style) }
         }
         return LayoutScene(width, height, commands)
@@ -3038,8 +3040,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val rects=placement.nodes
 
         val commands = mutableListOf<DrawCommand>()
-        val edgeStroke = SceneColor("#666666")
-        val arrowFill = SceneColor("#333333")
+        val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
+        val arrowFill = SceneColor(DiagramPalette.INK)
 
         // Subgraph bounding boxes first so nodes/edges sit on top.
         diagram.subgraphs.sortedBy { group ->
@@ -3083,19 +3085,19 @@ public object SimpleMermaidLayout : DiagramLayout {
             val glyphStart=commands.size
             when (node.shape) {
                 FlowNodeShape.RECTANGLE -> {
-                    commands += DrawRect(rect,cornerRadius=if(node.borders==null)5.0 else 0.0,fill=SceneColor("#eeeeee"),stroke=SceneColor(if(node.borders==null)"#999999"else"none"),strokeWidth=1.5)
+                    commands += DrawRect(rect,cornerRadius=if(node.borders==null)5.0 else 0.0,fill=SceneColor(DiagramPalette.SURFACE_STRONG),stroke=SceneColor(if(node.borders==null)DiagramPalette.FAINT else "none"),strokeWidth=1.5)
                     node.borders?.let { borders ->
                         val tl=ScenePoint(rect.x,rect.y);val tr=ScenePoint(rect.x+rect.width,rect.y);val bl=ScenePoint(rect.x,rect.y+rect.height);val br=ScenePoint(rect.x+rect.width,rect.y+rect.height)
-                        listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor("#999999"),strokeWidth=1.5) }
+                        listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.5) }
                     }
                 }
-                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"), strokeWidth = 1.5)
-                FlowNodeShape.CIRCLE, FlowNodeShape.ELLIPSE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT), strokeWidth = 1.5)
+                FlowNodeShape.CIRCLE, FlowNodeShape.ELLIPSE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                 FlowNodeShape.DOUBLE_CIRCLE -> {
                     val cx = rect.x + rect.width / 2.0
                     val cy = rect.y + rect.height / 2.0
-                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0, rect.height / 2.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
-                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0 - 4.0, rect.height / 2.0 - 4.0, fill = SceneColor("#eeeeee"), stroke = SceneColor("#999999"))
+                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0, rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
+                    commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0 - 4.0, rect.height / 2.0 - 4.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                 }
                 FlowNodeShape.DIAMOND -> commands += DrawPolygon(
                     listOf(
@@ -3104,7 +3106,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height),
                         ScenePoint(rect.x, rect.y + rect.height / 2.0),
                     ),
-                    fill = SceneColor("#eeeeee"),
+                    fill = SceneColor(DiagramPalette.SURFACE_STRONG),
                 )
                 FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT, FlowNodeShape.SUBROUTINE, FlowNodeShape.CYLINDER, FlowNodeShape.HEXAGON, FlowNodeShape.ASYMMETRIC -> commands += flowSpecialShape(node.shape, rect)
             }
@@ -3230,13 +3232,13 @@ public object SimpleMermaidLayout : DiagramLayout {
         val points = diagram.frames.mapIndexed { i, frame -> frame.id to ScenePoint(config.padding + laneLabel + i * (cardWidth + gap) + cardWidth / 2, config.padding + titleOffset + lanes.indexOf(frame.kind) * laneHeight + laneHeight / 2) }.toMap()
         val commands = mutableListOf<DrawCommand>()
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = TextStyle(fontSize = 20.0, fontWeight = 600)) }
-        lanes.forEachIndexed { i, kind -> val y=config.padding+titleOffset+i*laneHeight; commands += DrawRect(SceneRect(config.padding,y,width-config.padding*2,laneHeight),0.0,SceneColor(if(i%2==0) "#f8fafc" else "#ffffff"),SceneColor("#cbd5e1")); commands += DrawText(kind.name,ScenePoint(config.padding+12,y+58),style=style) }
-        diagram.relations.forEach { relation -> val from=points.getValue(relation.sourceFrameId); val to=points.getValue(relation.targetFrameId); commands += DrawLine(from,to,stroke=SceneColor("#475569")); commands += arrowHead(from,to) }
-        diagram.frames.forEach { frame -> val p=points.getValue(frame.id); commands += DrawRect(SceneRect(p.x-cardWidth/2,p.y-cardHeight/2,cardWidth,cardHeight),7.0,SceneColor("#dbeafe"),SceneColor(if(frame.reset) "#dc2626" else "#334155")); commands += DrawText(frame.entityId,p.copy(y=p.y-2),TextAnchor.MIDDLE,style); commands += DrawText(frame.id,p.copy(y=p.y+18),TextAnchor.MIDDLE,TextStyle(fontSize=10.0)) }
+        lanes.forEachIndexed { i, kind -> val y=config.padding+titleOffset+i*laneHeight; commands += DrawRect(SceneRect(config.padding,y,width-config.padding*2,laneHeight),0.0,SceneColor(if(i%2==0) DiagramPalette.SURFACE else DiagramPalette.CANVAS),SceneColor(DiagramPalette.BORDER)); commands += DrawText(kind.name,ScenePoint(config.padding+12,y+58),style=style) }
+        diagram.relations.forEach { relation -> val from=points.getValue(relation.sourceFrameId); val to=points.getValue(relation.targetFrameId); commands += DrawLine(from,to,stroke=SceneColor(DiagramPalette.SECONDARY)); commands += arrowHead(from,to) }
+        diagram.frames.forEach { frame -> val p=points.getValue(frame.id); commands += DrawRect(SceneRect(p.x-cardWidth/2,p.y-cardHeight/2,cardWidth,cardHeight),7.0,SceneColor(DiagramPalette.BLUE_SURFACE),SceneColor(if(frame.reset) DiagramPalette.RED else DiagramPalette.SECONDARY)); commands += DrawText(frame.entityId,p.copy(y=p.y-2),TextAnchor.MIDDLE,style); commands += DrawText(frame.id,p.copy(y=p.y+18),TextAnchor.MIDDLE,TextStyle(fontSize=10.0)) }
         dataRows.forEachIndexed { index, rows ->
             val x = config.padding + laneLabel + index * (dataWidth + gap)
             val y = config.padding + titleOffset + lanes.size * laneHeight + 12.0
-            commands += DrawRect(SceneRect(x, y, dataWidth, dataHeight - 12.0), 6.0, SceneColor("#fef3c7"), SceneColor("#d97706"))
+            commands += DrawRect(SceneRect(x, y, dataWidth, dataHeight - 12.0), 6.0, SceneColor(DiagramPalette.AMBER_SURFACE), SceneColor(DiagramPalette.AMBER))
             rows.forEachIndexed { row, text -> commands += DrawText(text, ScenePoint(x + 12.0, y + 18.0 + row * 17.0), style = dataStyle) }
         }
         return LayoutScene(width,height,commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
@@ -3251,10 +3253,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         val style = TextStyle(fontSize = 13.0)
         val headStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
         val causeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val chromeFill = SceneColor("#e2e8f0")
-        val spineColor = SceneColor("#334155")
-        val boneColor = SceneColor("#475569")
-        val subBoneColor = SceneColor("#94a3b8")
+        val chromeFill = SceneColor(DiagramPalette.SURFACE_STRONG)
+        val spineColor = SceneColor(DiagramPalette.SECONDARY)
+        val boneColor = SceneColor(DiagramPalette.SECONDARY)
+        val subBoneColor = SceneColor(DiagramPalette.FAINT)
         val spineBase = 240.0
         val rowHeight = 26.0
         val boneSlope = 0.42
@@ -3392,9 +3394,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         val noteStyle = TextStyle(fontSize = 12.0, fontWeight = 600)
         val axisStyle = TextStyle(fontSize = 12.0, fontWeight = 600)
         val stageStyle = TextStyle(fontSize = 11.0)
-        val evolveColor = SceneColor("#dc2626")
-        val axisColor = SceneColor("#334155")
-        val stageLineColor = SceneColor("#64748b")
+        val evolveColor = SceneColor(DiagramPalette.RED)
+        val axisColor = SceneColor(DiagramPalette.SECONDARY)
+        val stageLineColor = SceneColor(DiagramPalette.MUTED)
         val commands = mutableListOf<DrawCommand>()
         var cursorY = config.padding
         diagram.title?.let { title ->
@@ -3444,7 +3446,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val centers = diagram.nodes.associateWith { node -> ScenePoint(x(node.evolution), y(node.visibility)) }
         diagram.nodes.filter { it.pipeline != null }.groupBy { it.pipeline }.forEach { (_, children) ->
             val first = children.minOf { x(it.evolution) }; val last = children.maxOf { x(it.evolution) }; val cy = y(children.first().visibility)
-            commands += DrawRect(SceneRect(first - 12.0, cy - 10.0, last - first + 24.0, 20.0), fill = SceneColor("#f8fafc"), stroke = stageLineColor)
+            commands += DrawRect(SceneRect(first - 12.0, cy - 10.0, last - first + 24.0, 20.0), fill = SceneColor(DiagramPalette.SURFACE), stroke = stageLineColor)
         }
         diagram.links.forEach { link: WardleyLink ->
             val from = centers.getValue(diagram.nodes.first { it.name == link.from })
@@ -3475,7 +3477,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         diagram.annotations.forEachIndexed { index, annotation ->
             val center = ScenePoint(x(annotation.evolution), y(annotation.visibility))
-            commands += DrawEllipse(center, 10.0, 10.0, fill = SceneColor("#fef3c7"))
+            commands += DrawEllipse(center, 10.0, 10.0, fill = SceneColor(DiagramPalette.AMBER_SURFACE))
             commands += DrawText(annotation.id, ScenePoint(center.x, center.y + 4.0), TextAnchor.MIDDLE, stageStyle)
             val box = diagram.annotationsBox
             commands += DrawText("${annotation.id}. ${annotation.text}", ScenePoint(if (box != null) x(box.evolution) else plotLeft, (if (box != null) y(box.visibility) else plotTop) + index * 18.0), style = noteStyle)
@@ -3483,7 +3485,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         fun force(notes: List<build.raft.mermaid.core.WardleyNote>, up: Boolean) {
             notes.forEach { note ->
                 val cx = x(note.evolution); val cy = y(note.visibility); val sign = if (up) -1.0 else 1.0
-                commands += DrawPolygon(listOf(ScenePoint(cx, cy + sign * 8), ScenePoint(cx - 6, cy - sign * 5), ScenePoint(cx + 6, cy - sign * 5)), SceneColor(if (up) "#16a34a" else "#dc2626"))
+                commands += DrawPolygon(listOf(ScenePoint(cx, cy + sign * 8), ScenePoint(cx - 6, cy - sign * 5), ScenePoint(cx + 6, cy - sign * 5)), SceneColor(if (up) DiagramPalette.GREEN else DiagramPalette.RED))
                 commands += DrawText(note.text, ScenePoint(cx + 10, cy + 4), style = noteStyle)
             }
         }
@@ -3544,10 +3546,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         val marks = when (cardinality) {
             EntityCardinality.ONLY_ONE -> listOf(bar(along(4.0)), bar(along(8.0)))
             EntityCardinality.ZERO_OR_ONE -> listOf(
-                bar(along(4.0)), DrawEllipse(along(12.0), 4.0, 4.0, fill = SceneColor("#ffffff")),
+                bar(along(4.0)), DrawEllipse(along(12.0), 4.0, 4.0, fill = SceneColor(DiagramPalette.CANVAS)),
             )
             EntityCardinality.ONE_OR_MORE -> crow() + bar(along(14.0))
-            EntityCardinality.ZERO_OR_MORE -> crow() + DrawEllipse(along(14.0), 4.0, 4.0, fill = SceneColor("#ffffff"))
+            EntityCardinality.ZERO_OR_MORE -> crow() + DrawEllipse(along(14.0), 4.0, 4.0, fill = SceneColor(DiagramPalette.CANVAS))
             EntityCardinality.MD_PARENT -> listOf(DrawPolygon(listOf(
                 anchor,
                 ScenePoint(along(8.0).x + perpX * 6.0, along(8.0).y + perpY * 6.0),
@@ -3559,7 +3561,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         else listOf(DrawLine(anchor, along(16.0))) + marks
     }
 
-    private fun arrowHead(from: ScenePoint, to: ScenePoint, fill: SceneColor = SceneColor("#475569")): DrawPolygon {
+    private fun arrowHead(from: ScenePoint, to: ScenePoint, fill: SceneColor = SceneColor(DiagramPalette.SECONDARY)): DrawPolygon {
         val dx = to.x - from.x
         val dy = to.y - from.y
         val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
@@ -3632,22 +3634,22 @@ public object SimpleMermaidLayout : DiagramLayout {
                     center = ScenePoint(to.x - ux * 6.0, to.y - uy * 6.0),
                     radiusX = 3.5,
                     radiusY = 3.5,
-                    fill = SceneColor("#ffffff"),
+                    fill = SceneColor(DiagramPalette.CANVAS),
                     stroke = fill,
                 ),
             )
         }
     }
 
-    private val PIE_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
-    private val RADAR_CURVE_FILLS = listOf("#dbeafe", "#dcfce7", "#fee2e2", "#fef3c7")
-    private val RADAR_CURVE_STROKES = listOf("#2563eb", "#16a34a", "#dc2626", "#d97706")
-    private val XY_COLORS = listOf("#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#0891b2")
-    private val JOURNEY_SCORE_COLORS = listOf("#fee2e2", "#fecaca", "#fed7aa", "#fef3c7", "#dcfce7", "#bbf7d0")
-    private val JOURNEY_ACTOR_COLORS = listOf("#8FBC8F", "#7CFC00", "#00FFFF", "#FFB6C1", "#DDA0DD")
-    private val TREEMAP_COLORS = listOf(SceneColor("#dbeafe"), SceneColor("#dcfce7"), SceneColor("#fef3c7"), SceneColor("#fce7f3"))
-    private val VENN_COLORS = listOf("#60a5fa", "#34d399", "#fbbf24")
-    private val VENN_STROKES = listOf("#2563eb", "#059669", "#d97706")
+    private val PIE_COLORS = listOf(DiagramPalette.BLUE_TINT, DiagramPalette.GREEN_TINT, DiagramPalette.AMBER_TINT, DiagramPalette.RED_TINT, DiagramPalette.PURPLE_TINT, DiagramPalette.CYAN_TINT)
+    private val RADAR_CURVE_FILLS = listOf(DiagramPalette.BLUE_SURFACE, DiagramPalette.GREEN_SURFACE, DiagramPalette.RED_SURFACE, DiagramPalette.AMBER_SURFACE)
+    private val RADAR_CURVE_STROKES = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.RED, DiagramPalette.AMBER)
+    private val XY_COLORS = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.AMBER, DiagramPalette.RED, DiagramPalette.PURPLE, DiagramPalette.CYAN)
+    private val JOURNEY_SCORE_COLORS = listOf(DiagramPalette.RED_SOFT, DiagramPalette.RED_SURFACE, DiagramPalette.PEACH_SURFACE, DiagramPalette.AMBER_SURFACE, DiagramPalette.GREEN_SURFACE, DiagramPalette.GREEN_STRONG)
+    private val JOURNEY_ACTOR_COLORS = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.AMBER, DiagramPalette.ROSE, DiagramPalette.PURPLE)
+    private val TREEMAP_COLORS = listOf(SceneColor(DiagramPalette.BLUE_SURFACE), SceneColor(DiagramPalette.GREEN_SURFACE), SceneColor(DiagramPalette.AMBER_SURFACE), SceneColor(DiagramPalette.ROSE_SURFACE))
+    private val VENN_COLORS = listOf(DiagramPalette.BLUE_TINT, DiagramPalette.GREEN_TINT, DiagramPalette.AMBER_TINT)
+    private val VENN_STROKES = listOf(DiagramPalette.BLUE, DiagramPalette.GREEN, DiagramPalette.AMBER)
 
     private fun TreemapNode.treemapWeight(): Double = value ?: if (children.isEmpty()) 1.0 else children.sumOf { it.treemapWeight() }
     private fun List<TreemapNode>.flattenTreemap(): List<TreemapNode> = flatMap { listOf(it) + it.children.flattenTreemap() }

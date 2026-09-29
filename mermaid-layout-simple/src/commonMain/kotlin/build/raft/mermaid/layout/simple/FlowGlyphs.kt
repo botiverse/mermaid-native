@@ -4,19 +4,19 @@ import build.raft.mermaid.core.*
 import build.raft.mermaid.layout.*
 import kotlin.math.sqrt
 
-internal fun flowMarker(marker:FlowMarker,from:ScenePoint,to:ScenePoint,fill:SceneColor=SceneColor("#333333"),strokeWidth:Double=1.5):List<DrawCommand> {
+internal fun flowMarker(marker:FlowMarker,from:ScenePoint,to:ScenePoint,fill:SceneColor=SceneColor(DiagramPalette.INK),strokeWidth:Double=1.5):List<DrawCommand> {
     val dx=to.x-from.x;val dy=to.y-from.y;val length=sqrt(dx*dx+dy*dy).coerceAtLeast(0.01)
     val ux=dx/length;val uy=dy/length
     return when(marker){
         FlowMarker.NONE->emptyList()
         FlowMarker.POINT->listOf(DrawPolygon(listOf(to,ScenePoint(to.x-ux*8-uy*4,to.y-uy*8+ux*4),ScenePoint(to.x-ux*8+uy*4,to.y-uy*8-ux*4)),fill=fill))
-        FlowMarker.CIRCLE->listOf(DrawEllipse(ScenePoint(to.x-ux*4,to.y-uy*4),4.0,4.0,fill=SceneColor("#ffffff"),stroke=fill,strokeWidth=strokeWidth))
+        FlowMarker.CIRCLE->listOf(DrawEllipse(ScenePoint(to.x-ux*4,to.y-uy*4),4.0,4.0,fill=SceneColor(DiagramPalette.CANVAS),stroke=fill,strokeWidth=strokeWidth))
         FlowMarker.CROSS->listOf(DrawLine(ScenePoint(to.x-5,to.y-5),ScenePoint(to.x+5,to.y+5),stroke=fill,strokeWidth=strokeWidth),DrawLine(ScenePoint(to.x-5,to.y+5),ScenePoint(to.x+5,to.y-5),stroke=fill,strokeWidth=strokeWidth))
     }
 }
 internal fun flowSpecialShape(shape:FlowNodeShape,r:SceneRect):List<DrawCommand> {
     val x=r.x;val y=r.y;val w=r.width;val h=r.height;val inset=12.0
-    val fill=SceneColor("#eeeeee");val stroke=SceneColor("#999999")
+    val fill=SceneColor(DiagramPalette.SURFACE);val stroke=SceneColor(DiagramPalette.OUTLINE)
     fun point(dx:Double,dy:Double)=ScenePoint(x+dx,y+dy)
     fun polygon(vararg p:ScenePoint)=listOf<DrawCommand>(DrawPolygon(p.toList(),fill=fill),DrawPolyline(p.toList()+p.first(),stroke=stroke,strokeWidth=1.5))
     return when(shape){

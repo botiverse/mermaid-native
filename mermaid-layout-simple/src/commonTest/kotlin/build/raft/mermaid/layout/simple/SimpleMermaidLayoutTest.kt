@@ -1,5 +1,6 @@
 package build.raft.mermaid.layout.simple
 
+import build.raft.mermaid.layout.DiagramPalette
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.ClassDefinition
 import build.raft.mermaid.core.ClassDiagram
@@ -229,7 +230,7 @@ class SimpleMermaidLayoutTest {
             Rel(a, b, "Stores", "SQL")
         """.trimIndent()
         val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
-        val cards = scene.commands.filterIsInstance<DrawRect>().filter { it.fill == SceneColor("#dbeafe") }.map { it.rect }
+        val cards = scene.commands.filterIsInstance<DrawRect>().filter { it.fill == SceneColor(DiagramPalette.BLUE_SURFACE) }.map { it.rect }
         val labels = scene.commands.filterIsInstance<DrawText>().filter { it.text == "Stores" || it.text == "[SQL]" && it.origin.y < cards[1].y }
         assertEquals(2, labels.size)
         for (label in labels) {
@@ -451,8 +452,8 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val boxes = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(3, boxes.size)
-        assertTrue(boxes.all { it.fill.value == "#e2e8f0" })
-        assertEquals("#e2e8f0", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        assertTrue(boxes.all { it.fill.value == DiagramPalette.SURFACE_STRONG })
+        assertEquals(DiagramPalette.SURFACE_STRONG, scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertTrue(labels.containsAll(listOf("Blurry", "Photo", "Process", "Equipment", "Environment")))
         assertTrue(scene.commands.filterIsInstance<DrawPolygon>().size > 3)
@@ -483,7 +484,7 @@ class SimpleMermaidLayoutTest {
         val componentLabel = first.commands.filterIsInstance<DrawText>().first { it.text == "Cup of Tea" }
         assertTrue(anchorLabel.origin.y < componentLabel.origin.y)
         // Evolution arrow keeps visibility constant (horizontal) and points right.
-        val evolutionLine = lines.first { it.stroke.value == "#dc2626" }
+        val evolutionLine = lines.first { it.stroke.value == DiagramPalette.RED }
         assertEquals(StrokePattern.DASHED, evolutionLine.pattern)
         assertEquals(evolutionLine.from.y, evolutionLine.to.y)
         assertTrue(evolutionLine.to.x > evolutionLine.from.x)
@@ -509,7 +510,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(listOf("Genesis", "Custom Built", "Product", "Commodity"), labels.filter { it in setOf("Genesis", "Custom Built", "Product", "Commodity") })
         assertTrue("note text" in labels)
         assertEquals(600, scene.commands.filterIsInstance<DrawText>().first { it.text == "note text" }.style.fontWeight)
-        val evolve = scene.commands.filterIsInstance<DrawLine>().first { it.stroke.value == "#dc2626" }
+        val evolve = scene.commands.filterIsInstance<DrawLine>().first { it.stroke.value == DiagramPalette.RED }
         assertEquals(StrokePattern.DASHED, evolve.pattern)
         assertEquals(evolve.from.y, evolve.to.y)
         assertTrue(evolve.to.x > evolve.from.x)
@@ -551,8 +552,8 @@ class SimpleMermaidLayoutTest {
         assertEquals(listOf("/", "project", "src"), labels.filter { it.style.fontWeight == 600 }.map { it.text })
         assertEquals(listOf("index.ts", "package.json"), labels.filter { it.style.fontWeight == 400 }.map { it.text })
         val dots = scene.commands.filterIsInstance<DrawEllipse>()
-        assertEquals("#f59e0b", dots.first().fill.value)
-        assertEquals("#3b82f6", dots.last().fill.value)
+        assertEquals(DiagramPalette.AMBER, dots.first().fill.value)
+        assertEquals(DiagramPalette.BLUE, dots.last().fill.value)
     }
 
     @Test
@@ -632,18 +633,18 @@ class SimpleMermaidLayoutTest {
         val rects = scene.commands.filterIsInstance<DrawRect>()
         val rails = rects.filter { it.rect.width == 32.0 }
         assertEquals(2, rails.size)
-        assertTrue(rails.all { it.fill.value == "#fcfcfc" && it.stroke.value == "#707070" })
-        val bodies = rects.filter { it.rect.width > 32.0 && it.stroke.value == "#707070" }
+        assertTrue(rails.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.MUTED })
+        val bodies = rects.filter { it.rect.width > 32.0 && it.stroke.value == DiagramPalette.MUTED }
         assertEquals(2, bodies.size)
-        val nodes = rects.filter { it.fill.value == "#ffffff" && it.stroke.value == "#2563eb" }
+        val nodes = rects.filter { it.fill.value == DiagramPalette.CANVAS && it.stroke.value == DiagramPalette.BLUE }
         assertEquals(1, nodes.size)
         assertTrue(nodes.all { it.cornerRadius == 0.0 })
         val diamond = scene.commands.filterIsInstance<DrawPolygon>().single { it.points.size == 4 }
-        assertEquals("#fef3c7", diamond.fill.value)
+        assertEquals(DiagramPalette.AMBER_SURFACE, diamond.fill.value)
         val outline = scene.commands.filterIsInstance<DrawPolyline>().single { it.points.size == 5 }
-        assertEquals("#d97706", outline.stroke.value)
-        assertTrue(scene.commands.filterIsInstance<DrawLine>().all { it.stroke.value == "#666666" })
-        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().filter { it.points.size == 3 }.all { it.fill.value == "#333333" })
+        assertEquals(DiagramPalette.AMBER, outline.stroke.value)
+        assertTrue(scene.commands.filterIsInstance<DrawLine>().all { it.stroke.value == DiagramPalette.SECONDARY })
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().filter { it.points.size == 3 }.all { it.fill.value == DiagramPalette.INK })
     }
 
     @Test
@@ -738,7 +739,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(listOf("0", "15", "16", "31"), indexes.map { it.text })
         assertEquals(TextAnchor.START, indexes[0].anchor)
         assertEquals(TextAnchor.END, indexes[1].anchor)
-        assertEquals("#eff6ff", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals(DiagramPalette.BLUE_SURFACE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
     }
 
     @Test
@@ -780,7 +781,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(lr[0].points.first().y, lr[1].points.first().y)
         assertEquals(td[0].points.first().x, td[1].points.first().x)
         assertTrue(td[1].points.first().y > td[0].points.first().y)
-        assertEquals("#2563eb", lr.first().fill.value)
+        assertEquals(DiagramPalette.BLUE, lr.first().fill.value)
     }
 
     @Test
@@ -839,7 +840,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(bars[0].rect.x, bars[1].rect.x)
         assertTrue(bars[1].rect.y > bars[0].rect.y)
         assertTrue(bars[1].rect.width > bars[0].rect.width * 3)
-        assertEquals("#2563eb", bars.first().fill.value)
+        assertEquals(DiagramPalette.BLUE, bars.first().fill.value)
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("Sales", "First", "Last")))
         val line = scene.commands.filterIsInstance<DrawPolyline>().single()
         assertTrue(line.points[1].x > line.points[0].x && line.points[1].y > line.points[0].y)
@@ -928,8 +929,8 @@ class SimpleMermaidLayoutTest {
         assertTrue("100.0" !in labels && "0.0" !in labels)
         assertTrue(labels.containsAll(listOf("20", "45", "70", "85", "25", "40", "75", "90")))
         assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
-        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
-        assertEquals("#16a34a", scene.commands.filterIsInstance<DrawPolyline>().first().stroke.value)
+        assertEquals(DiagramPalette.BLUE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals(DiagramPalette.GREEN, scene.commands.filterIsInstance<DrawPolyline>().first().stroke.value)
     }
 
     @Test
@@ -1100,10 +1101,10 @@ class SimpleMermaidLayoutTest {
         assertEquals(2, stateRects.size)
         assertEquals(3, first.commands.filterIsInstance<DrawLine>().size)
         assertEquals(3, first.commands.filterIsInstance<DrawEllipse>().size)
-        assertTrue(stateRects.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 })
+        assertTrue(stateRects.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.OUTLINE && it.cornerRadius == 5.0 })
         val terminals = first.commands.filterIsInstance<DrawEllipse>()
-        assertEquals("#222222", terminals.first().fill.value)
-        assertEquals("#222222", terminals.last().fill.value)
+        assertEquals(DiagramPalette.INK, terminals.first().fill.value)
+        assertEquals(DiagramPalette.INK, terminals.last().fill.value)
         assertTrue(terminals.first().radiusX > 0.0)
     }
 
@@ -1127,27 +1128,27 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val boxes = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(2, boxes.size)
-        assertTrue(boxes.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 && it.strokeWidth == 1.0 })
+        assertTrue(boxes.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.OUTLINE && it.cornerRadius == 5.0 && it.strokeWidth == 1.0 })
         val bullets = scene.commands.filterIsInstance<DrawEllipse>()
         assertEquals(3, bullets.size)
         val start = bullets.first()
-        assertEquals("#222222", start.fill.value)
-        assertEquals("#222222", start.stroke.value)
+        assertEquals(DiagramPalette.INK, start.fill.value)
+        assertEquals(DiagramPalette.INK, start.stroke.value)
         assertEquals(7.0, start.radiusX)
         assertEquals(7.0, start.radiusY)
         val endOuter = bullets[1]
         val endInner = bullets[2]
-        assertEquals("#ffffff", endOuter.fill.value)
-        assertEquals("#222222", endOuter.stroke.value)
+        assertEquals(DiagramPalette.CANVAS, endOuter.fill.value)
+        assertEquals(DiagramPalette.INK, endOuter.stroke.value)
         assertEquals(7.0, endOuter.radiusX)
-        assertEquals("#222222", endInner.fill.value)
+        assertEquals(DiagramPalette.INK, endInner.fill.value)
         assertEquals(2.5, endInner.radiusX)
         val lines = scene.commands.filterIsInstance<DrawLine>()
         assertEquals(3, lines.size)
-        assertTrue(lines.all { it.stroke.value == "#666666" && it.strokeWidth == 1.0 })
+        assertTrue(lines.all { it.stroke.value == DiagramPalette.SECONDARY && it.strokeWidth == 1.0 })
         val heads = scene.commands.filterIsInstance<DrawPolygon>()
         assertEquals(3, heads.size)
-        assertTrue(heads.all { it.fill.value == "#333333" })
+        assertTrue(heads.all { it.fill.value == DiagramPalette.INK })
     }
 
     @Test
@@ -1163,15 +1164,15 @@ class SimpleMermaidLayoutTest {
         )
 
         assertEquals(3.0, scene.commands.filterIsInstance<DrawLine>().single().strokeWidth)
-        assertEquals("#666666", scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
-        assertEquals("#333333", scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
-        assertEquals(setOf("#eeeeee"), scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }.toSet())
-        assertEquals(setOf("#999999"), scene.commands.filterIsInstance<DrawRect>().map { it.stroke.value }.toSet())
+        assertEquals(DiagramPalette.SECONDARY, scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals(DiagramPalette.INK, scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
+        assertEquals(setOf(DiagramPalette.SURFACE), scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }.toSet())
+        assertEquals(setOf(DiagramPalette.OUTLINE), scene.commands.filterIsInstance<DrawRect>().map { it.stroke.value }.toSet())
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.cornerRadius == 5.0 })
     }
 
     @Test
-    fun flowchartNodesUseOfficialNeutralChrome() {
+    fun flowchartNodesUseSharedNeutralChrome() {
         val scene = SimpleMermaidLayout.layout(
             FlowchartDiagram(
                 direction = FlowDirection.TD,
@@ -1192,9 +1193,9 @@ class SimpleMermaidLayoutTest {
         ))
         val nodes = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(2, nodes.size)
-        assertTrue(nodes.all { it.fill.value == "#eeeeee" && it.stroke.value == "#999999" && it.cornerRadius == 5.0 })
-        assertEquals("#666666", scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
-        assertEquals("#333333", scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
+        assertTrue(nodes.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.OUTLINE && it.cornerRadius == 5.0 })
+        assertEquals(DiagramPalette.SECONDARY, scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals(DiagramPalette.INK, scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
     }
 
     @Test
@@ -1253,7 +1254,7 @@ class SimpleMermaidLayoutTest {
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertTrue("Launch" in labels && "First users" in labels)
         assertTrue(labels.none { " · " in it })
-        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        assertEquals(DiagramPalette.BLUE, scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
     }
 
     @Test
@@ -1283,7 +1284,7 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(15, scene.commands.filterIsInstance<DrawEllipse>().size)
         assertTrue(scene.commands.filterIsInstance<DrawText>().none { "·" in it.text })
-        assertEquals(listOf("#bbf7d0", "#fef3c7", "#fee2e2"), scene.commands.filterIsInstance<DrawRect>().drop(1).map { it.fill.value })
+        assertEquals(listOf(DiagramPalette.GREEN_STRONG, DiagramPalette.AMBER_SURFACE, DiagramPalette.RED_SOFT), scene.commands.filterIsInstance<DrawRect>().drop(1).map { it.fill.value })
     }
 
     @Test
@@ -1293,7 +1294,7 @@ class SimpleMermaidLayoutTest {
         val cards = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(1, cards.size)
         assertEquals(LayoutConfig().padding, cards.single().rect.x)
-        assertEquals("#bbf7d0", cards.single().fill.value)
+        assertEquals(DiagramPalette.GREEN_STRONG, cards.single().fill.value)
         assertTrue(scene.commands.filterIsInstance<DrawText>().none { it.text.isBlank() })
     }
 
@@ -1317,8 +1318,8 @@ class SimpleMermaidLayoutTest {
         assertEquals(5, first.commands.filterIsInstance<DrawRect>().size)
         assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == "Score 3 · Shopper, Advisor" })
         assertEquals(
-            listOf("#dcfce7", "#fef3c7", "#bbf7d0"),
-            first.commands.filterIsInstance<DrawRect>().filter { it.fill.value != "#e2e8f0" }.map { it.fill.value },
+            listOf(DiagramPalette.GREEN_SURFACE, DiagramPalette.AMBER_SURFACE, DiagramPalette.GREEN_STRONG),
+            first.commands.filterIsInstance<DrawRect>().filter { it.fill.value != DiagramPalette.SURFACE_STRONG }.map { it.fill.value },
         )
         assertTrue(first.width >= 640.0 && first.height > 0.0)
     }
@@ -1341,12 +1342,12 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val dots = scene.commands.filterIsInstance<DrawEllipse>()
         assertEquals(10 + 3 + 2, dots.size)
-        assertEquals(4, dots.take(5).count { it.fill.value == "#334155" })
-        assertEquals(1, dots.take(5).count { it.fill.value == "#ffffff" })
+        assertEquals(4, dots.take(5).count { it.fill.value == DiagramPalette.SECONDARY })
+        assertEquals(1, dots.take(5).count { it.fill.value == DiagramPalette.CANVAS })
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertTrue("Shopper" in labels && "Advisor" in labels)
-        assertEquals("#8FBC8F", dots[dots.lastIndex - 1].fill.value)
-        assertEquals("#7CFC00", dots.last().fill.value)
+        assertEquals(DiagramPalette.BLUE, dots[dots.lastIndex - 1].fill.value)
+        assertEquals(DiagramPalette.GREEN, dots.last().fill.value)
     }
 
     @Test
@@ -1377,7 +1378,7 @@ class SimpleMermaidLayoutTest {
             val texts = rendered.commands.filterIsInstance<DrawText>()
             assertTrue(texts.map { it.text }.containsAll(listOf("Initial work", "v1, stable", "main", "feature")))
             texts.forEach { assertTrue(it.origin.x + FixedWidthTextMeasurer.measure(it.text, it.style).width <= rendered.width) }
-            assertEquals("#2563eb", rendered.commands.filterIsInstance<DrawRect>().first().fill.value)
+            assertEquals(DiagramPalette.BLUE, rendered.commands.filterIsInstance<DrawRect>().first().fill.value)
             if (rendered == top) assertTrue(texts.first { it.text == "v1, stable" }.origin.y - texts.first { it.text == "main" }.origin.y >= 30.0)
         }
     }
@@ -1388,7 +1389,7 @@ class SimpleMermaidLayoutTest {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text == "cherry-pick:work" })
-        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == "#2563eb" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == DiagramPalette.BLUE })
         val empty = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse("gitGraph")).diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertTrue(empty.width.isFinite() && empty.height.isFinite())
         assertTrue(empty.commands.filterIsInstance<DrawText>().any { it.text == "main" })
@@ -1442,7 +1443,7 @@ class SimpleMermaidLayoutTest {
         assertTrue(lastConnector < firstMarker, "A later edge must not paint over an earlier commit")
         assertTrue(commands.indexOfFirst { it is DrawText && it.text == "base" } > lastConnector)
         // Revert's white cross belongs to the node decoration and must remain on top.
-        assertTrue(commands.indexOfFirst { it is DrawLine && it.stroke.value == "#ffffff" } > firstMarker)
+        assertTrue(commands.indexOfFirst { it is DrawLine && it.stroke.value == DiagramPalette.CANVAS } > firstMarker)
     }
 
     @Test
@@ -1473,9 +1474,9 @@ class SimpleMermaidLayoutTest {
         val ellipses = scene.commands.filterIsInstance<DrawEllipse>()
         assertTrue(ellipses.size >= 4)
         assertEquals(1, scene.commands.filterIsInstance<DrawPolygon>().size)
-        assertEquals("#ede9fe", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
-        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
-        assertEquals("beta", scene.commands.filterIsInstance<DrawText>().first { it.style.color.value == "#7c3aed" }.text)
+        assertEquals(DiagramPalette.PURPLE_SURFACE, scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        assertEquals(DiagramPalette.BLUE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals("beta", scene.commands.filterIsInstance<DrawText>().first { it.style.color.value == DiagramPalette.PURPLE }.text)
     }
 
     @Test fun kanbanEmptyColumnsAndMetadataUseActualMeasuredGeometry() {
@@ -1487,7 +1488,7 @@ class SimpleMermaidLayoutTest {
         val detail = texts.single { it.text == "high · @Ada · K-10" }
         val label = texts.single { it.text == "Implement" }
         assertTrue(detail.origin.y > label.origin.y)
-        val card = scene.commands.filterIsInstance<DrawRect>().single { it.fill == build.raft.mermaid.layout.SceneColor("#ffffff") }
+        val card = scene.commands.filterIsInstance<DrawRect>().single { it.fill == build.raft.mermaid.layout.SceneColor(DiagramPalette.CANVAS) }
         assertTrue(detail.origin.y < card.rect.y + card.rect.height)
         assertTrue(detail.origin.x + FixedWidthTextMeasurer.measure(detail.text, detail.style).width < card.rect.x + card.rect.width)
         assertTrue(texts.any { it.text == "Done" })
@@ -1574,7 +1575,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertEquals(listOf("Grid 19.75", "Industry 12.5", "Heating, homes 7.25", "Losses & exports 2.5"), labels)
-        assertEquals("#dbeafe", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals(DiagramPalette.BLUE_SURFACE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
     }
 
     @Test fun treemapProducesMeasuredDeterministicWeightedRectangles() {
@@ -1634,7 +1635,7 @@ class SimpleMermaidLayoutTest {
         val ellipses = first.commands.filterIsInstance<DrawEllipse>()
         assertTrue(ellipses[2].center.y < ellipses[0].center.y)
         assertTrue(ellipses[2].center.y < ellipses[1].center.y)
-        assertEquals("#60a5fa", ellipses[0].fill.value)
+        assertEquals(DiagramPalette.BLUE_TINT, ellipses[0].fill.value)
     }
 
     @Test fun vennMeasuresLongTitleWithItsRenderedStyle() {
@@ -1694,7 +1695,7 @@ class SimpleMermaidLayoutTest {
         )
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val rectangles = scene.commands.filterIsInstance<DrawRect>()
-        val groupRects = rectangles.filter { it.fill.value == "#f8fafc" }.map { it.rect }
+        val groupRects = rectangles.filter { it.fill.value == DiagramPalette.SURFACE }.map { it.rect }
         val serviceCards = rectangles.filter { it.rect.height == 76.0 }.map { it.rect }
         val groupOne = groupRects[0]
         val groupTwo = groupRects[1]
@@ -1847,15 +1848,15 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val boxes = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(4, boxes.size)
-        assertTrue(boxes.all { it.fill.value == "#eaeaea" && it.stroke.value == "#666666" && it.cornerRadius == 3.0 })
+        assertTrue(boxes.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.OUTLINE && it.cornerRadius == 3.0 })
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertEquals(2, labels.count { it == "Alice" })
         assertEquals(2, labels.count { it == "Bob" })
         val heads = scene.commands.filterIsInstance<DrawPolygon>()
         assertEquals(2, heads.size)
-        assertTrue(heads.all { it.fill.value == "#333333" })
+        assertTrue(heads.all { it.fill.value == DiagramPalette.INK })
         val lifelines = scene.commands.filterIsInstance<DrawLine>().take(2)
-        assertTrue(lifelines.all { it.stroke.value == "#999999" && it.pattern == StrokePattern.SOLID })
+        assertTrue(lifelines.all { it.stroke.value == DiagramPalette.FAINT && it.pattern == StrokePattern.SOLID })
     }
 
     @Test
@@ -1995,10 +1996,10 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val fills = scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }
-        assertEquals(listOf("#dbeafe", "#dcfce7", "#fef3c7", "#fce7f3"), fills)
+        assertEquals(listOf(DiagramPalette.BLUE_SURFACE, DiagramPalette.GREEN_SURFACE, DiagramPalette.AMBER_SURFACE, DiagramPalette.ROSE_SURFACE), fills)
         val expand = scene.commands.filterIsInstance<DrawText>().first { it.text == "Expand" }
         assertEquals(TextAnchor.MIDDLE, expand.anchor)
-        assertEquals("#2563eb", scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
+        assertEquals(DiagramPalette.BLUE, scene.commands.filterIsInstance<DrawPolygon>().first().fill.value)
     }
 
     @Test
@@ -2006,13 +2007,13 @@ class SimpleMermaidLayoutTest {
         val source = "radar-beta\naxis a, b, c\ncurve Sample{c 20, a 50, b 35}\nmin 20, max 50, ticks 3, graticule polygon, showLegend false"
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
-        assertEquals(3, scene.commands.filterIsInstance<DrawPolyline>().count { it.stroke.value == "#d4d4d4" })
+        assertEquals(3, scene.commands.filterIsInstance<DrawPolyline>().count { it.stroke.value == DiagramPalette.BORDER })
         assertTrue(scene.commands.filterIsInstance<DrawEllipse>().isEmpty())
         assertTrue(scene.commands.filterIsInstance<DrawText>().none { it.text == "Sample" })
         assertTrue(scene.commands.filterIsInstance<DrawText>().map { it.text }.containsAll(listOf("30", "40", "50")))
-        val marker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
+        val marker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == DiagramPalette.BLUE }
         assertEquals(98.0, marker.points.first().y)
-        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == "#dbeafe" })
+        assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value == DiagramPalette.BLUE_SURFACE })
         val lastCurve = scene.commands.indexOfLast { it is DrawPolygon }
         assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "30" } > lastCurve)
         assertTrue(scene.commands.indexOfFirst { it is DrawText && it.text == "40" } > lastCurve)
@@ -2024,7 +2025,7 @@ class SimpleMermaidLayoutTest {
             val source = "radar-beta\naxis a,b,c\ncurve c{a 50, a 0, b 35, c 20}\nmin 20\nmax 50\nticks $requested"
             val scene = SimpleMermaidLayout.layout(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram, FixedWidthTextMeasurer, LayoutConfig())
             assertEquals(expected, scene.commands.filterIsInstance<DrawEllipse>().size)
-            val firstMarker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == "#2563eb" }
+            val firstMarker = scene.commands.filterIsInstance<DrawPolygon>().first { it.fill.value == DiagramPalette.BLUE }
             assertEquals(98.0, firstMarker.points.first().y)
         }
     }

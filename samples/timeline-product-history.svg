@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="194" viewBox="0 0 420 194" role="img">
-  <text x="24" y="42" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="600" fill="#111827">Product history</text>
-  <line x1="84.8" y1="56" x2="84.8" y2="170" stroke="#475569" stroke-width="1.5" fill="none"/>
-  <text x="24" y="81" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">2024</text>
-  <polygon points="84.8,76 91.8,83 84.8,90 77.8,83" fill="#2563eb"/>
-  <text x="102.8" y="87" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Launch</text>
-  <text x="102.8" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">First users</text>
-  <text x="24" y="133" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">2025</text>
-  <polygon points="84.8,128 91.8,135 84.8,142 77.8,135" fill="#2563eb"/>
-  <text x="102.8" y="139" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#111827">Scale</text>
+  <text x="24" y="42" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="600" fill="#27272a">Product history</text>
+  <line x1="84.8" y1="56" x2="84.8" y2="170" stroke="#52525b" stroke-width="1.5" fill="none"/>
+  <text x="24" y="81" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">2024</text>
+  <polygon points="84.8,76 91.8,83 84.8,90 77.8,83" fill="#526f9f"/>
+  <text x="102.8" y="87" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">Launch</text>
+  <text x="102.8" y="105" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">First users</text>
+  <text x="24" y="133" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">2025</text>
+  <polygon points="84.8,128 91.8,135 84.8,142 77.8,135" fill="#526f9f"/>
+  <text x="102.8" y="139" text-anchor="start" font-family="sans-serif" font-size="12" font-weight="400" fill="#27272a">Scale</text>
 </svg>

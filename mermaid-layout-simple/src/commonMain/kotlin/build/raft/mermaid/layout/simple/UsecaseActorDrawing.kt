@@ -8,7 +8,7 @@ internal fun drawUsecaseActor(actor: UsecaseActor, p: ScenePoint, fill: SceneCol
     fun point(x: Double, y: Double) = ScenePoint(p.x + x, p.y + y)
     when (actor.type) {
         UsecaseActorType.NORMAL -> {
-            add(DrawEllipse(point(0.0, -20.0), 10.0, 10.0, fill = SceneColor("#ffffff"), stroke = stroke))
+            add(DrawEllipse(point(0.0, -20.0), 10.0, 10.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = stroke))
             add(DrawLine(point(0.0, -10.0), point(0.0, 20.0), stroke = stroke))
             add(DrawLine(point(-15.0, 0.0), point(15.0, 0.0), stroke = stroke))
             add(DrawLine(point(0.0, 20.0), point(-13.0, 38.0), stroke = stroke))

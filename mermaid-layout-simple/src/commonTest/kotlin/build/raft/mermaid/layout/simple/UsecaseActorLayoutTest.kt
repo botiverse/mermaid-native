@@ -17,7 +17,7 @@ class UsecaseActorLayoutTest {
         assertEquals(0.0, hollow.commands.filterIsInstance<DrawEllipse>().single().fillOpacity)
         assertEquals(12, hollow.commands.filterIsInstance<DrawPolyline>().single().points.size)
         val awesome = scene("type: awesome")
-        assertEquals(SceneColor("#2563eb"), awesome.commands.filterIsInstance<DrawEllipse>().single().fill)
+        assertEquals(SceneColor(DiagramPalette.BLUE), awesome.commands.filterIsInstance<DrawEllipse>().single().fill)
         assertEquals(48.0, awesome.commands.filterIsInstance<DrawRect>().single().rect.width)
         val icon = scene("icon: \"missing:user\"")
         assertEquals(52.0, icon.commands.filterIsInstance<DrawRect>().single().rect.width)
