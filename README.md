@@ -128,3 +128,7 @@ Seven pinned upstream database assertions replay through production Kotlin parsi
 ### TreeView hierarchy model assertions
 
 Twelve pinned upstream database assertions replay through production Kotlin for nested/sibling nodes, annotations and diagram/accessibility metadata. The bridge projects Kotlin parent indices into the original nested shape; the renderer consumes those same indices. Lifecycle, generated IDs/counts, configuration, CSS painting and external icon resolution are outside this admission; see `compatibility/upstream-treeview-model/README.md`.
+
+### XY category slots and legend titles
+
+XY charts share category-slot resolution between axis inference and horizontal/vertical drawing. Extra values cannot affect the visible range; missing values keep category slots without painting zero-valued points. Legend titles trim surrounding whitespace while parser text remains intact. Coincident value labels use nearby free vertical positions so ordinary overlapping bar/line labels remain readable. The unchanged upstream model tests are replayed by `compatibility/upstream-xy-model/run.py`.
