@@ -35,4 +35,19 @@ class XyModelLayoutTest {
             assertEquals(scene(source), scene(padded), orientation)
         }
     }
+
+    @Test fun coincidentSeriesLabelsRemainReadableInBothOrientations() {
+        for (orientation in listOf("vertical", "horizontal")) {
+            val output = scene("xychart-beta $orientation\nx-axis [A, B, C, D]\nbar [1, 2]\nline [1, 2]")
+            val labels = output.commands.filterIsInstance<DrawText>().filter { it.style.fontWeight == 600 }
+            assertEquals(4, labels.size)
+            for (value in listOf("1", "2")) {
+                val pair = labels.filter { it.text == value }
+                assertEquals(2, pair.size)
+                val height = FixedWidthTextMeasurer.measure(value, pair.first().style).height
+                assertTrue(kotlin.math.abs(pair[0].origin.y - pair[1].origin.y) >= height + 3.0, orientation)
+                assertTrue(pair.all { it.origin.y - height >= LayoutConfig().padding && it.origin.y <= output.height - LayoutConfig().padding })
+            }
+        }
+    }
 }

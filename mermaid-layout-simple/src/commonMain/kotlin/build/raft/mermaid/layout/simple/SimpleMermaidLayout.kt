@@ -2348,6 +2348,34 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, if (commands.isEmpty()) 0.0 else (row + 1) * 24.0, commands)
     }
 
+    private fun addXyValueLabel(commands: MutableList<DrawCommand>, label: DrawText, measurer: TextMeasurer, padding: Double, height: Double) {
+        fun bounds(text: DrawText): SceneRect {
+            val size = measurer.measure(text.text, text.style)
+            val left = text.origin.x - when (text.anchor) {
+                TextAnchor.START -> 0.0
+                TextAnchor.MIDDLE -> size.width / 2.0
+                TextAnchor.END -> size.width
+            }
+            return SceneRect(left, text.origin.y - size.height, size.width, size.height)
+        }
+        val occupied = commands.filterIsInstance<DrawText>().filter { it.text.isNotEmpty() }.map(::bounds)
+        val step = measurer.measure(label.text, label.style).height + 4.0
+        for (attempt in 0..32) {
+            val offset = if (attempt == 0) 0.0 else ((attempt + 1) / 2) * step * if (attempt % 2 == 1) -1 else 1
+            val candidate = label.copy(origin = label.origin.copy(y = (label.origin.y + offset).xyCoordinate()))
+            val box = bounds(candidate)
+            if (box.y < padding || box.y + box.height > height - padding) continue
+            if (occupied.none { other ->
+                box.x < other.x + other.width + 3.0 && box.x + box.width + 3.0 > other.x &&
+                    box.y < other.y + other.height + 3.0 && box.y + box.height + 3.0 > other.y
+            }) {
+                commands += candidate
+                return
+            }
+        }
+        commands += label
+    }
+
     private fun layoutXyChart(diagram: XyChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         if (diagram.orientation == build.raft.mermaid.core.XyOrientation.HORIZONTAL) return layoutHorizontalXy(diagram, textMeasurer, config)
         val bodyStyle = TextStyle(fontSize = 12.0)
@@ -2420,12 +2448,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                             stroke = color,
                             strokeWidth = 1.0,
                         )
-                        commands += DrawText(
+                        addXyValueLabel(commands, DrawText(
                             series.labels.getOrNull(index)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
                             ScenePoint((barX + barWidth / 2.0).xyCoordinate(), (minOf(baseline, valueY) - 6.0).xyCoordinate()),
                             TextAnchor.MIDDLE,
                             valueStyle.copy(color = color),
-                        )
+                        ), textMeasurer, config.padding, height)
                     }
                     barIndex += 1
                 }
@@ -2433,12 +2461,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                     val points = series.values.mapIndexed { index, value -> ScenePoint(x(index, series.values.size), y(value)) }
                     commands += DrawPolyline(points = points, stroke = color, strokeWidth = 2.0)
                     series.values.forEachIndexed { index, value ->
-                        commands += DrawText(
+                        addXyValueLabel(commands, DrawText(
                             series.labels.getOrNull(index)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
                             ScenePoint(x(index, series.values.size), (y(value) - 10.0).xyCoordinate()),
                             TextAnchor.MIDDLE,
                             valueStyle.copy(color = color),
-                        )
+                        ), textMeasurer, config.padding, height)
                     }
                 }
             }
@@ -2494,8 +2522,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if(series.kind == XySeriesKind.BAR) commands += DrawRect(
                     SceneRect(minOf(zero, x(value)), row - bars * thickness / 2 + barIndex * thickness, maxOf(1.0, kotlin.math.abs(x(value) - zero)), thickness),
                     fill = color, stroke = color, strokeWidth = 1.0)
-                commands += DrawText(series.labels.getOrNull(i)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
-                    ScenePoint(x(value) + 8, row + 4), style = style.copy(color = color, fontWeight = 600))
+                addXyValueLabel(commands, DrawText(series.labels.getOrNull(i)?.takeIf { it.isNotEmpty() } ?: value.canonicalNumber(),
+                    ScenePoint(x(value) + 8, row + 4), style = style.copy(color = color, fontWeight = 600)), textMeasurer, config.padding, height)
             }
             if(series.kind == XySeriesKind.BAR) barIndex++
         }
