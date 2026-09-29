@@ -7,17 +7,8 @@ import build.raft.mermaid.layout.*
 internal class UsecaseJsonTableLayout(data: UsecaseOrderedJsonObject, title: List<String>, private val measurer: TextMeasurer) {
     private val cellStyle = TextStyle(fontSize = 12.0)
     private val titleStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-    private fun wrap(text: String, limit: Double): List<String> = text.split('\n').flatMap { line ->
-        val result = mutableListOf<String>(); var current = ""
-        // Iterate code points so wrapping never separates a UTF-16 surrogate pair.
-        var i = 0
-        while (i < line.length) {
-            val size = if (line[i].isHighSurrogate() && i + 1 < line.length && line[i + 1].isLowSurrogate()) 2 else 1
-            val next = line.substring(i, i + size)
-            if (current.isNotEmpty() && measurer.measure(current + next, cellStyle).width > limit) { result += current; current = "" }
-            current += next; i += size
-        }
-        result + current
+    private fun wrap(text: String, limit: Double): List<String> = MermaidTextWrapping.wrap(text) {
+        measurer.measure(it, cellStyle).width <= limit
     }
     private data class Row(val keys: List<String>, val values: List<String>) { val height: Double get() = maxOf(keys.size, values.size) * 18.0 + 16.0 }
     private val titles = title

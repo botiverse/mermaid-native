@@ -1,0 +1,6 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/splitText.spec.ts": "dcc31e5ce05984bf5e2ff28038828e518a41c2581ab0cb63247c30b96129806c"
+  }
+}

@@ -23,3 +23,9 @@ Small Mermaid conformance fixtures and expected semantic descriptions under
 recorded in their manifest at the pinned Mermaid commit. They remain available
 under Mermaid's MIT License. No Mermaid JavaScript harness or runtime is
 included in published artifacts.
+
+Unicode grapheme property tables and conformance cases are derived from the
+Unicode Character Database 17.0.0, copyright Unicode, Inc., under Unicode License
+v3. The license, exact source URLs and hashes, and reproducible generator are
+in compatibility/unicode-17. Grapheme segmentation follows UAX #29 revision 47:
+https://www.unicode.org/reports/tr29/tr29-47.html

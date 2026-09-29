@@ -7,10 +7,8 @@ import kotlin.math.*
 /** Non-overlapping boundary bands; plain legacy diagrams retain their existing layout. */
 internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, config: LayoutConfig): LayoutScene {
     val textStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-    fun wrapped(text: String): List<String> = text.split('\n').flatMap { line ->
-        val rows = mutableListOf<String>(); var row = ""
-        for (c in line) { if (row.isNotEmpty() && measurer.measure(row + c, textStyle).width > 240.0) { rows += row; row = "" }; row += c }
-        rows + row
+    fun wrapped(text: String): List<String> = MermaidTextWrapping.wrap(text) {
+        measurer.measure(it, textStyle).width <= 240.0
     }
     data class Item(val id: String, val label: String, val actor: Boolean = false, val ellipse: Boolean = false, val body: String? = null)
     val items = d.actors.map { Item(it.id, it.label, actor = true) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE) } + d.jsonNodes.map { Item(it.id, it.id, body = if (it.data == null) it.source else null) }
