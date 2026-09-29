@@ -25,4 +25,18 @@ class RadarModelLayoutTest {
         assertEquals(100.0, RadarGeometry.relativeRadius(15.0,0.0,10.0,100.0))
         assertEquals(75.0, RadarGeometry.relativeRadius(5.0,-10.0,10.0,100.0))
     }
+    @Test fun denseGridKeepsReadableTickLabelsAndTheMaximum() {
+        val chart = assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "radar-beta\naxis A,B,C\ncurve Small{3,2,1}\nticks 33\nshowLegend false"
+        )).diagram
+        val scene = SimpleMermaidLayout.layout(chart, FixedWidthTextMeasurer, LayoutConfig())
+        assertEquals(32, scene.commands.filterIsInstance<DrawEllipse>().size)
+        val labels = scene.commands.filterIsInstance<DrawText>().filter { it.text.toDoubleOrNull() != null }
+        assertTrue(labels.size in 2..9)
+        assertTrue(labels.any { it.text == "3" })
+        labels.sortedBy { it.origin.y }.zipWithNext().forEach { (a,b) ->
+            assertTrue(b.origin.y - a.origin.y >= 18.0)
+        }
+    }
+
 }

@@ -1923,7 +1923,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(it, ScenePoint(centerX, 26.0), TextAnchor.MIDDLE, titleStyle)
         }
         // Circular rings are the default; polygon is an explicit diagram option.
-        ringFractions.forEach { fraction ->
+        val tickLabelStride = maxOf(1, kotlin.math.ceil((bodyStyle.fontSize + 6.0) * ticks / radius).toInt())
+        ringFractions.forEachIndexed { index, fraction ->
             val ringRadius = radius * fraction
             if (polygonGrid && axisCount >= 3) {
                 val points = diagram.axes.indices.map { vertex(it, fraction) }
@@ -1938,7 +1939,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                     strokeWidth = 1.0,
                 )
             }
-            tickLabels += DrawText(
+            // Keep all requested grid rings, but reserve readable spacing between tick labels.
+            if ((ticks - index - 1) % tickLabelStride == 0) tickLabels += DrawText(
                 (diagram.minimum + range * fraction).radarTickLabel(),
                 ScenePoint(centerX + 8.0, (centerY - ringRadius + 4.0).radarCoordinate()),
                 style = bodyStyle,
