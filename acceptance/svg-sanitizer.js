@@ -13,6 +13,7 @@ export const ALLOWED_TAGS = new Set([
 
 export const ALLOWED_ATTRS = new Set([
   'xmlns', 'width', 'height', 'viewbox', 'role', 'aria-label', 'aria-hidden',
+  'id', 'aria-labelledby', 'aria-describedby', 'aria-roledescription',
   'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points',
   'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray',
   'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'opacity',
@@ -95,9 +96,14 @@ export function validateAttributeValue(attrName, attrVal) {
     return /^[a-zA-Z0-9\s,-]+$/.test(attrVal.trim())
   }
 
-  // role: only 'img'
+  // Only metadata IDs and single local metadata references are supported.
+  if (attrName === 'id' || attrName === 'aria-labelledby' || attrName === 'aria-describedby') {
+    return /^chart-(title|desc)-[A-Za-z0-9_.:-]+$/.test(attrVal)
+  }
+
+  // Keep the previous image role and the explicit graphics/document fallback.
   if (attrName === 'role') {
-    return attrVal.trim() === 'img'
+    return attrVal === 'img' || attrVal === 'graphics-document document'
   }
 
   // xmlns: only standard SVG namespace
@@ -188,6 +194,7 @@ export function validateSvgDomTree(docOrElement) {
   }
 
   // 3. Validate tag and attribute allowlists on all elements
+  const metadataIds = new Map()
   for (const el of elements) {
     const tagName = (el.localName || el.nodeName || '').toLowerCase()
     if (!ALLOWED_TAGS.has(tagName)) {
@@ -218,15 +225,31 @@ export function validateSvgDomTree(docOrElement) {
       if (attrName.startsWith('on')) {
         return { ok: false, error: `Forbidden event handler attribute "${attrName}" in SVG output` }
       }
-      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'id' || attrName === 'class') {
+      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'class') {
         return { ok: false, error: `Forbidden attribute "${attrName}" in SVG output` }
       }
       if (!ALLOWED_ATTRS.has(attrName)) {
         return { ok: false, error: `Disallowed attribute "${attrName}" in SVG output` }
       }
+      if (attrName === 'id') {
+        if ((tagName !== 'title' && tagName !== 'desc') || el.parentNode !== rootElement ||
+            !attr.value.startsWith(`chart-${tagName}-`) || metadataIds.has(attr.value)) {
+          return { ok: false, error: 'Only unique IDs on direct SVG title/desc metadata are permitted' }
+        }
+        metadataIds.set(attr.value, tagName)
+      }
+      if (['aria-labelledby', 'aria-describedby', 'aria-roledescription'].includes(attrName) && el !== rootElement) {
+        return { ok: false, error: 'Accessible metadata references are only permitted on the SVG root' }
+      }
       if (!validateAttributeValue(attrName, attr.value)) {
         return { ok: false, error: `Attribute "${attrName}" rejected by strict value grammar: "${attr.value}"` }
       }
+    }
+  }
+
+  for (const [attribute, targetTag] of [['aria-labelledby', 'title'], ['aria-describedby', 'desc']]) {
+    if (rootElement.hasAttribute(attribute) && metadataIds.get(rootElement.getAttribute(attribute)) !== targetTag) {
+      return { ok: false, error: `${attribute} must reference the matching metadata inside this SVG` }
     }
   }
 

@@ -134,7 +134,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene = when (diagram) {
         is build.raft.mermaid.core.InfoDiagram -> layoutInfo(diagram, textMeasurer, config)
-        is FlowchartDiagram -> layoutFlowchart(visibleFlow(diagram), textMeasurer, config)
+        is FlowchartDiagram -> layoutFlowchart(visibleFlow(diagram), textMeasurer, config).copy(
+            accessibilityTitle = diagram.accessibilityTitle,
+            accessibilityDescription = diagram.accessibilityDescription,
+        )
         is SequenceDiagram -> layoutSequence(diagram, textMeasurer, config)
         is PieDiagram -> layoutPie(diagram, textMeasurer, config)
         is StateDiagram -> layoutState(diagram, textMeasurer, config)

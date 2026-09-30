@@ -29,8 +29,41 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class SvgRendererTest {
+    @Test
+    fun accessibilityReferencesAreScopedEscapedAndOrderedBeforeDrawingCommands() {
+        val scene = LayoutScene(100.0, 60.0, listOf(DrawText("Visible", ScenePoint(10.0, 20.0))),
+            accessibilityTitle = "Title <&>", accessibilityDescription = "Description <&>")
+        val svg = SvgRenderer.render(scene, "first", "flowchart")
+        assertTrue("role=\"graphics-document document\"" in svg)
+        assertTrue("aria-roledescription=\"flowchart\"" in svg)
+        assertTrue("aria-labelledby=\"chart-title-first\"" in svg)
+        assertTrue("aria-describedby=\"chart-desc-first\"" in svg)
+        assertTrue("<title id=\"chart-title-first\">Title &lt;&amp;&gt;</title>" in svg)
+        assertTrue("<desc id=\"chart-desc-first\">Description &lt;&amp;&gt;</desc>" in svg)
+        assertTrue(svg.indexOf("<title") < svg.indexOf("<desc"))
+        assertTrue(svg.indexOf("<desc") < svg.indexOf("<text"))
+        val second = SvgRenderer.render(scene, "second", "flowchart")
+        assertFalse("chart-title-first" in second)
+        assertTrue("chart-title-second" in second)
+        assertEquals(SvgRenderer.render(scene), SvgRenderer.render(scene))
+        assertTrue("chart-title-first&quot;" in SvgRenderer.render(scene, "first\"", "type\"<&>"))
+        assertTrue("aria-roledescription=\"type&quot;&lt;&amp;&gt;\"" in SvgRenderer.render(scene, "first", "type\"<&>"))
+        assertFailsWith<IllegalArgumentException> { SvgRenderer.render(scene, "two tokens") }
+    }
+
+    @Test
+    fun emptyAccessibilityMetadataDoesNotCreateDanglingReferences() {
+        val svg = SvgRenderer.render(LayoutScene(100.0, 60.0, emptyList(), "", ""), "empty", "")
+        assertFalse("aria-labelledby" in svg)
+        assertFalse("aria-describedby" in svg)
+        assertFalse("aria-roledescription" in svg)
+        assertFalse("<title" in svg)
+        assertFalse("<desc" in svg)
+    }
+
     @Test fun classAbstractMemberUsesSvgItalicWithNoClassifierText() {
         val diagram = assertIs<MermaidParseResult.Success>(MermaidParser.parse("classDiagram\nclass Clock {\n+read()*\n}")).diagram
         val svg = SvgRenderer.render(SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
@@ -46,8 +79,8 @@ class SvgRendererTest {
         ))
         val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
         val svg = SvgRenderer.render(scene)
-        assertTrue("<title>Accounts &lt;&amp;&gt;</title>" in svg)
-        assertTrue("<desc>Entity &lt;relations&gt; &amp; keys</desc>" in svg)
+        assertTrue(">Accounts &lt;&amp;&gt;</title>" in svg)
+        assertTrue(">Entity &lt;relations&gt; &amp; keys</desc>" in svg)
         assertTrue("<relations>" !in svg)
     }
 

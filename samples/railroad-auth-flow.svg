@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="485" height="180" viewBox="0 0 485 180" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="485" height="180" viewBox="0 0 485 180" role="graphics-document document">
   <text x="72" y="45.26" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">auth</text>
   <rect x="88" y="24" width="63" height="31.6" rx="0" fill="#ffffff" stroke="#57534e" stroke-width="1.5"/>
   <text x="119.5" y="45.26" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">token</text>

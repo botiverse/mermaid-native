@@ -10,6 +10,24 @@ import kotlin.test.assertTrue
 
 class MermaidWebAdapterTest {
     @Test
+    fun flowAccessibilitySurvivesEveryLayoutPathThroughThePublicConsumer() {
+        for (body in listOf("A --> B", "A --> B\nA --> C", "A --> B\nB --> A", "subgraph Group\nA --> B\nend")) {
+            for (direction in listOf("TD", "LR", "BT", "RL")) {
+                for ((title, description) in listOf("Access <plan>" to "Ship & fix", "Only title" to "", "" to "Only description", "" to "")) {
+                    val metadata = (if (title.isEmpty()) "" else "accTitle: $title\n") +
+                        (if (description.isEmpty()) "" else "accDescr: $description\n")
+                    val source = "flowchart $direction\n$metadata$body"
+                    val svg = assertIs<MermaidWebResult.Success>(MermaidWebAdapter.render(MermaidWebRequest(source))).svg
+                    assertEquals(title.isNotEmpty(), "aria-labelledby=" in svg, source)
+                    assertEquals(description.isNotEmpty(), "aria-describedby=" in svg, source)
+                    if (title.isNotEmpty()) assertContains(svg, ">${title.replace("<", "&lt;").replace(">", "&gt;")}</title>")
+                    if (description.isNotEmpty()) assertContains(svg, ">${description.replace("&", "&amp;")}</desc>")
+                }
+            }
+        }
+    }
+
+    @Test
     fun everyPositiveGalleryFixtureRendersThroughPublicConsumer() {
         MermaidExamples.all.forEach { example ->
             val result = assertIs<MermaidWebResult.Success>(
