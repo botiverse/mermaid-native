@@ -3069,10 +3069,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             val text=SceneSize(lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width },max(nodeStyle.text.fontSize,lines.size*nodeStyle.lineHeight-8))
             val width=max(80.0,text.width+32.0)
             val height=max(40.0,text.height+20.0)
-            node.id to if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else SceneSize(width,height)
+            // A square diamond must contain the complete text rectangle, including its corners.
+            val diamondSide=max(80.0,text.width+text.height+32.0)
+            node.id to if(node.shape==FlowNodeShape.DIAMOND)SceneSize(diamondSide,diamondSide)else if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else SceneSize(width,height)
         }
-        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
-        val placement=FlowPlacement(diagram,sizes,config,textMeasurer).place()
+        val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true)
+        val placement=placer.place()
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
@@ -3096,7 +3098,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (edge.style == FlowEdgeStyle.INVISIBLE) return@forEach
             val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEach
             val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEach
-            val anchors = edgeAnchors(source, target, horizontal)
+            val anchors = edgeAnchors(source, target, placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
             val edgeStyle=flowEdgeStyle(edge,diagram)
             val markerColor=if(flowEdgeStyles(edge,diagram).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
             commands += DrawLine(
@@ -3137,15 +3139,16 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0, rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                     commands += DrawEllipse(ScenePoint(cx, cy), rect.width / 2.0 - 4.0, rect.height / 2.0 - 4.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                 }
-                FlowNodeShape.DIAMOND -> commands += DrawPolygon(
-                    listOf(
+                FlowNodeShape.DIAMOND -> {
+                    val points=listOf(
                         ScenePoint(rect.x + rect.width / 2.0, rect.y),
                         ScenePoint(rect.x + rect.width, rect.y + rect.height / 2.0),
                         ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height),
                         ScenePoint(rect.x, rect.y + rect.height / 2.0),
-                    ),
-                    fill = SceneColor(DiagramPalette.SURFACE_STRONG),
-                )
+                    )
+                    commands += DrawPolygon(points,fill=SceneColor(DiagramPalette.SURFACE_STRONG))
+                    commands += DrawPolyline(points+points.first(),stroke=SceneColor(DiagramPalette.OUTLINE),strokeWidth=1.5)
+                }
                 FlowNodeShape.PARALLELOGRAM, FlowNodeShape.PARALLELOGRAM_ALT, FlowNodeShape.TRAPEZOID, FlowNodeShape.TRAPEZOID_ALT, FlowNodeShape.SUBROUTINE, FlowNodeShape.CYLINDER, FlowNodeShape.HEXAGON, FlowNodeShape.ASYMMETRIC -> commands += flowSpecialShape(node.shape, rect)
             }
             val painted=commands.subList(glyphStart,commands.size).toList().flatMap(nodeStyle::paint)
