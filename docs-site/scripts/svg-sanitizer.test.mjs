@@ -22,3 +22,23 @@ test('consumer accepts numeric weights emitted by entity styles', () => {
   assert.equal(sanitize('<text font-weight="550">Account</text>').ok, true)
   assert.equal(sanitize('<text font-weight="1001">Account</text>').ok, false)
 })
+
+
+test('consumer preserves scoped Native accessibility references', () => {
+  const input = '<svg xmlns="http://www.w3.org/2000/svg" role="graphics-document document" aria-roledescription="flowchart" aria-labelledby="chart-title-first" aria-describedby="chart-desc-first"><title id="chart-title-first">Accounts</title><desc id="chart-desc-first">Two accounts</desc></svg>'
+  const result = sanitizeSvg(input, new DOMParser(), new XMLSerializer())
+  assert.equal(result.ok, true, result.error)
+  assert.equal(result.element.getAttribute('aria-labelledby'), 'chart-title-first')
+  assert.equal(result.element.getAttribute('aria-describedby'), 'chart-desc-first')
+  assert.equal(result.element.getAttribute('role'), 'graphics-document document')
+  for (const bad of [
+    input.replace('aria-labelledby="chart-title-first"', 'aria-labelledby="chart-title-outside"'),
+    input.replace('aria-labelledby="chart-title-first"', 'aria-labelledby="chart-desc-first"'),
+    input.replace('<title id="chart-title-first">', '<title id="arbitrary-host-id">'),
+    input.replace('</title>', '</title><title id="chart-title-first">duplicate</title>'),
+    input.replace('<title id="chart-title-first">', '<title id="chart-title-first" onclick="bad()">'),
+    input.replace('<desc id="chart-desc-first">Two accounts</desc>', '<rect id="chart-desc-first"/>'),
+    input.replace('aria-labelledby="chart-title-first"', 'aria-labelledby="chart-title-first chart-title-outside"'),
+    input.replace('<title id="chart-title-first">', '<g><title id="chart-title-first">').replace('</title>', '</title></g>'),
+  ]) assert.equal(sanitizeSvg(bad, new DOMParser(), new XMLSerializer()).ok, false, bad)
+})

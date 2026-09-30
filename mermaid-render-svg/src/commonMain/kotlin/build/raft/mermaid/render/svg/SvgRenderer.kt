@@ -13,24 +13,44 @@ import build.raft.mermaid.layout.TextAnchor
 
 /** Deterministic, markup-safe serializer for a platform-neutral [LayoutScene]. */
 public object SvgRenderer {
-    public fun render(scene: LayoutScene): String = buildString {
-        append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"")
-        append(scene.width.svgNumber())
-        append("\" height=\"")
-        append(scene.height.svgNumber())
-        append("\" viewBox=\"0 0 ")
-        append(scene.width.svgNumber())
-        append(' ')
-        append(scene.height.svgNumber())
-        append("\" role=\"img\">\n")
-        scene.accessibilityTitle?.let { append("  <title>").append(it.escapeXml()).append("</title>\n") }
-        scene.accessibilityDescription?.let { append("  <desc>").append(it.escapeXml()).append("</desc>\n") }
-        scene.commands.forEach { command ->
-            append("  ")
-            append(command.toSvg())
-            append('\n')
+    public fun render(scene: LayoutScene): String = render(
+        scene,
+        baseId = "mermaid-" + (scene.accessibilityTitle.orEmpty() + "\u0000" + scene.accessibilityDescription.orEmpty()).hashCode().toUInt().toString(16),
+    )
+
+    /**
+     * [baseId] scopes title/description IDs. Hosts composing multiple inline SVGs
+     * should provide a distinct ID per diagram instance. The one-argument overload
+     * keeps deterministic IDs derived from the accessible text for standalone SVGs.
+     * [diagramType] is an optional human-readable role description.
+     */
+    public fun render(scene: LayoutScene, baseId: String, diagramType: String = ""): String {
+        require(baseId.isNotEmpty() && baseId.none { it.isWhitespace() }) { "SVG base ID must be nonempty and contain no whitespace" }
+        val title = scene.accessibilityTitle?.takeIf { it.isNotEmpty() }
+        val description = scene.accessibilityDescription?.takeIf { it.isNotEmpty() }
+        return buildString {
+            append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"")
+            append(scene.width.svgNumber())
+            append("\" height=\"")
+            append(scene.height.svgNumber())
+            append("\" viewBox=\"0 0 ")
+            append(scene.width.svgNumber())
+            append(' ')
+            append(scene.height.svgNumber())
+            append("\" role=\"graphics-document document\"")
+            if (diagramType.isNotEmpty()) append(" aria-roledescription=\"").append(diagramType.escapeXml()).append('"')
+            if (title != null) append(" aria-labelledby=\"chart-title-").append(baseId.escapeXml()).append('"')
+            if (description != null) append(" aria-describedby=\"chart-desc-").append(baseId.escapeXml()).append('"')
+            append(">\n")
+            title?.let { append("  <title id=\"chart-title-").append(baseId.escapeXml()).append("\">").append(it.escapeXml()).append("</title>\n") }
+            description?.let { append("  <desc id=\"chart-desc-").append(baseId.escapeXml()).append("\">").append(it.escapeXml()).append("</desc>\n") }
+            scene.commands.forEach { command ->
+                append("  ")
+                append(command.toSvg())
+                append('\n')
+            }
+            append("</svg>\n")
         }
-        append("</svg>\n")
     }
 }
 

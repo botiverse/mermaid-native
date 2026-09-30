@@ -49,3 +49,15 @@ when (result) {
 ::: warning Publication status
 The Gradle publication model and Maven coordinates exist, but no stable Maven release is currently documented. Do not copy an unpublished version into production dependencies.
 :::
+
+## Accessible SVG exports
+
+`SvgRenderer.render(scene)` emits linked SVG title and description metadata when the layout scene provides accessible text. Empty metadata is omitted. The SVG declares the graphics-document role with a document fallback.
+
+For several inline SVG instances on one page, pass a different `baseId` for each instance. The optional diagram type supplies a role description:
+
+```kotlin
+val svg = SvgRenderer.render(scene, baseId = "message-42", diagramType = "flowchart")
+```
+
+Use letters, digits, underscores, periods, colons, or hyphens in IDs consumed by the provided web sanitizer. Title and description references must resolve within the same SVG. The one-argument renderer derives deterministic IDs from the accessible text for standalone exports; it does not allocate globally unique instance IDs.
