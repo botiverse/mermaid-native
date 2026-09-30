@@ -93,7 +93,8 @@ internal class ClassParser(private val source: String) {
             val parts=raw.split(':',limit=2);requireSyntax(parts.size==2 && parts[1].isNotBlank(),"Expected style property and value")
             val key=parts[0].trim().lowercase();val value=parts[1].trim()
             requireSyntax(key in setOf("fill","stroke","color","stroke-width","font-size","font-weight"),"Unsupported class style property")
-            if(key=="font-size" || key=="stroke-width") requireSyntax(value.lowercase().removeSuffix("px").toDoubleOrNull()?.isFinite()==true,"Expected numeric or px class style size")
+            if(key=="font-size") requireSyntax(FontSize.parse(value) != null,"Expected numeric, px or em class font size")
+            if(key=="stroke-width") requireSyntax(value.lowercase().removeSuffix("px").toDoubleOrNull()?.isFinite()==true,"Expected numeric or px class style size")
             "$key:$value"
         }
     }

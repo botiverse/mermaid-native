@@ -142,6 +142,24 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SimpleMermaidLayoutTest {
+    @Test
+    fun relativeFontSizesUseTheSameMetricsAndGeometryAsResolvedPixels() {
+        val sources = listOf(
+            "flowchart LR\nA[Normal] --> B[Double]\nstyle B font-size:SIZE",
+            "classDiagram\nclass Account {\n+balance\n}\nstyle Account font-size:SIZE",
+            "erDiagram\nA:::large { int id PK }\nclassDef large font-size:SIZE",
+        )
+        for (source in sources) {
+            fun scene(size: String) = SimpleMermaidLayout.layout(
+                assertIs<MermaidParseResult.Success>(MermaidParser.parse(source.replace("SIZE", size))).diagram,
+                FixedWidthTextMeasurer, LayoutConfig(),
+            )
+            assertTrue(scene("2em").commands.filterIsInstance<DrawText>().any { it.style.fontSize == 28.0 }, source)
+            assertEquals(scene("28px"), scene("2em"), source)
+            assertEquals(scene("21px"), scene("1.5em"), source)
+        }
+    }
+
     @Test fun infoShowsMeasuredNativeVersionWithoutClipping() {
         val scene = SimpleMermaidLayout.layout(build.raft.mermaid.core.InfoDiagram(version = "123456789.987654321-long-build"), FixedWidthTextMeasurer, LayoutConfig())
         val text = scene.commands.filterIsInstance<DrawText>().single()

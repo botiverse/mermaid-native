@@ -185,7 +185,10 @@ internal class EntityRelationshipParser(private val source: String) {
             requireSyntax(parts[0].trim().lowercase() in setOf("fill", "stroke", "color", "stroke-width", "font-size", "font-weight"), "Unsupported entity style property")
             val property = parts[0].trim().lowercase()
             val value = parts[1].trim()
-            if (property == "font-size" || property == "stroke-width") {
+            if (property == "font-size") {
+                requireSyntax(FontSize.parse(value) != null, "Expected numeric, px or em entity font size")
+            }
+            if (property == "stroke-width") {
                 requireSyntax(value.lowercase().removeSuffix("px").toDoubleOrNull()?.isFinite() == true, "Expected numeric or px entity style size")
             }
             parts[0].trim() + ":" + value

@@ -4,6 +4,7 @@ import build.raft.mermaid.layout.DiagramPalette
 
 import build.raft.mermaid.core.EntityDefinition
 import build.raft.mermaid.core.EntityRelationshipDiagram
+import build.raft.mermaid.core.FontSize
 import build.raft.mermaid.layout.SceneColor
 import build.raft.mermaid.layout.TextStyle
 
@@ -16,7 +17,7 @@ internal class EntityRelationshipStyle(entity: EntityDefinition, diagram: Entity
         val validHex = value?.startsWith("#") == true && value.length in listOf(4, 5, 7, 9) && value.drop(1).all { it in "0123456789abcdef" }
         return SceneColor(if (validHex) value!! else NAMED_COLORS[value] ?: if (value == "none") "none" else if (value == "transparent") "#00000000" else default)
     }
-    private val fontSize = properties["font-size"]?.lowercase()?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 && it <= 512.0 }
+    private val fontSize = FontSize.parse(properties["font-size"])?.resolvePixels(14.0)
     private val weight = properties["font-weight"]?.lowercase()?.let { if (it == "bold") 700 else if (it == "normal") 400 else it.toIntOrNull() }?.takeIf { it in 1..1000 }
     val title = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 600, color = color("color", DiagramPalette.INK))
     val name = TextStyle(fontSize = fontSize ?: 14.0, fontWeight = weight ?: 400, color = color("color", DiagramPalette.INK))
