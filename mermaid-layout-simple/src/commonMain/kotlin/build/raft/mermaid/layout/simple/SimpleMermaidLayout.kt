@@ -2755,7 +2755,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             note.classId?.let { id -> rects[id.substringBefore('~')] }?.let { owner ->
                 commands += DrawLine(ScenePoint(owner.x+owner.width/2,owner.y+owner.height),ScenePoint(rect.x+rect.width/2,rect.y),pattern=StrokePattern.DASHED)
             }
-            commands += DrawRect(rect,fill=SceneColor(DiagramPalette.AMBER_SURFACE),stroke=SceneColor(DiagramPalette.AMBER))
+            commands += DrawRect(rect,fill=SceneColor(DiagramPalette.NOTE_SURFACE),stroke=SceneColor(DiagramPalette.NOTE_BORDER))
             classNoteLines(note.text).forEachIndexed { lineIndex,line -> commands += DrawText(line,ScenePoint(rect.x+12,rect.y+20+lineIndex*22),style=style) }
         }
         diagram.classes.forEach { klass ->
@@ -2847,7 +2847,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val groupIds=diagram.states.filter { it.childIds.isNotEmpty() }.map { it.id }.toSet()
         val paintDiagram=FlowchartDiagram(diagram.direction,emptyList(),emptyList(),classDefinitions=diagram.classDefinitions)
         val paints=diagram.states.associate { state->state.id to FlowStyle(build.raft.mermaid.core.FlowNode(state.id,state.label,styles=state.styles,classes=state.classes),paintDiagram,
-            if(state.id in groupIds)listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.FAINT}","stroke-width:1")else if(state.kind==StateNodeKind.NOTE)listOf("fill:${DiagramPalette.AMBER_SURFACE}","stroke:${DiagramPalette.AMBER}","stroke-width:1")else listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.OUTLINE}","stroke-width:1")) }
+            if(state.id in groupIds)listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.FAINT}","stroke-width:1")else if(state.kind==StateNodeKind.NOTE)listOf("fill:${DiagramPalette.NOTE_SURFACE}","stroke:${DiagramPalette.NOTE_BORDER}","stroke-width:1")else listOf("fill:${DiagramPalette.SURFACE}","stroke:${DiagramPalette.OUTLINE}","stroke-width:1")) }
         val sizes=diagram.states.associate { state->
             val paint=paints.getValue(state.id)
             val lines=classNoteLines(state.label)+state.description?.let(::classNoteLines).orEmpty()
@@ -3050,7 +3050,7 @@ public object SimpleMermaidLayout : DiagramLayout {
 
         noteRects.forEach { (note,initial)->
             val rect=initial.copy(x=initial.x+dx)
-            commands+=DrawRect(rect,cornerRadius=3.0,fill=SceneColor(DiagramPalette.AMBER_SURFACE),stroke=SceneColor(DiagramPalette.AMBER))
+            commands+=DrawRect(rect,cornerRadius=3.0,fill=SceneColor(DiagramPalette.NOTE_SURFACE),stroke=SceneColor(DiagramPalette.NOTE_BORDER))
             classNoteLines(note.text).forEachIndexed { index,line->commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+20+index*22),TextAnchor.MIDDLE,style) }
         }
         return LayoutScene(width, height, commands)

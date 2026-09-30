@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="500" viewBox="0 0 720 500" role="img">
-  <text x="360" y="32" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#27272a">Team overlap</text>
+  <text x="360" y="32" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="600" fill="#141111">Team overlap</text>
   <ellipse cx="268" cy="314" rx="132" ry="132" fill="#aebfdc" fill-opacity="0.28" stroke="#526f9f" stroke-width="2"/>
-  <text x="210.840776" y="345.33702" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Frontend &amp; design</text>
+  <text x="210.840776" y="345.33702" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Frontend &amp; design</text>
   <ellipse cx="452" cy="314" rx="127.354796" ry="127.354796" fill="#b0cabb" fill-opacity="0.28" stroke="#537966" stroke-width="2"/>
-  <text x="507.147737" y="344.375005" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Backend</text>
+  <text x="507.147737" y="344.375005" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Backend</text>
   <ellipse cx="360" cy="182" rx="122.082253" ry="122.082253" fill="#dfc99f" fill-opacity="0.28" stroke="#8b7045" stroke-width="2"/>
-  <text x="360" y="127.400519" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Platform</text>
-  <text x="360" y="318" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#52525b">APIs</text>
-  <text x="360" y="274" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#52525b">Shared tooling</text>
+  <text x="360" y="127.400519" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Platform</text>
+  <text x="360" y="318" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#141111">APIs</text>
+  <text x="360" y="274" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#141111">Shared tooling</text>
 </svg>

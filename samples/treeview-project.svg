@@ -4,16 +4,16 @@
   <polyline points="108,119 108,150 145,150" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polyline points="66,83 66,186 103,186" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polyline points="24,47 24,222 61,222" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
-  <ellipse cx="24" cy="42" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="38" y="47" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">/</text>
-  <ellipse cx="66" cy="78" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="80" y="83" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">project</text>
-  <ellipse cx="108" cy="114" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="122" y="119" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">src</text>
-  <ellipse cx="150" cy="150" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="164" y="155" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">index.ts</text>
-  <ellipse cx="108" cy="186" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="122" y="191" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">README file.md</text>
-  <ellipse cx="66" cy="222" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#52525b" stroke-width="1"/>
-  <text x="80" y="227" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">package.json</text>
+  <ellipse cx="24" cy="42" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="38" y="47" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">/</text>
+  <ellipse cx="66" cy="78" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="80" y="83" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">project</text>
+  <ellipse cx="108" cy="114" rx="5" ry="5" fill="#8b7045" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="122" y="119" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">src</text>
+  <ellipse cx="150" cy="150" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="164" y="155" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">index.ts</text>
+  <ellipse cx="108" cy="186" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="122" y="191" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">README file.md</text>
+  <ellipse cx="66" cy="222" rx="5" ry="5" fill="#526f9f" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <text x="80" y="227" text-anchor="start" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">package.json</text>
 </svg>

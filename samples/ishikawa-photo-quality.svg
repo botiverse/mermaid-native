@@ -1,42 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1466.04" height="624" viewBox="0 0 1466.04 624" role="img">
-  <polyline points="24,277.7142857142857 1332.04,277.7142857142857" stroke="#52525b" stroke-width="2" fill="none"/>
+  <polyline points="24,277.7142857142857 1332.04,277.7142857142857" stroke="#141111" stroke-width="2" fill="none"/>
   <polygon points="1332.04,242.71428571428572 1332.04,312.7142857142857 1380.1649999999997,303.9642857142857 1414.54,295.2142857142857 1435.165,286.4642857142857 1442.04,277.7142857142857 1435.165,268.9642857142858 1414.54,260.2142857142857 1380.165,251.46428571428572 1332.04,242.71428571428572" fill="#efeff1"/>
-  <polyline points="1332.04,242.71428571428572 1332.04,312.7142857142857 1380.1649999999997,303.9642857142857 1414.54,295.2142857142857 1435.165,286.4642857142857 1442.04,277.7142857142857 1435.165,268.9642857142858 1414.54,260.2142857142857 1380.165,251.46428571428572 1332.04,242.71428571428572 1332.04,242.71428571428572" stroke="#52525b" stroke-width="2" fill="none"/>
-  <text x="1350.04" y="272.4642857142857" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#27272a">Blurry</text>
-  <text x="1350.04" y="293.4642857142857" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#27272a">Photo</text>
-  <line x1="340.08" y1="277.7142857142857" x2="243.59999999999997" y2="48" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="340.08,277.7142857142857 332.445988165571,271.1589929434174 340.74382711603727,267.67390058422154" fill="#52525b"/>
-  <rect x="208.29999999999995" y="36" width="70.6" height="24" rx="2" fill="#efeff1" stroke="#52525b" stroke-width="1.5"/>
-  <text x="243.59999999999997" y="52.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Process</text>
+  <polyline points="1332.04,242.71428571428572 1332.04,312.7142857142857 1380.1649999999997,303.9642857142857 1414.54,295.2142857142857 1435.165,286.4642857142857 1442.04,277.7142857142857 1435.165,268.9642857142858 1414.54,260.2142857142857 1380.165,251.46428571428572 1332.04,242.71428571428572 1332.04,242.71428571428572" stroke="#141111" stroke-width="2" fill="none"/>
+  <text x="1350.04" y="272.4642857142857" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#141111">Blurry</text>
+  <text x="1350.04" y="293.4642857142857" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#141111">Photo</text>
+  <line x1="340.08" y1="277.7142857142857" x2="243.59999999999997" y2="48" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="340.08,277.7142857142857 332.445988165571,271.1589929434174 340.74382711603727,267.67390058422154" fill="#141111"/>
+  <rect x="208.29999999999995" y="36" width="70.6" height="24" rx="2" fill="#efeff1" stroke="#141111" stroke-width="1.5"/>
+  <text x="243.59999999999997" y="52.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Process</text>
   <line x1="329.15999999999997" y1="251.71428571428572" x2="295.15999999999997" y2="251.71428571428572" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="329.15999999999997,251.71428571428572 320.15999999999997,256.2142857142857 320.15999999999997,247.21428571428572" fill="#a1a1aa"/>
-  <text x="289.15999999999997" y="256.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">Out of focus</text>
+  <text x="289.15999999999997" y="256.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">Out of focus</text>
   <line x1="318.24" y1="225.71428571428572" x2="284.24" y2="225.71428571428572" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="318.24,225.71428571428572 309.24,230.21428571428572 309.24,221.21428571428572" fill="#a1a1aa"/>
-  <text x="278.24" y="230.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">Shutter speed too slow</text>
-  <line x1="768.56" y1="277.7142857142857" x2="643.28" y2="576" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="768.56,277.7142857142857 769.2238271160372,287.7546708443499 760.925988165571,284.26957848515406" fill="#52525b"/>
-  <rect x="600.18" y="564" width="86.2" height="24" rx="2" fill="#efeff1" stroke="#52525b" stroke-width="1.5"/>
-  <text x="643.28" y="580.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Equipment</text>
+  <text x="278.24" y="230.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">Shutter speed too slow</text>
+  <line x1="768.56" y1="277.7142857142857" x2="643.28" y2="576" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="768.56,277.7142857142857 769.2238271160372,287.7546708443499 760.925988165571,284.26957848515406" fill="#141111"/>
+  <rect x="600.18" y="564" width="86.2" height="24" rx="2" fill="#efeff1" stroke="#141111" stroke-width="1.5"/>
+  <text x="643.28" y="580.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Equipment</text>
   <line x1="757.64" y1="303.7142857142857" x2="723.64" y2="303.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="757.64,303.7142857142857 748.64,308.2142857142857 748.64,299.2142857142857" fill="#a1a1aa"/>
-  <text x="717.64" y="308.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">LENS</text>
+  <text x="717.64" y="308.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">LENS</text>
   <line x1="703.64" y1="329.7142857142857" x2="669.64" y2="329.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <line x1="703.64" y1="329.7142857142857" x2="740.64" y2="303.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="740.64,303.7142857142857 735.8635295534621,312.57065800057484 730.6890199030458,305.2069327288288" fill="#a1a1aa"/>
-  <text x="663.64" y="334.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">Dirty lens</text>
+  <text x="663.64" y="334.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">Dirty lens</text>
   <line x1="735.8" y1="355.7142857142857" x2="701.8" y2="355.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="735.8,355.7142857142857 726.8,360.2142857142857 726.8,351.2142857142857" fill="#a1a1aa"/>
-  <text x="695.8" y="360.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">SENSOR</text>
+  <text x="695.8" y="360.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">SENSOR</text>
   <line x1="681.8" y1="381.7142857142857" x2="647.8" y2="381.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <line x1="681.8" y1="381.7142857142857" x2="718.8" y2="355.7142857142857" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="718.8,355.7142857142857 714.023529553462,364.57065800057484 708.8490199030458,357.2069327288288" fill="#a1a1aa"/>
-  <text x="641.8" y="386.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">Damaged sensor</text>
-  <line x1="1200.04" y1="277.7142857142857" x2="1103.56" y2="48" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="1200.04,277.7142857142857 1192.4059881655712,271.1589929434174 1200.7038271160372,267.67390058422154" fill="#52525b"/>
-  <rect x="1052.6599999999999" y="36" width="101.8" height="24" rx="2" fill="#efeff1" stroke="#52525b" stroke-width="1.5"/>
-  <text x="1103.56" y="52.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Environment</text>
+  <text x="641.8" y="386.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">Damaged sensor</text>
+  <line x1="1200.04" y1="277.7142857142857" x2="1103.56" y2="48" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1200.04,277.7142857142857 1192.4059881655712,271.1589929434174 1200.7038271160372,267.67390058422154" fill="#141111"/>
+  <rect x="1052.6599999999999" y="36" width="101.8" height="24" rx="2" fill="#efeff1" stroke="#141111" stroke-width="1.5"/>
+  <text x="1103.56" y="52.55" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Environment</text>
   <line x1="1189.12" y1="251.71428571428572" x2="1155.12" y2="251.71428571428572" stroke="#a1a1aa" stroke-width="1.5" fill="none"/>
   <polygon points="1189.12,251.71428571428572 1180.12,256.2142857142857 1180.12,247.21428571428572" fill="#a1a1aa"/>
-  <text x="1149.12" y="256.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#27272a">Subject moved too quickly</text>
+  <text x="1149.12" y="256.9142857142857" text-anchor="end" font-family="sans-serif" font-size="13" font-weight="400" fill="#141111">Subject moved too quickly</text>
 </svg>

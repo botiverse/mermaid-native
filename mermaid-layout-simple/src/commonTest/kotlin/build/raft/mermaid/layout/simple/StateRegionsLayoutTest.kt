@@ -16,11 +16,16 @@ class StateRegionsLayoutTest {
         assertEquals(text.getValue("C").origin.x,text.getValue("D").origin.x)
         assertEquals(3,scene.commands.filterIsInstance<DrawLine>().size)
     }
-    @Test fun floatingNoteActuallyRendersMultilineYellowBox() {
+    @Test fun floatingNoteActuallyRendersMultilineNoteBox() {
         val scene=layout("note \"First<br/>Second\" as N1")
-        assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value==DiagramPalette.AMBER_SURFACE })
+        val first=scene.commands.filterIsInstance<DrawText>().single { it.text=="First" }.origin
+        // Notes use the web note colors; identify the box by the note text it contains.
+        val note=scene.commands.filterIsInstance<DrawRect>().single { it.rect.contains(first) }
+        assertEquals(DiagramPalette.NOTE_SURFACE,note.fill.value)
+        assertEquals(DiagramPalette.NOTE_BORDER,note.stroke.value)
         assertEquals(listOf("First","Second"),scene.commands.filterIsInstance<DrawText>().map { it.text })
     }
+    private fun SceneRect.contains(p:ScenePoint)=p.x>=x && p.x<=x+width && p.y>=y && p.y<=y+height
     @Test fun compositeAndLeafSelfLoopsHaveVisiblePathsWithinScene() {
         val scene=layout("state Active { Idle }\nActive --> Active\nIdle --> Idle")
         val loops=scene.commands.filterIsInstance<DrawPolyline>()

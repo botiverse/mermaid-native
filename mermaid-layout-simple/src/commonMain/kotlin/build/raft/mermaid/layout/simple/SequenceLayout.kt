@@ -167,7 +167,7 @@ internal fun sequenceLayout(
             }
             is SequenceNote -> {
                 val (x,w)=noteBounds(event); val text=lines(event.text,event.wrap); val h=max(28.0,text.size*lineHeight+10)
-                foreground += DrawRect(SceneRect(x,eventY-12,w,h),3.0,SceneColor(DiagramPalette.AMBER_SURFACE),SceneColor(DiagramPalette.AMBER))
+                foreground += DrawRect(SceneRect(x,eventY-12,w,h),3.0,SceneColor(DiagramPalette.NOTE_SURFACE),SceneColor(DiagramPalette.NOTE_BORDER))
                 drawLines(foreground,text,x+w/2,eventY-12+(h-(text.size-1)*lineHeight)/2+style.fontSize*.35,TextAnchor.MIDDLE)
             }
             is SequenceFragment -> when(event.boundary){

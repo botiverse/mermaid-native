@@ -23,7 +23,12 @@ class ClassGrammarLayoutTest {
     }
     @Test fun notesAreMeasuredAndActuallyDrawnInsideTheirNamespace() {
         val scene=layout("namespace Team {\nclass A\nnote for A \"long note text\\nsecond line\"\n}")
-        val note=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value==DiagramPalette.AMBER_SURFACE }.rect
+        // Notes share the node colors (web theme), so find the note box by the note text it contains.
+        val noteText=scene.commands.filterIsInstance<DrawText>().single { it.text=="second line" }.origin
+        val noteRect=scene.commands.filterIsInstance<DrawRect>().single { r -> r.stroke.value!=DiagramPalette.FAINT && noteText.x>=r.rect.x && noteText.x<=r.rect.x+r.rect.width && noteText.y>=r.rect.y && noteText.y<=r.rect.y+r.rect.height }
+        assertEquals(DiagramPalette.NOTE_SURFACE,noteRect.fill.value)
+        assertEquals(DiagramPalette.NOTE_BORDER,noteRect.stroke.value)
+        val note=noteRect.rect
         val group=scene.commands.filterIsInstance<DrawRect>().single { it.fill.value==DiagramPalette.SURFACE && it.stroke.value==DiagramPalette.FAINT }.rect
         assertTrue(note.x>=group.x && note.y>=group.y && note.x+note.width<=group.x+group.width && note.y+note.height<=group.y+group.height)
         assertTrue(scene.commands.filterIsInstance<DrawText>().any { it.text=="second line" })
