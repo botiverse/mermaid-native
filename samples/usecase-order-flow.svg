@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" role="img">
-  <line x1="117" y1="82" x2="546" y2="82" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="546,82 537,86.5 537,77.5" fill="#52525b"/>
-  <text x="360" y="74" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#27272a">starts</text>
-  <line x1="621" y1="120" x2="621" y2="154" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="621,154 616.5,145 625.5,145" fill="#52525b"/>
-  <ellipse cx="99" cy="62" rx="10" ry="10" fill="#ffffff" fill-opacity="1" stroke="#858590" stroke-width="1.5"/>
-  <line x1="99" y1="72" x2="99" y2="102" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <line x1="84" y1="82" x2="114" y2="82" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <line x1="99" y1="102" x2="86" y2="120" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <line x1="99" y1="102" x2="112" y2="120" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <text x="99" y="140" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Customer</text>
+  <line x1="117" y1="82" x2="546" y2="82" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="546,82 537,86.5 537,77.5" fill="#141111"/>
+  <text x="360" y="74" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#141111">starts</text>
+  <line x1="621" y1="120" x2="621" y2="154" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="621,154 616.5,145 625.5,145" fill="#141111"/>
+  <ellipse cx="99" cy="62" rx="10" ry="10" fill="#ffffff" fill-opacity="1" stroke="#57534e" stroke-width="1.5"/>
+  <line x1="99" y1="72" x2="99" y2="102" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <line x1="84" y1="82" x2="114" y2="82" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <line x1="99" y1="102" x2="86" y2="120" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <line x1="99" y1="102" x2="112" y2="120" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <text x="99" y="140" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Customer</text>
   <ellipse cx="621" cy="82" rx="75" ry="38" fill="#dce6f5" fill-opacity="1" stroke="#526f9f" stroke-width="1.5"/>
-  <text x="621" y="87" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Place order</text>
+  <text x="621" y="87" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Place order</text>
   <rect x="546" y="154" width="150" height="76" rx="4" fill="#dce6f5" stroke="#526f9f" stroke-width="1.5"/>
-  <text x="621" y="197" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#27272a">Create receipt</text>
+  <text x="621" y="197" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Create receipt</text>
 </svg>

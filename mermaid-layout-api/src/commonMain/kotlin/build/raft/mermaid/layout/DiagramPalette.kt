@@ -2,17 +2,17 @@ package build.raft.mermaid.layout
 
 /** Shared default colors. Explicit diagram styles and named CSS colors remain source-owned. */
 public object DiagramPalette {
-    public const val INK: String = "#27272a"
-    public const val SECONDARY: String = "#52525b"
+    public const val INK: String = "#141111"
+    public const val SECONDARY: String = "#141111"
     public const val MUTED: String = "#71717a"
     public const val FAINT: String = "#a1a1aa"
     public const val CANVAS: String = "#ffffff"
-    public const val SURFACE: String = "#f7f7f8"
+    public const val SURFACE: String = "#f5f0e8"
     public const val SURFACE_STRONG: String = "#efeff1"
     public const val BORDER: String = "#d4d4d8"
     public const val GRID: String = "#e4e4e7"
     public const val GRID_FAINT: String = "#f0f0f2"
-    public const val OUTLINE: String = "#858590"
+    public const val OUTLINE: String = "#57534e"
     public const val BLUE: String = "#526f9f"
     public const val BLUE_SURFACE: String = "#dce6f5"
     public const val GREEN: String = "#537966"

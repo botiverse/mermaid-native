@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="515.2" height="88" viewBox="0 0 515.2 88" role="img">
-  <line x1="38" y1="44" x2="94" y2="44" stroke="#52525b" stroke-width="1" fill="none"/>
-  <polygon points="94,44 85,48.5 85,39.5" fill="#27272a"/>
-  <line x1="182" y1="44" x2="238" y2="44" stroke="#52525b" stroke-width="1" fill="none"/>
-  <polygon points="238,44 229,48.5 229,39.5" fill="#27272a"/>
-  <text x="210" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">start</text>
-  <line x1="421.2" y1="44" x2="477.2" y2="44" stroke="#52525b" stroke-width="1" fill="none"/>
-  <polygon points="477.2,44 468.2,48.5 468.2,39.5" fill="#27272a"/>
-  <text x="449.2" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">finish</text>
-  <ellipse cx="31" cy="44" rx="7" ry="7" fill="#27272a" fill-opacity="1" stroke="#27272a" stroke-width="1"/>
-  <rect x="94" y="24" width="88" height="40" rx="5" fill="#f7f7f8" stroke="#858590" stroke-width="1"/>
-  <text x="138" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Idle</text>
-  <rect x="238" y="24" width="183.2" height="40" rx="5" fill="#f7f7f8" stroke="#858590" stroke-width="1"/>
-  <text x="329.6" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#27272a">Processing request</text>
-  <ellipse cx="484.2" cy="44" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#27272a" stroke-width="1.5"/>
-  <ellipse cx="484.2" cy="44" rx="2.5" ry="2.5" fill="#27272a" fill-opacity="1" stroke="#27272a" stroke-width="1"/>
+  <line x1="38" y1="44" x2="94" y2="44" stroke="#141111" stroke-width="1" fill="none"/>
+  <polygon points="94,44 85,48.5 85,39.5" fill="#141111"/>
+  <line x1="182" y1="44" x2="238" y2="44" stroke="#141111" stroke-width="1" fill="none"/>
+  <polygon points="238,44 229,48.5 229,39.5" fill="#141111"/>
+  <text x="210" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">start</text>
+  <line x1="421.2" y1="44" x2="477.2" y2="44" stroke="#141111" stroke-width="1" fill="none"/>
+  <polygon points="477.2,44 468.2,48.5 468.2,39.5" fill="#141111"/>
+  <text x="449.2" y="36" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">finish</text>
+  <ellipse cx="31" cy="44" rx="7" ry="7" fill="#141111" fill-opacity="1" stroke="#141111" stroke-width="1"/>
+  <rect x="94" y="24" width="88" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1"/>
+  <text x="138" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Idle</text>
+  <rect x="238" y="24" width="183.2" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1"/>
+  <text x="329.6" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Processing request</text>
+  <ellipse cx="484.2" cy="44" rx="7" ry="7" fill="#ffffff" fill-opacity="1" stroke="#141111" stroke-width="1.5"/>
+  <ellipse cx="484.2" cy="44" rx="2.5" ry="2.5" fill="#141111" fill-opacity="1" stroke="#141111" stroke-width="1"/>
 </svg>

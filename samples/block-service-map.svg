@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="576" height="216" viewBox="0 0 576 216" role="img">
-  <line x1="196" y1="88" x2="196" y2="128" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="196,128 191.5,119 200.5,119" fill="#52525b"/>
-  <line x1="472" y1="88" x2="196" y2="128" stroke="#52525b" stroke-width="1.5" fill="none"/>
-  <polygon points="196,128 204.261515,122.255666 205.552376,131.162611" fill="#52525b"/>
-  <rect x="24" y="24" width="344" height="64" rx="6" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
-  <text x="196" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#27272a">Public &amp; partner API</text>
-  <rect x="392" y="24" width="160" height="64" rx="6" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
-  <text x="472" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#27272a">Database</text>
-  <rect x="24" y="128" width="344" height="64" rx="6" fill="#f7f7f8" stroke="#858590" stroke-width="1.5"/>
-  <text x="196" y="166" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#27272a">Worker</text>
+  <line x1="196" y1="88" x2="196" y2="128" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="196,128 191.5,119 200.5,119" fill="#141111"/>
+  <line x1="472" y1="88" x2="196" y2="128" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="196,128 204.261515,122.255666 205.552376,131.162611" fill="#141111"/>
+  <rect x="24" y="24" width="344" height="64" rx="6" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="196" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#141111">Public &amp; partner API</text>
+  <rect x="392" y="24" width="160" height="64" rx="6" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="472" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#141111">Database</text>
+  <rect x="24" y="128" width="344" height="64" rx="6" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="196" y="166" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#141111">Worker</text>
 </svg>
