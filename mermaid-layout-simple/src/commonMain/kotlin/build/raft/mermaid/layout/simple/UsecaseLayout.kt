@@ -108,7 +108,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         val rows = wrapped(note.label); val target = points[note.targetId] ?: continue
         noteY = maxOf(noteY, target.y - 30); val height = maxOf(60.0, rows.size * 20.0 + 24.0); val x = graphW + 24.0
         commands += DrawLine(target, ScenePoint(x, noteY + height / 2), pattern = StrokePattern.DASHED)
-        commands += DrawRect(SceneRect(x, noteY, noteW, height), 4.0, fill = SceneColor(DiagramPalette.AMBER_SURFACE), stroke = SceneColor(DiagramPalette.AMBER))
+        commands += DrawRect(SceneRect(x, noteY, noteW, height), 4.0, fill = SceneColor(DiagramPalette.NOTE_SURFACE), stroke = SceneColor(DiagramPalette.NOTE_BORDER))
         rows.forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(x + 14, noteY + 24 + i * 20), style = textStyle) }
         noteY += height + 20
     }

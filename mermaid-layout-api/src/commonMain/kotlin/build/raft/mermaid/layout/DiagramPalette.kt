@@ -13,6 +13,9 @@ public object DiagramPalette {
     public const val GRID: String = "#e4e4e7"
     public const val GRID_FAINT: String = "#f0f0f2"
     public const val OUTLINE: String = "#57534e"
+    /** Notes follow the Raft web theme (noteBkgColor = surface, noteBorderColor = border). */
+    public const val NOTE_SURFACE: String = SURFACE
+    public const val NOTE_BORDER: String = OUTLINE
     public const val BLUE: String = "#526f9f"
     public const val BLUE_SURFACE: String = "#dce6f5"
     public const val GREEN: String = "#537966"
