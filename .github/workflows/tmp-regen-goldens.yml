@@ -19,3 +19,10 @@ jobs:
         with:
           name: regenerated-goldens
           path: samples/*.svg
+      - run: ./gradlew :mermaid-testkit:testDebugUnitTest --tests '*TmpNotePreviewTest*' --rerun-tasks || true
+        env:
+          NOTE_PREVIEW_DIR: ${{ github.workspace }}/note-preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: note-preview
+          path: note-preview/
