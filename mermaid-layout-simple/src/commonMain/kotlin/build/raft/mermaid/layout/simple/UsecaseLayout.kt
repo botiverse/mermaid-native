@@ -20,10 +20,26 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     val tables = d.jsonNodes.mapNotNull { node -> node.data?.let { node.id to UsecaseJsonTableLayout(it, lines.getValue(node.id), measurer) } }.toMap()
     val nodeW = maxOf(180.0, (lines.values.flatten().maxOfOrNull { measurer.measure(it, textStyle).width } ?: 0.0) + 40.0)
     val nodeH = maxOf(76.0, (lines.values.maxOfOrNull { it.size } ?: 1) * 20.0 + 28.0)
-    val slotW = maxOf(nodeW, tables.values.maxOfOrNull { it.width } ?: 0.0)
-    val slotH = maxOf(nodeH, tables.values.maxOfOrNull { it.height } ?: 0.0)
-    fun itemWidth(item: Item): Double = tables[item.id]?.width ?: nodeW
-    fun itemHeight(item: Item): Double = tables[item.id]?.height ?: nodeH
+    // Rectangular padding alone does not contain the first/last wrapped rows
+    // inside an ellipse. Grow only ellipses whose padded text corners need it.
+    val ellipseSizes = items.filter { it.ellipse }.associate { item ->
+        val rows = lines.getValue(item.id)
+        var scale = 1.0
+        rows.forEachIndexed { index, line ->
+            val measured = measurer.measure(line, textStyle)
+            val baseline = -(rows.size - 1) * 10.0 + 5.0 + index * 20.0
+            val x = measured.width / 2.0 + 8.0
+            // TextMeasurer exposes height, not ascent/descent. Reserve that
+            // height above the baseline plus a small descent and inner gap.
+            val y = maxOf(abs(baseline - measured.height), abs(baseline + textStyle.fontSize * .25)) + 4.0
+            scale = maxOf(scale, sqrt((x / (nodeW / 2.0)).pow(2) + (y / (nodeH / 2.0)).pow(2)))
+        }
+        item.id to SceneSize(nodeW * scale, nodeH * scale)
+    }
+    fun itemWidth(item: Item): Double = tables[item.id]?.width ?: ellipseSizes[item.id]?.width ?: nodeW
+    fun itemHeight(item: Item): Double = tables[item.id]?.height ?: ellipseSizes[item.id]?.height ?: nodeH
+    val slotW = maxOf(nodeW, items.maxOfOrNull(::itemWidth) ?: 0.0)
+    val slotH = maxOf(nodeH, items.maxOfOrNull(::itemHeight) ?: 0.0)
     val actorExtent = items.filter { it.actor }.maxOfOrNull { 56.0 + (lines.getValue(it.id).size - 1) * 20.0 + 20.0 } ?: 0.0
     val rowH = maxOf(140.0, slotH + 60.0, actorExtent * 2.0)
     val horizontal = d.direction == FlowDirection.LR || d.direction == FlowDirection.RL
@@ -98,7 +114,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         }
         if (item.actor) {
             commands += drawUsecaseActor(d.actors.first { it.id == item.id }, p, fill, stroke)
-        } else if (item.ellipse) commands += DrawEllipse(p, nodeW / 2, nodeH / 2, fill = fill, stroke = stroke)
+        } else if (item.ellipse) commands += DrawEllipse(p, itemWidth(item) / 2, itemHeight(item) / 2, fill = fill, stroke = stroke)
         else commands += DrawRect(SceneRect(p.x - nodeW / 2, p.y - nodeH / 2, nodeW, nodeH), 4.0, fill = fill, stroke = stroke)
         val rows = lines.getValue(item.id)
         rows.forEachIndexed { index, line -> commands += DrawText(line, ScenePoint(p.x, if (item.actor) p.y + 56 + index * 20 else p.y - (rows.size - 1) * 10 + 5 + index * 20), anchor = TextAnchor.MIDDLE, style = textStyle.copy(color = color(item.id, "color", DiagramPalette.INK))) }
