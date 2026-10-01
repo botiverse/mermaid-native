@@ -19,6 +19,13 @@ text-measurement seam and returns stable geometry. This makes parser tests and
 geometry tests deterministic while allowing Android, iOS, and OHOS fonts to
 remain platform-specific.
 
+`FixedWidthTextMeasurer` is the fallback when the host has no font metrics. It
+reserves one em for Unicode 17 wide/fullwidth BMP characters and retains the
+0.6-em estimate per other UTF-16 unit (1.2 em for a supplementary character).
+This keeps CJK labels and table wrapping from using Latin-sized character
+widths. It does not perform font shaping; hosts requiring precise font metrics
+should provide a `TextMeasurer`.
+
 Public modules share one version and are published with Gradle Module Metadata.
 Consumers should depend on exact published artifacts rather than source or
 composite builds.
