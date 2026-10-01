@@ -3130,11 +3130,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             else commands += flowMarker(edge.toMarker, anchors.first, anchors.second,markerColor,edgeStyle.strokeWidth)
             commands += flowMarker(edge.fromMarker, anchors.second, anchors.first,markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
-                val mid = ScenePoint(
-                    (anchors.first.x + anchors.second.x) / 2.0,
-                    (anchors.first.y + anchors.second.y) / 2.0 - 6.0,
-                )
-                commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
+                val mid = MermaidPathGeometry.midpoint(listOf(anchors.first, anchors.second))
+                commands += DrawText(label, mid.copy(y = mid.y - 6.0), TextAnchor.MIDDLE, style)
             }
         }
         diagram.nodes.forEach { node ->
