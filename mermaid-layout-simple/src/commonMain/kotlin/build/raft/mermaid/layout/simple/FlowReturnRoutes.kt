@@ -12,7 +12,7 @@ internal data class FlowReturnRoute(
     val bounds: SceneRect,
 )
 
-/** Exterior feedback tracks for flat flowcharts; nested containers keep their current routing. */
+/** Feedback tracks around a flat set of nodes, also used inside leaf containers. */
 internal fun flowReturnRoutes(
     diagram: FlowchartDiagram,
     rects: Map<String, SceneRect>,
