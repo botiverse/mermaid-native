@@ -32,7 +32,8 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     private fun gap(from:String,to:String):Double = config.nodeGap*max(1,diagram.edges.filter { (it.sourceId==from && it.targetId==to) || (it.sourceId==to && it.targetId==from) }.maxOfOrNull { it.length.coerceAtMost(10) } ?: 1)
     private data class Layer(val rank:Int,val ids:List<String>)
     private val layerCache=mutableMapOf<String?,List<Layer>?>()
-    // Rank only acyclic sibling graphs. Containers retain their own direction and padding.
+    // Rank sibling graphs. For flat flowcharts, remove DFS feedback arcs only from
+    // ranking; the original edges remain in the diagram and are routed separately.
     private fun layers(parent:String?):List<Layer>? = layerCache.getOrPut(parent) {
         if(!rankByEdges)return@getOrPut null
         val ids=children(parent)
@@ -42,11 +43,32 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
             while(id !in ids && seen.add(id))id=(if(id in groups)parents[id]else owners[id]) ?: return null
             return id.takeIf { it in ids }
         }
-        val links=diagram.edges.mapNotNull { edge ->
+        var links=diagram.edges.mapNotNull { edge ->
             val from=sibling(edge.sourceId);val to=sibling(edge.targetId)
             if(from==null || to==null || from==to)null else Triple(from,to,edge.length.coerceIn(1,10))
         }
         if(links.isEmpty())return@getOrPut null
+        if(diagram.subgraphs.isEmpty()) {
+            val outgoing=links.groupBy { it.first }
+            val active=mutableSetOf<String>()
+            val visited=mutableSetOf<String>()
+            val feedback=mutableSetOf<Triple<String,String,Int>>()
+            // Explicit stack avoids recursion limits on long flowcharts.
+            ids.forEach { root ->
+                if(visited.add(root)) {
+                    active.add(root)
+                    val stack=mutableListOf(root to outgoing[root].orEmpty().iterator())
+                    while(stack.isNotEmpty()) {
+                        val (id,edges)=stack.last()
+                        if(!edges.hasNext()) { active.remove(id);stack.removeAt(stack.lastIndex);continue }
+                        val edge=edges.next();val target=edge.second
+                        if(target in active)feedback.add(edge)
+                        else if(visited.add(target)) { active.add(target);stack.add(target to outgoing[target].orEmpty().iterator()) }
+                    }
+                }
+            }
+            links=links.filterNot { it in feedback }
+        }
         val incoming=ids.associateWith { id->links.count { it.second==id } }.toMutableMap()
         val ranks=ids.associateWith { 0 }.toMutableMap()
         val queue=ids.filter { incoming.getValue(it)==0 }.toMutableList()

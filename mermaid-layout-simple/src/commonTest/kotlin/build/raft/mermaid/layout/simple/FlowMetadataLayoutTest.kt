@@ -45,7 +45,9 @@ class FlowMetadataLayoutTest {
         val d = assertIs<MermaidParseResult.Success>(MermaidParser.parse("graph LR\nsubgraph group[Group]\nA-->B\nend\nC-->A\nB-->C\ngroup@{view: collapsed}")).diagram
         val scene = SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(setOf("C", "Group"), scene.commands.filterIsInstance<DrawText>().map { it.text }.toSet())
-        assertEquals(2, scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(2, scene.commands.filterIsInstance<DrawPolygon>().size)
         assertTrue(scene.width.isFinite() && scene.height.isFinite())
     }
     @Test fun groupAndEdgeClassesPaintActualShapesAndCollapsedReplacement() {
