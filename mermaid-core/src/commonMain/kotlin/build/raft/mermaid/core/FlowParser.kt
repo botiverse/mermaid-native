@@ -55,8 +55,8 @@ internal class FlowParser(private val source:String) {
         requireFlow(stack.isEmpty(),"Unclosed subgraph")
         MermaidParseResult.Success(FlowchartDiagram(direction,nodes.values.toList(),edges.toList(),groups.toList(),accTitle,accDescription,definitions.toMap(),interactions.toList(),defaultEdgeStyles,defaultInterpolate))
     } catch(e:FlowSyntaxError) {
-        val prefix=source.take(offset)
-        MermaidParseResult.Failure(listOf(MermaidDiagnostic(if(parsingHeader)MermaidDiagnosticCode.INVALID_HEADER else MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message?:"Unsupported flowchart syntax",SourceLocation(prefix.count { it=='\n' }+1,offset-prefix.lastIndexOf('\n')))))
+        val prefix=source.take(offset).replace("\r\n", "\n").replace('\r', '\n')
+        MermaidParseResult.Failure(listOf(MermaidDiagnostic(if(parsingHeader)MermaidDiagnosticCode.INVALID_HEADER else MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message?:"Unsupported flowchart syntax",SourceLocation(prefix.count { it=='\n' }+1,prefix.length-prefix.lastIndexOf('\n')))))
     }
     private fun styles(text:String):List<String> {
         val values=mutableListOf<String>();var start=0;var level=0
@@ -117,10 +117,17 @@ internal class FlowParser(private val source:String) {
         while(at<source.length){val c=source[at]
             if(c=='"')quote=!quote
             if(!quote){
-                if(closes.isEmpty() && source.startsWith("%%",at)){emit(at);while(at<source.length && source[at]!='\n')at++;start=at+1;at++;continue}
+                if(closes.isEmpty() && source.startsWith("%%",at)) {
+                    emit(at)
+                    while(at<source.length && source[at]!='\n' && source[at]!='\r') at++
+                    if(source.getOrNull(at)=='\r') at++
+                    if(source.getOrNull(at)=='\n') at++
+                    start=at
+                    continue
+                }
                 if(c in "[({")closes+=when(c){'['->']';'('->')';else->'}'}
                 else if(closes.lastOrNull()==c)closes.removeAt(closes.lastIndex)
-                if(closes.isEmpty() && (c=='\n' || c==';')){emit(at);start=at+1}
+                if(closes.isEmpty() && (c=='\n' || c=='\r' || c==';')){emit(at);start=at+1}
             };at++
         }
         if(quote || closes.isNotEmpty()){val leading=source.drop(start).indexOfFirst { !it.isWhitespace() };offset=start+maxOf(0,leading);parsingHeader=out.isEmpty();fail("Unclosed flowchart label")};emit(source.length);return out
