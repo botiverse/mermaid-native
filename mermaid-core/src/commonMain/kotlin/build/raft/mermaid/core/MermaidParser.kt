@@ -826,7 +826,9 @@ private fun String.toMindmapLines(): List<MindmapSourceLine> = buildList {
 }
 
 private fun String.toStatements(): List<SourceStatement> = buildList {
-    lineSequence().forEachIndexed { lineIndex, physicalLine ->
+    val cleaned = MermaidComments.mapped(this@toStatements)
+    var physicalStart = 0
+    cleaned.text.lineSequence().forEach { physicalLine ->
         var segmentStart = 0
         physicalLine.split(';').forEach { segment ->
             val leadingWhitespace = segment.indexOfFirst { !it.isWhitespace() }
@@ -836,15 +838,15 @@ private fun String.toStatements(): List<SourceStatement> = buildList {
                     add(
                         SourceStatement(
                             text = text,
-                            location = SourceLocation(
-                                line = lineIndex + 1,
-                                column = segmentStart + leadingWhitespace + 1,
-                            ),
+                            location = cleaned.location(physicalStart + segmentStart + leadingWhitespace),
                         ),
                     )
                 }
             }
             segmentStart += segment.length + 1
         }
+        physicalStart += physicalLine.length
+        if (cleaned.text.getOrNull(physicalStart) == '\r') physicalStart++
+        if (cleaned.text.getOrNull(physicalStart) == '\n') physicalStart++
     }
 }
