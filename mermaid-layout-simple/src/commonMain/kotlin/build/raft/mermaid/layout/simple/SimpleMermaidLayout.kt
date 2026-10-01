@@ -3096,6 +3096,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
+        val returnRoutes=flowReturnRoutes(diagram,rects,textMeasurer,config)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
@@ -3112,26 +3113,25 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+6+groupStyle.text.fontSize),TextAnchor.MIDDLE,groupStyle.text)
         }
 
-        diagram.edges.forEach { edge ->
-            if (edge.style == FlowEdgeStyle.INVISIBLE) return@forEach
-            val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEach
-            val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEach
+        diagram.edges.forEachIndexed { index, edge ->
+            if (edge.style == FlowEdgeStyle.INVISIBLE) return@forEachIndexed
+            val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEachIndexed
+            val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEachIndexed
             val anchors = edgeAnchors(source, target, placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
             val edgeStyle=flowEdgeStyle(edge,diagram)
             val markerColor=if(flowEdgeStyles(edge,diagram).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
-            commands += DrawLine(
-                anchors.first,
-                anchors.second,
-                stroke = edgeStyle.stroke,
-                strokeWidth = edgeStyle.strokeWidth,
-                pattern = if (edge.style == FlowEdgeStyle.DOTTED) StrokePattern.DASHED else StrokePattern.SOLID,
-            )
-            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(anchors.first, anchors.second, fill = markerColor)
-            else commands += flowMarker(edge.toMarker, anchors.first, anchors.second,markerColor,edgeStyle.strokeWidth)
-            commands += flowMarker(edge.fromMarker, anchors.second, anchors.first,markerColor,edgeStyle.strokeWidth)
+            val route=returnRoutes[index]
+            val points=route?.points ?: listOf(anchors.first,anchors.second)
+            val pattern=if(edge.style==FlowEdgeStyle.DOTTED)StrokePattern.DASHED else StrokePattern.SOLID
+            if(route==null) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            val lastFrom=points[points.lastIndex-1]
+            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, points.last(), fill = markerColor)
+            else commands += flowMarker(edge.toMarker, lastFrom, points.last(),markerColor,edgeStyle.strokeWidth)
+            commands += flowMarker(edge.fromMarker, points[1], points.first(),markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
-                val mid = MermaidPathGeometry.midpoint(listOf(anchors.first, anchors.second))
-                commands += DrawText(label, mid.copy(y = mid.y - 6.0), TextAnchor.MIDDLE, style)
+                val mid = route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
+                commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
             }
         }
         diagram.nodes.forEach { node ->
@@ -3173,7 +3173,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             lines.forEachIndexed { index,line -> commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*nodeStyle.lineHeight+nodeStyle.text.fontSize*0.35),TextAnchor.MIDDLE,nodeStyle.text) }
 
         }
-        return LayoutScene(width, height, commands)
+        if(returnRoutes.isEmpty())return LayoutScene(width,height,commands)
+        val bounds=returnRoutes.values.map { it.bounds }
+        val dx=maxOf(0.0,config.padding-bounds.minOf { it.x })
+        val dy=maxOf(0.0,config.padding-bounds.minOf { it.y })
+        return LayoutScene(maxOf(width,bounds.maxOf { it.x+it.width }+config.padding)+dx,
+            maxOf(height,bounds.maxOf { it.y+it.height }+config.padding)+dy,commands.map { it.offsetBy(dx,dy) })
     }
 
     private fun edgeAnchors(source: SceneRect, target: SceneRect, horizontal: Boolean): Pair<ScenePoint, ScenePoint> =
