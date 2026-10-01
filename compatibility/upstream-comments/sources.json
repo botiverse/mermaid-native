@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagram-api/comments.spec.ts": "e5e39fe6ab38b2ce1267e4bd098f8d3f64b1077cb4d30ca830a7fbec1679c076"
+  },
+  "sourceFiles": {
+    "packages/mermaid/src/diagram-api/comments.ts": "3592fb8d68ad83644816b7cb08bc8da4faff47e43332ba446b5d45666520ed60"
+  }
+}
