@@ -70,3 +70,35 @@ blank lines and case variants are accepted; the whole header line must match.
 `MermaidParser.parse` uses the same detector after preprocessing comments, then
 runs the selected grammar parser. Detection alone does not guarantee valid
 syntax, and the low-level detector does not remove comments or metadata.
+
+## TreeView icons
+
+TreeView supports native vector glyphs for `icon(file)` and `icon(folder)` (also
+`icon(mermaid-treeview:file)` and `icon(mermaid-treeview:folder)`). `icon(none)`
+hides the icon while retaining the tree's connector dot. Custom pack references
+remain visible as fallback text; external Iconify packs are not downloaded.
+
+```text
+treeView-beta
+/ icon(folder)
+  src/ icon(folder) ## Source files
+    main.kt icon(file)
+```
+
+Kotlin callers can configure automatic icons on the parsed model before layout:
+
+```kotlin
+val tree = (MermaidParser.parse(source) as MermaidParseResult.Success).diagram as TreeViewDiagram
+val configured = tree.copy(iconConfig = TreeViewIconConfig(
+    showIcons = true,
+    filenameIcons = mapOf("Dockerfile" to "file"),
+    extensionIcons = mapOf(".kt" to "file", ".tmp" to "none"),
+))
+val scene = SimpleMermaidLayout.layout(configured, FixedWidthTextMeasurer, LayoutConfig())
+```
+
+Explicit annotations win over automatic detection. Exact filename mappings win
+over extension mappings; extensions are matched in lowercase, with or without
+the leading dot. Built-in names always use the built-in pack. A `defaultIconPack`
+qualifies other unprefixed references. These options are programmatic and are
+not read from Mermaid YAML frontmatter.

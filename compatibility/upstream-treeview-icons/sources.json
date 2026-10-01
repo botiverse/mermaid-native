@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/treeView/icons.spec.ts": "3c11a7a8d98c77aa0dd6d544d9ed39378b7b38a85f8ce6322bbe03f205374695"
+  },
+  "sourceFiles": {
+    "packages/mermaid/src/diagrams/treeView/icons.ts": "1e7c69822b88f07783717b49b69db4af38ba925a027498da3b4d14534834de6a"
+  }
+}

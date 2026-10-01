@@ -64,6 +64,7 @@ import build.raft.mermaid.core.IshikawaNode
 import build.raft.mermaid.core.SwimlaneDiagram
 import build.raft.mermaid.core.SwimlaneNodeShape
 import build.raft.mermaid.core.TreeViewDiagram
+import build.raft.mermaid.core.TreeViewIcons
 import build.raft.mermaid.core.TreeViewNode
 import build.raft.mermaid.core.RailroadChoice
 import build.raft.mermaid.core.RailroadSpecial
@@ -278,12 +279,17 @@ public object SimpleMermaidLayout : DiagramLayout {
         val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
         val detailStyle = TextStyle(fontSize = 11.0, color = SceneColor(DiagramPalette.MUTED))
         val titleOffset = if (diagram.title == null) 0.0 else 44.0
-        fun detail(node: TreeViewNode): String = listOfNotNull(node.iconAnnotation?.takeIf { it.isNotBlank() && it != "none" }, node.description?.takeIf { it.isNotBlank() }).joinToString(" · ")
+        val icons = nodes.associateWith { TreeViewIcons.getNodeIcon(it, diagram.iconConfig) }
+        fun builtin(node: TreeViewNode): Boolean = isBuiltinTreeViewIcon(icons[node])
+        fun labelOffset(node: TreeViewNode): Double = if (builtin(node)) 38.0 else 14.0
+        fun detail(node: TreeViewNode): String = listOfNotNull(
+            icons[node]?.takeUnless { builtin(node) }, node.description?.takeIf { it.isNotBlank() },
+        ).joinToString(" · ")
         val rowHeight = if (nodes.any { detail(it).isNotEmpty() }) 52.0 else 36.0
         val indent = 42.0
         val nodeRadius = 5.0
         val maxLabelRight = nodes.maxOfOrNull { node ->
-            config.padding + node.depth * indent + 18.0 + max(textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width, textMeasurer.measure(detail(node), detailStyle).width)
+            config.padding + node.depth * indent + labelOffset(node) + 4.0 + max(textMeasurer.measure(node.label, if (node.directory) directoryStyle else labelStyle).width, textMeasurer.measure(detail(node), detailStyle).width)
         }
         val width = maxOf(360.0, (maxLabelRight ?: 0.0) + config.padding, textMeasurer.measure(diagram.title.orEmpty(), titleStyle).width + config.padding * 2)
         val height = max(180.0, config.padding * 2.0 + nodes.size * rowHeight) + titleOffset
@@ -311,8 +317,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         nodes.forEachIndexed { index, node ->
             val point = points[index]
             commands += DrawEllipse(point, nodeRadius, nodeRadius, fill = if (node.directory) SceneColor(DiagramPalette.AMBER) else SceneColor(DiagramPalette.BLUE), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
-            if (detail(node).isNotEmpty()) commands += DrawText(detail(node), ScenePoint(point.x + 14.0, point.y + 21.0), style = detailStyle)
-            commands += DrawText(node.label, ScenePoint(point.x + 14.0, point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
+            if (builtin(node)) commands += treeViewIconCommands(requireNotNull(icons[node]), ScenePoint(point.x + 14.0, point.y - 8.0))
+            if (detail(node).isNotEmpty()) commands += DrawText(detail(node), ScenePoint(point.x + labelOffset(node), point.y + 21.0), style = detailStyle)
+            commands += DrawText(node.label, ScenePoint(point.x + labelOffset(node), point.y + 5.0).canonical(), style = if (node.directory) directoryStyle else labelStyle)
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
