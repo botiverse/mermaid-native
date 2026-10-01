@@ -1,0 +1,15 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/railroad/railroadDetector.spec.ts": "e338ecf670dd9545a407f427e1a8c2a09a47387ad13bc9c9f080d6c9246f5a8a",
+    "packages/mermaid/src/diagrams/railroad/abnfDetector.spec.ts": "c92d3f7dc468638be5fe4bc7b41eef62fef7125a923115dcfc7ad8d588d37d4d",
+    "packages/mermaid/src/diagrams/railroad/ebnfDetector.spec.ts": "79d1d00bd0673f37c7aceb16757922577e31f67d30e13526333c5ff6683768c6",
+    "packages/mermaid/src/diagrams/railroad/pegDetector.spec.ts": "59246ac07464449e1589437f839017f408ad7b48b5d35ec9e931afd46c83c88d"
+  },
+  "sourceFiles": {
+    "packages/mermaid/src/diagrams/railroad/railroadDetector.ts": "780ed885480359e2f03d4d36e5ecdf715e63c1199fe47569520cc95434ddb91a",
+    "packages/mermaid/src/diagrams/railroad/abnfDetector.ts": "df85b7ee0403bc41077be7fea0126e9eec01aa49d94c071aa91a4ad43d11ed3b",
+    "packages/mermaid/src/diagrams/railroad/ebnfDetector.ts": "cbc14a69184d7eb5341ae41b30a45201996f04d665a9f884d8309252387b52b0",
+    "packages/mermaid/src/diagrams/railroad/pegDetector.ts": "ed1908e8f6ca613a5470330aaa9793650552affa5d0ee5c733ec2644d6a7acf0"
+  }
+}

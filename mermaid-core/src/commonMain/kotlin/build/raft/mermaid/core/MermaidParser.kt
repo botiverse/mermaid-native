@@ -16,6 +16,7 @@ public object MermaidParser {
                 SourceLocation(line = 1, column = 1),
             )
 
+        val railroadSyntax = RailroadSyntax.detect(header.text)
         return when {
             header.text.equals("sequenceDiagram", ignoreCase = true) -> SequenceParser(source).parse()
             STATE_HEADER.matches(header.text) -> StateParser(source).parse()
@@ -43,10 +44,12 @@ public object MermaidParser {
             header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
             SWIMLANE_HEADER.matches(header.text) -> parseSwimlaneFlow(source)
             header.text == "treeView-beta" -> parseTreeView(source)
-            header.text.equals("railroad-abnf-beta", ignoreCase = true) -> AbnfParser(source).parse()
-            header.text.equals("railroad-peg-beta", ignoreCase = true) -> PegParser(source).parse()
-            header.text.equals("railroad-ebnf-beta", ignoreCase = true) -> EbnfParser(source).parse()
-            header.text.equals("railroad-beta", ignoreCase = true) -> parseRailroad(source)
+            railroadSyntax != null -> when (railroadSyntax) {
+                RailroadSyntax.ABNF -> AbnfParser(source).parse()
+                RailroadSyntax.PEG -> PegParser(source).parse()
+                RailroadSyntax.EBNF -> EbnfParser(source).parse()
+                RailroadSyntax.NATIVE -> parseRailroad(source)
+            }
             header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
             header.text.equals("wardley-beta", ignoreCase = true) -> WardleyParser(source).parse()
             header.text.startsWith("radar-beta") -> RadarParser(source).parse()
