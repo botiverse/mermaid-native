@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/handle-markdown-text.spec.ts": "6f897bc944bc1b0a99b585fca86db21adc965bf6290ca24f44521b7cdcb3c347"
+  },
+  "sourceFiles": {
+    "packages/mermaid/src/rendering-util/handle-markdown-text.ts": "6d8fc409c5401de7aa1f7c8ca2e2f1384af8d9f96690102cfe88646ee7971b28"
+  }
+}

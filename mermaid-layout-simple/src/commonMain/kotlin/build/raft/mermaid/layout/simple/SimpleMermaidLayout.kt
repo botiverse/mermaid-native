@@ -3081,10 +3081,14 @@ public object SimpleMermaidLayout : DiagramLayout {
     ): LayoutScene {
         val style = TextStyle()
         val nodeStyles=diagram.nodes.associate { it.id to FlowStyle(it,diagram) }
+        val markdownLabels=diagram.nodes.filter { it.labelType=="markdown" }.associate {
+            it.id to FlowMarkdownLabel(it.label,nodeStyles.getValue(it.id).text,textMeasurer)
+        }
         val sizes = diagram.nodes.associate { node ->
             val nodeStyle=nodeStyles.getValue(node.id)
             val lines=classNoteLines(node.label)
-            val text=SceneSize(lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width },max(nodeStyle.text.fontSize,lines.size*nodeStyle.lineHeight-8))
+            val markdown=markdownLabels[node.id]
+            val text=SceneSize(markdown?.width ?: lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width },max(nodeStyle.text.fontSize,(markdown?.lineCount ?: lines.size)*nodeStyle.lineHeight-8))
             val width=max(80.0,text.width+32.0)
             val height=max(40.0,text.height+20.0)
             // A square diamond must contain the complete text rectangle, including its corners.
@@ -3169,8 +3173,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             val painted=commands.subList(glyphStart,commands.size).toList().flatMap(nodeStyle::paint)
             while(commands.size>glyphStart)commands.removeAt(commands.lastIndex)
             commands+=painted
-            val lines=classNoteLines(node.label)
-            lines.forEachIndexed { index,line -> commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*nodeStyle.lineHeight+nodeStyle.text.fontSize*0.35),TextAnchor.MIDDLE,nodeStyle.text) }
+            val markdown=markdownLabels[node.id]
+            if(markdown!=null) commands+=markdown.draw(rect,nodeStyle.lineHeight)
+            else {
+                val lines=classNoteLines(node.label)
+                lines.forEachIndexed { index,line -> commands+=DrawText(line,ScenePoint(rect.x+rect.width/2,rect.y+rect.height/2+(index-(lines.size-1)/2.0)*nodeStyle.lineHeight+nodeStyle.text.fontSize*0.35),TextAnchor.MIDDLE,nodeStyle.text) }
+            }
 
         }
         if(returnRoutes.isEmpty())return LayoutScene(width,height,commands)
