@@ -1,0 +1,10 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/utils.spec.ts": "8cb55c0926e9d942c47e096e9fcef316901dae073f12d8d952d523857079ecdb"
+  },
+  "sourceFiles": {
+    "packages/mermaid/src/diagram-api/detectType.ts": "f1f72f2197fda408527c2431262d74e5b1b2f35e8fe2dd59628824c39aa19665",
+    "packages/mermaid/src/diagram-api/diagram-orchestration.ts": "2feb3f76bf4ed593d2fc278eeba99ad32c4da764cc523f1abe75b63520dc6c22"
+  }
+}

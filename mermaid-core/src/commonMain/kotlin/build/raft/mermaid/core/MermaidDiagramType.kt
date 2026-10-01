@@ -1,0 +1,38 @@
+package build.raft.mermaid.core
+
+/** Native parser families, independent of renderer versions and layout engines. */
+public enum class MermaidDiagramType(public val id: String) {
+    SEQUENCE("sequence"),
+    STATE("state"),
+    PIE("pie"),
+    CLASS("class"),
+    ER("er"),
+    XY("xychart"),
+    MINDMAP("mindmap"),
+    GANTT("gantt"),
+    TIMELINE("timeline"),
+    QUADRANT("quadrant"),
+    JOURNEY("journey"),
+    GITGRAPH("gitGraph"),
+    REQUIREMENT("requirement"),
+    KANBAN("kanban"),
+    PACKET("packet"),
+    BLOCK("block"),
+    SANKEY("sankey"),
+    TREEMAP("treemap"),
+    VENN("venn"),
+    USECASE("usecase"),
+    ARCHITECTURE("architecture"),
+    C4("c4"),
+    CYNEFIN("cynefin"),
+    ISHIKAWA("ishikawa"),
+    SWIMLANE("swimlane"),
+    TREEVIEW("treeView"),
+    RAILROAD("railroad"),
+    ZENUML("zenuml"),
+    WARDLEY("wardley"),
+    RADAR("radar"),
+    EVENTMODELING("eventmodeling"),
+    INFO("info"),
+    FLOWCHART("flowchart");
+}

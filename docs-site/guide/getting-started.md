@@ -102,3 +102,19 @@ over extension mappings; extensions are matched in lowercase, with or without
 the leading dot. Built-in names always use the built-in pack. A `defaultIconPack`
 qualifies other unprefixed references. These options are programmatic and are
 not read from Mermaid YAML frontmatter.
+
+## Detect a diagram family before parsing
+
+```kotlin
+val type = MermaidParser.detectType("graph TD\nunfinished body")
+check(type == MermaidDiagramType.FLOWCHART)
+println(type.id) // flowchart
+```
+
+The detector identifies a supported Native family from the first header, using
+exactly the same comment and whitespace handling as `MermaidParser.parse`.
+A detected family does not validate the body or header options; call `parse`
+to obtain the model or typed diagnostics. Empty or unknown headers return null.
+It does not extract YAML frontmatter or apply Mermaid init configuration.
+Family IDs describe Native parser families, independent of upstream renderer
+versions and layout engines; all Railroad dialects belong to `RAILROAD`.

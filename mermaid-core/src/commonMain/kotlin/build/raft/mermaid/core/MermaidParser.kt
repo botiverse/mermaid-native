@@ -16,64 +16,116 @@ public object MermaidParser {
                 SourceLocation(line = 1, column = 1),
             )
 
-        val railroadSyntax = RailroadSyntax.detect(header.text)
-        return when {
-            header.text.equals("sequenceDiagram", ignoreCase = true) -> SequenceParser(source).parse()
-            STATE_HEADER.matches(header.text) -> StateParser(source).parse()
-            header.text.startsWith("pie", ignoreCase = true) -> PieParser(source).parse()
-            (header.text.equals("classDiagram", ignoreCase = true) || header.text.equals("classDiagram-v2", ignoreCase = true)) -> ClassParser(source).parse()
-            header.text.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> EntityRelationshipParser(source).parse()
-            XY_HEADER.matches(header.text) -> XyParser(source).parse()
-            header.text.equals("mindmap", ignoreCase = true) -> parseMindmap(source)
-            header.text.equals("gantt", ignoreCase = true) -> GanttParser(source).parse()
-            header.text.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> TimelineParser(source).parse()
-            header.text.takeWhile { !it.isWhitespace() }.equals("quadrantChart", ignoreCase = true) -> QuadrantParser(source).parseValidated()
-            header.text.equals("journey", ignoreCase = true) -> JourneyParser(source).parse()
-            header.text.startsWith("gitGraph") -> GitGraphParser(source).parse()
-            header.text.equals("requirementDiagram", ignoreCase = true) -> RequirementParser(source).parse()
-            header.text.equals("kanban", ignoreCase = true) -> parseKanban(source)
-            header.text.equals("packet", ignoreCase = true) || header.text.equals("packet-beta", ignoreCase = true) -> PacketParser(source).parse()
-            header.text.equals("block", ignoreCase = true) || header.text.equals("block-beta", ignoreCase = true) -> BlockParser(source).parse()
-            header.text.equals("sankey", ignoreCase = true) || header.text.equals("sankey-beta", ignoreCase = true) -> parseSankey(source)
-            (header.text.equals("treemap-beta", ignoreCase = true) || header.text.equals("treemap", ignoreCase = true)) -> TreemapParser(source).parse()
-            header.text.equals("venn-beta", ignoreCase = true) -> parseVenn(source)
-            header.text.equals("usecase-beta", ignoreCase = true) || header.text.equals("usecaseDiagram", ignoreCase = true) -> parseUsecase(source)
-            Regex("^architecture-beta(?:\\s.*)?$").matches(header.text) -> parseArchitecture(source)
-            header.text in setOf("C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment") -> parseC4Context(source)
-            header.text.lowercase() in setOf("cynefin-beta", "cynefin-beta:", "cynefin") -> CynefinParser(source).parse()
-            header.text.equals("ishikawa", ignoreCase = true) || header.text.equals("ishikawa-beta", ignoreCase = true) || header.text.equals("fishbone", ignoreCase = true) -> parseIshikawa(source)
-            SWIMLANE_HEADER.matches(header.text) -> parseSwimlaneFlow(source)
-            header.text == "treeView-beta" -> parseTreeView(source)
-            railroadSyntax != null -> when (railroadSyntax) {
+        return when (detectHeader(header.text)) {
+            MermaidDiagramType.SEQUENCE -> SequenceParser(source).parse()
+            MermaidDiagramType.STATE -> StateParser(source).parse()
+            MermaidDiagramType.PIE -> PieParser(source).parse()
+            MermaidDiagramType.CLASS -> ClassParser(source).parse()
+            MermaidDiagramType.ER -> EntityRelationshipParser(source).parse()
+            MermaidDiagramType.XY -> XyParser(source).parse()
+            MermaidDiagramType.MINDMAP -> parseMindmap(source)
+            MermaidDiagramType.GANTT -> GanttParser(source).parse()
+            MermaidDiagramType.TIMELINE -> TimelineParser(source).parse()
+            MermaidDiagramType.QUADRANT -> QuadrantParser(source).parseValidated()
+            MermaidDiagramType.JOURNEY -> JourneyParser(source).parse()
+            MermaidDiagramType.GITGRAPH -> GitGraphParser(source).parse()
+            MermaidDiagramType.REQUIREMENT -> RequirementParser(source).parse()
+            MermaidDiagramType.KANBAN -> parseKanban(source)
+            MermaidDiagramType.PACKET -> PacketParser(source).parse()
+            MermaidDiagramType.BLOCK -> BlockParser(source).parse()
+            MermaidDiagramType.SANKEY -> parseSankey(source)
+            MermaidDiagramType.TREEMAP -> TreemapParser(source).parse()
+            MermaidDiagramType.VENN -> parseVenn(source)
+            MermaidDiagramType.USECASE -> parseUsecase(source)
+            MermaidDiagramType.ARCHITECTURE -> parseArchitecture(source)
+            MermaidDiagramType.C4 -> parseC4Context(source)
+            MermaidDiagramType.CYNEFIN -> CynefinParser(source).parse()
+            MermaidDiagramType.ISHIKAWA -> parseIshikawa(source)
+            MermaidDiagramType.SWIMLANE -> parseSwimlaneFlow(source)
+            MermaidDiagramType.TREEVIEW -> parseTreeView(source)
+            MermaidDiagramType.RAILROAD -> when (RailroadSyntax.detect(header.text)!!) {
                 RailroadSyntax.ABNF -> AbnfParser(source).parse()
                 RailroadSyntax.PEG -> PegParser(source).parse()
                 RailroadSyntax.EBNF -> EbnfParser(source).parse()
                 RailroadSyntax.NATIVE -> parseRailroad(source)
             }
-            header.text.equals("zenuml", ignoreCase = true) -> parseZenuml(statements)
-            header.text.equals("wardley-beta", ignoreCase = true) -> WardleyParser(source).parse()
-            header.text.startsWith("radar-beta") -> RadarParser(source).parse()
-            header.text == "eventmodeling" -> parseEventModeling(source)
-            header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
-                MermaidDiagnosticCode.INVALID_HEADER,
-                "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
-                header.location,
-            )
-            Regex("^info(?:\\s.*)?$").matches(header.text) -> parseInfo(source)
-            header.text.takeWhile { !it.isWhitespace() }.lowercase() in setOf("flowchart", "graph", "flowchart-elk") -> FlowParser(source).parse()
-            header.text.startsWith("flowchart", ignoreCase = true) ||
-                header.text.startsWith("graph", ignoreCase = true) -> failure(
-                MermaidDiagnosticCode.INVALID_HEADER,
-                "Expected graph/flowchart followed by TD, TB, LR, BT, or RL",
-                header.location,
-            )
-            else -> failure(
-                MermaidDiagnosticCode.UNSUPPORTED_DIAGRAM,
-                "Unsupported Mermaid diagram header: ${header.text}",
-                header.location,
-            )
+            MermaidDiagramType.ZENUML -> parseZenuml(statements)
+            MermaidDiagramType.WARDLEY -> WardleyParser(source).parse()
+            MermaidDiagramType.RADAR -> RadarParser(source).parse()
+            MermaidDiagramType.EVENTMODELING -> parseEventModeling(source)
+            MermaidDiagramType.INFO -> parseInfo(source)
+            MermaidDiagramType.FLOWCHART -> FlowParser(source).parse()
+            null -> when {
+                header.text.startsWith("swimlane-beta", ignoreCase = true) -> failure(
+                    MermaidDiagnosticCode.INVALID_HEADER,
+                    "Expected swimlane-beta optionally followed by TD, TB, LR, BT, or RL",
+                    header.location,
+                )
+                header.text.startsWith("flowchart", ignoreCase = true) ||
+                    header.text.startsWith("graph", ignoreCase = true) -> failure(
+                    MermaidDiagnosticCode.INVALID_HEADER,
+                    "Expected graph/flowchart followed by TD, TB, LR, BT, or RL",
+                    header.location,
+                )
+                else -> failure(
+                    MermaidDiagnosticCode.UNSUPPORTED_DIAGRAM,
+                    "Unsupported Mermaid diagram header: ${header.text}",
+                    header.location,
+                )
+            }
         }
     }
+
+    /**
+     * Identifies a supported Native diagram family from its header without parsing its body.
+     *
+     * Uses the same comment/whitespace handling and header dispatch as [parse]. A non-null
+     * result does not mean the body or header options are valid. Empty/unknown headers return
+     * null. This does not extract YAML frontmatter or apply Mermaid init configuration.
+     */
+    public fun detectType(source: String): MermaidDiagramType? =
+        source.toStatements().firstOrNull()?.let { detectHeader(it.text) }
+
+    private fun detectHeader(header: String): MermaidDiagramType? {
+        val railroadSyntax = RailroadSyntax.detect(header)
+        return when {
+            header.equals("sequenceDiagram", ignoreCase = true) -> MermaidDiagramType.SEQUENCE
+            STATE_HEADER.matches(header) -> MermaidDiagramType.STATE
+            header.startsWith("pie", ignoreCase = true) -> MermaidDiagramType.PIE
+            (header.equals("classDiagram", ignoreCase = true) || header.equals("classDiagram-v2", ignoreCase = true)) -> MermaidDiagramType.CLASS
+            header.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> MermaidDiagramType.ER
+            XY_HEADER.matches(header) -> MermaidDiagramType.XY
+            header.equals("mindmap", ignoreCase = true) -> MermaidDiagramType.MINDMAP
+            header.equals("gantt", ignoreCase = true) -> MermaidDiagramType.GANTT
+            header.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> MermaidDiagramType.TIMELINE
+            header.takeWhile { !it.isWhitespace() }.equals("quadrantChart", ignoreCase = true) -> MermaidDiagramType.QUADRANT
+            header.equals("journey", ignoreCase = true) -> MermaidDiagramType.JOURNEY
+            header.startsWith("gitGraph") -> MermaidDiagramType.GITGRAPH
+            header.equals("requirementDiagram", ignoreCase = true) -> MermaidDiagramType.REQUIREMENT
+            header.equals("kanban", ignoreCase = true) -> MermaidDiagramType.KANBAN
+            header.equals("packet", ignoreCase = true) || header.equals("packet-beta", ignoreCase = true) -> MermaidDiagramType.PACKET
+            header.equals("block", ignoreCase = true) || header.equals("block-beta", ignoreCase = true) -> MermaidDiagramType.BLOCK
+            header.equals("sankey", ignoreCase = true) || header.equals("sankey-beta", ignoreCase = true) -> MermaidDiagramType.SANKEY
+            (header.equals("treemap-beta", ignoreCase = true) || header.equals("treemap", ignoreCase = true)) -> MermaidDiagramType.TREEMAP
+            header.equals("venn-beta", ignoreCase = true) -> MermaidDiagramType.VENN
+            header.equals("usecase-beta", ignoreCase = true) || header.equals("usecaseDiagram", ignoreCase = true) -> MermaidDiagramType.USECASE
+            Regex("^architecture-beta(?:\\s.*)?$").matches(header) -> MermaidDiagramType.ARCHITECTURE
+            header in setOf("C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment") -> MermaidDiagramType.C4
+            header.lowercase() in setOf("cynefin-beta", "cynefin-beta:", "cynefin") -> MermaidDiagramType.CYNEFIN
+            header.equals("ishikawa", ignoreCase = true) || header.equals("ishikawa-beta", ignoreCase = true) || header.equals("fishbone", ignoreCase = true) -> MermaidDiagramType.ISHIKAWA
+            SWIMLANE_HEADER.matches(header) -> MermaidDiagramType.SWIMLANE
+            header == "treeView-beta" -> MermaidDiagramType.TREEVIEW
+            railroadSyntax != null -> MermaidDiagramType.RAILROAD
+            header.equals("zenuml", ignoreCase = true) -> MermaidDiagramType.ZENUML
+            header.equals("wardley-beta", ignoreCase = true) -> MermaidDiagramType.WARDLEY
+            header.startsWith("radar-beta") -> MermaidDiagramType.RADAR
+            header == "eventmodeling" -> MermaidDiagramType.EVENTMODELING
+            Regex("^info(?:\\s.*)?$").matches(header) -> MermaidDiagramType.INFO
+            header.takeWhile { !it.isWhitespace() }.lowercase() in setOf("flowchart", "graph", "flowchart-elk") -> MermaidDiagramType.FLOWCHART
+            else -> null
+        }
+    }
+
 
 
     private fun parseZenuml(statements: List<SourceStatement>): MermaidParseResult {
