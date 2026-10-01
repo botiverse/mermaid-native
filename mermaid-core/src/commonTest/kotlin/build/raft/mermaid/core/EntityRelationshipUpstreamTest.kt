@@ -126,7 +126,7 @@ class EntityRelationshipUpstreamTest {
         val diagram = parse("A\nstyle A fill:red; B")
         assertEquals(listOf("A", "B"), diagram.entities.map { it.id })
         assertEquals(listOf("fill:red"), diagram.entities[0].styles)
-        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("erDiagram\nA\nstyle A font-size:2em"))
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("erDiagram\nA\nstyle A font-size:2rem"))
     }
 
     @Test fun stylesClassesAccessibilityAndParentMarker() {

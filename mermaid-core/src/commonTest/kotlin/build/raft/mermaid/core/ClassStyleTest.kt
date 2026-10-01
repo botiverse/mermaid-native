@@ -15,7 +15,7 @@ class ClassStyleTest {
         assertEquals(ClassInteraction("A","https://example.test/a;b#c",tooltip="Docs",target="_self"),d.interactions.last())
     }
     @Test fun unsupportedStyleAndMalformedInteractionFailClosed() {
-        listOf("class A\nstyle A filter:blur(2px)","class A\nclick A call broken(","class A\nstyle A font-size:1em").forEach {
+        listOf("class A\nstyle A filter:blur(2px)","class A\nclick A call broken(","class A\nstyle A font-size:1rem").forEach {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("classDiagram\n$it"),it)
         }
     }
