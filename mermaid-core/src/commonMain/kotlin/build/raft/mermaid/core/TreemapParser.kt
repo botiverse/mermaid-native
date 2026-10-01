@@ -2,12 +2,8 @@ package build.raft.mermaid.core
 
 /** Quoted rows, measured hierarchy and explicitly retained class declarations. */
 internal class TreemapParser(private val source: String) {
-    private data class Node(val label: String, val value: Double?, val indent: Int, val selector: String?, val children: MutableList<Node> = mutableListOf()) {
-        fun freeze(): TreemapNode = TreemapNode(label, value, children.map { it.freeze() }, selector)
-        fun weight(): Double = value ?: children.sumOf { it.weight() }
-    }
     fun parse(): MermaidParseResult {
-        val roots = mutableListOf<Node>(); val stack = mutableListOf<Node>(); val labels = mutableSetOf<String>()
+        val hierarchy = TreemapHierarchy(); val labels = mutableSetOf<String>()
         val classes = linkedMapOf<String, String>(); val assignments = linkedMapOf<String, String>()
         var title: String? = null; var accTitle: String? = null; var accDescription: String? = null
         var header = false; var description: StringBuilder? = null
@@ -47,18 +43,18 @@ internal class TreemapParser(private val source: String) {
                     if (label.isBlank() || !labels.add(label)) return fail("Treemap labels must be unique and non-empty", index + 1)
                     if (rawValue.isNotEmpty() && (value == null || !value.isFinite() || value <= 0.0)) return fail("Treemap leaf values must be finite and positive", index + 1)
                     val indent = raw.takeWhile { it == ' ' || it == '\t' }.fold(0) { total, ch -> total + if (ch == '\t') 4 else 1 }
-                    while (stack.isNotEmpty() && stack.last().indent >= indent) stack.removeAt(stack.lastIndex)
-                    val node = Node(label, value, indent, match.groupValues[4].takeIf { it.isNotEmpty() })
-                    if (stack.isEmpty()) roots += node else {
-                        if (stack.last().value != null) return fail("Treemap leaves cannot have children", index + 1)
-                        stack.last().children += node
+                    try {
+                        hierarchy.add(TreemapHierarchyItem(indent, label, value, match.groupValues[4].takeIf { it.isNotEmpty() }))
+                    } catch (error: IllegalArgumentException) {
+                        return fail(error.message ?: "Invalid treemap hierarchy", index + 1)
                     }
-                    stack += node
                 }
             }
         }
         if (description != null) return fail("Unclosed treemap accessibility description", source.lines().size)
+        val roots = hierarchy.build()
+        fun TreemapNode.weight(): Double = value ?: children.sumOf { it.weight() }
         if (roots.any { !it.weight().isFinite() } || !roots.sumOf { it.weight() }.isFinite()) return fail("Treemap weights must have a finite sum", 1)
-        return MermaidParseResult.Success(TreemapDiagram(roots.map { it.freeze() }, title, accTitle, accDescription, classes, assignments))
+        return MermaidParseResult.Success(TreemapDiagram(roots, title, accTitle, accDescription, classes, assignments))
     }
 }
