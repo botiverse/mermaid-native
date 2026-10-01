@@ -18,5 +18,9 @@
   "LICENSE.txt": {
     "url": "https://www.unicode.org/license.txt",
     "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96"
+  },
+  "EastAsianWidth.txt": {
+    "url": "https://www.unicode.org/Public/17.0.0/ucd/EastAsianWidth.txt",
+    "sha256": "ea7ce50f3444a050333448dffef1cadd9325af55cbb764b4a2280faf52170a33"
   }
 }

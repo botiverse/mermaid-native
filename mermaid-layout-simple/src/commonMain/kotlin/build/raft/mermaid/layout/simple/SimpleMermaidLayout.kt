@@ -115,12 +115,20 @@ import kotlin.math.PI
 import kotlin.math.round
 import kotlin.math.ceil
 
-/** Deterministic text metrics for goldens and hosts without platform font metrics. */
+/**
+ * Deterministic fallback metrics for hosts without platform font measurement.
+ * Wide/fullwidth BMP characters reserve one em; other UTF-16 units retain the
+ * historical 0.6 em estimate (including 1.2 em per supplementary code point).
+ * This is an approximation, not font shaping. Hosts can supply a [TextMeasurer].
+ */
 public object FixedWidthTextMeasurer : TextMeasurer {
-    override fun measure(text: String, style: TextStyle): SceneSize = SceneSize(
-        width = text.length * style.fontSize * 0.6,
-        height = style.fontSize * 1.2,
-    )
+    override fun measure(text: String, style: TextStyle): SceneSize {
+        val wide = text.count { UnicodeWideBmpData.contains(it.code) }
+        return SceneSize(
+            width = (text.length - wide) * style.fontSize * 0.6 + wide * style.fontSize,
+            height = style.fontSize * 1.2,
+        )
+    }
 }
 
 private const val PACKET_BITS_PER_ROW: Int = 32
