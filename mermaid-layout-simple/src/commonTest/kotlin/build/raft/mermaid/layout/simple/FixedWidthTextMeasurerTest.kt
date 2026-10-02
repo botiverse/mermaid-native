@@ -16,10 +16,48 @@ class FixedWidthTextMeasurerTest {
     }
 
     @Test fun narrowAmbiguousSupplementaryAndMalformedTextKeepHistoricalMetrics() {
-        for (text in listOf("", "abc XYZ 123", "éΩ·", "ｶﾅ", "e\u0301", "😀", "𠀀", "👩‍💻", "\uD800", "\uDC00")) {
+        for (text in listOf("", "abc XYZ 123", "éΩ·", "ｶﾅ", "e\u0301", "😀", "𠀀", "\uD800", "\uDC00")) {
             val size = 14.25
             assertEquals(SceneSize(text.length * size * 0.6, size * 1.2), FixedWidthTextMeasurer.measure(text, TextStyle(fontSize = size)), text)
         }
+    }
+
+    @Test fun recognizedEmojiSequencesReserveOneSupplementaryGlyph() {
+        val sequences = listOf("👨‍👩‍👧‍👦", "👩‍💻", "👍🏽", "🇨🇳", "1️⃣", "1⃣", "🏳️‍🌈", "❤️‍🔥")
+        for (size in listOf(10.0, 14.25, 24.0)) {
+            val style = TextStyle(fontSize = size)
+            for (text in sequences) {
+                assertEquals(size * 1.2, FixedWidthTextMeasurer.measure(text, style).width, 0.00001, text)
+                assertEquals(size * 1.2, FixedWidthTextMeasurer.measure(text, style).height)
+            }
+            assertEquals(size * (1.2 + 0.6 + 1.2), FixedWidthTextMeasurer.measure("👨‍👩‍👧‍👦 👍🏽", style).width, 0.00001)
+            assertEquals(size * (1.0 + 1.2 + 0.6), FixedWidthTextMeasurer.measure("中👨‍👩‍👧‍👦A", style).width, 0.00001)
+        }
+    }
+
+    @Test fun arbitraryJoinedPictographsAndTextPresentationStayConservative() {
+        for (text in listOf("😀‍😀", "A‍B", "❤️‍A", "☀︎", "🇨", "\u200D", "\uFE0F")) {
+            val size = 14.25
+            val wide = text.count { UnicodeWideBmpData.contains(it.code) }
+            val oldWidth = (text.length - wide) * size * 0.6 + wide * size
+            assertEquals(oldWidth, FixedWidthTextMeasurer.measure(text, TextStyle(fontSize=size)).width, text)
+        }
+    }
+
+    @Test fun familyEmojiNodeAndMarkdownRunsUseCorrectedWidths() {
+        val emoji = "👨‍👩‍👧‍👦"
+        for (direction in listOf("LR", "RL", "TD", "BT")) {
+            val result = scene("graph $direction\nA[\"${emoji.repeat(4)}\"]")
+            val rect = result.commands.filterIsInstance<DrawRect>().single().rect
+            val text = result.commands.filterIsInstance<DrawText>().single()
+            assertEquals(4 * 1.2 * text.style.fontSize + 32.0, rect.width, 0.00001)
+            assertEquals(emoji.repeat(4),text.text)
+        }
+        val result = scene("graph TD\nA[\"`**Family** $emoji *ready*`\"]")
+        val words = result.commands.filterIsInstance<DrawText>()
+        assertEquals(listOf("Family",emoji,"ready"), words.map { it.text })
+        val space = FixedWidthTextMeasurer.measure(" ",words[1].style).width
+        assertEquals(words[1].origin.x + words[1].style.fontSize * 1.2 + space, words[2].origin.x,0.00001)
     }
 
     private fun scene(source: String) = SimpleMermaidLayout.layout(
