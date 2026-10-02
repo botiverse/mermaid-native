@@ -169,7 +169,8 @@ class MockCanvasContext : ContextApi {
     }
 
     override fun createLinearGradient(x0: Float, y0: Float, x1: Float, y1: Float): CanvasLinearGradient {
-        throw UnsupportedOperationException()
+        log.add("createLinearGradient($x0,$y0,$x1,$y1)")
+        return CanvasLinearGradient(x0,y0,x1,y1)
     }
 
     override fun createRadialGradient(

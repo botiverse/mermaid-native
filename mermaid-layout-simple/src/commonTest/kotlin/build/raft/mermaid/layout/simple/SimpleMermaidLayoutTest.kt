@@ -282,8 +282,8 @@ class SimpleMermaidLayoutTest {
 +1: "Flag"
 """)).diagram
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
-        val indices = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 9.0 }
-        assertEquals(8.0, indices.single { it.text == "8" }.origin.x - indices.single { it.text == "7" }.origin.x)
+        val indices = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 10.0 }
+        assertEquals(5.0, indices.single { it.text == "8" }.origin.x - indices.single { it.text == "7" }.origin.x)
         assertEquals(1, indices.count { it.text == "16" })
         assertEquals(TextAnchor.MIDDLE, indices.single { it.text == "16" }.anchor)
     }
@@ -753,11 +753,11 @@ class SimpleMermaidLayoutTest {
         )
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
-        val indexes = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 9.0 }
+        val indexes = scene.commands.filterIsInstance<DrawText>().filter { it.style.fontSize == 10.0 }
         assertEquals(listOf("0", "15", "16", "31"), indexes.map { it.text })
         assertEquals(TextAnchor.START, indexes[0].anchor)
         assertEquals(TextAnchor.END, indexes[1].anchor)
-        assertEquals(DiagramPalette.BLUE_SURFACE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals("#efefef", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
     }
 
     @Test
@@ -768,7 +768,7 @@ class SimpleMermaidLayoutTest {
             FixedWidthTextMeasurer,
             LayoutConfig(),
         )
-        val labelStyle = build.raft.mermaid.layout.TextStyle(fontSize = 11.0)
+        val labelStyle = build.raft.mermaid.layout.TextStyle(fontSize = 12.0)
         val requiredWidth = FixedWidthTextMeasurer.measure(label, labelStyle).width + 20.0
         assertEquals(2, scene.commands.filterIsInstance<DrawRect>().size)
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.width >= requiredWidth })
@@ -783,7 +783,7 @@ class SimpleMermaidLayoutTest {
             FixedWidthTextMeasurer,
             config,
         )
-        val titleStyle = build.raft.mermaid.layout.TextStyle(fontSize = 18.0, fontWeight = 600)
+        val titleStyle = build.raft.mermaid.layout.TextStyle(fontSize = 14.0)
         val requiredWidth = FixedWidthTextMeasurer.measure(title, titleStyle).width + config.padding * 2
         assertTrue(scene.width >= requiredWidth)
     }
@@ -1567,11 +1567,13 @@ class SimpleMermaidLayoutTest {
         val first = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(first, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         assertEquals(3, first.commands.filterIsInstance<DrawRect>().size)
-        val links = first.commands.filterIsInstance<DrawLine>()
+        val links = first.commands.filterIsInstance<DrawPolygon>()
         assertEquals(2, links.size)
-        assertTrue(links[0].strokeWidth > links[1].strokeWidth)
-        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 12.0, fontWeight = 500))
-        assertTrue(first.commands.filterIsInstance<DrawRect>().last().rect.width >= measured.width + 32.0)
+        assertTrue(links[0].points.last().y-links[0].points.first().y > links[1].points.last().y-links[1].points.first().y)
+        val measured = FixedWidthTextMeasurer.measure(longLabel, build.raft.mermaid.layout.TextStyle(fontSize = 14.0))
+        assertEquals(10.0,first.commands.filterIsInstance<DrawRect>().last().rect.width)
+        val caption=first.commands.filterIsInstance<DrawText>().last()
+        assertTrue(caption.origin.x-measured.width>=0 && caption.origin.x<=first.width)
     }
 
     @Test
@@ -1593,7 +1595,7 @@ class SimpleMermaidLayoutTest {
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val labels = scene.commands.filterIsInstance<DrawText>().map { it.text }
         assertEquals(listOf("Grid 19.75", "Industry 12.5", "Heating, homes 7.25", "Losses & exports 2.5"), labels)
-        assertEquals(DiagramPalette.BLUE_SURFACE, scene.commands.filterIsInstance<DrawRect>().first().fill.value)
+        assertEquals("#4e79a7", scene.commands.filterIsInstance<DrawRect>().first().fill.value)
     }
 
     @Test fun treemapProducesMeasuredDeterministicWeightedRectangles() {

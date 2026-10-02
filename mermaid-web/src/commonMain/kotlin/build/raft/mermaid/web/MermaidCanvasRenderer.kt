@@ -92,6 +92,12 @@ public object MermaidCanvasRenderer {
         is DrawPolygon -> buildString {
             append("{\"op\":\"polygon\",\"pts\":").append(points(command.points))
             append(",\"fill\":").append(jsonString(command.fill.value))
+            command.gradient?.let { g ->
+                append(",\"gradient\":{\"x1\":").append(number(g.from.x))
+                append(",\"y1\":").append(number(g.from.y)).append(",\"x2\":").append(number(g.to.x)).append(",\"y2\":").append(number(g.to.y))
+                append(",\"start\":").append(jsonString(g.startColor.value)).append(",\"end\":").append(jsonString(g.endColor.value))
+                append(",\"opacity\":").append(number(g.opacity)).append('}')
+            }
             append('}')
         }
         is DrawText -> buildString {

@@ -62,9 +62,19 @@ public data class DrawPolyline(
     val pattern: StrokePattern = StrokePattern.SOLID,
 ) : DrawCommand
 
+/** Two-stop gradient in scene coordinates, shared by SVG and Canvas renderers. */
+public data class SceneLinearGradient(
+    val from: ScenePoint,
+    val to: ScenePoint,
+    val startColor: SceneColor,
+    val endColor: SceneColor,
+    val opacity: Double = 1.0,
+)
+
 public data class DrawPolygon(
     val points: List<ScenePoint>,
     val fill: SceneColor = SceneColor(DiagramPalette.SECONDARY),
+    val gradient: SceneLinearGradient? = null,
 ) : DrawCommand
 
 public data class DrawText(

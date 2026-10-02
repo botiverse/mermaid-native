@@ -14,7 +14,7 @@ export type MermaidCanvasOp =
   | { op: 'ellipse'; cx: number; cy: number; rx: number; ry: number; fill: string; fo: number; stroke: string; sw: number }
   | { op: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; sw: number; dash: boolean }
   | { op: 'polyline'; pts: number[]; stroke: string; sw: number; dash: boolean }
-  | { op: 'polygon'; pts: number[]; fill: string }
+  | { op: 'polygon'; pts: number[]; fill: string; gradient?: { x1: number; y1: number; x2: number; y2: number; start: string; end: string; opacity: number } }
   | { op: 'text'; text: string; x: number; y: number; anchor: CanvasTextAlign; size: number; family: string; weight: number; italic?: boolean; fill: string }
 
 export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanvasScript, resolutionScale = 1): void {
@@ -69,8 +69,16 @@ export function drawMermaidCanvas(canvas: HTMLCanvasElement, script: MermaidCanv
       case 'polygon':
         tracePath(ctx, op.pts, true)
         if (op.fill && op.fill !== 'none') {
-          ctx.fillStyle = op.fill
+          if (op.gradient) {
+            const g = op.gradient
+            const gradient = ctx.createLinearGradient(g.x1, g.y1, g.x2, g.y2)
+            gradient.addColorStop(0, g.start)
+            gradient.addColorStop(1, g.end)
+            ctx.fillStyle = gradient
+            ctx.globalAlpha = g.opacity
+          } else ctx.fillStyle = op.fill
           ctx.fill()
+          ctx.globalAlpha = 1
         }
         break
       case 'text':

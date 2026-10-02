@@ -207,7 +207,14 @@ public object MermaidKuiklyRenderer {
         }
         context.closePath()
 
-        context.fillStyle(fillColor)
+        val g=cmd.gradient
+        if(g==null) context.fillStyle(fillColor)
+        else {
+            val gradient=context.createLinearGradient(g.from.x.toFloat(),g.from.y.toFloat(),g.to.x.toFloat(),g.to.y.toFloat())
+            gradient.addColorStop(0f,parseSceneColor(g.startColor,g.opacity.toFloat()) ?: fillColor)
+            gradient.addColorStop(1f,parseSceneColor(g.endColor,g.opacity.toFloat()) ?: fillColor)
+            context.fillStyle(gradient)
+        }
         context.fill()
     }
 

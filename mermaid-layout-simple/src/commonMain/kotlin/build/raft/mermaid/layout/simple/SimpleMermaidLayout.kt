@@ -522,7 +522,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is DrawEllipse -> copy(center = ScenePoint(center.x + dx, center.y + dy))
         is DrawLine -> copy(from = ScenePoint(from.x + dx, from.y + dy), to = ScenePoint(to.x + dx, to.y + dy))
         is DrawPolyline -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) })
-        is DrawPolygon -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) })
+        is DrawPolygon -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) }, gradient=gradient?.let { it.copy(from=ScenePoint(it.from.x+dx,it.from.y+dy),to=ScenePoint(it.to.x+dx,it.to.y+dy)) })
         is DrawText -> copy(origin = ScenePoint(origin.x + dx, origin.y + dy))
     }
 
@@ -1307,6 +1307,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutSankey(diagram: SankeyDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+        sankeyFlowLayout(diagram,textMeasurer,config)?.let { return it }
         val textStyle = TextStyle(fontSize = 12.0, fontWeight = 500)
         val layerGap = 120.0
         val nodeGap = 24.0
@@ -1773,54 +1774,40 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutPacket(diagram: PacketDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        val labelStyle = TextStyle(fontSize = 11.0)
-        val bitIndexStyle = TextStyle(fontSize = 9.0, fontWeight = 600)
-        val titleStyle = TextStyle(fontSize = 18.0, fontWeight = 600)
-        val bitWidth = max(24.0, diagram.fields.maxOfOrNull { field ->
-            val firstRow = field.startBit / PACKET_BITS_PER_ROW
-            val lastRow = field.endBit / PACKET_BITS_PER_ROW
-            val narrowestSegmentBits = (firstRow..lastRow).minOf { row ->
-                val rowStart = row * PACKET_BITS_PER_ROW
-                val segmentStart = maxOf(field.startBit, rowStart)
-                val segmentEnd = minOf(field.endBit, rowStart + PACKET_BITS_PER_ROW - 1)
-                segmentEnd - segmentStart + 1
+        val family="trebuchet ms, verdana, arial, sans-serif"
+        val labelStyle=TextStyle(fontSize=12.0,fontFamily=family,color=SceneColor("#000000"))
+        val bitIndexStyle=labelStyle.copy(fontSize=10.0)
+        val titleStyle=labelStyle.copy(fontSize=14.0)
+        val horizontalGap=5.0
+        // Preserve measured long-label containment while matching the upstream 32px default bit grid.
+        val bitWidth=max(32.0,diagram.fields.maxOfOrNull { field ->
+            val firstRow=field.startBit/PACKET_BITS_PER_ROW;val lastRow=field.endBit/PACKET_BITS_PER_ROW
+            val narrowest=(firstRow..lastRow).minOf { row ->
+                minOf(field.endBit,row*PACKET_BITS_PER_ROW+PACKET_BITS_PER_ROW-1)-maxOf(field.startBit,row*PACKET_BITS_PER_ROW)+1
             }
-            (textMeasurer.measure(field.label, labelStyle).width + 20.0) / narrowestSegmentBits
+            (textMeasurer.measure(field.label,labelStyle).width+20.0+horizontalGap)/narrowest
         } ?: 0.0)
-        val titleHeight = if (diagram.title == null) 0.0 else 34.0
-        val indexBand = 14.0
-        val blockHeight = 38.0
-        val rowHeight = indexBand + blockHeight + 8.0
-        val rowCount = diagram.fields.maxOfOrNull { it.endBit }?.let { it / PACKET_BITS_PER_ROW + 1 } ?: 0
-        val gridWidth = config.padding * 2 + PACKET_BITS_PER_ROW * bitWidth
-        val titleWidth = diagram.title?.let { textMeasurer.measure(it, titleStyle).width + config.padding * 2 } ?: 0.0
-        val width = max(gridWidth, titleWidth)
-        val height = config.padding * 2 + titleHeight + rowCount * rowHeight
-        val commands = mutableListOf<DrawCommand>()
-        diagram.title?.let {
-            commands += DrawText(it, ScenePoint(config.padding, config.padding + 18.0), style = titleStyle)
-        }
+        val blockHeight=32.0;val rowHeight=47.0;val topBand=15.0
+        val rows=diagram.fields.maxOfOrNull { it.endBit }?.let { it/PACKET_BITS_PER_ROW+1 } ?: 0
+        val title=diagram.title?.takeIf { it.isNotEmpty() }
+        val gridWidth=PACKET_BITS_PER_ROW*bitWidth+2.0
+        val width=max(gridWidth,title?.let { textMeasurer.measure(it,titleStyle).width+config.padding*2 } ?: 0.0)
+        val height=rows*rowHeight+if(title!=null)rowHeight else topBand
+        val commands=mutableListOf<DrawCommand>()
         diagram.fields.forEach { field ->
-            val firstRow = field.startBit / PACKET_BITS_PER_ROW
-            val lastRow = field.endBit / PACKET_BITS_PER_ROW
-            (firstRow..lastRow).forEach { row ->
-                val rowStart = row * PACKET_BITS_PER_ROW
-                val segmentStart = maxOf(field.startBit, rowStart)
-                val segmentEnd = minOf(field.endBit, rowStart + PACKET_BITS_PER_ROW - 1)
-                val x = config.padding + (segmentStart - rowStart) * bitWidth
-                val y = config.padding + titleHeight + row * rowHeight
-                val segmentWidth = (segmentEnd - segmentStart + 1) * bitWidth
-                if (segmentStart == segmentEnd) {
-                    commands += DrawText("$segmentStart", ScenePoint(x + segmentWidth / 2.0, y + 10.0), TextAnchor.MIDDLE, bitIndexStyle)
-                } else {
-                    commands += DrawText("$segmentStart", ScenePoint(x + 4.0, y + 10.0), TextAnchor.START, bitIndexStyle)
-                    commands += DrawText("$segmentEnd", ScenePoint(x + segmentWidth - 4.0, y + 10.0), TextAnchor.END, bitIndexStyle)
-                }
-                commands += DrawRect(SceneRect(x, y + indexBand, segmentWidth, blockHeight), cornerRadius = 2.0, fill = SceneColor(DiagramPalette.BLUE_SURFACE))
-                commands += DrawText(field.label, ScenePoint(x + segmentWidth / 2.0, y + indexBand + 23.0), TextAnchor.MIDDLE, labelStyle)
+            (field.startBit/PACKET_BITS_PER_ROW..field.endBit/PACKET_BITS_PER_ROW).forEach { row ->
+                val rowStart=row*PACKET_BITS_PER_ROW
+                val start=maxOf(field.startBit,rowStart);val end=minOf(field.endBit,rowStart+PACKET_BITS_PER_ROW-1)
+                val x=1.0+(start-rowStart)*bitWidth;val y=row*rowHeight+topBand
+                val w=(end-start+1)*bitWidth-horizontalGap
+                commands+=DrawRect(SceneRect(x,y,w,blockHeight),fill=SceneColor("#efefef"),stroke=SceneColor("#000000"),strokeWidth=1.0)
+                commands+=DrawText(field.label,ScenePoint(x+w/2,y+blockHeight/2+labelStyle.fontSize*.35),TextAnchor.MIDDLE,labelStyle)
+                commands+=DrawText("$start",ScenePoint(if(start==end)x+w/2 else x,y-2),if(start==end)TextAnchor.MIDDLE else TextAnchor.START,bitIndexStyle)
+                if(start!=end)commands+=DrawText("$end",ScenePoint(x+w,y-2),TextAnchor.END,bitIndexStyle)
             }
         }
-        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
+        title?.let { commands+=DrawText(it,ScenePoint(width/2,height-rowHeight/2+titleStyle.fontSize*.35),TextAnchor.MIDDLE,titleStyle) }
+        return LayoutScene(width,height,commands,diagram.accessibilityTitle,diagram.accessibilityDescription)
     }
 
     private fun layoutQuadrantChart(diagram: QuadrantChartDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
