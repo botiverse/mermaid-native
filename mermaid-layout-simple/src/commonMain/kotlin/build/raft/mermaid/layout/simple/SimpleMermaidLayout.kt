@@ -3110,7 +3110,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
-        val returnRoutes=flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
+        val feedbackRoutes=flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
+        val returnRoutes=feedbackRoutes+flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
