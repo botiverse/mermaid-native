@@ -34,3 +34,7 @@ OrthogonalGeometry adapts Mermaid direction geometry predicates at the pinned
 revision in compatibility/upstream-orthogonal-geometry/sources.json, copyright
 Knut Sveidqvist and contributors, under the MIT License reproduced in that
 directory. Production flowchart obstacle routing consumes these predicates.
+
+DAG Sankey positioning in SankeyFlowLayout.kt is adapted from d3-sankey 0.12.3,
+Copyright 2015 Mike Bostock, licensed under BSD-3-Clause.
+The license is reproduced in compatibility/d3-sankey/LICENSE.

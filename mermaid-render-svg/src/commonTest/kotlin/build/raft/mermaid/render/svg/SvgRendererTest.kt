@@ -32,6 +32,22 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
 class SvgRendererTest {
+    @Test fun sankeyGradientsHaveScopedIdsAndOpacity() {
+        val diagram=(build.raft.mermaid.core.MermaidParser.parse("sankey\nA,B,10") as build.raft.mermaid.core.MermaidParseResult.Success).diagram
+        val scene=SimpleMermaidLayout.layout(diagram,FixedWidthTextMeasurer,LayoutConfig())
+        val a=SvgRenderer.render(scene,"chart-a");val b=SvgRenderer.render(scene,"chart-b")
+        assertTrue(a.contains("id=\"chart-a-gradient-0\""))
+        assertTrue(a.contains("fill=\"url(#chart-a-gradient-0)\""))
+        assertTrue(a.contains("fill-opacity=\"0.5\""))
+        assertTrue(b.contains("id=\"chart-b-gradient-0\""))
+        assertTrue(!b.contains("chart-a-gradient"))
+        assertEquals(SvgRenderer.render(scene), SvgRenderer.render(scene))
+        val otherDiagram=(MermaidParser.parse("sankey\nA,B,10\nB,C,5") as MermaidParseResult.Success).diagram
+        val other=SvgRenderer.render(SimpleMermaidLayout.layout(otherDiagram,FixedWidthTextMeasurer,LayoutConfig()))
+        val id=Regex("linearGradient id=\"([^\"]+)\"").find(SvgRenderer.render(scene))!!.groupValues[1]
+        assertFalse(other.contains("id=\"$id\""))
+    }
+
     @Test
     fun accessibilityReferencesAreScopedEscapedAndOrderedBeforeDrawingCommands() {
         val scene = LayoutScene(100.0, 60.0, listOf(DrawText("Visible", ScenePoint(10.0, 20.0))),

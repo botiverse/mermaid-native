@@ -15,7 +15,8 @@ import build.raft.mermaid.layout.TextAnchor
 public object SvgRenderer {
     public fun render(scene: LayoutScene): String = render(
         scene,
-        baseId = "mermaid-" + (scene.accessibilityTitle.orEmpty() + "\u0000" + scene.accessibilityDescription.orEmpty()).hashCode().toUInt().toString(16),
+        baseId = "mermaid-" + (scene.accessibilityTitle.orEmpty() + "\u0000" + scene.accessibilityDescription.orEmpty()).hashCode().toUInt().toString(16) +
+            if (scene.commands.any { it is DrawPolygon && it.gradient != null }) "-" + scene.commands.filterIsInstance<DrawPolygon>().map { it.gradient }.toString().hashCode().toUInt().toString(16) else "",
     )
 
     /**
@@ -44,9 +45,9 @@ public object SvgRenderer {
             append(">\n")
             title?.let { append("  <title id=\"chart-title-").append(baseId.escapeXml()).append("\">").append(it.escapeXml()).append("</title>\n") }
             description?.let { append("  <desc id=\"chart-desc-").append(baseId.escapeXml()).append("\">").append(it.escapeXml()).append("</desc>\n") }
-            scene.commands.forEach { command ->
+            scene.commands.forEachIndexed { index, command ->
                 append("  ")
-                append(command.toSvg())
+                append(command.toSvg("$baseId-gradient-$index"))
                 append('\n')
             }
             append("</svg>\n")
@@ -54,7 +55,7 @@ public object SvgRenderer {
     }
 }
 
-private fun DrawCommand.toSvg(): String = when (this) {
+private fun DrawCommand.toSvg(gradientId: String): String = when (this) {
     is DrawRect -> buildString {
         append("<rect x=\"${rect.x.svgNumber()}\" y=\"${rect.y.svgNumber()}\"")
         append(" width=\"${rect.width.svgNumber()}\" height=\"${rect.height.svgNumber()}\"")
@@ -83,7 +84,12 @@ private fun DrawCommand.toSvg(): String = when (this) {
     }
     is DrawPolygon -> buildString {
         val serializedPoints = points.joinToString(" ") { "${it.x.svgNumber()},${it.y.svgNumber()}" }
-        append("<polygon points=\"$serializedPoints\" fill=\"${fill.value.escapeXml()}\"/>")
+        val g=gradient
+        if(g!=null) {
+            append("<defs><linearGradient id=\"${gradientId.escapeXml()}\" gradientUnits=\"userSpaceOnUse\" x1=\"${g.from.x.svgNumber()}\" y1=\"${g.from.y.svgNumber()}\" x2=\"${g.to.x.svgNumber()}\" y2=\"${g.to.y.svgNumber()}\">")
+            append("<stop offset=\"0\" stop-color=\"${g.startColor.value.escapeXml()}\"/><stop offset=\"1\" stop-color=\"${g.endColor.value.escapeXml()}\"/></linearGradient></defs>")
+            append("<polygon points=\"$serializedPoints\" fill=\"url(#${gradientId.escapeXml()})\" fill-opacity=\"${g.opacity.svgNumber()}\"/>")
+        } else append("<polygon points=\"$serializedPoints\" fill=\"${fill.value.escapeXml()}\"/>")
     }
     is DrawText -> buildString {
         append("<text x=\"${origin.x.svgNumber()}\" y=\"${origin.y.svgNumber()}\"")

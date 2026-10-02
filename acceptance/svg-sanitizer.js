@@ -8,7 +8,7 @@
  */
 
 export const ALLOWED_TAGS = new Set([
-  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan', 'title', 'desc'
+  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan', 'title', 'desc', 'defs', 'lineargradient', 'stop'
 ])
 
 export const ALLOWED_ATTRS = new Set([
@@ -18,7 +18,8 @@ export const ALLOWED_ATTRS = new Set([
   'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray',
   'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'opacity',
   'transform', 'text-anchor', 'font-family', 'font-size', 'font-weight', 'font-style',
-  'letter-spacing', 'dominant-baseline', 'alignment-baseline'
+  'letter-spacing', 'dominant-baseline', 'alignment-baseline',
+  'gradientunits', 'offset', 'stop-color'
 ])
 
 /**
@@ -37,7 +38,7 @@ export function validateAttributeValue(attrName, attrVal) {
   // Reject URL/resource schemes and function calls
   const stripped = attrVal.toLowerCase().replace(/\s+/g, '')
   if (
-    stripped.includes('url(') ||
+    (stripped.includes('url(') && !(attrName === 'fill' && /^url\(#[A-Za-z0-9_.:-]+-gradient-[0-9]+\)$/.test(attrVal))) ||
     stripped.includes('javascript:') ||
     stripped.includes('vbscript:') ||
     stripped.includes('data:') ||
@@ -47,7 +48,10 @@ export function validateAttributeValue(attrName, attrVal) {
   }
 
   // Strict grammar for color attributes: only #rgb, #rrggbb, #rgba, #rrggbbaa, or 'none'
-  if (attrName === 'fill' || attrName === 'stroke') {
+  if (attrName === 'fill' && /^url\(#[A-Za-z0-9_.:-]+-gradient-[0-9]+\)$/.test(attrVal)) return true
+  if (attrName === 'gradientunits') return attrVal === 'userSpaceOnUse'
+  if (attrName === 'offset') return /^(0(\.[0-9]+)?|1(\.0+)?)$/.test(attrVal)
+  if (attrName === 'fill' || attrName === 'stroke' || attrName === 'stop-color') {
     const trimmed = attrVal.trim()
     if (trimmed === 'none') return true
     if (/^#[0-9a-fA-F]{3,8}$/.test(trimmed)) return true
@@ -98,7 +102,7 @@ export function validateAttributeValue(attrName, attrVal) {
 
   // Only metadata IDs and single local metadata references are supported.
   if (attrName === 'id' || attrName === 'aria-labelledby' || attrName === 'aria-describedby') {
-    return /^chart-(title|desc)-[A-Za-z0-9_.:-]+$/.test(attrVal)
+    return /^chart-(title|desc)-[A-Za-z0-9_.:-]+$/.test(attrVal) || (attrName === 'id' && /^[A-Za-z0-9_.:-]+-gradient-[0-9]+$/.test(attrVal))
   }
 
   // Keep the previous image role and the explicit graphics/document fallback.
@@ -195,11 +199,24 @@ export function validateSvgDomTree(docOrElement) {
 
   // 3. Validate tag and attribute allowlists on all elements
   const metadataIds = new Map()
+  const gradientIds = new Set()
+  const gradientRefs = []
   for (const el of elements) {
     const tagName = (el.localName || el.nodeName || '').toLowerCase()
     if (!ALLOWED_TAGS.has(tagName)) {
       return { ok: false, error: `Forbidden element <${tagName}> in SVG output` }
     }
+
+    // Only direct, inert gradient definitions and polygon-local references are admitted.
+    const parentTag = (el.parentNode?.localName || el.parentNode?.nodeName || '').toLowerCase()
+    if ((tagName === 'defs' && el.parentNode !== rootElement) ||
+        (tagName === 'lineargradient' && parentTag !== 'defs') ||
+        (tagName === 'stop' && parentTag !== 'lineargradient') ||
+        (parentTag === 'defs' && tagName !== 'lineargradient') ||
+        (parentTag === 'lineargradient' && tagName !== 'stop')) {
+      return { ok: false, error: 'Invalid gradient definition structure' }
+    }
+    const gradientAttrs = { defs: [], lineargradient: ['id', 'gradientunits', 'x1', 'y1', 'x2', 'y2'], stop: ['offset', 'stop-color'] }
 
     // SVG metadata is text-only. Do not admit HTML/SVG descendants through
     // title/desc integration points when the serialized result is inserted.
@@ -231,9 +248,24 @@ export function validateSvgDomTree(docOrElement) {
       if (!ALLOWED_ATTRS.has(attrName)) {
         return { ok: false, error: `Disallowed attribute "${attrName}" in SVG output` }
       }
-      if (attrName === 'id') {
+      if (gradientAttrs[tagName] && !gradientAttrs[tagName].includes(attrName)) {
+        return { ok: false, error: 'Invalid gradient definition attribute' }
+      }
+      if (['gradientunits', 'offset', 'stop-color'].includes(attrName) && !gradientAttrs[tagName]?.includes(attrName)) {
+        return { ok: false, error: 'Gradient attribute outside gradient definition' }
+      }
+      if (attrName === 'fill' && attr.value.startsWith('url(')) {
+        if (tagName !== 'polygon') return { ok: false, error: 'Gradient fills are limited to polygons' }
+        gradientRefs.push(attr.value.slice(5, -1))
+      }
+      if (attrName === 'id' && tagName === 'lineargradient') {
+        if (!/^[A-Za-z0-9_.:-]+-gradient-[0-9]+$/.test(attr.value) || (gradientIds.has(attr.value) || metadataIds.has(attr.value))) {
+          return { ok: false, error: 'Invalid or duplicate gradient ID' }
+        }
+        gradientIds.add(attr.value)
+      } else if (attrName === 'id') {
         if ((tagName !== 'title' && tagName !== 'desc') || el.parentNode !== rootElement ||
-            !attr.value.startsWith(`chart-${tagName}-`) || metadataIds.has(attr.value)) {
+            !attr.value.startsWith(`chart-${tagName}-`) || metadataIds.has(attr.value) || gradientIds.has(attr.value)) {
           return { ok: false, error: 'Only unique IDs on direct SVG title/desc metadata are permitted' }
         }
         metadataIds.set(attr.value, tagName)
@@ -246,6 +278,8 @@ export function validateSvgDomTree(docOrElement) {
       }
     }
   }
+
+  if (gradientRefs.some(id => !gradientIds.has(id))) return { ok: false, error: 'Gradient reference must resolve inside this SVG' }
 
   for (const [attribute, targetTag] of [['aria-labelledby', 'title'], ['aria-describedby', 'desc']]) {
     if (rootElement.hasAttribute(attribute) && metadataIds.get(rootElement.getAttribute(attribute)) !== targetTag) {

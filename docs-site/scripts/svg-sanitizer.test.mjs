@@ -42,3 +42,20 @@ test('consumer preserves scoped Native accessibility references', () => {
     input.replace('<title id="chart-title-first">', '<g><title id="chart-title-first">').replace('</title>', '</title></g>'),
   ]) assert.equal(sanitizeSvg(bad, new DOMParser(), new XMLSerializer()).ok, false, bad)
 })
+
+
+test('consumer accepts only inert locally resolved Sankey gradients', () => {
+  const body = '<defs><linearGradient id="native-gradient-0" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="590" y2="0"><stop offset="0" stop-color="#4e79a7"/><stop offset="1" stop-color="#f28e2c"/></linearGradient></defs><polygon points="10,0 590,0 590,10" fill="url(#native-gradient-0)" fill-opacity="0.5"/>'
+  const good = sanitize(body)
+  assert.equal(good.ok, true, good.error)
+  for (const bad of [
+    body.replace('url(#native-gradient-0)', 'url(https://example.com/a.svg#x)'),
+    body.replace('url(#native-gradient-0)', 'url(#outside-gradient-0)'),
+    body.replace('<stop offset="0"', '<stop onclick="alert(1)" offset="0"'),
+    body.replace('gradientUnits="userSpaceOnUse"', 'href="#other"'),
+    body.replace('</defs>', '<linearGradient id="native-gradient-0"/></defs>'),
+    body.replace('<defs>', '<g><defs>').replace('</defs>', '</defs></g>'),
+    body.replace('<stop offset="0"', '<animate offset="0"'),
+    body.replace('stop-color="#4e79a7"', 'stop-color="url(#native-gradient-0)"'),
+  ]) assert.equal(sanitize(bad).ok, false, bad)
+})

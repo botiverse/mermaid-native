@@ -6,6 +6,13 @@ import kotlin.test.assertContains
 import kotlin.test.assertTrue
 
 class MermaidCanvasRendererTest {
+    @Test fun sankeyCanvasWirePreservesGradientCoordinatesAndOpacity() {
+        val result=MermaidWebAdapter.renderCanvas(MermaidWebRequest("sankey\nA,B,10"))
+        assertTrue(result is MermaidWebCanvasResult.Success)
+        assertContains(result.script,"\"gradient\":{\"x1\":10,\"y1\":0,\"x2\":590,\"y2\":0")
+        assertContains(result.script,"\"start\":\"#4e79a7\",\"end\":\"#f28e2c\",\"opacity\":0.5")
+    }
+
     @Test fun classAbstractMemberKeepsItalicInCanvasWireFormat() {
         val result = MermaidWebAdapter.renderCanvas(MermaidWebRequest("classDiagram\nclass Clock {\n+read()*\n}"))
         assertTrue(result is MermaidWebCanvasResult.Success)

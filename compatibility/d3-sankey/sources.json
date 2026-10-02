@@ -1,0 +1,7 @@
+{
+  "version": "0.12.3",
+  "source": "https://github.com/d3/d3-sankey/blob/v0.12.3/src/sankey.js",
+  "sha256": "14eeab99922cac50331b84f2efe34becba8e1305183ae79f48a08943a03b7f83",
+  "license": "BSD-3-Clause",
+  "scope": "DAG justify alignment, proportional flow allocation and six relaxation iterations; original Mermaid assertions are not added by this port."
+}

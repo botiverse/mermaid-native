@@ -24,6 +24,16 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MermaidKuiklyRendererTest {
+    @Test fun sankeyRibbonUsesNativeCanvasGradient() {
+        val diagram=assertNotNull((build.raft.mermaid.core.MermaidParser.parse("sankey\nA,B,10") as? build.raft.mermaid.core.MermaidParseResult.Success)?.diagram)
+        val scene=SimpleMermaidLayout.layout(diagram,FixedWidthTextMeasurer,LayoutConfig())
+        val context=MockCanvasContext()
+        MermaidKuiklyRenderer.render(scene,context)
+        assertTrue(context.log.contains("createLinearGradient(10.0,0.0,590.0,0.0)"))
+        assertEquals(1,context.log.count { it=="fillStyle(gradient)" })
+        assertTrue(context.log.contains("fill"))
+    }
+
 
     @Test fun italicSceneTextUsesKuiklyCanvasFontStyle() {
         val scene = LayoutScene(100.0, 50.0, listOf(DrawText("Abstract", ScenePoint(10.0, 20.0), style = TextStyle(italic = true))))

@@ -58,8 +58,16 @@ export function drawMermaidCanvas(canvas, script, resolutionScale = 1) {
       case 'polygon':
         tracePath(ctx, op.pts, true);
         if (op.fill && op.fill !== 'none') {
-          ctx.fillStyle = op.fill;
-          ctx.fill();
+          if (op.gradient) {
+            const g = op.gradient
+            const gradient = ctx.createLinearGradient(g.x1, g.y1, g.x2, g.y2)
+            gradient.addColorStop(0, g.start)
+            gradient.addColorStop(1, g.end)
+            ctx.fillStyle = gradient
+            ctx.globalAlpha = g.opacity
+          } else ctx.fillStyle = op.fill;
+          ctx.fill()
+          ctx.globalAlpha = 1;
         }
         break;
       case 'text':
