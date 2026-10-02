@@ -58,9 +58,18 @@ internal fun flowObstacleRoutes(diagram: FlowchartDiagram,rects: Map<String,Scen
             val maxY=maxOf(points.maxOf { it.y },label?.y ?: Double.NEGATIVE_INFINITY)
             return FlowReturnRoute(points,label,SceneRect(minX,minY,maxX-minX,maxY-minY))
         }
-        val chosen=listOfNotNull(candidate(low-24.0,true),candidate(high+24.0,false)).minByOrNull { route ->
-            route.points.zipWithNext().count { (p,q)->OrthogonalGeometry.segmentConflictsWithAnyEdge(p,q,edges,original) }
-        } ?: return@forEachIndexed
+        // A shared endpoint stub is preferable to a true crossing. Rank strict crossings first,
+        // then retain the broader conflict score (overlap and T-junctions) as a tie breaker.
+        val otherSegments=edges.filter { it !== original && !it.isLayoutOnly }.flatMap { it.points.zipWithNext() }
+        val chosen=listOfNotNull(candidate(low-24.0,true),candidate(high+24.0,false)).minWithOrNull(
+            compareBy<FlowReturnRoute> { route ->
+                route.points.zipWithNext().sumOf { (p,q) ->
+                    otherSegments.count { (a,b) -> OrthogonalGeometry.segmentsStrictlyCross(p,q,a,b) }
+                }
+            }.thenBy { route ->
+                route.points.zipWithNext().count { (p,q)->OrthogonalGeometry.segmentConflictsWithAnyEdge(p,q,edges,original) }
+            }
+        ) ?: return@forEachIndexed
         result[index]=chosen
         edges[index]=OrthogonalGeometry.Edge(chosen.points)
         low=minOf(low,if(horizontal)chosen.bounds.y else chosen.bounds.x)

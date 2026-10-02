@@ -20,9 +20,9 @@ public final class OrthogonalGeometryNativeBridge {
     for(String line;(line=reader.readLine())!=null;) {
       var in=new Input(line);int op=in.integer();var a=in.point();var b=in.point();boolean result;
       var geometry=OrthogonalGeometry.INSTANCE;
-      if(op==0 || op==1) {
+      if(op==0 || op==1 || op==4) {
         var c=in.point();var d=in.point();double epsilon=in.number();
-        result=op==0?geometry.segmentsCross(a,b,c,d,epsilon,in.number()):geometry.sameAxisSegmentsOverlap(a,b,c,d,epsilon);
+        result=op==0?geometry.segmentsCross(a,b,c,d,epsilon,in.number()):op==4?geometry.segmentsStrictlyCross(a,b,c,d,epsilon):geometry.sameAxisSegmentsOverlap(a,b,c,d,epsilon);
       } else if(op==2) {
         int count=in.integer();var rects=new ArrayList<OrthogonalGeometry.RectEntry>();
         for(int i=0;i<count;i++)rects.add(new OrthogonalGeometry.RectEntry(in.text(),new SceneRect(in.number(),in.number(),in.number(),in.number())));

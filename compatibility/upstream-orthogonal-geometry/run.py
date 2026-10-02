@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run eight unchanged upstream orthogonal geometry assertions against production Kotlin."""
+"""Run ten unchanged upstream orthogonal geometry assertions against production Kotlin."""
 import argparse, base64, hashlib, json, os, shutil, subprocess
 from pathlib import Path
 p = argparse.ArgumentParser()
@@ -23,7 +23,7 @@ subprocess.run(['javac', '-cp', cp, '-d', str(w), str(h/'OrthogonalGeometryNativ
 calls = w/'official-calls.jsonl'; calls.write_text('')
 shared = """import {vi,expect} from 'vitest';
 import * as geometry from '../packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/direction/geometry.js';
-const operations=['orthogonalSegmentsCross','sameAxisSegmentsOverlap','segmentHitsAnyRect','segmentConflictsWithAnyEdge'];
+const operations=['orthogonalSegmentsCross','orthogonalSegmentsStrictlyCross','sameAxisSegmentsOverlap','segmentHitsAnyRect','segmentConflictsWithAnyEdge'];
 function input(op,args){
  if(op==='segmentConflictsWithAnyEdge')return {op,args:[args[0],args[1],args[2],args[2].indexOf(args[3]),args[4]??{}]};
  return {op,args};
@@ -45,17 +45,17 @@ for mode,setup in [('official','capture'),('native','adapter')]:
     (w/f'{mode}.workspace.ts').write_text("import {defineWorkspace} from 'vitest/config';export default defineWorkspace(['.native-orthogonal-geometry-audit/"+mode+".config.ts']);")
 def test(mode):
     with (w/f'{mode}.log').open('w') as log:
-        return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-orthogonal-geometry-audit/{mode}.config.ts','--workspace',f'.native-orthogonal-geometry-audit/{mode}.workspace.ts','--testNamePattern','^swimlane direction geometry (orthogonalSegmentsCross|node bounds helpers checks segment hits|route shape and candidate conflict helpers (detects same-axis|checks candidate))','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=log,stderr=subprocess.STDOUT,timeout=240)
+        return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-orthogonal-geometry-audit/{mode}.config.ts','--workspace',f'.native-orthogonal-geometry-audit/{mode}.workspace.ts','--testNamePattern','^swimlane direction geometry (orthogonalSegmentsCross|orthogonalSegmentsStrictlyCross|node bounds helpers checks segment hits|route shape and candidate conflict helpers (detects same-axis|checks candidate))','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=log,stderr=subprocess.STDOUT,timeout=240)
 if test('official').returncode: raise SystemExit('Original orthogonal-geometry assertions failed')
-assert json.loads((w/'official.json').read_text())['numPassedTests']==8
+assert json.loads((w/'official.json').read_text())['numPassedTests']==10
 sources=list(dict.fromkeys(json.loads(x)['source'] for x in calls.read_text().splitlines()))
 lines=[]
 def point(p):return [p['x'],p['y']]
 def encoded(s):return base64.b64encode(s.encode()).decode()
 for source in sources:
     v=json.loads(source);op=v['op'];args=v['args']
-    if op in ['orthogonalSegmentsCross','sameAxisSegmentsOverlap']:
-        row=[0 if op=='orthogonalSegmentsCross' else 1]+[n for p in args[:4] for n in point(p)]+[args[4] if len(args)>4 else .001]
+    if op in ['orthogonalSegmentsCross','orthogonalSegmentsStrictlyCross','sameAxisSegmentsOverlap']:
+        row=[0 if op=='orthogonalSegmentsCross' else 4 if op=='orthogonalSegmentsStrictlyCross' else 1]+[n for p in args[:4] for n in point(p)]+[args[4] if len(args)>4 else .001]
         if op=='orthogonalSegmentsCross':row += [args[5] if len(args)>5 else .000001]
     elif op=='segmentHitsAnyRect':
         row=[2]+point(args[0])+point(args[1])+[len(args[2])]
@@ -78,7 +78,7 @@ for(const op of operations)vi.spyOn(geometry,op).mockImplementation((...args)=>{
 });
 """.replace('CACHE',json.dumps(str(cache))))
 status=test('native')
-summary={'upstreamRevision':m['revision'],'runtimeSha256':{j.name:hashlib.sha256(j.read_bytes()).hexdigest() for j in jars},'uniqueInputs':len(sources),'selection':'Eight original geometry tests; four unconsumed helpers excluded'}
+summary={'upstreamRevision':m['revision'],'runtimeSha256':{j.name:hashlib.sha256(j.read_bytes()).hexdigest() for j in jars},'uniqueInputs':len(sources),'selection':'Ten original geometry tests; two unconsumed helpers excluded'}
 for mode in ['official','native']:
     d=json.loads((w/f'{mode}.json').read_text());summary[mode]={k:d[k] for k in ['numTotalTests','numPassedTests','numFailedTests','numPendingTests','success']}
 (w/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary,indent=2));raise SystemExit(status.returncode)

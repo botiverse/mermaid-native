@@ -48,6 +48,22 @@ class FlowObstacleRoutesTest {
         assertEquals(2,routes(s).size);assertClear(s)
         assertTrue(s.commands.filterIsInstance<DrawText>().any { it.text=="retry" })
     }
+    @Test fun skipAndFeedbackPreferOppositeSidesToAvoidInteriorCrossings() {
+        for(direction in listOf("TD","TB","LR","RL","BT")) {
+            val source="graph $direction\nA[Start]-->B[Middle]\nB-->C[End]\nA-->|skip|C\nC-->|retry|A"
+            val s=scene(source)
+            val lines=routes(s);assertEquals(2,lines.size,direction);assertClear(s)
+            // Independent axis-aligned crossing check of the final rendered routes.
+            for((a,b) in lines[0].points.zipWithNext())for((c,d) in lines[1].points.zipWithNext()) {
+                fun interior(x: Double,u: Double,v: Double)=x>minOf(u,v)+.001 && x<maxOf(u,v)-.001
+                val crosses=if(a.y==b.y && c.x==d.x)interior(c.x,a.x,b.x)&&interior(a.y,c.y,d.y)
+                    else if(a.x==b.x && c.y==d.y)interior(a.x,c.x,d.x)&&interior(c.y,a.y,b.y)else false
+                assertFalse(crosses,"$direction routes cross: $a $b / $c $d")
+            }
+            assertEquals(s,scene(source),direction)
+        }
+    }
+
     @Test fun clearDiagonalInvisibleAndNestedEdgesKeepTheirExistingPath() {
         for(source in listOf("graph TD\nA-->B", "graph TD\nA-->B\nA-->C",
             "graph TD\nA-->B\nB-->C\nA~~~C", "graph TD\nsubgraph G\nA-->B\nB-->C\nA-->C\nend")) {

@@ -24,6 +24,18 @@ public object OrthogonalGeometry {
         return !((endpoint(h1)||endpoint(h2)) && (endpoint(v1)||endpoint(v2)))
     }
 
+    /** Perpendicular intersection strictly inside both segments; shared endpoints and T-junctions are excluded. */
+    public fun segmentsStrictlyCross(a: ScenePoint, b: ScenePoint, c: ScenePoint, d: ScenePoint,
+        epsilon: Double = 1e-3): Boolean {
+        val ah = abs(a.y-b.y)<epsilon; val av = abs(a.x-b.x)<epsilon
+        val bh = abs(c.y-d.y)<epsilon; val bv = abs(c.x-d.x)<epsilon
+        if (!((ah && bv) || (av && bh))) return false
+        val h1=if(ah)a else c; val h2=if(ah)b else d
+        val v1=if(ah)c else a; val v2=if(ah)d else b
+        return v1.x>min(h1.x,h2.x)+epsilon && v1.x<max(h1.x,h2.x)-epsilon &&
+            h1.y>min(v1.y,v2.y)+epsilon && h1.y<max(v1.y,v2.y)-epsilon
+    }
+
     public fun sameAxisSegmentsOverlap(a: ScenePoint, b: ScenePoint, c: ScenePoint, d: ScenePoint,
         epsilon: Double = 1e-3): Boolean {
         fun overlap(a: Double,b: Double,c: Double,d: Double)=max(0.0,min(max(a,b),max(c,d))-max(min(a,b),min(c,d)))
