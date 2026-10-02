@@ -9,11 +9,11 @@ diagnostics rather than silently rendering a different diagram.
 
 ## Default appearance
 
-All diagram families share `DiagramPalette`: zinc text and neutral surfaces, subtle
+Most diagram families share `DiagramPalette`: zinc text and neutral surfaces, subtle
 borders, and muted blue, green, rose, amber, purple and cyan accents. Titles retain
 their stronger type hierarchy; category colors, status differences and Journey
 scores remain distinct. Source-authored styles and named CSS colors keep their
-literal values. The palette is shared by native scene commands and SVG output.
+literal values. The palette is shared by native scene commands and SVG output. Sankey uses the upstream Tableau palette and translucent gradients; Packet uses neutral gray fields with black borders.
 
 ## Modules
 
@@ -21,10 +21,10 @@ literal values. The palette is shared by native scene commands and SVG output.
 - `mermaid-layout-api`: toolkit-neutral scene graph, draw commands, and layout SPI.
 - `mermaid-layout-simple`: deterministic Apache-2.0 starter layout.
 - `mermaid-render-svg`: common SVG serializer.
-- `mermaid-kuikly`: reserved module for the future Kuikly Canvas/Text adapter; the native renderer is not implemented yet.
+- `mermaid-kuikly`: Kuikly Canvas renderer and MermaidView DSL component.
 - `mermaid-testkit`: compatibility fixtures and geometry goldens.
 
-All artifacts share one version and are published under `build.raft.mermaid`.
+Artifacts are published under `build.raft.mermaid`; Android/iOS use the normal version and HarmonyOS uses the matching `-ohos` version. See the [client SDK integration guide](docs-site/guide/getting-started.md) and [release notes](docs-site/guide/releases.md).
 
 Read the optimized documentation site at https://botiverse.github.io/mermaid-native/.
 ELK support is deliberately outside the Apache-2.0 core; any future `layout-elk`
@@ -39,14 +39,10 @@ in `NOTICE`; the project license does not relicense those materials.
 
 ## Current parser support
 
-The first supported syntax slices are:
-
-- `sequenceDiagram` with one `A->>B` message;
-- `flowchart` with one `A-->B` edge.
-
-Parser support is covered on Android and iOS. Layout, SVG, and native host
-support remain separate compatibility entries and are not implied by parser
-support.
+The parser covers the 32 families in the [support matrix](docs-site/reference/families.md).
+Coverage is bounded per feature; parsing support does not imply complete upstream
+layout, configuration or interaction parity. Consult the matrix before adopting
+an advanced syntax feature.
 
 ## Quick start
 

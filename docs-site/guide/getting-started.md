@@ -1,8 +1,201 @@
-# Getting started
+# Client SDK integration
 
-Mermaid Native is currently consumed from source while artifact publication remains gated. The repository builds with JDK 17 and the included Gradle wrapper.
+Mermaid Native parses Mermaid text into a typed model, lays it out into a shared
+scene, and renders through Kuikly Canvas or SVG. The native path needs no WebView
+or JavaScript runtime. Android and iOS consume the normal Kotlin Multiplatform
+artifacts; HarmonyOS consumes a separate OHOS build of the same source.
 
-## Build and test
+## Version and prerequisites
+
+The current SDK release is **0.1.9** for Android/iOS and **0.1.9-ohos** for HarmonyOS.
+Both are available from the public Maven repository below. See the
+[release notes](./releases) for the immutable source, validation and upgrade steps.
+
+| Consumer | Compiler / platform | Kuikly core used by the adapter |
+| --- | --- | --- |
+| Android | Kotlin 2.1.21, minimum API 21; SDK built with compile SDK 35 | `2.24.0-raft.1-2.1.21` |
+| iOS | Kotlin 2.1.21; `iosArm64`, `iosSimulatorArm64`, `iosX64` KLIBs | `2.24.0-raft.1-2.1.21` |
+| HarmonyOS | Kotlin `2.0.21-KBA-010`, `ohosArm64` | `2.24.0-raft.1-2.0.21-ohos` |
+
+JDK 17 is used for builds. The SDK supplies KMP libraries, not a standalone Swift
+XCFramework, CocoaPod, or HarmonyOS HAR. Link it into your existing shared module
+and continue using that host's framework/HAR packaging. A Kuikly host must already
+have its matching native renderer installed; adding a Maven dependency alone does
+not set up an Android/iOS/OHOS application.
+
+## Add the Maven repository
+
+Public artifact reads do not require credentials. Add this repository in
+`settings.gradle.kts` alongside your existing Google/Maven Central repositories:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri("https://maven.artifacts.botiverse.dev")
+            content {
+                includeGroup("build.raft.mermaid")
+                includeGroup("com.tencent.kuikly-open")
+            }
+        }
+        google()
+        mavenCentral()
+    }
+}
+```
+
+If your project already filters this repository to Kuikly only, add
+`build.raft.mermaid` to its allowed groups. Keep the existing repositories and
+filters required by the rest of your host SDK.
+
+## Android and iOS dependencies
+
+In your existing shared module's `build.gradle.kts`, use a single version for all
+Mermaid modules. Gradle selects the Android or iOS variant automatically:
+
+```kotlin
+val mermaidVersion = "0.1.9"
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("build.raft.mermaid:mermaid-core:$mermaidVersion")
+            implementation("build.raft.mermaid:mermaid-layout-simple:$mermaidVersion")
+            implementation("build.raft.mermaid:mermaid-kuikly:$mermaidVersion")
+            // Optional: export SVG without a Kuikly host.
+            implementation("build.raft.mermaid:mermaid-render-svg:$mermaidVersion")
+        }
+    }
+}
+```
+
+For an Android-only module, place the same dependencies inside `dependencies {}`.
+Omit `mermaid-kuikly` when you only need parsing/layout/SVG. `mermaid-layout-api`
+is provided transitively; add it explicitly if you depend directly on its API.
+
+## HarmonyOS dependencies
+
+Use the host's existing OHOS settings/build entry point and KBA compiler. In that
+build only, select the OHOS version for **every** Mermaid dependency:
+
+```kotlin
+val mermaidVersion = "0.1.9-ohos"
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("build.raft.mermaid:mermaid-core:$mermaidVersion")
+            implementation("build.raft.mermaid:mermaid-layout-simple:$mermaidVersion")
+            implementation("build.raft.mermaid:mermaid-kuikly:$mermaidVersion")
+        }
+    }
+}
+```
+
+The OHOS publication contains `mermaid-core`, `mermaid-layout-api`,
+`mermaid-layout-simple`, and `mermaid-kuikly`. SVG, Web and testkit artifacts are
+not published on this plane. Preserve your host's Tencent plugin repository and
+KBA stdlib/coroutines/atomicfu repositories. Never put normal and OHOS versions
+in the same dependency graph, or substitute a normal KLIB for an OHOS KLIB.
+
+## Parse and lay out a diagram
+
+This function can live in `commonMain`. Handle diagnostics in your UI rather than
+assuming every string parses successfully:
+
+```kotlin
+import build.raft.mermaid.core.MermaidParser
+import build.raft.mermaid.core.MermaidParseResult
+import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.LayoutScene
+import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
+import build.raft.mermaid.layout.simple.SimpleMermaidLayout
+
+fun makeMermaidScene(source: String, onError: (String) -> Unit): LayoutScene? {
+    return when (val result = MermaidParser.parse(source)) {
+        is MermaidParseResult.Success -> SimpleMermaidLayout.layout(
+            result.diagram,
+            FixedWidthTextMeasurer,
+            LayoutConfig(),
+        )
+        is MermaidParseResult.Failure -> {
+            onError(result.diagnostics.joinToString("\n"))
+            null
+        }
+    }
+}
+```
+
+`FixedWidthTextMeasurer` is deterministic and approximate. For accurate host fonts,
+provide a `TextMeasurer` that returns `SceneSize` for the supplied text and
+`TextStyle`, in the same units/fonts used for drawing. Cache parsing/layout when
+the source and layout settings are unchanged; do not rebuild the scene on every
+paint. Text measurement that calls a platform UI API must follow that API's
+thread requirements.
+
+## Render in Kuikly
+
+Inside an existing Kuikly DSL container, pass the prepared scene to `MermaidView`:
+
+```kotlin
+import build.raft.mermaid.kuikly.MermaidView
+import build.raft.mermaid.layout.LayoutScene
+import com.tencent.kuikly.core.base.ViewContainer
+
+fun ViewContainer<*, *>.addMermaid(sceneToRender: LayoutScene, availableWidth: Float) {
+    val fitScale = if (sceneToRender.width > 0.0) {
+        (availableWidth / sceneToRender.width.toFloat()).coerceIn(0.01f, 1f)
+    } else 1f
+    MermaidView {
+        attr {
+            scene = sceneToRender
+            scale = fitScale
+            batchDraw = true
+            width(sceneToRender.width.toFloat() * fitScale)
+            height(sceneToRender.height.toFloat() * fitScale)
+        }
+    }
+}
+```
+
+Reserve the scaled scene height in the parent layout. `MermaidView` draws a canvas;
+it does not add scrolling, pan/zoom, selectable text, link handling, or an accessible
+semantic tree. Supply those through your host UI. On narrow screens you can use a
+scrollable viewport instead of reducing text to an unreadable size. The view is a
+Kuikly DSL component, not a Jetpack Compose `@Composable` function.
+
+For an existing Kuikly canvas, call
+`MermaidKuiklyRenderer.render(scene, context, scale = 1f)` in its draw callback.
+The renderer saves/restores the context and supports translucent Sankey gradients.
+
+## Export SVG
+
+```kotlin
+import build.raft.mermaid.layout.LayoutScene
+import build.raft.mermaid.render.svg.SvgRenderer
+
+fun exportMermaidSvg(scene: LayoutScene): String =
+    SvgRenderer.render(scene, baseId = "message-42", diagramType = "flowchart")
+```
+
+Use a distinct `baseId` per inline chart and the correct family for `diagramType`.
+If your host sanitizes SVG, its allowlist must support inert local `defs`,
+`linearGradient`, `stop`, and `fill="url(#...)"` references for Sankey. Do not
+allow arbitrary external references or script/style content. The repository's
+`acceptance/svg-sanitizer.js` shows the supported bounded format.
+
+## Confirm the version in the client
+
+```kotlin
+import build.raft.mermaid.core.MERMAID_NATIVE_VERSION
+
+println("Mermaid Native: $MERMAID_NATIVE_VERSION")
+```
+
+Expect `0.1.9` on Android/iOS and `0.1.9-ohos` on HarmonyOS. Inspect the resolved
+Gradle dependency graph as well, since the core version alone cannot prove every
+renderer uses the same release. Rebuild the host's shared framework/HAR after a
+KLIB upgrade. Follow [the upgrade checklist and release notes](./releases).
+
+## Build from source
 
 ```bash
 git clone https://github.com/botiverse/mermaid-native.git
@@ -10,45 +203,9 @@ cd mermaid-native
 ./gradlew check
 ```
 
-Run the focused multiplatform compatibility suites:
-
-```bash
-./gradlew \
-  :mermaid-core:allTests \
-  :mermaid-layout-simple:allTests \
-  :mermaid-testkit:allTests \
-  :mermaid-web:allTests
-```
-
-## Parse source
-
-```kotlin
-val result = MermaidParser.parse("flowchart LR; A[Start] --> B[Finish]")
-when (result) {
-    is MermaidParseResult.Success -> {
-        // Pass result.diagram to a supported layout and renderer.
-    }
-    is MermaidParseResult.Failure -> {
-        result.diagnostics.forEach(::println)
-    }
-}
-```
-
-## Choose a module
-
-| Module | Responsibility |
-| --- | --- |
-| `mermaid-core` | Parser, typed AST, and diagnostics |
-| `mermaid-layout-api` | Platform-neutral scene graph and layout SPI |
-| `mermaid-layout-simple` | Deterministic built-in layout |
-| `mermaid-render-svg` | Common SVG serialization |
-| `mermaid-web` | Kotlin/Wasm browser-facing adapter |
-| `mermaid-testkit` | Fixtures, semantic vectors, and geometry goldens |
-| `mermaid-kuikly` | Reserved Kuikly adapter module; the real renderer is not implemented yet |
-
-::: warning Publication status
-The Gradle publication model and Maven coordinates exist, but no stable Maven release is currently documented. Do not copy an unpublished version into production dependencies.
-:::
+The normal build includes seven modules: core, layout-api, layout-simple,
+render-svg, kuikly, web and testkit. The separate OHOS build uses
+`./gradlew -c settings.ohos.gradle.kts` with its four supported modules.
 
 ## Accessible SVG exports
 
