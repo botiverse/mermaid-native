@@ -1,17 +1,17 @@
 # Original Usecase production model assertions
 
-Replays 23 unchanged original assertions from pinned `usecase.spec.ts`: basic actors, use cases, relationships, simple boundaries, direction, actor metadata, complex diagrams and class definitions. The explicit boundary assertion also checks the Native boundary type and ordered parent links. The database lifetime/LayoutData/AST/style assertions remain excluded (16 unselected tests, not passes or skips for Native coverage). Source SHA-256 is verified before running.
+Replays 25 unchanged original assertions from pinned Mermaid: 23 from `usecase.spec.ts` and two from `usecase.parser.spec.ts`. The additional parser assertions check numeric-leading actor/usecase/JSON IDs and relationships, and preservation of decimal style values. Source SHA-256 is verified before running.
 
-The official run captures `Diagram.fromText` inputs. The Java bridge calls the real `MermaidParser.parse`, serializes its typed actor/relationship fields, node collections, boundary type and parent links, direction and class definitions, and renames sourceId/targetId for transport. It does not parse syntax, resolve metadata, or construct layout. Reflection supports measuring the prior production runtime: absent actor metadata defaults to the old normal figure and absent relationship type remains null.
+The original pass captures `Diagram.fromText` and the two direct `parser.parse` inputs. The Java bridge calls production `MermaidParser.parse` and projects its actor, usecase, boundary, relationship, JSON-node ID, style, direction, and class fields. Native ordered style maps are serialized as `key:value` entries and parent links as member IDs; the bridge neither parses source nor computes expected values. The Native pass replaces both parsing entry points and exposes only the transported results to the original getters, with no upstream parser/model fallback.
 
-The adapter supplies these Native results to the original getter assertions; it does not run the JS parser/model builder in the Native pass. JS database lifecycle, complete normalized AST and HTML/icon-pack rendering are not covered. Actual Native variant rendering is separately checked through production parser-to-scene tests and the Wasm page.
+The 91 other assertions across these two files remain unselected: 16 from the general suite and 75 from the parser publication/AST suite. Database lifetime, complete normalized AST, source spans, and HTML/icon-pack rendering are not covered. The JSON projection checks IDs only; JSON payload parsing has separate coverage.
 
-Run after the core Android runtime JAR is built:
+Run after building the core Android runtime JAR:
 
 ```sh
-python3 compatibility/upstream-usecase-model/run.py --upstream /path/to/mermaid --stdlib /path/to/kotlin-stdlib.jar --verify-boundary-mutations
+python3 compatibility/upstream-usecase-model/run.py --upstream /path/to/mermaid --stdlib /path/to/kotlin-stdlib.jar --verify-model-mutations
 ```
 
-Boundary membership is projected from the ordered Native `attributes` map by `parentId`; the bridge never examines the source text or invokes the upstream model builder. This is model coverage, not new renderer or complete AST coverage.
+The mutation option independently corrupts boundary type, membership, a numeric actor ID, and decimal styles. Each must fail only its targeted original assertion; restoration must return all 25 tests to passing. These negative controls are not additional coverage. `--verify-boundary-mutations` remains an alias for existing callers.
 
-With `--verify-boundary-mutations`, the harness separately corrupts the transported boundary type and membership. Each must fail only the explicit-boundary original assertion; it then restores the production results and requires all 23 assertions to pass again. The mutation reports are negative controls, never Native passing coverage.
+This is parser/model coverage; no production rendering code changes are required, and it does not imply renderer parity. Reflection for older actor metadata remains supported; absent actor metadata defaults to the old normal figure and absent relationship type remains null.
