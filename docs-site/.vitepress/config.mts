@@ -25,7 +25,7 @@ export default defineConfig({
     logo: '/logo.svg',
     siteTitle: 'Mermaid Native',
     nav: [
-      { text: 'Guide', link: '/guide/compatibility' },
+      { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Architecture', link: '/guide/architecture' },
       { text: 'Examples', link: '/examples' },
       { text: 'Canvas', link: '/canvas' },
@@ -37,7 +37,8 @@ export default defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Getting started', link: '/guide/getting-started' },
+            { text: 'Client SDK integration', link: '/guide/getting-started' },
+            { text: 'Releases and upgrading', link: '/guide/releases' },
             { text: 'Compatibility', link: '/guide/compatibility' },
             { text: 'Architecture', link: '/guide/architecture' },
             { text: 'Testing', link: '/guide/testing' },
