@@ -21,6 +21,12 @@ List<Object> jsonNodes=new ArrayList<>();for(UsecaseJsonNode n:d.getJsonNodes())
   for(var entry:d.getAttributes().entrySet())
     if(n.getId().equals(entry.getValue().getParentId()))members.add(entry.getKey());
   r.put("members",members);boundaries.add(r);
-}out.put("boundaries",boundaries);List<Object> edges=new ArrayList<>();for(UsecaseRelationship e:d.getRelationships()){Map<String,Object> r=row(e);r.put("source",e.getSourceId());r.put("target",e.getTargetId());r.put("type",getter(e,"getType",null));edges.add(r);}out.put("relationships",edges);out.put("classDefs",d.getClassDefs());return out;}
+}out.put("boundaries",boundaries);List<Object> edges=new ArrayList<>();for(UsecaseRelationship e:d.getRelationships()){Map<String,Object> r=row(e);r.put("source",e.getSourceId());r.put("target",e.getTargetId());r.put("type",getter(e,"getType",null));edges.add(r);}out.put("relationships",edges);Map<String,Object> classDefs=new LinkedHashMap<>();
+for(var definition:d.getClassDefs().entrySet()) {
+ List<String> styles=new ArrayList<>();
+ for(var entry:definition.getValue().entrySet())styles.add(entry.getKey()+":"+entry.getValue());
+ classDefs.put(definition.getKey(),Map.of("styles",styles));
+}
+out.put("classDefs",classDefs);return out;}
  public static void main(String[] args){Scanner lines=new Scanner(System.in,StandardCharsets.UTF_8);while(lines.hasNextLine()){String source=new String(Base64.getDecoder().decode(lines.nextLine()),StandardCharsets.UTF_8);try{System.out.println(json(render(source)));}catch(Throwable e){System.out.println(json(Map.of("error",e.toString())));}}}
 }
