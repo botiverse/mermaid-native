@@ -52,6 +52,61 @@ class FlowEdgeLabelTest {
         val nodes=mapOf("A" to SceneRect(80.0,0.0,40.0,40.0),"B" to SceneRect(80.0,160.0,40.0,40.0),
             "left" to SceneRect(0.0,40.0,95.0,120.0),"right" to SceneRect(105.0,40.0,100.0,120.0))
         val paths=mapOf(0 to listOf(ScenePoint(100.0,40.0),ScenePoint(100.0,160.0)))
-        assertTrue(flowVerticalEdgeLabels(diagram,nodes,paths,emptyMap(),FixedWidthTextMeasurer).isEmpty())
+        assertTrue(flowStraightEdgeLabels(diagram,nodes,paths,emptyMap(),FixedWidthTextMeasurer).isEmpty())
     }
+
+    @Test fun diagonalBranchLabelsClearTheirLinesInEveryDirection() {
+        for (direction in listOf("TD", "BT", "LR", "RL")) {
+            val source = "flowchart $direction\nA[Start]-->|one|B[Left]\nA-->|two|C[Right]\nB-->|done|D[Finish]\nC-->D"
+            val rendered = scene(source)
+            assertEquals(rendered, scene(source))
+            val lines = rendered.commands.filterIsInstance<DrawLine>()
+            val texts = rendered.commands.filterIsInstance<DrawText>()
+            for ((index, name) in listOf("one", "two", "done").withIndex()) {
+                val r = bounds(texts.single { it.text == name })
+                val line = lines[index]
+                val dx = line.to.x - line.from.x
+                val dy = line.to.y - line.from.y
+                // Every corner must be strictly on the same side of its edge's line.
+                val sides = listOf(r.x, r.x + r.width).flatMap { x ->
+                    listOf(r.y, r.y + r.height).map { y -> dx * (y - line.from.y) - dy * (x - line.from.x) }
+                }
+                assertTrue(sides.all { it > 0 } || sides.all { it < 0 }, "$direction $name")
+                for (node in rendered.commands.filterIsInstance<DrawRect>()) {
+                    assertFalse(overlap(r, node.rect), "$direction $name overlaps node")
+                }
+                assertTrue(r.x >= 0 && r.y >= 0 && r.x + r.width <= rendered.width && r.y + r.height <= rendered.height)
+            }
+        }
+    }
+
+    @Test fun diagonalLabelsKeepTheirOriginalPlacementWhenBothCandidatesAreBlocked() {
+        val diagram = FlowchartDiagram(FlowDirection.TD,
+            listOf(FlowNode("A", "A"), FlowNode("B", "B")),
+            listOf(FlowEdge("A", "B", label = "blocked label")))
+        val nodes = mapOf("obstacle" to SceneRect(-200.0, -200.0, 600.0, 600.0))
+        val paths = mapOf(0 to listOf(ScenePoint(0.0, 0.0), ScenePoint(100.0, 100.0)))
+        assertTrue(flowStraightEdgeLabels(diagram, nodes, paths, emptyMap(), FixedWidthTextMeasurer).isEmpty())
+    }
+
+
+    @Test fun wideDiagonalLabelsStayNearTheirEdgeHeight() {
+        val name = "Continue after every validation check completes"
+        for (direction in listOf("TD", "BT", "LR", "RL")) {
+            val rendered = scene("flowchart $direction\nA[Start]-->|$name|B[Left]\nA-->|alternative path|C[Right]\nB-->|done|D[Finish]\nC-->D")
+            val line = rendered.commands.filterIsInstance<DrawLine>().first()
+            val r = bounds(rendered.commands.filterIsInstance<DrawText>().single { it.text == name })
+            val centerY = r.y + r.height / 2
+            assertTrue(centerY in minOf(line.from.y, line.to.y)..maxOf(line.from.y, line.to.y), direction)
+            val dx = line.to.x - line.from.x
+            val dy = line.to.y - line.from.y
+            val sides = listOf(r.x, r.x + r.width).flatMap { x ->
+                listOf(r.y, r.y + r.height).map { y -> dx * (y - line.from.y) - dy * (x - line.from.x) }
+            }
+            assertTrue(sides.all { it > 0 } || sides.all { it < 0 }, direction)
+            for (node in rendered.commands.filterIsInstance<DrawRect>()) assertFalse(overlap(r, node.rect), direction)
+            assertTrue(r.x >= 0 && r.x + r.width <= rendered.width, direction)
+        }
+    }
+
 }
