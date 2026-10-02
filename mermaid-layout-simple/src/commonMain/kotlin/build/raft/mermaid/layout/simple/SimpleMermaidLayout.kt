@@ -3103,6 +3103,13 @@ public object SimpleMermaidLayout : DiagramLayout {
             flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
         else feedbackRoutes+obstacleRoutes
         val returnRoutes=planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
+        val edgePaths=diagram.edges.mapIndexedNotNull { index, edge ->
+            val source=rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@mapIndexedNotNull null
+            val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
+            val anchors=edgeAnchors(source,target,placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
+            index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
+        }.toMap()
+        val adjustedLabels=flowVerticalEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
@@ -3121,13 +3128,10 @@ public object SimpleMermaidLayout : DiagramLayout {
 
         diagram.edges.forEachIndexed { index, edge ->
             if (edge.style == FlowEdgeStyle.INVISIBLE) return@forEachIndexed
-            val source = rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@forEachIndexed
-            val target = rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@forEachIndexed
-            val anchors = edgeAnchors(source, target, placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
+            val points=edgePaths[index] ?: return@forEachIndexed
             val edgeStyle=flowEdgeStyle(edge,diagram)
             val markerColor=if(flowEdgeStyles(edge,diagram).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
             val route=returnRoutes[index]
-            val points=route?.points ?: listOf(anchors.first,anchors.second)
             val pattern=if(edge.style==FlowEdgeStyle.DOTTED)StrokePattern.DASHED else StrokePattern.SOLID
             if(route==null) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
@@ -3136,7 +3140,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             else commands += flowMarker(edge.toMarker, lastFrom, points.last(),markerColor,edgeStyle.strokeWidth)
             commands += flowMarker(edge.fromMarker, points[1], points.first(),markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
-                val mid = route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
+                val mid = adjustedLabels[index]?.origin ?: route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
                 commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
             }
         }
@@ -3183,8 +3187,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
 
         }
-        if(returnRoutes.isEmpty())return LayoutScene(width,height,commands)
-        val bounds=returnRoutes.values.map { it.bounds }
+        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty())return LayoutScene(width,height,commands)
+        val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }
         val dx=maxOf(0.0,config.padding-bounds.minOf { it.x })
         val dy=maxOf(0.0,config.padding-bounds.minOf { it.y })
         return LayoutScene(maxOf(width,bounds.maxOf { it.x+it.width }+config.padding)+dx,
