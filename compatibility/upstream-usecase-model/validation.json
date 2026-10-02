@@ -1,0 +1,35 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeJarSha256": "c82849255f702ad60cebd39ec6d8d3f2f670705d8ead5fa17b46a5c9c70b88b0",
+  "uniqueInputs": 22,
+  "official": {
+    "numTotalTests": 39,
+    "numPassedTests": 23,
+    "numFailedTests": 0,
+    "numPendingTests": 16,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 39,
+    "numPassedTests": 23,
+    "numFailedTests": 0,
+    "numPendingTests": 16,
+    "success": true
+  },
+  "boundaryMutations": {
+    "type": {
+      "failedTests": [
+        "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
+      ],
+      "passedTests": 22
+    },
+    "members": {
+      "failedTests": [
+        "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
+      ],
+      "passedTests": 22
+    }
+  },
+  "nativeSource": "5ba689d88b0d02a2798067d52397723c66cea0dc",
+  "scope": "23 original model tests; 16 unselected. One new assertion; no renderer changes."
+}
