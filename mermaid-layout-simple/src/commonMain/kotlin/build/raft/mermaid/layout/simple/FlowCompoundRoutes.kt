@@ -13,6 +13,7 @@ internal fun flowCompoundRoutes(
     groups: Map<String, SceneRect>,
     existing: Map<Int, FlowReturnRoute>,
     measurer: TextMeasurer,
+    routeRootEdges: Boolean = false,
 ): Map<Int, FlowReturnRoute> {
     if (groups.isEmpty() || nodes.isEmpty()) return emptyMap()
     val definitions = diagram.subgraphs.associateBy { it.id }
@@ -35,7 +36,7 @@ internal fun flowCompoundRoutes(
     val result = linkedMapOf<Int, FlowReturnRoute>()
     var laneInset = 24.0
     diagram.edges.forEachIndexed { index, edge ->
-        if (index in existing || edge.style == FlowEdgeStyle.INVISIBLE) return@forEachIndexed
+        if (index in existing || edge.style == FlowEdgeStyle.INVISIBLE || edge.sourceId == edge.targetId) return@forEachIndexed
         val source = nodes[edge.sourceId] ?: return@forEachIndexed
         val target = nodes[edge.targetId] ?: return@forEachIndexed
         val sourceOwners = owners.getValue(edge.sourceId)
@@ -43,7 +44,7 @@ internal fun flowCompoundRoutes(
         // A common enclosing frame needs its own reserved interior lanes. Do not
         // escape that frame or enlarge it over adjacent sibling containers here.
         if (sourceOwners.intersect(targetOwners).isNotEmpty() ||
-            sourceOwners.isEmpty() && targetOwners.isEmpty()) return@forEachIndexed
+            !routeRootEdges && sourceOwners.isEmpty() && targetOwners.isEmpty()) return@forEachIndexed
         val horizontal = diagram.direction in listOf(FlowDirection.LR, FlowDirection.RL)
         val reversed = diagram.direction in listOf(FlowDirection.RL, FlowDirection.BT)
         fun center(r: SceneRect) = if (horizontal) r.x + r.width / 2 else r.y + r.height / 2

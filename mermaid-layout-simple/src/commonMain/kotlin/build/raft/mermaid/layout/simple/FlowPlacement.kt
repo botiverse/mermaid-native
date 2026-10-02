@@ -34,7 +34,7 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     private data class Layer(val rank:Int,val ids:List<String>)
     private val layerCache=mutableMapOf<String?,List<Layer>?>()
     // Remove feedback arcs only from ranking where separate return routes are supported:
-    // flat flowcharts and leaf containers. Original edges remain in the diagram.
+    // flat flowcharts and framed containers. Original edges remain in the diagram.
     private fun layers(parent:String?):List<Layer>? = layerCache.getOrPut(parent) {
         if(!rankByEdges)return@getOrPut null
         val ids=children(parent)
@@ -49,13 +49,18 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
             if(from==null || to==null || from==to)null else Triple(from,to,edge.length.coerceIn(1,10))
         }
         if(links.isEmpty())return@getOrPut null
-        if(diagram.subgraphs.isEmpty() || (parent!=null && ids.none { it in groups })) {
+        if(diagram.subgraphs.isEmpty() || (parent!=null && parent !in unframedGroups)) {
             val outgoing=links.groupBy { it.first }
             val active=mutableSetOf<String>()
             val visited=mutableSetOf<String>()
             val feedback=mutableSetOf<Triple<String,String,Int>>()
             // Explicit stack avoids recursion limits on long flowcharts.
-            ids.forEach { root ->
+            // In compound containers, declaration order follows the first node
+            // represented by each sibling, rather than putting every group first.
+            val roots=if(ids.any { it in groups })ids.sortedBy { id ->
+                diagram.nodes.indexOfFirst { sibling(it.id)==id }.let { if(it<0)Int.MAX_VALUE else it }
+            }else ids
+            roots.forEach { root ->
                 if(visited.add(root)) {
                     active.add(root)
                     val stack=mutableListOf(root to outgoing[root].orEmpty().iterator())
@@ -135,10 +140,45 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     private data class Insets(val left:Double=0.0,val top:Double=0.0,val right:Double=0.0,val bottom:Double=0.0)
     private val insetCache=mutableMapOf<String?,Insets>()
 
-    // Only direct-node routes in framed leaf containers are supported here. A cycle
-    // crossing containers needs a separate compound-edge routing policy.
+    // Measure descendant geometry before reserving the current frame's gutters.
+    // Child frames already include their own return routes and labels.
+    private val compoundRouteCache=mutableMapOf<String,Map<Int,FlowReturnRoute>>()
+    private fun compoundRoutes(parent:String,boxes:Map<String,SceneRect>):Map<Int,FlowReturnRoute> {
+        val localBoxes=childRects(parent,0.0,0.0)
+        val routes=compoundRouteCache.getOrPut(parent) { measureCompoundRoutes(parent,localBoxes) }
+        val first=boxes.keys.firstOrNull() ?: return emptyMap()
+        val dx=boxes.getValue(first).x-localBoxes.getValue(first).x
+        val dy=boxes.getValue(first).y-localBoxes.getValue(first).y
+        // Reuse the measured side/lane choice. Re-ranking equivalent candidates
+        // after a translation can change a floating-point tie and escape gutters.
+        fun move(p:ScenePoint)=ScenePoint(p.x+dx,p.y+dy)
+        return routes.mapValues { (_,r) -> r.copy(points=r.points.map(::move),label=r.label?.let(::move),
+            bounds=r.bounds.copy(x=r.bounds.x+dx,y=r.bounds.y+dy)) }
+    }
+    private fun measureCompoundRoutes(parent:String,boxes:Map<String,SceneRect>):Map<Int,FlowReturnRoute> {
+        val nodes=linkedMapOf<String,SceneRect>()
+        val frames=linkedMapOf<String,SceneRect>()
+        fun collect(children:Map<String,SceneRect>) {
+            children.forEach { (id,rect) ->
+                if(id in groups) {
+                    frames[id]=rect
+                    val inset=insets(id)
+                    collect(childRects(id,rect.x+(if(id in unframedGroups)0 else 16)+inset.left,
+                        rect.y+headerHeight(id)+inset.top))
+                }else nodes[id]=rect
+            }
+        }
+        collect(boxes)
+        val local=diagram.copy(direction=direction(parent),nodes=diagram.nodes.filter { it.id in nodes },
+            subgraphs=diagram.subgraphs.filter { it.id in frames }.map { group ->
+                group.copy(parentId=parents[group.id]?.takeIf { it in frames })
+            })
+        return flowCompoundRoutes(local,nodes,frames,emptyMap(),measurer,routeRootEdges=true)
+    }
+
     private fun nestedRoutes(parent:String?,boxes:Map<String,SceneRect>):Map<Int,FlowReturnRoute> {
-        if(!rankByEdges || parent==null || parent in unframedGroups || boxes.keys.any { it in groups })return emptyMap()
+        if(!rankByEdges || parent==null || parent in unframedGroups)return emptyMap()
+        if(boxes.keys.any { it in groups })return compoundRoutes(parent,boxes)
         val edges=diagram.edges.withIndex().filter { it.value.sourceId in boxes && it.value.targetId in boxes }
         if(edges.isEmpty())return emptyMap()
         val local=diagram.copy(direction=direction(parent),nodes=diagram.nodes.filter { it.id in boxes },
@@ -147,7 +187,7 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     }
 
     private fun insets(parent:String?):Insets = insetCache.getOrPut(parent) {
-        if(!rankByEdges || parent==null || parent in unframedGroups || children(parent).any { it in groups })return@getOrPut Insets()
+        if(!rankByEdges || parent==null || parent in unframedGroups)return@getOrPut Insets()
         val raw=rawMeasure(parent)
         val routes=nestedRoutes(parent,childRects(parent,0.0,0.0)).values
         if(routes.isEmpty())return@getOrPut Insets()

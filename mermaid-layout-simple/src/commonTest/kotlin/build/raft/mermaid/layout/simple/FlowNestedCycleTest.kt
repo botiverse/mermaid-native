@@ -70,4 +70,68 @@ class FlowNestedCycleTest {
         assertEquals(3,s.commands.filterIsInstance<DrawLine>().size)
         assertEquals(1,s.commands.filterIsInstance<DrawText>().count { it.text=="retry" })
     }
+
+    private fun compound(direction:String,extra:String="") = """
+        flowchart $direction
+        subgraph Outer[Outer group]
+        A[Entry]-->B[First]
+        subgraph Inner[Inner group]
+        B-->C[Second]
+        C-->|retry inner|B
+        end
+        C-->D[Exit]
+        D-->|retry outer|A
+        $extra
+        end
+    """.trimIndent()
+
+    @Test fun compoundCyclesReserveAncestorGuttersInEveryDirection() {
+        for(direction in listOf("TD","LR","RL","BT")) {
+            val source=compound(direction)
+            val s=layout(source);assertEquals(s,layout(source))
+            val frames=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==4.0 }.map { it.rect }
+            val nodes=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==5.0 }.map { it.rect }
+            assertEquals(2,frames.size);assertEquals(4,nodes.size)
+            assertTrue(contains(frames[0],frames[1]))
+            val routes=s.commands.filterIsInstance<DrawPolyline>();assertEquals(2,routes.size,direction)
+            for(route in routes) {
+                for(p in route.points)assertTrue(contains(frames[0],SceneRect(p.x,p.y,0.0,0.0)),direction)
+                for((a,b) in route.points.zipWithNext())for(node in nodes)assertFalse(enters(a,b,node),direction)
+                for((a,b) in route.points.zipWithNext())for(frame in frames)assertFalse(enters(a,b,frame.copy(height=32.0)),direction)
+            }
+            val text=s.commands.filterIsInstance<DrawText>().map(::textBounds)
+            for(i in text.indices)for(j in i+1 until text.size)assertFalse(intersects(text[i],text[j]),direction)
+            for(t in text)assertTrue(contains(frames[0],t),direction)
+            val horizontal=direction in listOf("LR","RL")
+            val sign=if(direction in listOf("RL","BT"))-1 else 1
+            val centers=nodes.map { sign*(if(horizontal)it.x+it.width/2 else it.y+it.height/2) }
+            assertTrue(centers.zipWithNext().all { (a,b)->a<b },direction)
+        }
+    }
+
+    @Test fun compoundLongLabelsGrowTheirOwnFrameWithoutOverlappingRootSiblings() {
+        val s=layout(compound("LR","D-->|retry after every validation result is checked|A")+"\nsubgraph Spare[Unrelated]\nX[Untouched]\nend")
+        val frames=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==4.0 }.map { it.rect }
+        fun frame(label:String):SceneRect {
+            val index=s.commands.indexOfFirst { it is DrawText && it.text==label }
+            return (s.commands[index-1] as DrawRect).rect
+        }
+        val outer=frame("Outer group");val spare=frame("Unrelated")
+        assertFalse(intersects(outer,spare))
+        val labels=s.commands.filterIsInstance<DrawText>().filter { it.text.startsWith("retry") }.map(::textBounds)
+        assertEquals(3,labels.size)
+        for(t in labels)assertTrue(contains(outer,t),"$outer must contain $t")
+        for(i in labels.indices)for(j in i+1 until labels.size)assertFalse(intersects(labels[i],labels[j]))
+        for(route in s.commands.filterIsInstance<DrawPolyline>())for((a,b) in route.points.zipWithNext())assertFalse(enters(a,b,spare))
+        assertTrue(contains(SceneRect(0.0,0.0,s.width,s.height),outer))
+    }
+
+    @Test fun compoundRoutesPreserveGlobalEdgeIndexAndPaint() {
+        val d=parse("flowchart LR\nX-->Y\n"+compound("LR").substringAfter("\n"))
+        val painted=d.copy(edges=d.edges.map { if(it.label=="retry outer")it.copy(style=FlowEdgeStyle.DOTTED,styles=listOf("stroke:#123456","stroke-width:3px"))else it })
+        val s=SimpleMermaidLayout.layout(painted,FixedWidthTextMeasurer,LayoutConfig())
+        val route=s.commands.filterIsInstance<DrawPolyline>().single { it.stroke.value=="#123456" }
+        assertEquals(StrokePattern.DASHED,route.pattern);assertEquals(3.0,route.strokeWidth)
+        assertEquals(1,s.commands.filterIsInstance<DrawText>().count { it.text=="retry outer" })
+    }
 }
