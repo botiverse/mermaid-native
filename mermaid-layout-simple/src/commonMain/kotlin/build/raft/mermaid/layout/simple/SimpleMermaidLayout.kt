@@ -3098,7 +3098,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         val height=placement.height
         val rects=placement.nodes
         val feedbackRoutes=flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
-        val planarRoutes=feedbackRoutes+flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
+        val obstacleRoutes=flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
+        val planarRoutes=if(feedbackRoutes.isNotEmpty() && obstacleRoutes.isNotEmpty())
+            flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
+        else feedbackRoutes+obstacleRoutes
         val returnRoutes=planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
