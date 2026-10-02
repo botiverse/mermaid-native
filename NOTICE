@@ -29,3 +29,8 @@ conformance cases are derived from Unicode Character Database 17.0.0 and Emoji 1
 v3. The license, exact source URLs and hashes, and reproducible generator are
 in compatibility/unicode-17. Grapheme segmentation follows UAX #29 revision 47:
 https://www.unicode.org/reports/tr29/tr29-47.html
+
+OrthogonalGeometry adapts Mermaid direction geometry predicates at the pinned
+revision in compatibility/upstream-orthogonal-geometry/sources.json, copyright
+Knut Sveidqvist and contributors, under the MIT License reproduced in that
+directory. Production flowchart obstacle routing consumes these predicates.
