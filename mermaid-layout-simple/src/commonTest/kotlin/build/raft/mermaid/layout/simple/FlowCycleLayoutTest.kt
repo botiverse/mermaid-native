@@ -109,4 +109,40 @@ class FlowCycleLayoutTest {
             for (label in labels) assertTrue(label.x>=0 && label.y>=0 && label.x+label.width<=s.width && label.y+label.height<=s.height)
         }
     }
+    @Test fun mixedForwardDetoursAndNestedReturnsReduceCrossingsWithoutObscuringLabels() {
+        for (direction in listOf("TD", "LR", "RL", "BT")) for (retry in listOf("retry", "A long retry label around the entire cycle")) {
+            val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("""
+                flowchart $direction
+                A[Entry]-->B[Branch one]
+                A-->C[Branch two]
+                B-->D[Join]
+                C-->D
+                D-->|$retry|A
+                B-->|switch|C
+                C-->|return|B
+            """.trimIndent())).diagram
+            val s = SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig())
+            assertEquals(s, SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig()))
+            val routes = s.commands.filterIsInstance<DrawPolyline>()
+            val nodes = s.commands.filterIsInstance<DrawRect>().map { it.rect }
+            val labels = s.commands.filterIsInstance<DrawText>().map(::textBounds)
+            assertEquals(4, routes.size)
+            var crossings = 0
+            fun interior(x:Double,a:Double,b:Double)=x>minOf(a,b)+.001 && x<maxOf(a,b)-.001
+            for (i in routes.indices) for (j in i+1 until routes.size)
+                for ((a,b) in routes[i].points.zipWithNext()) for ((c,d) in routes[j].points.zipWithNext()) {
+                    if ((a.x==b.x && c.y==d.y && interior(a.x,c.x,d.x)&&interior(c.y,a.y,b.y)) ||
+                        (a.y==b.y && c.x==d.x && interior(c.x,a.x,b.x)&&interior(a.y,c.y,d.y))) crossings++
+                }
+            assertEquals(1, crossings, "$direction $retry")
+            // The straight B→C label shares its unchanged endpoint stub in vertical layouts.
+            // Exterior routing must keep all node boxes and routed-edge labels clear.
+            val routedLabels = s.commands.filterIsInstance<DrawText>().filter { it.text in listOf(retry, "return") }.map(::textBounds)
+            for (route in routes) for ((a,b) in route.points.zipWithNext()) for (r in nodes + routedLabels)
+                assertFalse(segmentEnters(a,b,r), "$direction $retry: $a $b enters $r")
+            for (i in labels.indices) for (j in i+1 until labels.size) assertFalse(intersects(labels[i],labels[j]))
+            for (r in labels) assertTrue(r.x>=0 && r.y>=0 && r.x+r.width<=s.width && r.y+r.height<=s.height)
+        }
+    }
+
 }
