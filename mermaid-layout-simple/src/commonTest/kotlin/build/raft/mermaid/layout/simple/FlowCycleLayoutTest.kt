@@ -73,4 +73,40 @@ class FlowCycleLayoutTest {
         val route=s.commands.filterIsInstance<DrawPolyline>().single()
         assertEquals(StrokePattern.DASHED,route.pattern);assertEquals("#123456",route.stroke.value);assertEquals(3.0,route.strokeWidth)
     }
+
+    @Test fun forwardDetoursDoNotMoveAcrossExistingReturnLabels() {
+        val source = "flowchart LR\nA[Entry]-->B[Branch one]\nA-->C[Branch two]\nB-->D[Join]\nC-->D\nD-->|retry|A\nB-->|switch|C\nC-->|return|B"
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
+        val s = SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig())
+        val labels = s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("retry", "return") }.map(::textBounds)
+        assertEquals(2, labels.size)
+        for (route in s.commands.filterIsInstance<DrawPolyline>())
+            for ((a,b) in route.points.zipWithNext()) for (label in labels)
+                assertFalse(segmentEnters(a,b,label), "$a $b enters $label")
+    }
+
+    @Test fun overlappingCyclesAndSelfLoopsUseBothSidesWithoutStrictCrossings() {
+        for (direction in listOf("TD", "LR", "RL", "BT")) for (body in listOf(
+            "A[Entry]-->B[First]\nB-->C[Second]\nC-->|retry one|A\nC-->D[Third]\nD-->E[Exit]\nE-->|retry two|C",
+            "A[Start]-->B[Work]\nB-->|again|B\nB-->C[Done]\nC-->|restart|A\nA-->|wait|A",
+        )) {
+            val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("flowchart $direction\n$body")).diagram
+            val s = SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig())
+            assertEquals(s, SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig()))
+            val routes = s.commands.filterIsInstance<DrawPolyline>()
+            val nodes = s.commands.filterIsInstance<DrawRect>().map { it.rect }
+            for (route in routes) for ((a,b) in route.points.zipWithNext()) for (node in nodes)
+                assertFalse(segmentEnters(a,b,node), direction)
+            fun interior(x:Double,a:Double,b:Double)=x>minOf(a,b)+.001 && x<maxOf(a,b)-.001
+            for (i in routes.indices) for (j in i+1 until routes.size)
+                for ((a,b) in routes[i].points.zipWithNext()) for ((c,d) in routes[j].points.zipWithNext()) {
+                    val crosses = if (a.x==b.x && c.y==d.y) interior(a.x,c.x,d.x)&&interior(c.y,a.y,b.y)
+                        else if (a.y==b.y && c.x==d.x) interior(c.x,a.x,b.x)&&interior(a.y,c.y,d.y) else false
+                    assertFalse(crosses, "$direction $body: $a $b / $c $d")
+                }
+            val labels = s.commands.filterIsInstance<DrawText>().map(::textBounds)
+            for (i in labels.indices) for (j in i+1 until labels.size) assertFalse(intersects(labels[i],labels[j]))
+            for (label in labels) assertTrue(label.x>=0 && label.y>=0 && label.x+label.width<=s.width && label.y+label.height<=s.height)
+        }
+    }
 }

@@ -61,5 +61,56 @@ internal fun flowReturnRoutes(
         result[index] = FlowReturnRoute(points, label, SceneRect(minX, minY, maxX - minX, maxY - minY))
         track -= (if (horizontal) size?.height ?: 0.0 else size?.width ?: 0.0) + 32.0
     }
+    // Keep the established tracks unless moving one to the opposite side removes
+    // a strict crossing. Consider all return routes together, including self-loops.
+    val obstacles = rects.map { OrthogonalGeometry.RectEntry(it.key, it.value) }
+    val edges = diagram.edges.mapIndexed { index, edge ->
+        val a = boxes[edge.sourceId]; val b = boxes[edge.targetId]
+        OrthogonalGeometry.Edge(result[index]?.points ?: if (a != null && b != null)
+            listOf(point(a.end, a.cross), point(b.start, b.cross)) else emptyList(),
+            edge.style == FlowEdgeStyle.INVISIBLE)
+    }.toMutableList()
+    // Forward obstacle detours choose their side in the next routing pass. Keep
+    // the established feedback tracks when that pass is needed: independently
+    // moving both families can merely relocate crossings onto return labels.
+    if (diagram.edges.withIndex().any { (index, edge) ->
+            val a = boxes[edge.sourceId]; val b = boxes[edge.targetId]
+            index !in result && edge.style != FlowEdgeStyle.INVISIBLE && a != null && b != null &&
+                b.start > a.end && abs(a.cross - b.cross) < 1e-6 &&
+                OrthogonalGeometry.segmentHitsAnyRect(point(a.end, a.cross), point(b.start, b.cross),
+                    obstacles, listOf(edge.sourceId, edge.targetId))
+        }) return result
+    var high = rects.values.maxOf { if (horizontal) it.y + it.height else it.x + it.width }
+    for ((index, original) in result.toMap()) {
+        val otherSegments = edges.filterIndexed { i, edge -> i != index && !edge.isLayoutOnly }
+            .flatMap { it.points.zipWithNext() }
+        fun crossings(points: List<ScenePoint>) = points.zipWithNext().sumOf { (a, b) ->
+            otherSegments.count { (c, d) -> OrthogonalGeometry.segmentsStrictlyCross(a, b, c, d) }
+        }
+        val oldCrossings = crossings(original.points)
+        if (oldCrossings == 0) continue
+        val oppositeTrack = high + 24.0
+        val points = original.points.mapIndexed { i, p ->
+            if (i == 2 || i == 3) {
+                if (horizontal) ScenePoint(p.x, oppositeTrack) else ScenePoint(oppositeTrack, p.y)
+            } else p
+        }
+        if (crossings(points) >= oldCrossings || points.zipWithNext().any { (a, b) ->
+                OrthogonalGeometry.segmentHitsAnyRect(a, b, obstacles)
+            }) continue
+        val size = diagram.edges[index].label?.takeIf { it.isNotEmpty() }?.let { measurer.measure(it, TextStyle()) }
+        val label = original.label?.let {
+            if (horizontal) ScenePoint(it.x, oppositeTrack + size!!.height + 8.0)
+            else ScenePoint(oppositeTrack + 8.0 + size!!.width / 2, it.y)
+        }
+        val minX = minOf(points.minOf { it.x }, label?.let { it.x - size!!.width / 2 } ?: Double.POSITIVE_INFINITY)
+        val maxX = maxOf(points.maxOf { it.x }, label?.let { it.x + size!!.width / 2 } ?: Double.NEGATIVE_INFINITY)
+        val minY = minOf(points.minOf { it.y }, label?.let { it.y - size!!.height } ?: Double.POSITIVE_INFINITY)
+        val maxY = maxOf(points.maxOf { it.y }, label?.y ?: Double.NEGATIVE_INFINITY)
+        val route = FlowReturnRoute(points, label, SceneRect(minX, minY, maxX - minX, maxY - minY))
+        result[index] = route
+        edges[index] = OrthogonalGeometry.Edge(points)
+        high = if (horizontal) maxY else maxX
+    }
     return result
 }
