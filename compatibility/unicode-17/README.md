@@ -18,5 +18,17 @@ The same generator also emits the 59 BMP Wide/Fullwidth ranges from the pinned
 CJK labels and JSON cell wrapping in hosts without real font metrics. Other
 UTF-16 units retain the previous 0.6 em estimate, including supplementary pairs
 at 1.2 em. Ambiguous-width characters retain their previous estimate; this does not
-introduce combining-mark or emoji shaping. Hosts needing font-accurate measurements should supply `TextMeasurer`.
+introduce font shaping. Hosts needing font-accurate measurements should supply `TextMeasurer`.
 These fallback metric regression tests do not add original Mermaid coverage.
+
+
+The pinned [emoji-test.txt](https://www.unicode.org/Public/17.0.0/emoji/emoji-test.txt)
+also generates membership data for 3825 multi-codepoint fully qualified,
+minimally qualified and unqualified emoji forms. After grapheme segmentation,
+`FixedWidthTextMeasurer` reserves 1.2 em for a recognized sequence, matching
+its estimate for one supplementary emoji. Families, professions, modifiers,
+flags and keycaps no longer accumulate widths for every UTF-16 unit.
+Unknown sequences and non-emoji clusters retain their historical metrics.
+Membership does not guarantee glyph support in a host font; hosts requiring
+accurate fallback-font behavior should provide a real `TextMeasurer`.
+This data is used for metrics, not additional Mermaid assertion coverage.

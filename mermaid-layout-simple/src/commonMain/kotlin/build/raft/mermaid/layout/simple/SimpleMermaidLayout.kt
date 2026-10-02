@@ -119,16 +119,26 @@ import kotlin.math.ceil
 /**
  * Deterministic fallback metrics for hosts without platform font measurement.
  * Wide/fullwidth BMP characters reserve one em; other UTF-16 units retain the
- * historical 0.6 em estimate (including 1.2 em per supplementary code point).
- * This is an approximation, not font shaping. Hosts can supply a [TextMeasurer].
+ * historical 0.6 em estimate. Recognized multi-codepoint Unicode emoji reserve
+ * 1.2 em for the whole cluster, matching a single supplementary emoji.
+ * This remains an approximation, not font shaping. Hosts can supply a [TextMeasurer].
  */
 public object FixedWidthTextMeasurer : TextMeasurer {
     override fun measure(text: String, style: TextStyle): SceneSize {
         val wide = text.count { UnicodeWideBmpData.contains(it.code) }
-        return SceneSize(
-            width = (text.length - wide) * style.fontSize * 0.6 + wide * style.fontSize,
-            height = style.fontSize * 1.2,
-        )
+        var width = (text.length - wide) * style.fontSize * 0.6 + wide * style.fontSize
+        // Preserve the exact historical arithmetic for ordinary text. Only a
+        // listed emoji sequence receives a correction; unknown ZWJ combinations,
+        // combining text and isolated surrogates keep their conservative estimate.
+        if (text.any { it.isSurrogate() || it == '\u200D' || it == '\uFE0F' || it == '\u20E3' }) {
+            for (cluster in build.raft.mermaid.core.UnicodeGraphemes.split(text)) {
+                if (!UnicodeEmojiSequences.contains(cluster)) continue
+                val clusterWide = cluster.count { UnicodeWideBmpData.contains(it.code) }
+                val oldWidth = (cluster.length - clusterWide) * style.fontSize * 0.6 + clusterWide * style.fontSize
+                width -= oldWidth - style.fontSize * 1.2
+            }
+        }
+        return SceneSize(width = width, height = style.fontSize * 1.2)
     }
 }
 
