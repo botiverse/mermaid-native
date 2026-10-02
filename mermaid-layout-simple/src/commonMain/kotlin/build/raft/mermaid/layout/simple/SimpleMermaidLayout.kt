@@ -3109,7 +3109,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val anchors=edgeAnchors(source,target,placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
         }.toMap()
-        val adjustedLabels=flowVerticalEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
+        val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
