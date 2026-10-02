@@ -2,9 +2,13 @@
 
 ## 0.1.9 / 0.1.9-ohos
 
-**Publication verification in progress.** Continue using 0.1.8 / 0.1.8-ohos until
-this entry is marked available. This release includes engine changes through
-[PR #219](https://github.com/botiverse/mermaid-native/pull/219).
+**Available.** Both release planes were published by
+[the 0.1.9 release workflow](https://github.com/botiverse/mermaid-native/actions/runs/36990371765)
+from immutable tag [`v0.1.9`](https://github.com/botiverse/mermaid-native/tree/v0.1.9),
+source [`63c2c7ed`](https://github.com/botiverse/mermaid-native/commit/63c2c7edbeba8926acb22de041b6377409a237e5).
+This release includes engine changes through
+[PR #219](https://github.com/botiverse/mermaid-native/pull/219); later main-branch
+changes are not included in these artifacts.
 
 - Sankey: flow-proportional bars and curved bands, upstream DAG positioning,
   Tableau colors, value labels and translucent gradients in SVG and Kuikly Canvas.
