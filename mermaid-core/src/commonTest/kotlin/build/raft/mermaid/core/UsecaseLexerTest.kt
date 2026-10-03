@@ -46,7 +46,7 @@ class UsecaseLexerTest {
         val invalid = UsecaseDocument().parse("usecase-beta\nsystemBoundary Auth\njson Payload@{}\nend")
         assertIs<MermaidParseResult.Failure>(invalid)
         assertTrue(invalid.diagnostics.single().message.contains("json Payload@"))
-        val quoted = UsecaseDocument().parse("usecase-beta\nactor User \"extra\"")
+        val quoted = UsecaseDocument().parse("usecase-beta\ndirection LR \"extra\"")
         assertIs<MermaidParseResult.Failure>(quoted)
         assertTrue(quoted.diagnostics.single().message.contains("but found: '\"extra\"'"))
     }
