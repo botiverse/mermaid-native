@@ -1,0 +1,55 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "a70fa59862cfbd0d2c1108893891ab79bfe105dd",
+  "nativeJarSha256": "21465f9341334060354e99fe0c652784ea85111609edb323727479fd218549e3",
+  "nativeOperations": 156,
+  "operations": {
+    "M.add": 47,
+    "M.clear": 22,
+    "M.data": 11,
+    "M.root": 2,
+    "M.set": 8,
+    "T.accDescr.get": 1,
+    "T.accDescr.set": 1,
+    "T.accTitle.get": 1,
+    "T.accTitle.set": 1,
+    "T.add": 25,
+    "T.clear": 19,
+    "T.config": 1,
+    "T.count": 3,
+    "T.root": 12,
+    "T.title.get": 1,
+    "T.title.set": 1
+  },
+  "official": {
+    "numTotalTests": 29,
+    "numPassedTests": 29,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 29,
+    "numPassedTests": 29,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "counter": [
+      "treeView db getCount should start at 1"
+    ],
+    "identity": [
+      "treeView db addNode should assign unique incrementing ids"
+    ],
+    "width": [
+      "MindmapDb getData function getData should preserve node properties in processed data"
+    ],
+    "section": [
+      "MindmapDb getData function getData should assign correct section classes based on sibling position"
+    ],
+    "metadata": [
+      "treeView db accessibility should set and get accTitle"
+    ]
+  }
+}
