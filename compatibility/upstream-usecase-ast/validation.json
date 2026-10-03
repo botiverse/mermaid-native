@@ -1,7 +1,7 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
-  "nativeSource": "fbbba3f906e1e7308c6557f9a79e35d536de5514",
-  "nativeJarSha256": "d3c4aa86f902b5865d774599d15d32763594963d46b7207f4a19643dc7c11ccc",
+  "nativeSource": "2edf843be5e02326aaf74d8d05ef296686b82c24",
+  "nativeJarSha256": "dc29f4f3557869aaa4ad0de6b9cc79b7a926fbe1c09ed1fae5935a82f21967dc",
   "nativeOperations": 180,
   "nativeParseCalls": 102,
   "nativeClearCalls": 78,
@@ -14,8 +14,8 @@
   },
   "native": {
     "numTotalTests": 77,
-    "numPassedTests": 59,
-    "numFailedTests": 18,
+    "numPassedTests": 68,
+    "numFailedTests": 9,
     "numPendingTests": 0,
     "success": false
   },
@@ -34,7 +34,10 @@
     ],
     "unquotedToken": [
       "usecase parser publication and normalized AST still rejects a brace inside an unquoted label"
+    ],
+    "grammarLocation": [
+      "usecase parser publication and normalized AST locates rejected 'JSON' content inside a boundary"
     ]
   },
-  "scope": "Full77 original parser assertions:59passed18failed0skipped.8priorfailuresfixed;18passesremainownedbyusecase-model.180actualNativeoperationsand5negativecontrols. IncompleteAST/semanticcontractsremain."
+  "scope": "Full77 original parser assertions:68passed9failed0skipped.9priorgrammarfailuresfixed;18passesremainownedbyusecase-model.180actualNativeoperationsand6negativecontrols. IncompleteAST/semanticcontractsremain."
 }

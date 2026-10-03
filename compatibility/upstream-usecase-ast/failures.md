@@ -1,6 +1,6 @@
 # Remaining original Usecase publication/AST failures
 
-Production fbbba3f906e1e7308c6557f9a79e35d536de5514. All 77 reference assertions pass; Native 59 pass / 18 fail, zero skipped. Eight previously failing unquoted-label assertions now pass. Detailed raw results are preserved with the audit.
+Production 2edf843be5e02326aaf74d8d05ef296686b82c24. All 77 reference assertions pass; Native 68 pass / 9 fail, zero skipped. Nine previously failing statement-grammar diagnostics now pass. Detailed raw results are preserved with the audit.
 
 ## reports exact actor metadata and incompatible icon locations
 
@@ -18,41 +18,9 @@ AssertionError: expected 'Unknown usecase target missingEdge' to be 'Class/style
 
 AssertionError: expected [ { id: 'trueEdge', …(2) }, …(3) ] to deeply equal [ { id: 'trueEdge', …(2) }, …(3) ]
 
-## locates rejected 'relation' content inside a boundary
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates rejected 'note' content inside a boundary
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates rejected 'JSON' content inside a boundary
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates rejected 'nested boundary' content inside a boundary
-
-AssertionError: expected false to be true // Object.is equality
-
 ## rejects notes targeting JSON, boundary, and explicit edge IDs with both locations
 
 AssertionError: expected 'Unknown usecase target Payload' to be 'Note target \'Payload\' must be an ac…' // Object.is equality
-
-## locates a stereotype on invalid boundary syntax
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates a stereotype on invalid note syntax
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates a stereotype on invalid JSON syntax
-
-AssertionError: expected false to be true // Object.is equality
-
-## locates a stereotype on invalid edge syntax
-
-AssertionError: expected false to be true // Object.is equality
 
 ## rejects business icon, awesome, and rectangular declarations at exact locations
 
@@ -60,11 +28,7 @@ AssertionError: expected 'Business actor \'Icon\' must use norm…' to be 'Busin
 
 ## rejects JSON in boundaries and JSON semantic or circle relations at exact locations
 
-AssertionError: expected false to be true // Object.is equality
-
-## requires inline boundary metadata before the class suffix
-
-AssertionError: expected false to be true // Object.is equality
+AssertionError: expected undefined to be an instance of Error
 
 ## rejects inline boundary metadata that a boundary does not accept
 
