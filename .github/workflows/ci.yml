@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify imported upstream assertion sources
+        run: python3 compatibility/upstream-batch/run.py --verify-only --output build/upstream-batch
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
