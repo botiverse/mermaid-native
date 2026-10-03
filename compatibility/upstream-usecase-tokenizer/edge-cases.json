@@ -1,0 +1,57 @@
+[
+  "",
+  " \t",
+  "\r\n\r\n",
+  "\"bad\nactor Good",
+  "\"bad\r\nactor Good",
+  "'bad\ractor Good",
+  "<< >>",
+  "<<\nA >>",
+  "<<Human>> actor Person",
+  "<<Human\nactor Good",
+  "accTitle: Exact title\r\nactor A",
+  "  accDescr {first\nsecond}\ractor A",
+  "accDescr {unclosed",
+  "A accTitle: inline",
+  "\t%% comment\r\nA %% data",
+  "json P@{}:::data",
+  "json P @{\"x\":\"}\\\"{\",\"n\":[1,{\"v\":2}]}",
+  "json P@{\n",
+  "\"`line\n",
+  "\"`line\n\n",
+  "\"`line\r\nlast`\"",
+  "日本語😀 Ärlig  é",
+  "actorName actor-name ACTOR includeName included INCLUDE",
+  "TD TDname TB BT LR RL direction end ending",
+  "classDef class className style style-name",
+  "@{ #fff #F96 #xyz --foo --x-- ----> <---- ..> --|>",
+  "1 1mg 1.5 1.5px .5 1. 5%",
+  "--x x-- --o o-- --|> ..> <<< >>>",
+  "red\\,blue color:red,stroke-width:1.5px",
+  "\"%%\" 'plain' \"`%%\ntext`\"",
+  "actor a\rjson X@{\"a\":{}}\n<<User>>",
+  {
+    "prefix": "json Payload@",
+    "repeat": "{",
+    "count": 32001
+  },
+  {
+    "repeat": "\"`x",
+    "count": 32000
+  },
+  {
+    "prefix": "<<",
+    "repeat": "x",
+    "count": 128000
+  },
+  {
+    "repeat": "<<x\n",
+    "count": 256
+  },
+  {
+    "prefix": "<<",
+    "repeat": "\n",
+    "count": 256,
+    "suffix": "body"
+  }
+]

@@ -1,0 +1,81 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "c9ea22f0b2cc5632cca9f1c9a6154041aa71671a",
+  "nativeJarSha256": "bbe66d511fb043f07d36a6944b42c2b18c668764773dc5ed65fe8804ce27195f",
+  "nativeTokenizeCalls": 17,
+  "additionalDifferentialCases": 36,
+  "exactReferenceTokenComparisons": 77,
+  "official": {
+    "numTotalTests": 13,
+    "numPassedTests": 13,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 13,
+    "numPassedTests": 13,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "operator": [
+      "usecase Chevrotain lexer uses longest operator and delimiter precedence"
+    ],
+    "keyword": [
+      "usecase Chevrotain lexer keeps exact keywords out of longer identifiers and matches semantic words case-insensitively"
+    ],
+    "newline": [
+      "usecase Chevrotain lexer emits one token per physical newline for carriage return and line feed"
+    ],
+    "jsonLocation": [
+      "usecase Chevrotain lexer balances nested JSON while ignoring escaped quotes and braces in strings"
+    ],
+    "unclosedMarkdown": [
+      "usecase Chevrotain lexer consumes unclosed Markdown and stereotypes once instead of rescanning every suffix"
+    ],
+    "decimal": [
+      "usecase Chevrotain lexer lexes digit-leading ids as identifiers while decimals stay numbers"
+    ]
+  },
+  "regression": {
+    "ast": {
+      "passed": 71,
+      "failed": 6,
+      "unchangedFailures": true,
+      "mutationControls": 7
+    },
+    "model": {
+      "passed": 43,
+      "unselected": 73
+    }
+  },
+  "localValidation": {
+    "core": {
+      "AndroidDebug": 319,
+      "iOSSimulatorArm64": 319,
+      "WasmBrowser": 319
+    },
+    "layout": 284,
+    "sample": 5,
+    "svgAndroidDebug": 10,
+    "browser": {
+      "svgExactBaseline": 13,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/7da0840067ce18c8a407.wasm",
+      "wasmSha256": "1cd0910041cd654d090f3b11ff2b1d65ad208b265778e0083c1349aaf02e05a4"
+    },
+    "diagnostics": {
+      "quotedToken": "PASS",
+      "jsonToken": "PASS",
+      "validRecovery": "PASS"
+    },
+    "screenshotsInspected": 7
+  },
+  "scope": {
+    "newOriginalAssertions": 13,
+    "existingParserFailuresFixed": 0,
+    "sdkPublished": false,
+    "productionUse": "Grammar diagnostics tokenize the actual input; valid grammar remains the existing parser."
+  }
+}

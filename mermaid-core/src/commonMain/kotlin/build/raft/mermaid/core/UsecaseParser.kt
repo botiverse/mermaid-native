@@ -4,6 +4,7 @@ package build.raft.mermaid.core
 public class UsecaseParser(private val source: String) {
     public var sourceAst: UsecaseSourceAst? = null
         private set
+    private val sourceTokens by lazy { UsecaseLexer.tokenize(source).tokens.associateBy { it.startOffset } }
     private var pos = 0
     private var headerSpan = listOf(0, 0)
     private val statements = mutableListOf<MutableMap<String, Any?>>()
@@ -77,7 +78,8 @@ public class UsecaseParser(private val source: String) {
     }
     private fun failGrammarToken(expected: String): Nothing {
         hws()
-        val image = jsonDeclarationStart.matchAt(source, pos)?.value
+        val image = sourceTokens[pos]?.image
+            ?: jsonDeclarationStart.matchAt(source, pos)?.value
             ?: labelOperator.matchAt(source, pos)?.value
             ?: idPattern.matchAt(source, pos)?.value
             ?: source.getOrNull(pos)?.toString().orEmpty()

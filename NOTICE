@@ -43,3 +43,8 @@ CynefinBoundaries adapts Mermaid's seeded random and Cynefin boundary algorithms
 at the revision recorded in compatibility/upstream-cynefin-boundaries/sources.json.
 Copyright Knut Sveidqvist and contributors, under the MIT License reproduced in
 mermaid-layout-api/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
+
+UsecaseLexer adapts Mermaid's Usecase token vocabulary and lexical modes at the
+revision recorded in compatibility/upstream-usecase-tokenizer/sources.json.
+Copyright Knut Sveidqvist and contributors, under the MIT License reproduced in
+mermaid-core/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
