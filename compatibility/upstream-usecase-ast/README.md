@@ -1,6 +1,6 @@
 # Original Usecase source/publication assertions
 
-Runs the complete unchanged, hash-pinned `usecase.parser.spec.ts`: 77 reference assertions pass; the Native document yields 51 passing and 26 failing, with zero skipped. Eighteen passes were already covered by upstream-usecase-model; the source-AST baseline added 22 passing and 37 failing assertions. Declaration validation subsequently converted 11 failures to passes, leaving 33 passes and 26 failures beyond the original 18. See failures.md for the remaining contract gaps.
+Runs the complete unchanged, hash-pinned `usecase.parser.spec.ts`: 77 reference assertions pass; the Native document yields 59 passing and 18 failing, with zero skipped. Eighteen passes were already covered by upstream-usecase-model; the source-AST baseline added 22 passing and 37 failing assertions. Declaration validation converted 11 failures to passes, then unquoted-label grammar validation converted another eight. This leaves 41 passes and 18 failures beyond the original 18. See failures.md for the remaining contract gaps.
 
 The production `UsecaseParser` records half-open UTF-16 ranges while consuming source. Its `sourceAst` is published only after successful `parseValidated()`. `UsecaseDocument` pairs that AST with the existing renderer model, clears both before parsing and on failure, and supports explicit clear. `UsecaseSourceAst.asMap()` returns a detached JSON-compatible snapshot. Renderer model equality and fields remain unchanged.
 
@@ -17,10 +17,12 @@ The reference pass records all external `clear` and `parse` calls, including rep
 
 Some failing assertions stop before consuming all captured operations for their test. All reference operations are still executed in Native; their results are not counted as passing unless the unchanged assertion passes. Per-test queues prevent this early stop from shifting subsequent tests. Tests remain failures, never skips.
 
-Four negative controls change the header range, the `son` JSON identifier range, the publication snapshot following an invalid parse, or the previous-origin text in a collision diagnostic. Each causes exactly its targeted previously passing original assertion to fail; restoring transport returns 51/26. Existing 43 original model assertions and 299 core/277 layout/five sample tests pass. These are independent checks and are not all additional original coverage.
+Five negative controls change the header range, the `son` JSON identifier range, the publication snapshot following an invalid parse, the previous-origin text in a collision diagnostic, or the actual unquoted-token diagnostic. Each causes exactly its targeted previously passing original assertion to fail; restoring transport returns 59/18. Existing 43 original model assertions and 302 core/277 layout/five sample tests pass. These are independent checks and are not all additional original coverage.
 
 ```sh
 python3 compatibility/upstream-usecase-ast/run.py --upstream /path/to/mermaid --stdlib /path/to/kotlin-stdlib.jar --verify-mutations
 ```
 
-Build `:mermaid-core:bundleLibRuntimeToJarDebug` first. The script intentionally exits nonzero while 26 failures remain. No SDK publication is included.
+Unquoted labels now reject nested delimiters, reserved relationship/class/metadata tokens and embedded quoted strings at their source location. Ordinary punctuation, quoted delimiters and valid single-quoted labels remain accepted; this does not claim complete single-quoted name or metadata support.
+
+Build `:mermaid-core:bundleLibRuntimeToJarDebug` first. The script intentionally exits nonzero while 18 failures remain. No SDK publication is included.

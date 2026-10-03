@@ -14,7 +14,7 @@ public class UsecaseParser(private val source: String) {
     private var metadataOccurrences = mutableListOf<Map<String, Any?>>()
     private fun span(start: Int, end: Int = pos): List<Int> = listOf(start, end)
     private fun labelSpan(start: Int, end: Int): List<Int> {
-        val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) == '"') 1 else 0
+        val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) in listOf('"', '\'')) 1 else 0
         return span(start + trim, end - trim)
     }
     private fun appendStatement(statement: MutableMap<String, Any?>) {
@@ -35,6 +35,7 @@ public class UsecaseParser(private val source: String) {
     private var accTitle: String? = null
     private var accDescr: String? = null
     private val idPattern = Regex("[A-Za-z0-9_]+")
+    private val labelOperator = Regex("--\\|>|\\.\\.>|:::|@\\{|<<|<--+|--+>|--o|o--|--x|x--|--+")
     private val forbidden = setOf("allowmixing", "newpage", "package", "rectangle", "skinparam")
     private data class Entity(val id: String, val label: String, val shape: UsecaseShape, val explicit: Boolean, val attributes: UsecaseAttributes, val labelType: String, val occurrence: Map<String, Any?>, val generated: Boolean, val originLabel: String, val endpointDeclaration: Boolean)
     private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
@@ -56,11 +57,11 @@ public class UsecaseParser(private val source: String) {
         )
     }
     private fun quoted(): String {
-        hws(); val quoteStart = pos; requireText("\""); val markdown = source.getOrNull(pos) == '`'; if (markdown) pos++
+        hws(); val quoteStart = pos; val quote = source.getOrNull(pos) ?: fail("Expected quoted label"); requireText(quote.toString()); val markdown = quote == '"' && source.getOrNull(pos) == '`'; if (markdown) pos++
         val start = pos
         while (pos < source.length) {
             if (markdown && source.startsWith("`\"", pos)) { val value = source.substring(start, pos); pos += 2; return value }
-            if (!markdown && source[pos] == '"') { val value = source.substring(start, pos); pos++; return value }
+            if (!markdown && source[pos] == quote) { val value = source.substring(start, pos); pos++; return value }
             if (!markdown && source[pos] in "\r\n") failQuotedLabel(quoteStart, "Physical newlines require a Markdown label")
             pos++
         }
@@ -70,12 +71,33 @@ public class UsecaseParser(private val source: String) {
         hws(); if (at("\"")) { val label = quoted(); return label.replace(Regex("[^A-Za-z0-9_]"), "_") to label }
         val id = identifier(); return id to id
     }
+    private fun failLabelToken(image: String): Nothing {
+        val location = sourceLocation(pos)
+        throw LabelLexingError(
+            "Error parsing usecase diagram: expected label text but found: '$image' at line ${location.line}, column ${location.column} [$pos,${pos + image.length})",
+            location,
+        )
+    }
     private fun label(close: Char): String {
-        hws(); if (at("\"")) return quoted()
+        hws(); if (at("\"") || at("'")) return quoted()
         val start = pos
         while (pos < source.length && source[pos] != close) {
-            if (source[pos] in "\r\n;" || source.startsWith("@{", pos) || source.startsWith("<<", pos)) fail("Invalid unquoted usecase label")
-            pos++
+            val char = source[pos]
+            if (char == '"' || char == '\'') {
+                val end = source.indexOf(char, pos + 1)
+                if (end < 0 || source.substring(pos + 1, end).any { it in "\r\n" }) {
+                    val quoteStart = pos; pos++
+                    failQuotedLabel(quoteStart, "Unclosed string inside an unquoted label")
+                }
+                failLabelToken(source.substring(pos, end + 1))
+            }
+            val operator = labelOperator.matchAt(source, pos)?.value
+            if (operator != null) failLabelToken(operator)
+            if (char in "()[]{}\r\n") failLabelToken(if (source.startsWith("\r\n", pos)) "\r\n" else char.toString())
+            // Consume identifier text as one token: the final 'o' in 'foo--bar'
+            // belongs to the word, not the start of a backward-circle operator.
+            val word = idPattern.matchAt(source, pos)
+            pos = if (word != null) word.range.last + 1 else pos + 1
         }
         return source.substring(start, pos).trim().takeIf { it.isNotEmpty() } ?: fail("Empty usecase label")
     }
