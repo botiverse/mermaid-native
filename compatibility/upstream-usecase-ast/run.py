@@ -52,7 +52,7 @@ for mode in ['official','native']:
 if o.verify_mutations:
  original=cache.read_text();controls={}
  try:
-  for key in ['headerSpan','jsonIdSpan','failedPublication','collisionOrigin','unquotedToken']:
+  for key in ['headerSpan','jsonIdSpan','failedPublication','collisionOrigin','unquotedToken','grammarLocation']:
    mutated=json.loads(original);targets=set();changed=0
    for row in mutated:
     source=row.get('source','');snap=row['snapshot']
@@ -61,6 +61,7 @@ if o.verify_mutations:
     elif key=='failedPublication' and 'actor Draft' in source and 'note for Missing "invalid"' in source:snap['ast']={'stale':True}
     elif key=='collisionOrigin' and source=='usecase-beta\n\"A-B\"\n\"A B\"' and 'names both exact locations' in row['test']:snap['error']=snap['error'].replace('previous declaration at', 'missing previous declaration at')
     elif key=='unquotedToken' and source=='usecase-beta\nLiteral(Literal {nested} markers)':snap['error']=snap['error'].replace('but found:', 'token:')
+    elif key=='grammarLocation' and "locates rejected 'JSON' content" in row['test'] and source=='usecase-beta\nsystemBoundary Auth\njson Payload@{}\nend':snap['error']=snap['error'].replace('at line', 'at missing line')
     else:continue
     targets.add(row['test'].replace(' > ',' '));changed+=1
    assert changed==1 and len(targets)==1 and not(targets&baseline),(key,targets,baseline)
