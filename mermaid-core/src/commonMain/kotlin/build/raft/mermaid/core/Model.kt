@@ -669,14 +669,17 @@ public data class UsecaseRelationship(
     val explicitId: Boolean = false, val minlen: Int = 1,
     val animate: Boolean = false, val animation: String? = null, val labelType: String? = null,
 ) {
-    val arrowType: Int get() = when {
-        startMarker == "arrow" -> 1
-        startMarker == "circle" -> 5
-        startMarker == "cross" -> 6
-        endMarker == "circle" -> 3
-        endMarker == "cross" -> 4
-        endMarker == "none" -> 2
-        else -> 0
+    // Separate endpoint switches retain every marker in production Wasm lowering.
+    val arrowType: Int get() = when (startMarker) {
+        "arrow" -> 1
+        "circle" -> 5
+        "cross" -> 6
+        else -> when (endMarker) {
+            "circle" -> 3
+            "cross" -> 4
+            "none" -> 2
+            else -> 0
+        }
     }
     val type: UsecaseRelationshipType get() = when {
         endMarker == "generalization" -> UsecaseRelationshipType.GENERALIZATION

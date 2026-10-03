@@ -11,6 +11,20 @@ class UsecaseSemanticsTest {
         assertEquals(SourceLocation(5, 6), failure.diagnostics.single().location)
     }
 
+    @Test fun jsonMarkerRulesReachThePublicParserOnEveryPlatform() {
+        for ((operator, arrow) in listOf("--o" to 3, "--x" to 4, "o--" to 5, "x--" to 6)) {
+            val source = "usecase-beta\njson Payload@{}\nInspect $operator Payload"
+            val raw = assertIs<UsecaseDiagram>(assertIs<MermaidParseResult.Success>(UsecaseParser(source).parse()).diagram)
+            assertEquals(arrow, raw.relationships.single().arrowType, operator)
+            assertEquals(UsecaseRelationshipType.ASSOCIATION, raw.relationships.single().type)
+            assertEquals(listOf("Payload"), raw.jsonNodes.map { it.id })
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), operator)
+        }
+        for (operator in listOf("-->", "<--", "--")) {
+            assertIs<MermaidParseResult.Success>(MermaidParser.parse("usecase-beta\njson Payload@{}\nInspect $operator Payload"))
+        }
+    }
+
     @Test fun unknownTargetsAndInvalidNotesClearPublishedState() {
         val doc = UsecaseDocument()
         for (body in listOf("A --> B\nclass edge_0 selected", "A --> B\nstyle missing stroke:red", "json Data@{}\nnote for Data \"invalid\"", "systemBoundary Auth\nend\nnote for Auth \"invalid\"", "A edge@--> B\nnote for edge \"invalid\"")) {
