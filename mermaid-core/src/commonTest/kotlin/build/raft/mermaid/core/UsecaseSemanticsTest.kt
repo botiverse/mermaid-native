@@ -33,6 +33,16 @@ class UsecaseSemanticsTest {
         assertEquals(true, (astEdge["attrs"] as Map<*, *>)["animate"])
     }
 
+    @Test fun relationshipModelRetainsMarkerDirectionLengthAndMarkdownLabelType() {
+        val doc = UsecaseDocument()
+        assertIs<MermaidParseResult.Success>(doc.parse("usecase-beta\nA <-- B\nB -- \"`**label**`\" ---> C\nC --x D"))
+        val edges = doc.diagram!!.relationships
+        assertEquals(listOf(1, 0, 4), edges.map { it.arrowType })
+        assertEquals(listOf(1, 2, 1), edges.map { it.minlen })
+        assertEquals("markdown", edges[1].labelType)
+        assertEquals("**label**", edges[1].label)
+    }
+
     @Test fun jsonAndInternalNoteEdgesAreDetachedSerializableAstValues() {
         val doc = UsecaseDocument()
         assertIs<MermaidParseResult.Success>(doc.parse("usecase-beta\njson Data@{\"obj\":{\"2\":true,\"1\":null},\"items\":[false,3]}\nA long@----> Data\nnote for A \"remember\""))

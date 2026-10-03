@@ -213,18 +213,19 @@ public class UsecaseParser(private val source: String) {
         var edgeId: String? = null; hws(); val relationStart = pos; var idSpan: List<Int>? = null; var edgeLabelSpan: List<Int>? = null; val candidate = idPattern.find(source, pos)?.takeIf { it.range.first == pos }
         if (candidate != null && source.getOrNull(candidate.range.last + 1) == '@') { edgeId = candidate.value; idSpan = span(candidate.range.first, candidate.range.last + 1); pos = candidate.range.last + 2 }
         hws(); val match = Regex("--\\|>|\\.\\.>|<--+|o--|x--|--o|--x|--+>|--+").find(source, pos)?.takeIf { it.range.first == pos } ?: fail("Expected usecase relation")
-        var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null
-        if (operator == "..>") { requireText(":"); hws(); val labelStart = pos; edgeLabel = identifier().lowercase(); edgeLabelSpan = span(labelStart); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
+        var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null; var edgeLabelType: String? = null
+        if (operator == "..>") { requireText(":"); hws(); val labelStart = pos; edgeLabel = identifier().lowercase(); edgeLabelType = "text"; edgeLabelSpan = span(labelStart); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
         else if (operator in listOf("--", "<--", "o--", "x--")) {
             val restStart = pos
             hws()
             if (source.getOrNull(pos) == '"') {
+                val textType = if (source.startsWith("\"`", pos)) "markdown" else "text"
                 val text = quoted(); hws()
                 val right = Regex("--+(?:>|[ox])?").find(source, pos)?.takeIf { it.range.first == pos }
                 if (right == null) pos = restStart // A quoted destination, not a relation label.
                 else {
                     if (operator != "--" && right.value != "--") fail("Invalid reverse labelled relation")
-                    edgeLabel = text
+                    edgeLabel = text; edgeLabelType = textType
                     if (operator == "--") operator = right.value
                     pos = right.range.last + 1
                 }
@@ -235,7 +236,7 @@ public class UsecaseParser(private val source: String) {
                 if (right != null) {
                     val raw = rest.substring(0, right.range.first).trim()
                     if (raw.isNotEmpty()) {
-                        edgeLabel = raw
+                        edgeLabel = raw; edgeLabelType = "text"
                         val rightOperator = right.groupValues[1]
                         if (operator != "--" && rightOperator != "--") fail("Invalid reverse labelled relation")
                         if (operator == "--") operator = rightOperator
@@ -251,7 +252,7 @@ public class UsecaseParser(private val source: String) {
         val resolvedId = edgeId ?: "edge-${anonymousEdgeCount++}"
         edges += UsecaseRelationship(from.id, to.id, edgeLabel, resolvedId, startMarker, endMarker, operator == "..>",
             explicitId = edgeId != null, minlen = if (operator == "..>" || operator == "--|>") 1 else (operator.count { it == '-' } - 1).coerceAtLeast(1),
-            labelType = if (edgeLabel != null) "text" else null)
+            labelType = edgeLabelType)
         relationRanges += span(relationStart)
         val occurrence = linkedMapOf<String, Any?>("id" to resolvedId, "span" to span(relationStart))
         if (idSpan != null) occurrence["idSpan"] = idSpan
