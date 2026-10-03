@@ -1,7 +1,7 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
-  "nativeSource": "03c585a7f78f6764fd025860219ecfaf5bc4fa41",
-  "nativeJarSha256": "e6af79c82d9a16e93e986b9a84def86c80ee45bdb15c1b49cf2c832723db3ac9",
+  "nativeSource": "0ed77c0acae3dc9fc3e353a4f851b8a6c419dfae",
+  "nativeJarSha256": "5f6c1715380a13ade77bdab4fc81f272a55fd5554d25cfcfb4ce802262d5f4c9",
   "nativeOperations": 180,
   "nativeParseCalls": 102,
   "nativeClearCalls": 78,
@@ -14,10 +14,10 @@
   },
   "native": {
     "numTotalTests": 77,
-    "numPassedTests": 71,
-    "numFailedTests": 6,
+    "numPassedTests": 77,
+    "numFailedTests": 0,
     "numPendingTests": 0,
-    "success": false
+    "success": true
   },
   "mutationControls": {
     "headerSpan": [
@@ -40,7 +40,126 @@
     ],
     "metadataLocation": [
       "usecase parser publication and normalized AST reports exact actor metadata and incompatible icon locations"
+    ],
+    "relationKind": [
+      "usecase parser publication and normalized AST rejects mixed-kind generalization and actor include at the exact relation span"
+    ],
+    "classTarget": [
+      "usecase parser publication and normalized AST rejects duplicate and unknown edge class/style targets with exact locations"
+    ],
+    "noteTarget": [
+      "usecase parser publication and normalized AST rejects notes targeting JSON, boundary, and explicit edge IDs with both locations"
+    ],
+    "jsonRelation": [
+      "usecase parser publication and normalized AST rejects JSON in boundaries and JSON semantic or circle relations at exact locations"
+    ],
+    "edgeAnimation": [
+      "usecase parser publication and normalized AST publishes exact true, fast, slow, and false animation state and rejects invalid values"
+    ],
+    "astAnimation": [
+      "usecase parser publication and normalized AST publishes exact true, fast, slow, and false animation state and rejects invalid values"
+    ],
+    "astJson": [
+      "usecase parser publication and normalized AST publishes a complete serializable AST v1 with ordered statements and exact spans"
     ]
   },
-  "scope": "Full77 original parser assertions:71passed6failed0skipped.3prior metadata failures fixed;18passes remain owned by usecase-model.180actual Native operations and7negative controls. Incomplete AST/semantic contracts remain."
+  "scope": {
+    "newlyFixedOriginalFailures": 6,
+    "priorModelOverlap": 18,
+    "sdkPublished": false,
+    "animatedRenderingImplemented": false
+  },
+  "regression": {
+    "lexer": {
+      "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+      "nativeSource": "0ed77c0acae3dc9fc3e353a4f851b8a6c419dfae",
+      "nativeJarSha256": "5f6c1715380a13ade77bdab4fc81f272a55fd5554d25cfcfb4ce802262d5f4c9",
+      "nativeTokenizeCalls": 17,
+      "additionalDifferentialCases": 36,
+      "exactReferenceTokenComparisons": 77,
+      "official": {
+        "numTotalTests": 13,
+        "numPassedTests": 13,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      },
+      "native": {
+        "numTotalTests": 13,
+        "numPassedTests": 13,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      },
+      "mutationControls": {
+        "operator": [
+          "usecase Chevrotain lexer uses longest operator and delimiter precedence"
+        ],
+        "keyword": [
+          "usecase Chevrotain lexer keeps exact keywords out of longer identifiers and matches semantic words case-insensitively"
+        ],
+        "newline": [
+          "usecase Chevrotain lexer emits one token per physical newline for carriage return and line feed"
+        ],
+        "jsonLocation": [
+          "usecase Chevrotain lexer balances nested JSON while ignoring escaped quotes and braces in strings"
+        ],
+        "unclosedMarkdown": [
+          "usecase Chevrotain lexer consumes unclosed Markdown and stereotypes once instead of rescanning every suffix"
+        ],
+        "decimal": [
+          "usecase Chevrotain lexer lexes digit-leading ids as identifiers while decimals stay numbers"
+        ]
+      }
+    },
+    "model": {
+      "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+      "nativeJarSha256": "5f6c1715380a13ade77bdab4fc81f272a55fd5554d25cfcfb4ce802262d5f4c9",
+      "uniqueInputs": 43,
+      "nativeParseCalls": 47,
+      "official": {
+        "numTotalTests": 116,
+        "numPassedTests": 43,
+        "numFailedTests": 0,
+        "numPendingTests": 73,
+        "success": true
+      },
+      "native": {
+        "numTotalTests": 116,
+        "numPassedTests": 43,
+        "numFailedTests": 0,
+        "numPendingTests": 73,
+        "success": true
+      }
+    }
+  },
+  "localValidation": {
+    "core": {
+      "AndroidDebug": 325,
+      "iOSSimulatorArm64": 325,
+      "WasmBrowser": 325
+    },
+    "layout": 284,
+    "sample": 5,
+    "svgAndroidDebug": 10,
+    "browser": {
+      "svgExactBaseline": 17,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/939278661d9a0a9bbb2c.wasm",
+      "wasmSha256": "c2c36d55ddb403acea621199b39eec407bffbd98b04ab4fce6d296d11e02fc5a"
+    },
+    "diagnostics": {
+      "invalidCases": 4,
+      "validRecovery": true,
+      "screenshotsInspected": 11
+    },
+    "productionWasmGate": {
+      "productionModule": "mermaid-web/build/compileSync/wasmJs/main/productionExecutable/optimized/mermaid-native-mermaid-web-wasm-js.mjs",
+      "rejectedJsonMarkers": 4,
+      "acceptedJsonMarkers": 3,
+      "mixedKindRejected": true,
+      "typedAnimationRejected": true,
+      "validRecovery": true
+    },
+    "oldProductionNegativeControl": "625ce123f0cec3634e08118e7af5e630ab9e5375c4bfcc3ec81ac781e2e20f4e fails at --o as expected"
+  }
 }
