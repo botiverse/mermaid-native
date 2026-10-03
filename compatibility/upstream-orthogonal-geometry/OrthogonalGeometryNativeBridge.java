@@ -15,11 +15,39 @@ public final class OrthogonalGeometryNativeBridge {
     String text() { return new String(Base64.getDecoder().decode(fields[i++]),StandardCharsets.UTF_8); }
     ScenePoint point() { return new ScenePoint(number(),number()); }
   }
+  private static String quote(String s) {
+    var out=new StringBuilder("\"");
+    for(char c:s.toCharArray()) {
+      if(c=='"' || c=='\\')out.append('\\').append(c);
+      else if(c<32)out.append(String.format("\\u%04x",(int)c));
+      else out.append(c);
+    }
+    return out.append('"').toString();
+  }
   public static void main(String[] args) throws Exception {
     var reader=new BufferedReader(new InputStreamReader(System.in,StandardCharsets.UTF_8));
     for(String line;(line=reader.readLine())!=null;) {
-      var in=new Input(line);int op=in.integer();var a=in.point();var b=in.point();boolean result;
+      var in=new Input(line);int op=in.integer();
       var geometry=OrthogonalGeometry.INSTANCE;
+      if(op==5) {
+        int count=in.integer();var points=new ArrayList<ScenePoint>();for(int i=0;i<count;i++)points.add(in.point());
+        var route=geometry.classifyThreeSegmentRoute(points,in.number());
+        System.out.println("{\"value\":"+(route==null?"null":"{\"kind\":\""+route.getKind().name()+"\"}")+"}");
+        if(in.i!=in.fields.length)throw new IllegalArgumentException("unconsumed fields");
+        continue;
+      }
+      if(op==6) {
+        int count=in.integer();var nodes=new ArrayList<OrthogonalGeometry.NodeBounds>();
+        for(int i=0;i<count;i++)nodes.add(geometry.nodeBoundsFromCenter(in.text(),in.number(),in.number(),in.number(),in.number(),in.integer()!=0,in.integer()!=0));
+        var rows=new ArrayList<String>();
+        for(var entry:geometry.collectRealNodeBounds(nodes)){
+          var r=entry.getRect();rows.add("{\"id\":"+quote(entry.getId())+",\"rect\":{\"left\":"+r.getX()+",\"right\":"+(r.getX()+r.getWidth())+",\"top\":"+r.getY()+",\"bottom\":"+(r.getY()+r.getHeight())+"}}");
+        }
+        System.out.println("{\"value\":{\"realNodeRects\":["+String.join(",",rows)+"]}}");
+        if(in.i!=in.fields.length)throw new IllegalArgumentException("unconsumed fields");
+        continue;
+      }
+      var a=in.point();var b=in.point();boolean result;
       if(op==0 || op==1 || op==4) {
         var c=in.point();var d=in.point();double epsilon=in.number();
         result=op==0?geometry.segmentsCross(a,b,c,d,epsilon,in.number()):op==4?geometry.segmentsStrictlyCross(a,b,c,d,epsilon):geometry.sameAxisSegmentsOverlap(a,b,c,d,epsilon);

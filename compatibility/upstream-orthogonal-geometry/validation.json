@@ -1,0 +1,65 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "runtimeSha256": {
+    "mermaid-core.jar": "fa8c77a1c96aceb133f694309c8bb34efc76924e15ddcd3fa4f8f278909ce018",
+    "mermaid-layout-api.jar": "a5b7e90381231a1ac8df9a89f3a96a12d8099b20c24c76afac7073d15547d9b9",
+    "mermaid-layout-simple.jar": "e7663eb5f691b860c3c35c94be5fabce0ef8ad5ce1f876e87a78fa45681d7df6"
+  },
+  "uniqueInputs": 24,
+  "selection": "All twelve original geometry tests; bounds and route classification consumed by production flow routing",
+  "official": {
+    "numTotalTests": 12,
+    "numPassedTests": 12,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 12,
+    "numPassedTests": 12,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "resultMutations": {
+    "routeKind": {
+      "failedTests": [
+        "swimlane direction geometry route shape and candidate conflict helpers classifies 4-point H-V-H and V-H-V routes"
+      ],
+      "passedTests": 11
+    },
+    "diagonalRoute": {
+      "failedTests": [
+        "swimlane direction geometry route shape and candidate conflict helpers classifies 4-point H-V-H and V-H-V routes"
+      ],
+      "passedTests": 11
+    },
+    "nodeIdentity": {
+      "failedTests": [
+        "swimlane direction geometry node bounds helpers collects only real visible nodes"
+      ],
+      "passedTests": 11
+    },
+    "nodeBounds": {
+      "failedTests": [
+        "swimlane direction geometry node bounds helpers collects only real visible nodes"
+      ],
+      "passedTests": 11
+    }
+  },
+  "nativeSource": "90f6341bd5eebe7e402237ef96f83ebbe834dda1",
+  "androidTests": {
+    "mermaid-layout-simple": {
+      "tests": 275,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mermaid-testkit": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  }
+}

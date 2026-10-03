@@ -32,6 +32,9 @@ internal fun flowMixedRoutes(
     for (index in routes.keys) {
         val original = result.getValue(index)
         if (original.points.size != 6) continue
+        val middle = OrthogonalGeometry.classifyThreeSegmentRoute(original.points.subList(1, 5)) ?: continue
+        val expectedKind = if (horizontal) OrthogonalGeometry.RouteKind.VHV else OrthogonalGeometry.RouteKind.HVH
+        if (middle.kind != expectedKind) continue
         val others = result.filterKeys { it != index }
         val segments = others.values.flatMap { it.points.zipWithNext() }
         fun crossings(route: FlowReturnRoute) = route.points.zipWithNext().sumOf { (a, b) ->
