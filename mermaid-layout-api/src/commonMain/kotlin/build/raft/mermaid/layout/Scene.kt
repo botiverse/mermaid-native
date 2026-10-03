@@ -90,6 +90,7 @@ public data class LayoutScene(
     val commands: List<DrawCommand>,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val layoutValidation: LayoutValidationReport? = null,
 )
 
 public fun interface TextMeasurer {
@@ -101,6 +102,8 @@ public data class LayoutConfig(
     val nodeGap: Double = 56.0,
     val messageGap: Double = 56.0,
     val cynefin: CynefinBoundaryConfig = CynefinBoundaryConfig(),
+    /** Opt-in quadratic diagnostic for flowchart geometry; never changes rendering. */
+    val validateOrthogonalLayout: Boolean = false,
 )
 
 public fun interface DiagramLayout {

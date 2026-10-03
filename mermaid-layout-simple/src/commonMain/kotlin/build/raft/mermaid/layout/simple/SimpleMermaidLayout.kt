@@ -3152,6 +3152,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
+        val validationLabels = mutableMapOf<Int, DrawText>()
+        val validationTitles = mutableMapOf<String, DrawText>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
         val arrowFill = SceneColor(DiagramPalette.INK)
 
@@ -3163,7 +3165,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             val rect=placement.groups[subgraph.id] ?: return@forEach
             val groupStyle=flowGroupStyle(subgraph,diagram)
             commands += DrawRect(rect,cornerRadius=4.0,fill=groupStyle.fill,stroke=groupStyle.stroke,strokeWidth=groupStyle.strokeWidth)
-            commands += DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+6+groupStyle.text.fontSize),TextAnchor.MIDDLE,groupStyle.text)
+            val title = DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+6+groupStyle.text.fontSize),TextAnchor.MIDDLE,groupStyle.text)
+            commands += title
+            if(config.validateOrthogonalLayout)validationTitles[subgraph.id] = title
         }
 
         diagram.edges.forEachIndexed { index, edge ->
@@ -3181,7 +3185,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += flowMarker(edge.fromMarker, points[1], points.first(),markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
                 val mid = adjustedLabels[index]?.origin ?: route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
-                commands += DrawText(label, mid, TextAnchor.MIDDLE, style)
+                val text = DrawText(label, mid, TextAnchor.MIDDLE, style)
+                commands += text
+                if(config.validateOrthogonalLayout)validationLabels[index] = text
             }
         }
         diagram.nodes.forEach { node ->
@@ -3227,12 +3233,16 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
 
         }
-        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty())return LayoutScene(width,height,commands)
+        fun validation(dx: Double, dy: Double): build.raft.mermaid.layout.LayoutValidationReport? {
+            if (!config.validateOrthogonalLayout) return null
+            return flowLayoutValidation(diagram, rects, placement.groups, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
+        }
+        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty())return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
         val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }
         val dx=maxOf(0.0,config.padding-bounds.minOf { it.x })
         val dy=maxOf(0.0,config.padding-bounds.minOf { it.y })
         return LayoutScene(maxOf(width,bounds.maxOf { it.x+it.width }+config.padding)+dx,
-            maxOf(height,bounds.maxOf { it.y+it.height }+config.padding)+dy,commands.map { it.offsetBy(dx,dy) })
+            maxOf(height,bounds.maxOf { it.y+it.height }+config.padding)+dy,commands.map { it.offsetBy(dx,dy) },layoutValidation=validation(dx,dy))
     }
 
     private fun edgeAnchors(source: SceneRect, target: SceneRect, horizontal: Boolean): Pair<ScenePoint, ScenePoint> =
