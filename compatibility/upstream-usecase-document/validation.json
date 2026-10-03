@@ -1,0 +1,124 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "743bd914bc3baa63eb384be814f90a05a89e81fc",
+  "nativeJarSha256": "851207b1227c13c63ffa2ddb3ac9463bdf366f64e458293d31a1c89780d43f3f",
+  "nativeOperations": 69,
+  "official": {
+    "numTotalTests": 4,
+    "numPassedTests": 4,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 4,
+    "numPassedTests": 4,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "detachment": [
+      "usecase database atomically replaces committed state with a detached model"
+    ],
+    "replacement": [
+      "usecase database atomically replaces committed state with a detached model"
+    ],
+    "incomplete": [
+      "usecase database keeps the previous commit when a replacement is incomplete"
+    ],
+    "reset": [
+      "usecase database clears every collection, counter, AST, direction, config, title, and accessibility field"
+    ],
+    "padding": [
+      "usecase database gives oval use cases extra label clearance over rectangular use cases"
+    ]
+  },
+  "regression": {
+    "ast": {
+      "nativeSource": "743bd914bc3baa63eb384be814f90a05a89e81fc",
+      "nativeJarSha256": "851207b1227c13c63ffa2ddb3ac9463bdf366f64e458293d31a1c89780d43f3f",
+      "native": {
+        "numTotalTests": 77,
+        "numPassedTests": 77,
+        "numFailedTests": 0,
+        "success": true
+      },
+      "existingMutationControlsRepeatedCompletely": false,
+      "note": "Unchanged mutation-control repetition was interrupted after eight controls; runner finally restored Native snapshots and reran the complete 77-case passing baseline. New document controls all passed separately. The complete 14-control campaign is preserved with PR251."
+    },
+    "lexer": {
+      "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+      "nativeSource": "743bd914bc3baa63eb384be814f90a05a89e81fc",
+      "nativeJarSha256": "851207b1227c13c63ffa2ddb3ac9463bdf366f64e458293d31a1c89780d43f3f",
+      "nativeTokenizeCalls": 17,
+      "additionalDifferentialCases": 36,
+      "exactReferenceTokenComparisons": 77,
+      "official": {
+        "numTotalTests": 13,
+        "numPassedTests": 13,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      },
+      "native": {
+        "numTotalTests": 13,
+        "numPassedTests": 13,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      },
+      "mutationControls": {
+        "operator": [
+          "usecase Chevrotain lexer uses longest operator and delimiter precedence"
+        ],
+        "keyword": [
+          "usecase Chevrotain lexer keeps exact keywords out of longer identifiers and matches semantic words case-insensitively"
+        ],
+        "newline": [
+          "usecase Chevrotain lexer emits one token per physical newline for carriage return and line feed"
+        ],
+        "jsonLocation": [
+          "usecase Chevrotain lexer balances nested JSON while ignoring escaped quotes and braces in strings"
+        ],
+        "unclosedMarkdown": [
+          "usecase Chevrotain lexer consumes unclosed Markdown and stereotypes once instead of rescanning every suffix"
+        ],
+        "decimal": [
+          "usecase Chevrotain lexer lexes digit-leading ids as identifiers while decimals stay numbers"
+        ]
+      }
+    }
+  },
+  "localValidation": {
+    "tests": {
+      "AndroidDebug": 328,
+      "iOSSimulatorArm64": 328,
+      "WasmBrowser": 328,
+      "layout": 287,
+      "sample": 5,
+      "svgAndroidDebug": 10
+    },
+    "browser": {
+      "validCases": 20,
+      "changedFromBaseline": [
+        "rect",
+        "rectangle-long",
+        "rectangle-styled"
+      ],
+      "exactBaselineOrLocal": 17,
+      "rectangularTextFits": true,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/e6d6d144e9e6a039c2d1.wasm",
+      "wasmSha256": "1bd181abda7a73a6c3e73c33b06f46c3cfbbf52c3e81892b6faaf96f5e715e9e"
+    },
+    "screenshotsInspected": 8,
+    "productionWasmGate": "passed (4 rejected markers, 3 accepted markers, mixed-kind and typed animation rejection, valid recovery)",
+    "wasmRetry": "Existing lexer large-input test exceeded 2 seconds during concurrent audit work; isolated rerun passed all 328 without source or timeout changes."
+  },
+  "scope": {
+    "newOriginalAssertions": 4,
+    "sdkPublished": false,
+    "browserConfigurationParity": false,
+    "animatedRenderingImplemented": false
+  }
+}
