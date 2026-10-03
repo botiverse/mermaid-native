@@ -167,6 +167,10 @@ public class UsecaseParser(private val source: String) {
             if (pos == start) fail("Invalid usecase statement"); endLine()
         }
         if (parent != null) fail("Unclosed system boundary")
+        for (boundary in boundaries) {
+            val attributes = attrs[boundary.id] ?: UsecaseAttributes()
+            attrs[boundary.id] = attributes.copy(properties = mapOf("type" to "rect") + attributes.properties)
+        }
         MermaidParseResult.Success(UsecaseDiagram(direction, actors.values.toList(), nodes.values.toList(), edges, boundaries, notes, jsonNodes, attrs, classes, accTitle, accDescr))
     } catch (e: IllegalArgumentException) {
         val prefix = source.take(pos); val lines = prefix.split(Regex("\\r\\n|\\r|\\n"))
