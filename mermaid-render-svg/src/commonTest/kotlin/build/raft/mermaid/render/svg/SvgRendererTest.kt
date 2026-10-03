@@ -120,7 +120,16 @@ class SvgRendererTest {
         assertTrue(svg.contains("+1 more"))
         assertTrue(svg.contains("Probe → Sense → Respond"))
         assertTrue(svg.contains("Disorder"))
-        assertTrue(svg.contains("<line"))
+        val paths = Regex("<polyline points=\"([^\"]+)\"").findAll(svg).toList()
+        assertEquals(4, paths.size) // Three domain boundaries and one transition.
+        val transition = paths.last().groupValues[1].split(" ").map { point ->
+            point.split(",").map(String::toDouble)
+        }
+        assertTrue(transition.size > 2)
+        assertTrue(transition.flatten().all { it.isFinite() })
+        assertTrue(transition.first() != transition.last())
+        assertEquals(transition.first()[1], transition.last()[1])
+        assertTrue(transition[transition.size / 2][1] > transition.first()[1])
         assertTrue(svg.contains("<polygon"))
     }
     @Test

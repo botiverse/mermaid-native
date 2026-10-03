@@ -38,3 +38,8 @@ directory. Production flowchart obstacle routing consumes these predicates.
 DAG Sankey positioning in SankeyFlowLayout.kt is adapted from d3-sankey 0.12.3,
 Copyright 2015 Mike Bostock, licensed under BSD-3-Clause.
 The license is reproduced in compatibility/d3-sankey/LICENSE.
+
+CynefinBoundaries adapts Mermaid's seeded random and Cynefin boundary algorithms
+at the revision recorded in compatibility/upstream-cynefin-boundaries/sources.json.
+Copyright Knut Sveidqvist and contributors, under the MIT License reproduced in
+mermaid-layout-api/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
