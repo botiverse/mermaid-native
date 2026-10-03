@@ -100,6 +100,7 @@ public data class LayoutConfig(
     val padding: Double = 24.0,
     val nodeGap: Double = 56.0,
     val messageGap: Double = 56.0,
+    val cynefin: CynefinBoundaryConfig = CynefinBoundaryConfig(),
 )
 
 public fun interface DiagramLayout {

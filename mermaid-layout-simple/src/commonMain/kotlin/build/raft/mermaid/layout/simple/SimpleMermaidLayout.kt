@@ -57,6 +57,7 @@ import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.core.C4Diagram
 import build.raft.mermaid.core.C4Element
 import build.raft.mermaid.core.C4ElementKind
+import build.raft.mermaid.layout.CynefinBoundaries
 import build.raft.mermaid.core.CynefinDiagram
 import build.raft.mermaid.core.CynefinDomain
 import build.raft.mermaid.core.IshikawaDiagram
@@ -678,10 +679,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                 textMeasurer.measure(cynefinDomainPractice(domain), descriptionStyle).width,
             )
         }
-        val quadrantWidth = max(280.0, max(measuredItemWidth, measuredDescriptionWidth) + 56.0)
-        val quadrantHeight = max(220.0, (diagram.domains.maxOfOrNull { it.items.size } ?: 0) * 32.0 + 126.0)
-        val quadrantGap = 40.0
         val titleOffset = if (diagram.title == null) 0.0 else 48.0
+        val quadrantWidth = max((720.0 - config.padding * 2.0) / 2.0, max(measuredItemWidth, measuredDescriptionWidth) + 56.0)
+        val quadrantHeight = max((560.0 - config.padding * 2.0 - titleOffset) / 2.0, (diagram.domains.maxOfOrNull { it.items.size } ?: 0) * 32.0 + 126.0)
+        val quadrantGap = 0.0
         val width = max(720.0, config.padding * 2.0 + quadrantWidth * 2.0 + quadrantGap)
         val height = max(560.0, config.padding * 2.0 + titleOffset + quadrantHeight * 2.0 + quadrantGap)
         val left = config.padding
@@ -704,18 +705,40 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.title?.let { commands += DrawText(it, ScenePoint(config.padding, config.padding + 22.0), style = titleStyle) }
         listOf(CynefinDomain.COMPLEX, CynefinDomain.COMPLICATED, CynefinDomain.CHAOTIC, CynefinDomain.CLEAR).forEach { domain ->
             val center = centers.getValue(domain)
-            commands += DrawRect(SceneRect(center.x - quadrantWidth / 2.0, center.y - quadrantHeight / 2.0, quadrantWidth, quadrantHeight), 0.0, fill = fills.getValue(domain), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.5)
+            commands += DrawRect(SceneRect(center.x - quadrantWidth / 2.0, center.y - quadrantHeight / 2.0, quadrantWidth, quadrantHeight), 0.0, fill = fills.getValue(domain), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 0.0)
+        }
+        val regionWidth = quadrantWidth * 2.0
+        val regionHeight = quadrantHeight * 2.0
+        val seed = CynefinBoundaries.resolveSeed(config.cynefin.seed, config.cynefin.diagramId)
+        val boundaries = listOf(
+            CynefinBoundaries.fold(regionWidth, regionHeight, seed, config.cynefin.amplitude),
+            CynefinBoundaries.horizontal(regionWidth, regionHeight, seed + 100, config.cynefin.amplitude),
+            CynefinBoundaries.cliff(regionWidth, regionHeight),
+        )
+        boundaries.forEachIndexed { index, boundary ->
+            commands += DrawPolyline(boundary.sampledPoints().map { ScenePoint(it.x + left, it.y + top) },
+                stroke = SceneColor(if (index == 2) DiagramPalette.RED else DiagramPalette.MUTED),
+                strokeWidth = if (index == 2) 3.0 else 1.5,
+                pattern = if (index == 2) StrokePattern.SOLID else StrokePattern.DASHED)
         }
         val confusionCenter = centers.getValue(CynefinDomain.CONFUSION)
-        commands += DrawEllipse(confusionCenter, 92.0, 66.0, fill = fills.getValue(CynefinDomain.CONFUSION), stroke = SceneColor(DiagramPalette.PURPLE), strokeWidth = 1.5)
-        diagram.transitions.forEach { transition ->
+        val confusion = CynefinBoundaries.confusion(confusionCenter.x, confusionCenter.y, regionWidth * 0.15, regionHeight * 0.15)
+        commands += DrawEllipse(confusion.center, confusion.radiusX, confusion.radiusY, fill = fills.getValue(CynefinDomain.CONFUSION), stroke = SceneColor(DiagramPalette.PURPLE), strokeWidth = 1.5)
+        diagram.transitions.filter { it.from != it.to }.forEach { transition ->
             val from = centers.getValue(transition.from)
             val to = centers.getValue(transition.to)
-            val start = cynefinBoundaryPoint(from, to, transition.from == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
-            val end = cynefinBoundaryPoint(to, from, transition.to == CynefinDomain.CONFUSION, quadrantWidth, quadrantHeight)
-            commands += DrawLine(start.canonical(), end.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
-            commands += arrowHead(start, end)
-            transition.label?.let { label -> commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, TextStyle(fontSize = 11.0)) }
+            // Original center-to-center quadratic, with a perpendicular offset of 15%.
+            val control = ScenePoint((from.x + to.x) / 2.0 - (to.y - from.y) * 0.15,
+                (from.y + to.y) / 2.0 + (to.x - from.x) * 0.15)
+            val route = (0..24).map { step ->
+                val t = step / 24.0; val u = 1.0 - t
+                ScenePoint(u*u*from.x + 2*u*t*control.x + t*t*to.x,
+                    u*u*from.y + 2*u*t*control.y + t*t*to.y)
+            }
+            commands += DrawPolyline(route, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.5)
+            commands += arrowHead(route[route.lastIndex - 1], route.last())
+            transition.label?.let { label -> commands += DrawText(label,
+                ScenePoint(control.x, control.y - 6.0), TextAnchor.MIDDLE, TextStyle(fontSize = 11.0)) }
         }
         CynefinDomain.entries.forEach { domain ->
             val center = centers.getValue(domain)
@@ -740,9 +763,6 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, accessibilityTitle = diagram.accTitle ?: diagram.title, accessibilityDescription = diagram.accDescription)
     }
-
-    private fun cynefinBoundaryPoint(center: ScenePoint, toward: ScenePoint, ellipse: Boolean, quadrantWidth: Double, quadrantHeight: Double): ScenePoint =
-        usecaseBoundaryPoint(center, toward, if (ellipse) 92.0 else quadrantWidth / 2.0, if (ellipse) 66.0 else quadrantHeight / 2.0, ellipse)
 
     private fun cynefinDomainLabel(domain: CynefinDomain): String =
         domain.name.lowercase().replaceFirstChar { it.uppercase() }
