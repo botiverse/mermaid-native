@@ -36,7 +36,7 @@ public class UsecaseParser(private val source: String) {
     private var accDescr: String? = null
     private val idPattern = Regex("[A-Za-z0-9_]+")
     private val forbidden = setOf("allowmixing", "newpage", "package", "rectangle", "skinparam")
-    private data class Entity(val id: String, val label: String, val shape: UsecaseShape, val explicit: Boolean, val attributes: UsecaseAttributes, val labelType: String, val occurrence: Map<String, Any?>)
+    private data class Entity(val id: String, val label: String, val shape: UsecaseShape, val explicit: Boolean, val attributes: UsecaseAttributes, val labelType: String, val occurrence: Map<String, Any?>, val generated: Boolean, val originLabel: String, val endpointDeclaration: Boolean)
     private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
     private fun hws() { while (source.getOrNull(pos) == ' ' || source.getOrNull(pos) == '\t') pos++ }
     private fun at(text: String): Boolean { hws(); return source.startsWith(text, pos) }
@@ -97,13 +97,16 @@ public class UsecaseParser(private val source: String) {
     private fun classList(): List<String> { val result = mutableListOf(identifier()); while (take(",")) result += identifier(); return result }
     private fun entity(actor: Boolean = false, boundary: Boolean = false): Entity {
         hws(); val start = pos; metadataOccurrences = mutableListOf()
+        val generated = at("\"")
         var labelType = if (at("\"`")) "markdown" else "text"
         val (id, initialLabel) = name(); val idEnd = pos
-        var text = initialLabel; var shape = UsecaseShape.ELLIPSE; var explicit = initialLabel != id
+        var text = initialLabel; var shape = UsecaseShape.ELLIPSE; var explicit = generated
+        var endpointDeclaration = false
         var textSpan = labelSpan(start, idEnd)
-        if (take("(")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(')'); textSpan = labelSpan(textStart, pos); requireText(")"); explicit = true }
-        else if (!actor && take("[")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(']'); textSpan = labelSpan(textStart, pos); requireText("]"); shape = UsecaseShape.RECTANGLE; explicit = true }
-        val properties = if (at("@{")) metadata() else emptyMap()
+        if (take("(")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(')'); textSpan = labelSpan(textStart, pos); requireText(")"); explicit = true; endpointDeclaration = true }
+        else if (!actor && take("[")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(']'); textSpan = labelSpan(textStart, pos); requireText("]"); shape = UsecaseShape.RECTANGLE; explicit = true; endpointDeclaration = true }
+        val hasMetadata = at("@{")
+        val properties = if (hasMetadata) metadata() else emptyMap()
         var stereotype: String? = null; var stereotypeSpan: List<Int>? = null
         if (!boundary && take("<<")) {
             val stereotypeStart = pos; while (pos < source.length && !source.startsWith(">>", pos)) { if (source[pos] in "\r\n") fail("Multiline stereotype"); pos++ }
@@ -115,9 +118,50 @@ public class UsecaseParser(private val source: String) {
         if (metadataOccurrences.isNotEmpty()) occurrence["metadata"] = metadataOccurrences.toList()
         if (stereotypeSpan != null) occurrence["stereotypeSpan"] = stereotypeSpan
         statementNodes += occurrence
-        return Entity(id, text, shape, explicit, UsecaseAttributes(properties, stereotype, assigned, parentId = parent), labelType, occurrence)
+        return Entity(id, text, shape, explicit, UsecaseAttributes(properties, stereotype, assigned, parentId = parent), labelType, occurrence, generated, initialLabel, endpointDeclaration || hasMetadata || stereotype != null)
     }
-    private fun publish(e: Entity, actor: Boolean) {
+    private data class Declaration(val kind: String, val range: List<Int>, val entity: Entity? = null)
+    private val declarations = linkedMapOf<String, Declaration>()
+    private class DeclarationError(message: String, val location: SourceLocation) : IllegalArgumentException(message)
+    private fun sourceLocation(offset: Int): SourceLocation {
+        val lines = source.take(offset).split(Regex("\\r\\n|\\r|\\n"))
+        return SourceLocation(lines.size, lines.last().length + 1)
+    }
+    private fun describe(declaration: Declaration, withLabel: Boolean): String {
+        val (start, end) = declaration.range
+        val location = sourceLocation(start)
+        val suffix = if (withLabel && declaration.entity?.generated == true) " (label \"${declaration.entity.originLabel}\")" else ""
+        return "line ${location.line}, column ${location.column} [$start,$end)$suffix"
+    }
+    private fun conflict(message: String, current: Declaration, previous: Declaration, withLabel: Boolean = false): Nothing {
+        throw DeclarationError("$message at ${describe(current, withLabel)}; previous declaration at ${describe(previous, withLabel)}", sourceLocation(current.range[0]))
+    }
+    private fun declare(id: String, current: Declaration) {
+        val previous = declarations[id]
+        if (previous == null) { declarations[id] = current; return }
+        val entity = current.entity
+        val old = previous.entity
+        if (entity == null) conflict("ID '$id' is declared more than once (${previous.kind} and ${current.kind})", current, previous, true)
+        if (previous.kind != current.kind) conflict("ID '$id' is declared as both ${previous.kind} and ${current.kind}", current, previous, true)
+        if (entity.generated || old?.generated == true) conflict("Generated ID '$id' collides with another declaration", current, previous, true)
+        if (old == null) conflict("ID '$id' is declared more than once (${previous.kind} and ${current.kind})", current, previous, true)
+        if (old.label != entity.label || old.labelType != entity.labelType) conflict("ID '$id' has conflicting labels", current, previous)
+        if (old.shape != entity.shape) conflict("Use case '$id' has conflicting shapes", current, previous)
+        if (old.attributes.parentId != null && entity.attributes.parentId != null && old.attributes.parentId != entity.attributes.parentId) conflict("Element '$id' belongs to more than one system boundary", current, previous)
+        if (old.attributes.stereotype != null && entity.attributes.stereotype != null && old.attributes.stereotype != entity.attributes.stereotype) conflict("Element '$id' has conflicting stereotypes", current, previous)
+        // Retain the first origin, but remember optional semantics introduced by later declarations.
+        declarations[id] = previous.copy(entity = old.copy(attributes = old.attributes.copy(
+            parentId = old.attributes.parentId ?: entity.attributes.parentId,
+            stereotype = old.attributes.stereotype ?: entity.attributes.stereotype,
+        )))
+    }
+    private fun declareEntity(e: Entity, kind: String) {
+        val range = (e.occurrence.getValue("idSpan") as List<*>).map { it as Int }
+        declare(e.id, Declaration(kind, range, e))
+    }
+    private fun publish(e: Entity, actor: Boolean, declaration: Boolean = true) {
+        if (declaration) declareEntity(e, if (actor) "actor" else "usecase")
+
         if (!actor && jsonNodes.any { it.id == e.id }) return
         if (actor) { nodes.remove(e.id); val previous = actors[e.id]; if (previous != null && previous.label != e.label) fail("Conflicting actor declaration ${e.id}"); actors[e.id] = UsecaseActor(e.id, e.label, labelType = e.labelType) }
         else if (e.id !in actors) { val previous = nodes[e.id]; if (previous == null || e.explicit) nodes[e.id] = UsecaseNode(e.id, e.label, e.shape, e.labelType) }
@@ -158,9 +202,10 @@ public class UsecaseParser(private val source: String) {
                 }
             }
         }
-        val to = entity(); publish(to, false)
+        val to = entity(); publish(to, false, to.endpointDeclaration)
         val startMarker = when { operator.startsWith('<') -> "arrow"; operator.startsWith('o') -> "circle"; operator.startsWith('x') -> "cross"; else -> "none" }
         val endMarker = when { operator == "--|>" -> "generalization"; operator.endsWith('>') -> "arrow"; operator.endsWith('o') -> "circle"; operator.endsWith('x') -> "cross"; else -> "none" }
+        if (edgeId != null) declare(edgeId, Declaration("edge", idSpan!!))
         val resolvedId = edgeId ?: "edge-${anonymousEdgeCount++}"
         edges += UsecaseRelationship(from.id, to.id, edgeLabel, resolvedId, startMarker, endMarker, operator == "..>")
         val occurrence = linkedMapOf<String, Any?>("id" to resolvedId, "span" to span(relationStart))
@@ -196,10 +241,10 @@ public class UsecaseParser(private val source: String) {
                 "direction" -> { kind = "direction"; pos += 9; val value = identifier(); direction = when (value) { "LR" -> FlowDirection.LR; "RL" -> FlowDirection.RL; "BT" -> FlowDirection.BT; "TB", "TD" -> FlowDirection.TB; else -> fail("Invalid usecase direction") } }
                 "accTitle" -> { kind = "accTitle"; pos += 8; requireText(":"); accTitle = lineText() }
                 "accDescr" -> { kind = "accDescr"; pos += 8; if (take(":")) accDescr = lineText() else { requireText("{"); val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description"); accDescr = source.substring(pos, end).trim(); pos = end + 1 } }
-                "systemBoundary" -> { kind = "group"; pos += 14; val e = entity(boundary = true); extra["group"] = e.id; extra["idSpan"] = e.occurrence["idSpan"]; extra["titleSpan"] = e.occurrence["labelSpan"]; boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
+                "systemBoundary" -> { kind = "group"; pos += 14; val e = entity(boundary = true); declareEntity(e, "boundary"); extra["group"] = e.id; extra["idSpan"] = e.occurrence["idSpan"]; extra["titleSpan"] = e.occurrence["labelSpan"]; boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
                 "actor" -> { pos += 5; val e = entity(actor = true); publish(e, true); if (take(",")) { do { publish(entity(actor = true), true) } while (take(",")) } else { hws(); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } } }
                 "note" -> { kind = "note"; pos += 4; if (identifier() != "for") fail("Expected note for"); hws(); val targetStart = pos; val target = identifier(); val targetEnd = pos; if (at(",")) fail("Notes require a single target"); hws(); val textStart = pos; val text = if (at("\"")) quoted() else lineText(); extra["ref"] = "note-${notes.size}"; extra["refSpan"] = labelSpan(textStart, pos); statementNodes += mapOf("id" to target, "span" to span(targetStart, targetEnd), "idSpan" to span(targetStart, targetEnd)); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
-                "json" -> { kind = "json"; pos += 4; hws(); val idStart = pos; val id = identifier(); statementNodes += mapOf("id" to id, "span" to span(idStart), "idSpan" to span(idStart)); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
+                "json" -> { kind = "json"; pos += 4; hws(); val idStart = pos; val id = identifier(); declare(id, Declaration("json", span(idStart))); statementNodes += mapOf("id" to id, "span" to span(idStart), "idSpan" to span(idStart)); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
                 "classDef" -> { kind = "classDef"; pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
                 "class" -> { kind = "classAssign"; pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
                 "style" -> { kind = "style"; pos += 5; val id = identifier(); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
@@ -208,7 +253,7 @@ public class UsecaseParser(private val source: String) {
                     val e = entity(); hws()
                     // A bare target followed by metadata is an assignment, not a declaration.
                     if (!e.explicit && e.attributes.properties.isNotEmpty() && e.attributes.stereotype == null && e.attributes.classes.isEmpty() && parent == null && (pos == source.length || source[pos] in "\r\n")) { kind = if (edges.any { it.id == e.id }) "edgeMetadata" else "metadata"; attrs[e.id] = (attrs[e.id] ?: UsecaseAttributes()).copy(properties = attrs[e.id]?.properties.orEmpty() + e.attributes.properties) }
-                    else { publish(e, false); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } }
+                    else { val hasRelation = pos < source.length && source[pos] !in "\r\n"; publish(e, false, !hasRelation || e.endpointDeclaration); if (hasRelation) { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } }
                 }
             }
             if (pos == start) fail("Invalid usecase statement")
@@ -237,7 +282,7 @@ public class UsecaseParser(private val source: String) {
         MermaidParseResult.Success(UsecaseDiagram(direction, actors.values.toList(), nodes.values.toList(), edges, boundaries, notes, jsonNodes, attrs, classes, accTitle, accDescr))
     } catch (e: IllegalArgumentException) {
         val prefix = source.take(pos); val lines = prefix.split(Regex("\\r\\n|\\r|\\n"))
-        MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid usecase syntax", (e as? LabelLexingError)?.location ?: SourceLocation(lines.size, lines.last().length + 1))))
+        MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid usecase syntax", (e as? LabelLexingError)?.location ?: (e as? DeclarationError)?.location ?: SourceLocation(lines.size, lines.last().length + 1))))
     }
 
     public fun parseValidated(): MermaidParseResult {
