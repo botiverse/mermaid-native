@@ -32,7 +32,11 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         lines.getValue(item.id).map { measurer.measure(it, textStyle) } + markdownLabels[item.id]?.lineSizes.orEmpty()
     ) }
     val tables = d.jsonNodes.mapNotNull { node -> node.data?.let { node.id to UsecaseJsonTableLayout(it, lines.getValue(node.id), measurer) } }.toMap()
-    val nodeW = maxOf(180.0, (rowSizes.values.flatten().maxOfOrNull { it.width } ?: 0.0) + 40.0)
+    val usecaseById = d.useCases.associateBy { it.id }
+    val nodeW = maxOf(180.0, items.maxOfOrNull { item ->
+        (rowSizes.getValue(item.id).maxOfOrNull { it.width } ?: 0.0) +
+            (usecaseById[item.id]?.labelPadding() ?: 20.0) * 2
+    } ?: 0.0)
     val nodeH = maxOf(76.0, (rowSizes.values.maxOfOrNull { it.size } ?: 1) * 20.0 + 28.0)
     // Rectangular padding alone does not contain the first/last wrapped rows
     // inside an ellipse. Grow only ellipses whose padded text corners need it.

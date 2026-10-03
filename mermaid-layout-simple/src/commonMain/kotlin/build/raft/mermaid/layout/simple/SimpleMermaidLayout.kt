@@ -52,6 +52,7 @@ import build.raft.mermaid.core.VennDiagram
 import build.raft.mermaid.core.UsecaseActorType
 import build.raft.mermaid.core.UsecaseDiagram
 import build.raft.mermaid.core.UsecaseShape
+import build.raft.mermaid.core.labelPadding
 import build.raft.mermaid.core.ArchitectureDiagram
 import build.raft.mermaid.core.ArchitecturePort
 import build.raft.mermaid.core.C4Diagram
@@ -1060,8 +1061,9 @@ public object SimpleMermaidLayout : DiagramLayout {
     private fun layoutUsecase(diagram: UsecaseDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         if (diagram.actors.any { it.type != UsecaseActorType.NORMAL || it.business || it.labelType == "markdown" } || diagram.useCases.any { it.labelType == "markdown" } || diagram.classDefs.containsKey("default") || diagram.boundaries.isNotEmpty() || diagram.notes.isNotEmpty() || diagram.jsonNodes.isNotEmpty() || diagram.attributes.isNotEmpty() || diagram.relationships.any { it.startMarker != "none" || it.endMarker != "arrow" || it.dashed || it.sourceId == it.targetId }) return layoutUsecaseExtended(diagram, textMeasurer, config)
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val labels = diagram.actors.map { it.label } + diagram.useCases.map { it.label }
-        val nodeWidth = max(150.0, (labels.maxOfOrNull { textMeasurer.measure(it, style).width } ?: 0.0) + 40.0)
+        val paddedWidths = diagram.actors.map { textMeasurer.measure(it.label, style).width + 40.0 } +
+            diagram.useCases.map { textMeasurer.measure(it.label, style).width + it.labelPadding() * 2 }
+        val nodeWidth = max(150.0, paddedWidths.maxOrNull() ?: 0.0)
         val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
         val rows = max(diagram.actors.size, diagram.useCases.size)
         val width = if (horizontal) max(720.0, nodeWidth * 2 + 180.0) else max(720.0, nodeWidth * rows + 32.0 * (rows - 1) + config.padding * 2)

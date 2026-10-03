@@ -662,6 +662,8 @@ public data class UsecaseNode(
     val id: String, val label: String, val shape: UsecaseShape,
     val labelType: String = "text",
 )
+/** Shared label inset consumed by Native Usecase layout and document clients. */
+public fun UsecaseNode.labelPadding(): Double = if (shape == UsecaseShape.ELLIPSE) 20.0 else 10.0
 public enum class UsecaseRelationshipType { ASSOCIATION, INCLUDE, EXTEND, GENERALIZATION }
 public data class UsecaseRelationship(
     val sourceId: String, val targetId: String, val label: String? = null,
