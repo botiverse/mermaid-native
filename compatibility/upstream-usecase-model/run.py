@@ -28,9 +28,9 @@ export default defineConfig({plugins:[jsonSchemaPlugin()],resolve:{alias:{'@merm
 for mode,setup in [('official','capture'),('native','adapter')]:
  (w/f'{mode}.config.ts').write_text(config.replace('SETUP',setup));(w/f'{mode}.workspace.ts').write_text("import {defineWorkspace} from 'vitest/config';export default defineWorkspace(['.native-usecase-model-audit/"+mode+".config.ts']);")
 def test(mode):
- with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-usecase-model-audit/{mode}.config.ts','--workspace',f'.native-usecase-model-audit/{mode}.workspace.ts','--testNamePattern','^.*when parsing (basic actors|use cases|relationships|system boundaries|direction|actor metadata|complex diagrams|class definitions)|^usecase parser publication.*(accepts ids that start with a digit|keeps decimal style values intact now that ids may start with a digit|lets a later metadata statement override inline boundary metadata|preserves the separators inside multi-word style and classDef values|resolves forward .* refinement independently of declaration order|accepts a .* boundary label|declares a boundary with an explicit id, a label, inline metadata, and classes|keeps plain ids, derived ids, and separate metadata statements working)$|database methods should get specific (actor|use case) by id$','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
+ with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-usecase-model-audit/{mode}.config.ts','--workspace',f'.native-usecase-model-audit/{mode}.workspace.ts','--testNamePattern','^.*when parsing (basic actors|use cases|relationships|system boundaries|direction|actor metadata|complex diagrams|class definitions)|^usecase parser publication.*(accepts ids that start with a digit|keeps decimal style values intact now that ids may start with a digit|lets a later metadata statement override inline boundary metadata|preserves the separators inside multi-word style and classDef values|resolves forward .* refinement independently of declaration order|accepts a .* boundary label|declares a boundary with an explicit id, a label, inline metadata, and classes|keeps plain ids, derived ids, and separate metadata statements working|finalizes unresolved relation endpoints as ellipse use cases without actor inference|merges equivalent repeated declarations, including equivalent parent ownership)$|database methods should get specific (actor|use case) by id$','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
 if test('official').returncode:raise SystemExit('Original Usecase production model suite failed')
-assert json.loads((w/'official.json').read_text())['numPassedTests']==39
+assert json.loads((w/'official.json').read_text())['numPassedTests']==41
 sources=list(dict.fromkeys(json.loads(x)['source'] for x in calls.read_text().splitlines()))
 result=subprocess.run(['java','-cp',cp,'UsecaseModelNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True,timeout=60)
 models=[json.loads(x) for x in result.stdout.splitlines()];assert len(models)==len(sources)
@@ -61,10 +61,14 @@ for mode in ['official','native']:
 if status.returncode==0 and o.verify_model_mutations:
  original_cache=cache.read_text();mutations={}
  try:
-  for field in ['type','members','numericActorId','decimalStyles','overrideType','classWordSeparators','forwardActor','forwardRectangle','boundaryMarkdown','boundaryPlain','boundaryClasses','separateMembers']:
+  for field in ['type','members','numericActorId','decimalStyles','overrideType','classWordSeparators','forwardActor','forwardRectangle','boundaryMarkdown','boundaryPlain','boundaryClasses','separateMembers','unresolvedShape','repeatedParent']:
    mutated=json.loads(original_cache);changed=0
    for source, model in mutated:
-    if field=='boundaryClasses' and 'systemBoundary sb1["Payment service"]@{ type: package }:::system' in source:
+    if field=='unresolvedShape' and source=='usecase-beta\nLeft --> Right':
+     model['useCases'][0]['shape']='rect';changed+=1
+    elif field=='repeatedParent' and source.count('actor User("Person")')==2:
+     model['actors'][0]['parentId']='Wrong';changed+=1
+    elif field=='boundaryClasses' and 'systemBoundary sb1["Payment service"]@{ type: package }:::system' in source:
      model['boundaries'][0]['classes']=[];changed+=1
     elif field=='separateMembers' and 'systemBoundary Billing' in source:
      for boundary in model['boundaries']:
@@ -97,7 +101,7 @@ if status.returncode==0 and o.verify_model_mutations:
    cache.write_text(json.dumps(mutated));mutation_status=test('native')
    result=json.loads((w/'native.json').read_text())
    failures=[a['fullName'] for suite in result['testResults'] for a in suite['assertionResults'] if a['status']=='failed']
-   expected='declares a boundary with an explicit id' if field=='boundaryClasses' else 'keeps plain ids, derived ids' if field=='separateMembers' else 'accepts ids that start with a digit' if field=='numericActorId' else 'keeps decimal style values' if field=='decimalStyles' else 'lets a later metadata statement override' if field=='overrideType' else 'preserves the separators' if field=='classWordSeparators' else "resolves forward 'actor' refinement" if field=='forwardActor' else "resolves forward 'rectangular use case' refinement" if field=='forwardRectangle' else 'accepts a bracketed Markdown string boundary label' if field=='boundaryMarkdown' else 'accepts a parenthesized plain string boundary label' if field=='boundaryPlain' else 'explicit id'
+   expected='finalizes unresolved relation endpoints' if field=='unresolvedShape' else 'merges equivalent repeated declarations' if field=='repeatedParent' else 'declares a boundary with an explicit id' if field=='boundaryClasses' else 'keeps plain ids, derived ids' if field=='separateMembers' else 'accepts ids that start with a digit' if field=='numericActorId' else 'keeps decimal style values' if field=='decimalStyles' else 'lets a later metadata statement override' if field=='overrideType' else 'preserves the separators' if field=='classWordSeparators' else "resolves forward 'actor' refinement" if field=='forwardActor' else "resolves forward 'rectangular use case' refinement" if field=='forwardRectangle' else 'accepts a bracketed Markdown string boundary label' if field=='boundaryMarkdown' else 'accepts a parenthesized plain string boundary label' if field=='boundaryPlain' else 'explicit id'
    assert mutation_status.returncode!=0 and len(failures)==1 and expected in failures[0], failures
    mutations[field]={'failedTests':failures,'passedTests':result['numPassedTests']}
    shutil.copy2(w/'native.json',w/f'mutation-{field}.json')

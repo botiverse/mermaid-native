@@ -655,9 +655,13 @@ public data class UsecaseActor(
     val id: String, val label: String,
     val type: UsecaseActorType = UsecaseActorType.NORMAL,
     val icon: String? = null, val business: Boolean = false,
+    val labelType: String = "text",
 )
 public enum class UsecaseShape { ELLIPSE, RECTANGLE }
-public data class UsecaseNode(val id: String, val label: String, val shape: UsecaseShape)
+public data class UsecaseNode(
+    val id: String, val label: String, val shape: UsecaseShape,
+    val labelType: String = "text",
+)
 public enum class UsecaseRelationshipType { ASSOCIATION, INCLUDE, EXTEND, GENERALIZATION }
 public data class UsecaseRelationship(
     val sourceId: String, val targetId: String, val label: String? = null,
