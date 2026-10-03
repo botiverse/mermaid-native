@@ -44,6 +44,23 @@ internal class FlowMarkdownLabel(source: String, private val base: TextStyle, pr
     private fun width(line: List<MermaidMarkdown.Word>) = line.sumOf { space(it) + measurer.measure(it.content, style(it)).width }
     val width: Double = lines.maxOf(::width)
     val lineCount: Int = lines.size
+    val lineSizes: List<SceneSize> = lines.map { line ->
+        SceneSize(width(line), line.maxOfOrNull { measurer.measure(it.content, style(it)).height } ?: measurer.measure("", base).height)
+    }
+    /** The origin is the horizontal center and first baseline of a node label. */
+    fun drawCentered(origin: ScenePoint, lineHeight: Double): List<DrawText> = lines.flatMapIndexed { index, line ->
+        var x = origin.x - width(line) / 2.0
+        if (line.size == 1) return@flatMapIndexed listOf(
+            DrawText(line.single().content, ScenePoint(origin.x, origin.y + index * lineHeight), TextAnchor.MIDDLE, style(line.single()))
+        )
+        line.map { word ->
+            x += space(word)
+            val paint = style(word)
+            DrawText(word.content, ScenePoint(x, origin.y + index * lineHeight), TextAnchor.START, paint).also {
+                x += measurer.measure(word.content, paint).width
+            }
+        }
+    }
     /** The origin is the left edge and first baseline of a wrapped heading. */
     fun drawLeft(origin: ScenePoint, lineHeight: Double): List<DrawText> = lines.flatMapIndexed { index, line ->
         var x = origin.x
