@@ -2,7 +2,24 @@ package build.raft.mermaid.core
 
 /** Canonical line grammar, shared by the Native product entry and compatibility boundary. */
 public class UsecaseParser(private val source: String) {
+    public var sourceAst: UsecaseSourceAst? = null
+        private set
     private var pos = 0
+    private var headerSpan = listOf(0, 0)
+    private val statements = mutableListOf<MutableMap<String, Any?>>()
+    private var groupStatement: MutableMap<String, Any?>? = null
+    private var groupChildren = mutableListOf<MutableMap<String, Any?>>()
+    private var statementNodes = mutableListOf<Map<String, Any?>>()
+    private var statementEdges = mutableListOf<Map<String, Any?>>()
+    private var metadataOccurrences = mutableListOf<Map<String, Any?>>()
+    private fun span(start: Int, end: Int = pos): List<Int> = listOf(start, end)
+    private fun labelSpan(start: Int, end: Int): List<Int> {
+        val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) == '"') 1 else 0
+        return span(start + trim, end - trim)
+    }
+    private fun appendStatement(statement: MutableMap<String, Any?>) {
+        if (groupStatement == null) statements += statement else groupChildren += statement
+    }
     private val actors = linkedMapOf<String, UsecaseActor>()
     private val nodes = linkedMapOf<String, UsecaseNode>()
     private val edges = mutableListOf<UsecaseRelationship>()
@@ -19,7 +36,7 @@ public class UsecaseParser(private val source: String) {
     private var accDescr: String? = null
     private val idPattern = Regex("[A-Za-z0-9_]+")
     private val forbidden = setOf("allowmixing", "newpage", "package", "rectangle", "skinparam")
-    private data class Entity(val id: String, val label: String, val shape: UsecaseShape, val explicit: Boolean, val attributes: UsecaseAttributes, val labelType: String)
+    private data class Entity(val id: String, val label: String, val shape: UsecaseShape, val explicit: Boolean, val attributes: UsecaseAttributes, val labelType: String, val occurrence: Map<String, Any?>)
     private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
     private fun hws() { while (source.getOrNull(pos) == ' ' || source.getOrNull(pos) == '\t') pos++ }
     private fun at(text: String): Boolean { hws(); return source.startsWith(text, pos) }
@@ -67,8 +84,11 @@ public class UsecaseParser(private val source: String) {
         fun lines() { hws(); while (newline()) hws() }
         lines(); if (take("}")) return result
         while (true) {
-            val key = if (at("\"")) quoted() else identifier(); requireText(":")
-            val value = if (at("\"")) quoted() else identifier(); result[key] = value; hws()
+            hws(); val keyStart = pos
+            val key = if (at("\"")) quoted() else identifier(); val keyEnd = pos; requireText(":"); hws()
+            val valueStart = pos; val value = if (at("\"")) quoted() else identifier(); val valueEnd = pos
+            metadataOccurrences += mapOf("key" to key, "span" to span(keyStart, valueEnd), "keySpan" to labelSpan(keyStart, keyEnd), "valueSpan" to labelSpan(valueStart, valueEnd))
+            result[key] = value; hws()
             if (take("}")) return result
             val comma = take(","); val hadLine = newline(); if (!comma && !hadLine) fail("Expected metadata separator")
             lines(); if (hadLine) { take(","); lines() }; if (take("}")) return result
@@ -76,18 +96,26 @@ public class UsecaseParser(private val source: String) {
     }
     private fun classList(): List<String> { val result = mutableListOf(identifier()); while (take(",")) result += identifier(); return result }
     private fun entity(actor: Boolean = false, boundary: Boolean = false): Entity {
+        hws(); val start = pos; metadataOccurrences = mutableListOf()
         var labelType = if (at("\"`")) "markdown" else "text"
-        val (id, initialLabel) = name(); var text = initialLabel; var shape = UsecaseShape.ELLIPSE; var explicit = initialLabel != id
-        if (take("(")) { labelType = if (at("\"`")) "markdown" else "text"; text = label(')'); requireText(")"); explicit = true }
-        else if (!actor && take("[")) { labelType = if (at("\"`")) "markdown" else "text"; text = label(']'); requireText("]"); shape = UsecaseShape.RECTANGLE; explicit = true }
+        val (id, initialLabel) = name(); val idEnd = pos
+        var text = initialLabel; var shape = UsecaseShape.ELLIPSE; var explicit = initialLabel != id
+        var textSpan = labelSpan(start, idEnd)
+        if (take("(")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(')'); textSpan = labelSpan(textStart, pos); requireText(")"); explicit = true }
+        else if (!actor && take("[")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(']'); textSpan = labelSpan(textStart, pos); requireText("]"); shape = UsecaseShape.RECTANGLE; explicit = true }
         val properties = if (at("@{")) metadata() else emptyMap()
-        var stereotype: String? = null
+        var stereotype: String? = null; var stereotypeSpan: List<Int>? = null
         if (!boundary && take("<<")) {
-            val start = pos; while (pos < source.length && !source.startsWith(">>", pos)) { if (source[pos] in "\r\n") fail("Multiline stereotype"); pos++ }
-            stereotype = source.substring(start, pos).trim().takeIf { it.isNotEmpty() } ?: fail("Empty stereotype"); requireText(">>")
+            val stereotypeStart = pos; while (pos < source.length && !source.startsWith(">>", pos)) { if (source[pos] in "\r\n") fail("Multiline stereotype"); pos++ }
+            stereotype = source.substring(stereotypeStart, pos).trim().takeIf { it.isNotEmpty() } ?: fail("Empty stereotype")
+            stereotypeSpan = span(stereotypeStart, pos); requireText(">>")
         }
         val assigned = if (take(":::")) classList() else emptyList()
-        return Entity(id, text, shape, explicit, UsecaseAttributes(properties, stereotype, assigned, parentId = parent), labelType)
+        val occurrence = linkedMapOf<String, Any?>("id" to id, "span" to span(start), "idSpan" to labelSpan(start, idEnd), "labelSpan" to textSpan, "defines" to (actor || explicit))
+        if (metadataOccurrences.isNotEmpty()) occurrence["metadata"] = metadataOccurrences.toList()
+        if (stereotypeSpan != null) occurrence["stereotypeSpan"] = stereotypeSpan
+        statementNodes += occurrence
+        return Entity(id, text, shape, explicit, UsecaseAttributes(properties, stereotype, assigned, parentId = parent), labelType, occurrence)
     }
     private fun publish(e: Entity, actor: Boolean) {
         if (!actor && jsonNodes.any { it.id == e.id }) return
@@ -96,11 +124,11 @@ public class UsecaseParser(private val source: String) {
         if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes
     }
     private fun relation(from: Entity) {
-        var edgeId: String? = null; hws(); val candidate = idPattern.find(source, pos)?.takeIf { it.range.first == pos }
-        if (candidate != null && source.getOrNull(candidate.range.last + 1) == '@') { edgeId = candidate.value; pos = candidate.range.last + 2 }
+        var edgeId: String? = null; hws(); val relationStart = pos; var idSpan: List<Int>? = null; var edgeLabelSpan: List<Int>? = null; val candidate = idPattern.find(source, pos)?.takeIf { it.range.first == pos }
+        if (candidate != null && source.getOrNull(candidate.range.last + 1) == '@') { edgeId = candidate.value; idSpan = span(candidate.range.first, candidate.range.last + 1); pos = candidate.range.last + 2 }
         hws(); val match = Regex("--\\|>|\\.\\.>|<--+|o--|x--|--o|--x|--+>|--+").find(source, pos)?.takeIf { it.range.first == pos } ?: fail("Expected usecase relation")
         var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null
-        if (operator == "..>") { requireText(":"); edgeLabel = identifier().lowercase(); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
+        if (operator == "..>") { requireText(":"); hws(); val labelStart = pos; edgeLabel = identifier().lowercase(); edgeLabelSpan = span(labelStart); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
         else if (operator in listOf("--", "<--", "o--", "x--")) {
             val restStart = pos
             hws()
@@ -133,7 +161,12 @@ public class UsecaseParser(private val source: String) {
         val to = entity(); publish(to, false)
         val startMarker = when { operator.startsWith('<') -> "arrow"; operator.startsWith('o') -> "circle"; operator.startsWith('x') -> "cross"; else -> "none" }
         val endMarker = when { operator == "--|>" -> "generalization"; operator.endsWith('>') -> "arrow"; operator.endsWith('o') -> "circle"; operator.endsWith('x') -> "cross"; else -> "none" }
-        edges += UsecaseRelationship(from.id, to.id, edgeLabel, edgeId ?: "edge-${anonymousEdgeCount++}", startMarker, endMarker, operator == "..>")
+        val resolvedId = edgeId ?: "edge-${anonymousEdgeCount++}"
+        edges += UsecaseRelationship(from.id, to.id, edgeLabel, resolvedId, startMarker, endMarker, operator == "..>")
+        val occurrence = linkedMapOf<String, Any?>("id" to resolvedId, "span" to span(relationStart))
+        if (idSpan != null) occurrence["idSpan"] = idSpan
+        if (edgeLabelSpan != null) occurrence["labelSpan"] = edgeLabelSpan
+        statementEdges += occurrence
     }
     private fun styleValues(): Map<String, String> {
         val text = lineText(); if (';' in text) fail("Semicolons are not CSS separators")
@@ -147,34 +180,54 @@ public class UsecaseParser(private val source: String) {
         fail("Unclosed JSON object")
     }
     public fun parse(): MermaidParseResult = try {
-        hws(); if (!take("usecase-beta") && !take("usecaseDiagram")) fail("Expected usecase-beta"); endLine()
+        sourceAst = null
+        hws(); val headerStart = pos; if (!take("usecase-beta") && !take("usecaseDiagram")) fail("Expected usecase-beta"); headerSpan = span(headerStart); endLine()
         while (true) {
-            hws(); if (pos >= source.length) break
-            if (newline()) continue
-            if (take("%%")) { lineText(); endLine(); continue }
-            val start = pos; val keyword = idPattern.find(source, pos)?.takeIf { it.range.first == pos }?.value
+            val whitespaceStart = pos; hws(); if (pos >= source.length) break
+            if (newline()) { appendStatement(linkedMapOf("kind" to "blank", "span" to span(whitespaceStart))); continue }
+            val commentStart = pos
+            if (take("%%")) { lineText(); appendStatement(linkedMapOf("kind" to "comment", "span" to span(commentStart))); endLine(); continue }
+            statementNodes = mutableListOf(); statementEdges = mutableListOf(); metadataOccurrences = mutableListOf()
+            val start = pos; val extra = linkedMapOf<String, Any?>(); var kind = "node"
+            val keyword = idPattern.find(source, pos)?.takeIf { it.range.first == pos }?.value
             if (parent != null && keyword in setOf("systemBoundary", "note", "json", "direction", "classDef", "class", "style", "accTitle", "accDescr")) fail("Only declarations are allowed inside a system boundary")
             when (keyword) {
-                "end" -> { pos += 3; if (parent == null) fail("Unexpected boundary end"); parent = null }
-                "direction" -> { pos += 9; val value = identifier(); direction = when (value) { "LR" -> FlowDirection.LR; "RL" -> FlowDirection.RL; "BT" -> FlowDirection.BT; "TB", "TD" -> FlowDirection.TB; else -> fail("Invalid usecase direction") } }
-                "accTitle" -> { pos += 8; requireText(":"); accTitle = lineText() }
-                "accDescr" -> { pos += 8; if (take(":")) accDescr = lineText() else { requireText("{"); val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description"); accDescr = source.substring(pos, end).trim(); pos = end + 1 } }
-                "systemBoundary" -> { pos += 14; val e = entity(boundary = true); boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
+                "end" -> { pos += 3; if (parent == null) fail("Unexpected boundary end"); parent = null; kind = "end" }
+                "direction" -> { kind = "direction"; pos += 9; val value = identifier(); direction = when (value) { "LR" -> FlowDirection.LR; "RL" -> FlowDirection.RL; "BT" -> FlowDirection.BT; "TB", "TD" -> FlowDirection.TB; else -> fail("Invalid usecase direction") } }
+                "accTitle" -> { kind = "accTitle"; pos += 8; requireText(":"); accTitle = lineText() }
+                "accDescr" -> { kind = "accDescr"; pos += 8; if (take(":")) accDescr = lineText() else { requireText("{"); val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description"); accDescr = source.substring(pos, end).trim(); pos = end + 1 } }
+                "systemBoundary" -> { kind = "group"; pos += 14; val e = entity(boundary = true); extra["group"] = e.id; extra["idSpan"] = e.occurrence["idSpan"]; extra["titleSpan"] = e.occurrence["labelSpan"]; boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
                 "actor" -> { pos += 5; val e = entity(actor = true); publish(e, true); if (take(",")) { do { publish(entity(actor = true), true) } while (take(",")) } else { hws(); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } } }
-                "note" -> { pos += 4; if (identifier() != "for") fail("Expected note for"); val target = identifier(); if (at(",")) fail("Notes require a single target"); val text = if (at("\"")) quoted() else lineText(); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
-                "json" -> { pos += 4; val id = identifier(); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
-                "classDef" -> { pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
-                "class" -> { pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
-                "style" -> { pos += 5; val id = identifier(); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
+                "note" -> { kind = "note"; pos += 4; if (identifier() != "for") fail("Expected note for"); hws(); val targetStart = pos; val target = identifier(); val targetEnd = pos; if (at(",")) fail("Notes require a single target"); hws(); val textStart = pos; val text = if (at("\"")) quoted() else lineText(); extra["ref"] = "note-${notes.size}"; extra["refSpan"] = labelSpan(textStart, pos); statementNodes += mapOf("id" to target, "span" to span(targetStart, targetEnd), "idSpan" to span(targetStart, targetEnd)); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
+                "json" -> { kind = "json"; pos += 4; hws(); val idStart = pos; val id = identifier(); statementNodes += mapOf("id" to id, "span" to span(idStart), "idSpan" to span(idStart)); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
+                "classDef" -> { kind = "classDef"; pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
+                "class" -> { kind = "classAssign"; pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
+                "style" -> { kind = "style"; pos += 5; val id = identifier(); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
                 else -> {
                     if (keyword?.lowercase() in forbidden) fail("Unsupported PlantUML statement")
                     val e = entity(); hws()
                     // A bare target followed by metadata is an assignment, not a declaration.
-                    if (!e.explicit && e.attributes.properties.isNotEmpty() && e.attributes.stereotype == null && e.attributes.classes.isEmpty() && parent == null && (pos == source.length || source[pos] in "\r\n")) attrs[e.id] = (attrs[e.id] ?: UsecaseAttributes()).copy(properties = attrs[e.id]?.properties.orEmpty() + e.attributes.properties)
+                    if (!e.explicit && e.attributes.properties.isNotEmpty() && e.attributes.stereotype == null && e.attributes.classes.isEmpty() && parent == null && (pos == source.length || source[pos] in "\r\n")) { kind = if (edges.any { it.id == e.id }) "edgeMetadata" else "metadata"; attrs[e.id] = (attrs[e.id] ?: UsecaseAttributes()).copy(properties = attrs[e.id]?.properties.orEmpty() + e.attributes.properties) }
                     else { publish(e, false); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } }
                 }
             }
-            if (pos == start) fail("Invalid usecase statement"); endLine()
+            if (pos == start) fail("Invalid usecase statement")
+            if (kind == "end") {
+                val group = groupStatement ?: fail("Unexpected boundary end")
+                group["span"] = span((group.getValue("span") as List<*>)[0] as Int)
+                group["endSpan"] = span(start); group["children"] = groupChildren.toList()
+                groupStatement = null; groupChildren = mutableListOf()
+            } else {
+                if (statementEdges.isNotEmpty()) kind = "edge"
+                val statement = linkedMapOf<String, Any?>("kind" to kind, "span" to span(start))
+                statement.putAll(extra)
+                if (statementNodes.isNotEmpty() && kind != "group") statement["nodes"] = statementNodes.toList()
+                if (statementEdges.isNotEmpty()) statement["edges"] = statementEdges.toList()
+                if (metadataOccurrences.isNotEmpty() && kind in setOf("group", "metadata", "edgeMetadata")) statement["metadata"] = metadataOccurrences.toList()
+                appendStatement(statement)
+                if (kind == "group") { groupStatement = statement; groupChildren = mutableListOf() }
+            }
+            endLine()
         }
         if (parent != null) fail("Unclosed system boundary")
         for (boundary in boundaries) {
@@ -219,6 +272,44 @@ public class UsecaseParser(private val source: String) {
             val type = if (icon != null) UsecaseActorType.ICON else when (declared) { "hollow" -> UsecaseActorType.HOLLOW; "awesome" -> UsecaseActorType.AWESOME; else -> UsecaseActorType.NORMAL }
             validatedActors += actor.copy(type = type, icon = icon, business = business)
         }
-        return MermaidParseResult.Success(d.copy(actors = validatedActors, jsonNodes = validatedJson))
+        val complete = d.copy(actors = validatedActors, jsonNodes = validatedJson)
+        sourceAst = buildAst(complete)
+        return MermaidParseResult.Success(complete)
     }
+    private fun buildAst(d: UsecaseDiagram): UsecaseSourceAst {
+        val graphNodes = linkedMapOf<String, Any?>()
+        fun node(id: String, label: String, shape: String, kind: String, properties: Map<String, Any?>) {
+            val attributes = d.attributes[id]
+            val attrs = linkedMapOf<String, Any?>("kind" to kind)
+            attrs.putAll(properties)
+            attributes?.stereotype?.let { attrs["stereotype"] = it }
+            attributes?.parentId?.let { attrs["parentId"] = it }
+            val row = linkedMapOf<String, Any?>("label" to label, "shape" to shape, "attrs" to attrs)
+            if (!attributes?.classes.isNullOrEmpty()) row["classes"] = attributes!!.classes
+            if (!attributes?.styles.isNullOrEmpty()) row["styles"] = attributes!!.styles.map { "${it.key}:${it.value}" }
+            graphNodes[id] = row
+        }
+        for (a in d.actors) node(a.id, a.label, if (a.type == UsecaseActorType.NORMAL) "actor" else "actor-${a.type.name.lowercase()}", "actor", mapOf("actorType" to a.type.name.lowercase(), "business" to a.business, "labelType" to a.labelType))
+        for (n in d.useCases) {
+            val shape = if (n.shape == UsecaseShape.RECTANGLE) "rect" else "ellipse"
+            node(n.id, n.label, shape, "usecase", mapOf("useCaseShape" to shape, "business" to (d.attributes[n.id]?.properties?.get("business") == "true"), "labelType" to n.labelType))
+        }
+        for (n in d.jsonNodes) node(n.id, n.id, "json-table", "json", emptyMap())
+        for (n in d.notes) node(n.id.orEmpty(), n.label, "note", "note", mapOf("target" to n.targetId, "labelType" to "text"))
+        val groups = d.boundaries.associate { b -> b.id to mapOf("title" to b.label, "nodes" to d.attributes.filterValues { it.parentId == b.id }.keys.toList(), "attrs" to mapOf("kind" to "systemBoundary", "boundaryType" to d.attributes[b.id]?.properties?.get("type"), "labelType" to b.labelType)) }
+        val graphEdges = d.relationships.map { e ->
+            linkedMapOf<String, Any?>("id" to e.id, "source" to e.sourceId, "target" to e.targetId).also { row ->
+                e.label?.let { row["label"] = it }
+                row["attrs"] = mapOf("relationshipType" to e.type.name.lowercase())
+            }
+        }
+        val data = linkedMapOf<String, Any?>("version" to 1, "diagramType" to "usecase", "source" to source,
+            "header" to mapOf("keyword" to "usecase", "direction" to d.direction.name, "span" to headerSpan),
+            "nodes" to graphNodes, "edges" to graphEdges, "groups" to groups,
+            "classDefs" to d.classDefs.mapValues { (_, values) -> mapOf("styles" to values.map { "${it.key}:${it.value}" }) },
+            "statements" to statements.toList())
+        accTitle?.let { data["accTitle"] = it }; accDescr?.let { data["accDescr"] = it }
+        return UsecaseSourceAst(data)
+    }
+
 }

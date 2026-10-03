@@ -1,0 +1,34 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "6ef0d1b498d59da279c38ee558073ec83a3f9f81",
+  "nativeJarSha256": "d1351b9ec1b5961facf2228bf930b7713c824959aaaaffd71181b272c5a9f41c",
+  "nativeOperations": 180,
+  "nativeParseCalls": 102,
+  "nativeClearCalls": 78,
+  "official": {
+    "numTotalTests": 77,
+    "numPassedTests": 77,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 77,
+    "numPassedTests": 40,
+    "numFailedTests": 37,
+    "numPendingTests": 0,
+    "success": false
+  },
+  "mutationControls": {
+    "headerSpan": [
+      "usecase parser publication and normalized AST accepts the header at EOF and publishes an empty AST"
+    ],
+    "jsonIdSpan": [
+      "usecase parser publication and normalized AST locates the JSON id son even when it is a substring of the json keyword"
+    ],
+    "failedPublication": [
+      "usecase parser publication and normalized AST isolates success, clear, failure, and a second success across singleton reuse"
+    ]
+  },
+  "scope": "Complete original parser-publication file:77 executed,40 passed,37 failed,0 skipped.18 already covered by the prior model suite;22 newly passing,37 newly failing. Actual Native document clear/parse operations and AST snapshots; no test-side parsing, upstream model fallback or complete AST parity claim."
+}
