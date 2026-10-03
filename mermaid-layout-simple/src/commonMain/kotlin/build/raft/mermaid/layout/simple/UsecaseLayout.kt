@@ -10,6 +10,10 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     fun wrapped(text: String): List<String> = MermaidTextWrapping.wrap(text) {
         measurer.measure(it, textStyle).width <= 240.0
     }
+    val markdownHeaders = d.boundaries.filter { it.labelType == "markdown" }.associate { boundary ->
+        boundary.id to FlowMarkdownLabel(boundary.label, textStyle, measurer, maxWidth = 240.0)
+    }
+    fun headerLines(boundary: UsecaseBoundary) = markdownHeaders[boundary.id]?.lineCount ?: wrapped(boundary.label).size
     data class Item(val id: String, val label: String, val actor: Boolean = false, val ellipse: Boolean = false, val body: String? = null)
     val items = d.actors.map { Item(it.id, it.label, actor = true) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE) } + d.jsonNodes.map { Item(it.id, it.id, body = if (it.data == null) it.source else null) }
     val lines = items.associate { item -> item.id to buildList {
@@ -57,7 +61,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         val boundary = d.boundaries.firstOrNull { it.id == id }
         if (group.isEmpty() && boundary == null) continue
         val a = group.filter { it.actor }; val n = group.filter { !it.actor }
-        val headerH = if (boundary != null) wrapped(boundary.label).size * 20.0 + 26.0 else 0.0
+        val headerH = if (boundary != null) headerLines(boundary) * 20.0 + 26.0 else 0.0
         val contentY = y + headerH
         val height = if (horizontal) maxOf(a.size, n.size, 1) * rowH else rowH * 2
         for ((lane, members) in listOf(a, n).withIndex()) for ((index, item) in members.withIndex()) {
@@ -74,7 +78,9 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     for ((boundary, box) in groupBoxes) {
         commands += DrawRect(box, 8.0, fill = color(boundary.id, "fill", DiagramPalette.SURFACE), stroke = color(boundary.id, "stroke", DiagramPalette.FAINT))
         if (d.attributes[boundary.id]?.properties?.get("type") == "package") commands += DrawRect(SceneRect(box.x + 12.0, box.y - 10.0, minOf(box.width - 24.0, 180.0), 20.0), fill = SceneColor(DiagramPalette.SURFACE), stroke = SceneColor(DiagramPalette.FAINT))
-        wrapped(boundary.label).forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(box.x + 16.0, box.y + 25.0 + i * 18.0), style = textStyle) }
+        val markdown = markdownHeaders[boundary.id]
+        if (markdown != null) commands += markdown.drawLeft(ScenePoint(box.x + 16.0, box.y + 25.0), 18.0)
+        else wrapped(boundary.label).forEachIndexed { i, line -> commands += DrawText(line, ScenePoint(box.x + 16.0, box.y + 25.0 + i * 18.0), style = textStyle) }
     }
     fun actorHalfWidth(id: String) = if (d.actors.first { it.id == id }.type == UsecaseActorType.NORMAL) 20.0 else 28.0
     fun anchor(item: Item, toward: ScenePoint): ScenePoint {

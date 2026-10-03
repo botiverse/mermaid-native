@@ -1,18 +1,39 @@
 package build.raft.mermaid.layout.simple
 
+import build.raft.mermaid.core.MermaidTextWrapping
+import build.raft.mermaid.core.MermaidWord
 import build.raft.mermaid.layout.*
 
 /** Shared measurement/drawing contract so styled node text fits the node geometry. */
-internal class FlowMarkdownLabel(source: String, private val base: TextStyle, private val measurer: TextMeasurer) {
-    private val lines = MermaidMarkdown.lines(source).map { words ->
-        val runs = mutableListOf<MermaidMarkdown.Word>()
+internal class FlowMarkdownLabel(source: String, private val base: TextStyle, private val measurer: TextMeasurer, maxWidth: Double? = null) {
+    private fun runs(words: List<MermaidMarkdown.Word>): List<MermaidMarkdown.Word> {
+        val result = mutableListOf<MermaidMarkdown.Word>()
         for (word in words) {
-            val previous = runs.lastOrNull()
+            val previous = result.lastOrNull()
             if (previous?.type == word.type) {
-                runs[runs.lastIndex] = previous.copy(content = previous.content + (if (word.spaceBefore) " " else "") + word.content)
-            } else runs += word
+                result[result.lastIndex] = previous.copy(content = previous.content + (if (word.spaceBefore) " " else "") + word.content)
+            } else result += word
         }
-        runs
+        return result
+    }
+    private fun words(tokens: List<MermaidWord>): List<MermaidMarkdown.Word> = buildList {
+        var space = false
+        for (token in tokens) {
+            if (token.content == " ") space = true
+            else {
+                add(MermaidMarkdown.Word(token.content, MermaidMarkdown.WordType.valueOf(token.type), space && isNotEmpty()))
+                space = false
+            }
+        }
+    }
+    private val lines = MermaidMarkdown.lines(source).flatMap { line ->
+        if (maxWidth == null || line.isEmpty()) listOf(runs(line))
+        else {
+            val tokens = line.flatMap { word ->
+                (if (word.spaceBefore) listOf(MermaidWord(" ")) else emptyList()) + MermaidWord(word.content, word.type.name)
+            }
+            MermaidTextWrapping.wrapLine(tokens, { width(runs(words(it))) <= maxWidth }).map { runs(words(it)) }
+        }
     }
     private fun style(word: MermaidMarkdown.Word) = when (word.type) {
         MermaidMarkdown.WordType.NORMAL -> base
@@ -23,6 +44,17 @@ internal class FlowMarkdownLabel(source: String, private val base: TextStyle, pr
     private fun width(line: List<MermaidMarkdown.Word>) = line.sumOf { space(it) + measurer.measure(it.content, style(it)).width }
     val width: Double = lines.maxOf(::width)
     val lineCount: Int = lines.size
+    /** The origin is the left edge and first baseline of a wrapped heading. */
+    fun drawLeft(origin: ScenePoint, lineHeight: Double): List<DrawText> = lines.flatMapIndexed { index, line ->
+        var x = origin.x
+        line.map { word ->
+            x += space(word)
+            val paint = style(word)
+            DrawText(word.content, ScenePoint(x, origin.y + index * lineHeight), TextAnchor.START, paint).also {
+                x += measurer.measure(word.content, paint).width
+            }
+        }
+    }
     fun draw(rect: SceneRect, lineHeight: Double): List<DrawText> = lines.flatMapIndexed { index, line ->
         var x = rect.x + (rect.width - width(line)) / 2
         val y = rect.y + rect.height / 2 + (index - (lines.size - 1) / 2.0) * lineHeight + base.fontSize * 0.35
