@@ -5,3 +5,5 @@ Replays twelve unchanged pinned upstream DB assertions: nine hierarchy/annotatio
 Six cases remain unselected: clear/reset, empty-root initialization, two count cases, generated IDs and configuration. The adapter does not claim DB lifecycle/ID parity, CSS painting or external icon resolution. Annotation preservation is tested as model data.
 
 Run `python3 compatibility/upstream-treeview-model/run.py --upstream /path/to/mermaid --stdlib /path/to/kotlin-stdlib.jar`. Optional `--runtime-jar` uses an already validated production JAR with identical core sources; its hash is recorded. No Gradle process is started.
+
+The separate `../upstream-tree-documents` runner now exercises the complete 18-case file through production editable documents, including the six cases unselected here. This older source-based adapter remains bounded to its original twelve cases; overlapping passes must not be counted twice.
