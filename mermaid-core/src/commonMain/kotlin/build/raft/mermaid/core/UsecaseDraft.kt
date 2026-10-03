@@ -51,13 +51,15 @@ public class UsecaseDraft {
     internal fun diagram(): UsecaseDiagram = UsecaseDiagram(
         direction, actors!!.values.toList(), useCases!!.values.toList(), relationships!!.toList(),
         systemBoundaries!!.values.toList(), notes!!.values.toList(), jsonNodes!!.values.toList(),
-        attributes!!.toMap(), classDefs!!.toMap(), accTitle, accDescription,
+        attributes!!.toMap(), classDefs!!.toMap(), accTitle, accDescription, config!!,
     )
 }
 
-/** Native document configuration. Rendering uses platform text measurement and LayoutConfig;
- * these values describe model defaults, not browser-global configuration. */
-public data class UsecaseDocumentConfig(val ellipsePadding: Double = 20.0, val rectanglePadding: Double = 10.0)
+/** Native label insets, shared by document export and the measured layout consumer.
+ * Other layout settings remain in LayoutConfig rather than browser-global configuration. */
+public data class UsecaseDocumentConfig(val ellipsePadding: Double = 20.0, val rectanglePadding: Double = 10.0) {
+    init { require(ellipsePadding.isFinite() && rectanglePadding.isFinite() && ellipsePadding >= 0 && rectanglePadding >= 0) }
+}
 
 private fun detachedJson(value: UsecaseJsonValue): UsecaseJsonValue = when (value) {
     is UsecaseJsonValue.ObjectValue -> UsecaseJsonValue.ObjectValue(value.value.mapValues { detachedJson(it.value) })

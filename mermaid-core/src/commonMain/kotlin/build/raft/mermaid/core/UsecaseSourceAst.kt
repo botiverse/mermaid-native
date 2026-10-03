@@ -28,7 +28,7 @@ public class UsecaseDocument {
     public fun createModel(): UsecaseDraft = UsecaseDraft()
     /** Use-case label geometry hints shared with the Native layout consumer. */
     public fun usecaseLabelData(): List<Map<String, Any>> = diagram?.useCases.orEmpty().map { node ->
-        mapOf("id" to node.id, "label" to node.label, "padding" to node.labelPadding())
+        mapOf("id" to node.id, "label" to node.label, "padding" to node.labelPadding(diagram!!.labelInsets))
     }
     public fun configuration(): UsecaseDocumentConfig = committedDraft?.config?.copy() ?: UsecaseDocumentConfig()
 

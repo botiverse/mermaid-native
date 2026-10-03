@@ -1062,7 +1062,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         if (diagram.actors.any { it.type != UsecaseActorType.NORMAL || it.business || it.labelType == "markdown" } || diagram.useCases.any { it.labelType == "markdown" } || diagram.classDefs.containsKey("default") || diagram.boundaries.isNotEmpty() || diagram.notes.isNotEmpty() || diagram.jsonNodes.isNotEmpty() || diagram.attributes.isNotEmpty() || diagram.relationships.any { it.startMarker != "none" || it.endMarker != "arrow" || it.dashed || it.sourceId == it.targetId }) return layoutUsecaseExtended(diagram, textMeasurer, config)
         val style = TextStyle(fontSize = 13.0, fontWeight = 600)
         val paddedWidths = diagram.actors.map { textMeasurer.measure(it.label, style).width + 40.0 } +
-            diagram.useCases.map { textMeasurer.measure(it.label, style).width + it.labelPadding() * 2 }
+            diagram.useCases.map { textMeasurer.measure(it.label, style).width + it.labelPadding(diagram.labelInsets) * 2 }
         val nodeWidth = max(150.0, paddedWidths.maxOrNull() ?: 0.0)
         val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
         val rows = max(diagram.actors.size, diagram.useCases.size)

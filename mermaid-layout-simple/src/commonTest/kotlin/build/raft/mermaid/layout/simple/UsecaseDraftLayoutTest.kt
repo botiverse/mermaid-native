@@ -38,4 +38,17 @@ class UsecaseDraftLayoutTest {
             if (shape == UsecaseShape.RECTANGLE) assertEquals(measured + 20.0, actual, 1e-9)
         }
     }
+    @Test fun committedInsetsAreUsedByTheRendererAndResetWithTheDocument() {
+        val doc = UsecaseDocument(); val draft = doc.createModel()
+        draft.useCases!!["N"] = UsecaseNode("N", "Long enough label for custom insets", UsecaseShape.RECTANGLE)
+        draft.config = UsecaseDocumentConfig(30.0, 45.0)
+        doc.commit(draft)
+        val custom = layout(doc.diagram!!).commands.filterIsInstance<DrawRect>().single().rect.width
+        val normal = layout(doc.diagram!!.copy(labelInsets = UsecaseDocumentConfig())).commands.filterIsInstance<DrawRect>().single().rect.width
+        assertEquals(70.0, custom - normal, 1e-9)
+        assertEquals(45.0, doc.usecaseLabelData().single()["padding"])
+        draft.config = UsecaseDocumentConfig(); assertEquals(45.0, doc.configuration().rectanglePadding)
+        doc.clear(); assertEquals(10.0, doc.configuration().rectanglePadding)
+    }
+
 }
