@@ -19,6 +19,10 @@ class UsecaseDeclarationTest {
         assertEquals(SourceLocation(4, 2), failure.diagnostics.single().location)
     }
 
+    @Test fun boundaryLabelDelimitersDoNotDeclareDifferentShapes() {
+        assertIs<MermaidParseResult.Success>(UsecaseDocument().parse("usecase-beta\nsystemBoundary Auth[Authentication]\nend\nsystemBoundary Auth(Authentication)\nend"))
+    }
+
     @Test fun globalSymbolsAreCheckedInEitherDeclarationOrder() {
         for (body in listOf("actor Shared\njson Shared@{}", "json Shared@{}\nactor Shared", "actor link\nA link@--> B", "A link@--> B\nactor link", "systemBoundary Shared\nend\nactor Shared", "actor Shared\nsystemBoundary Shared\nend")) {
             val doc = UsecaseDocument()

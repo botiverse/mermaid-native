@@ -146,7 +146,7 @@ public class UsecaseParser(private val source: String) {
         if (entity.generated || old?.generated == true) conflict("Generated ID '$id' collides with another declaration", current, previous, true)
         if (old == null) conflict("ID '$id' is declared more than once (${previous.kind} and ${current.kind})", current, previous, true)
         if (old.label != entity.label || old.labelType != entity.labelType) conflict("ID '$id' has conflicting labels", current, previous)
-        if (old.shape != entity.shape) conflict("Use case '$id' has conflicting shapes", current, previous)
+        if (current.kind == "usecase" && old.shape != entity.shape) conflict("Use case '$id' has conflicting shapes", current, previous)
         if (old.attributes.parentId != null && entity.attributes.parentId != null && old.attributes.parentId != entity.attributes.parentId) conflict("Element '$id' belongs to more than one system boundary", current, previous)
         if (old.attributes.stereotype != null && entity.attributes.stereotype != null && old.attributes.stereotype != entity.attributes.stereotype) conflict("Element '$id' has conflicting stereotypes", current, previous)
         // Retain the first origin, but remember optional semantics introduced by later declarations.
