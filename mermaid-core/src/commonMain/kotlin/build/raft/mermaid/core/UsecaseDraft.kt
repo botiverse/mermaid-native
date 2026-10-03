@@ -43,7 +43,10 @@ public class UsecaseDraft {
             copy.noteCounter = noteCounter
             copy.accTitle = accTitle
             copy.accDescription = accDescription
-            copy.ast = ast?.let { UsecaseSourceAst(it).asMap() }
+            copy.ast = ast?.let { content ->
+                validateAstValue(content)
+                UsecaseSourceAst(content).asMap()
+            }
             copy.config = config!!.copy()
         }
     }
@@ -65,4 +68,17 @@ private fun detachedJson(value: UsecaseJsonValue): UsecaseJsonValue = when (valu
     is UsecaseJsonValue.ObjectValue -> UsecaseJsonValue.ObjectValue(value.value.mapValues { detachedJson(it.value) })
     is UsecaseJsonValue.ArrayValue -> UsecaseJsonValue.ArrayValue(value.value.map(::detachedJson))
     else -> value
+}
+
+private fun validateAstValue(value: Any?) {
+    when (value) {
+        null, is String, is Boolean -> Unit
+        is Number -> require(value.toDouble().isFinite()) { "Usecase AST numbers must be finite" }
+        is Map<*, *> -> value.forEach { (key, item) ->
+            require(key is String) { "Usecase AST keys must be strings" }
+            validateAstValue(item)
+        }
+        is List<*> -> value.forEach(::validateAstValue)
+        else -> throw IllegalArgumentException("Usecase AST must contain only JSON-compatible values")
+    }
 }

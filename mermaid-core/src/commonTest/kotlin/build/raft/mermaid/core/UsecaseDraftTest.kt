@@ -46,6 +46,11 @@ class UsecaseDraftTest {
             assertEquals("Cannot commit an incomplete usecase model", assertFailsWith<IllegalArgumentException> { doc.commit(draft) }.message)
             assertEquals("A", doc.diagram!!.actors.single().id); assertEquals("A", doc.ast!!.asMap()["source"])
         }
+        for (value in listOf(Any(), Double.NaN, mapOf(1 to "bad key"))) {
+            val draft = doc.createModel(); draft.ast = mapOf("invalid" to value)
+            assertFailsWith<IllegalArgumentException> { doc.commit(draft) }
+            assertEquals("A", doc.diagram!!.actors.single().id)
+        }
         val replacement = doc.createModel(); replacement.useCases!!["B"] = UsecaseNode("B", "B", UsecaseShape.RECTANGLE)
         doc.commit(replacement)
         assertTrue(doc.diagram!!.actors.isEmpty()); assertNull(doc.ast); assertEquals("B", doc.diagram!!.useCases.single().id)
