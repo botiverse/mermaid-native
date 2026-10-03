@@ -1,0 +1,88 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "2d8802a15a5e6b0605e132c1efba1a3006bfcbe9",
+  "nativeJarSha256": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+  "nativeOperations": 46,
+  "official": {
+    "numTotalTests": 8,
+    "numPassedTests": 8,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 8,
+    "numPassedTests": 8,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "subgraphId": [
+      "ErDB subgraph behavior add subgraph adds subgraphs and returns provided id, title and nodes#0"
+    ],
+    "membership": [
+      "ErDB subgraph behavior makeUniq behavior prevents nodes from being added to subsequent subgraphs if already present#0"
+    ],
+    "parent": [
+      "ErDB subgraph behavior getData cluster behavior returns nested cluster nodes with correct parent relationships#0"
+    ],
+    "edge": [
+      "ErDB subgraph behavior getData cluster behavior returns edges connected to subgraphs#0"
+    ],
+    "styles": [
+      "ErDB subgraph behavior CssStyles and classes behavior applies classes and styles to subgraphs#0"
+    ]
+  },
+  "regression": {
+    "parser": {
+      "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+      "nativeJarSha256": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+      "uniqueInputs": 555,
+      "official": {
+        "numTotalTests": 652,
+        "numPassedTests": 651,
+        "numFailedTests": 0,
+        "numPendingTests": 1,
+        "success": true
+      },
+      "native": {
+        "numTotalTests": 652,
+        "numPassedTests": 651,
+        "numFailedTests": 0,
+        "numPendingTests": 1,
+        "success": true
+      }
+    }
+  },
+  "localValidation": {
+    "tests": {
+      "AndroidDebug": 334,
+      "iOSSimulatorArm64": 334,
+      "WasmBrowser": 334,
+      "layout": 289,
+      "sample": 5
+    },
+    "browser": {
+      "svgExactBaselineOrLocal": 6,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/e6d6d144e9e6a039c2d1.wasm",
+      "wasmSha256": "1bd181abda7a73a6c3e73c33b06f46c3cfbbf52c3e81892b6faaf96f5e715e9e"
+    },
+    "screenshotsInspected": 4,
+    "productionWasmGate": {
+      "productionModule": "mermaid-web/build/compileSync/wasmJs/main/productionExecutable/optimized/mermaid-native-mermaid-web-wasm-js.mjs",
+      "rejectedJsonMarkers": 4,
+      "acceptedJsonMarkers": 3,
+      "mixedKindRejected": true,
+      "typedAnimationRejected": true,
+      "validRecovery": true
+    }
+  },
+  "scope": {
+    "newOriginalOccurrences": 8,
+    "priorParserAssertionsPreserved": 651,
+    "originalParserSkips": 1,
+    "fullBrowserConfigurationAndSanitization": false,
+    "sdkPublished": false
+  }
+}
