@@ -14,6 +14,7 @@ public class UsecaseModelNativeBridge {
 }out.put("useCases",nodes);
 List<Object> jsonNodes=new ArrayList<>();for(UsecaseJsonNode n:d.getJsonNodes())jsonNodes.add(Map.of("id",n.getId()));out.put("jsonNodes",jsonNodes);List<Object> boundaries=new ArrayList<>();for(UsecaseBoundary n:d.getBoundaries()) {
   Map<String,Object> r=row(n);
+  r.put("labelType",n.getLabelType());
   UsecaseAttributes attributes=d.getAttributes().get(n.getId());
   if(attributes!=null)r.put("type",attributes.getProperties().get("type"));
   // Project the Native parent links in their production insertion order. No source parsing.
