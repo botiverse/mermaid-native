@@ -5,7 +5,7 @@ internal class WardleyParser(private val source: String) {
     private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
     private fun name(raw: String): String {
         val text = raw.trim(); val value = if (text.startsWith('"') && text.endsWith('"')) text.substring(1, text.length - 1) else text
-        if (value.isEmpty() || value.none { it.isLetterOrDigit() || it == '_' } || value.any { !it.isLetterOrDigit() && it !in "_ -" }) fail("Invalid Wardley name")
+        if (value.isEmpty() || value.none { it.isLetterOrDigit() || it == '_' } || value.any { !it.isLetterOrDigit() && it !in "_ -()&" }) fail("Invalid Wardley name")
         return value
     }
     private fun coordinate(raw: String): Double {
@@ -49,6 +49,13 @@ internal class WardleyParser(private val source: String) {
                 text.startsWith("evolve ") -> { val body = text.substringAfter(' '); val label = name(body.substringBeforeLast(' ')); val target = coordinate(body.substringAfterLast(' ')); if (label !in nodes || evolutions.any { it.component == label }) fail("Unknown or duplicate Wardley evolution"); evolutions += WardleyEvolution(label, target) }
                 text.startsWith("annotations ") -> { val match = Regex("^annotations\\s*\\[([^]]+)]$").matchEntire(text) ?: fail("Invalid Wardley annotations placement"); val p = pair(match.groupValues[1]); annotationBox = WardleyNote("", p.first, p.second) }
                 text.startsWith("annotation ") -> { val match = Regex("^annotation\\s+([0-9]+),\\s*\\[([^]]+)]\\s*\"([^\"]*)\"$").matchEntire(text) ?: fail("Invalid Wardley annotation"); val p = pair(match.groupValues[2]); annotations += WardleyAnnotation(match.groupValues[1], match.groupValues[3], p.first, p.second) }
+                (text.startsWith("accelerator ") || text.startsWith("deaccelerator ")) && !text.substringAfter(' ').trimStart().startsWith('"') -> {
+                    val match = positioned.matchEntire(text.substringAfter(' ')) ?: fail("Invalid Wardley force")
+                    if (match.groupValues[3].isNotBlank()) fail("Unexpected Wardley force suffix")
+                    val label = name(match.groupValues[1]); val p = pair(match.groupValues[2])
+                    val force = WardleyNote(label, p.first, p.second)
+                    if (text.startsWith("accelerator ")) accelerators += force else deaccelerators += force
+                }
                 text.startsWith("note ") || text.startsWith("accelerator ") || text.startsWith("deaccelerator ") -> {
                     val match = Regex("^(note|accelerator|deaccelerator)\\s+\"([^\"]*)\"\\s*\\[([^]]+)]$").matchEntire(text) ?: fail("Invalid Wardley note")
                     val p = pair(match.groupValues[3]); val note = WardleyNote(match.groupValues[2], p.first, p.second)

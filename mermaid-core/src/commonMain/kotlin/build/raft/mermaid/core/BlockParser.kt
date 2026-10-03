@@ -107,12 +107,15 @@ internal class BlockParser(private val source: String) {
             while (text.getOrNull(index)?.let { it.isLetterOrDigit() || it == '_' || it == '-' } == true && !text.startsWith("--", index)) index++
             if (start == index) reject("Expected block identifier")
             val originalId = text.substring(start, index); var id = originalId; var label = id; var type = "na"; var directions = emptyList<String>(); var span = 1
-            if (text.startsWith("<[", index)) { index += 2; type = "block_arrow" }
+            var close = "]"
+            if (text.startsWith("((", index)) { index += 2; type = "circle"; close = "))" }
+            else if (text.startsWith("[(", index)) { index += 2; type = "cylinder"; close = ")]" }
+            else if (text.startsWith("<[", index)) { index += 2; type = "block_arrow" }
             else if (text.getOrNull(index) == '[') { index++; type = "square" }
             if (type != "na") {
                 space()
-                label = if (text.getOrNull(index) in listOf('"', '\'')) quoted() else { val end = text.indexOf(']', index); if (end < 0) reject("Unclosed block label"); text.substring(index, end).trim().also { if (it.any { c -> c.isWhitespace() } || it.contains('\'')) reject("Block labels containing whitespace require double quotes"); index = end } }
-                space(); if (text.getOrNull(index) != ']') reject("Expected ] after block label"); index++
+                label = if (text.getOrNull(index) in listOf('"', '\'')) quoted() else { val end = text.indexOf(close, index); if (end < 0) reject("Unclosed block label"); text.substring(index, end).trim().also { if (it.any { c -> c.isWhitespace() } || it.contains('\'')) reject("Block labels containing whitespace require double quotes"); index = end } }
+                space(); if (!text.startsWith(close, index)) reject("Expected $close after block label"); index += close.length
                 if (type == "block_arrow") {
                     if (label.isEmpty()) reject("Block arrow requires a non-empty label")
                     if (text.getOrNull(index) != '>') reject("Block arrow requires directions"); index++; space()

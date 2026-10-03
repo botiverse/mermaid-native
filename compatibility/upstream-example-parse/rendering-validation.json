@@ -1,0 +1,45 @@
+{
+  "phase": "local",
+  "cases": 7,
+  "baselineControlsUnchanged": 2,
+  "circlesAndCylinderCaps": "PASS",
+  "circleLabelContainmentAndBoundaryRoute": "PASS",
+  "wardleyModelText": "PASS",
+  "finiteViewBoxContainment": "PASS",
+  "browserWasmUrl": "http://127.0.0.1:5228/wasm/f7a5823d3cddea071a1f.wasm",
+  "wasmSha256": "ac1416e71cecf5d6fd5c269ee06f5d7a65c255dab2fa7264ba1be4b5493d8129",
+  "publicSvgExactLocal": null,
+  "nativeSource": "aec297e8c347d91e3d0802909b9fe41bfa24992a",
+  "tests": {
+    "mermaid-core": {
+      "tests": 291,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mermaid-layout-simple": {
+      "tests": 277,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mermaid-testkit": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "screenshotsInspected": [
+    "block-three-tier",
+    "block-nested",
+    "block-long-circle",
+    "wardley-forces"
+  ],
+  "limitations": [
+    "Parser success and selected shape geometry only; not full renderer parity.",
+    "Nested Block arrow width, Wardley force marker styling and fonts/spacing still differ from upstream.",
+    "Ten original parse failures remain: nine YAML-frontmatter inputs and one expanded Flowchart shapes input.",
+    "Four registry/render assertions remain unselected. No new SDK release."
+  ]
+}
