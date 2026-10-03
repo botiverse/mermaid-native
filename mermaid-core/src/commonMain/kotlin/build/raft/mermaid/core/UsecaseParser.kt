@@ -6,6 +6,7 @@ public class UsecaseParser(private val source: String) {
     private val actors = linkedMapOf<String, UsecaseActor>()
     private val nodes = linkedMapOf<String, UsecaseNode>()
     private val edges = mutableListOf<UsecaseRelationship>()
+    private var anonymousEdgeCount = 0
     private val boundaries = mutableListOf<UsecaseBoundary>()
     private val notes = mutableListOf<UsecaseNote>()
     private val jsonNodes = mutableListOf<UsecaseJsonNode>()
@@ -123,7 +124,7 @@ public class UsecaseParser(private val source: String) {
         val to = entity(); publish(to, false)
         val startMarker = when { operator.startsWith('<') -> "arrow"; operator.startsWith('o') -> "circle"; operator.startsWith('x') -> "cross"; else -> "none" }
         val endMarker = when { operator == "--|>" -> "generalization"; operator.endsWith('>') -> "arrow"; operator.endsWith('o') -> "circle"; operator.endsWith('x') -> "cross"; else -> "none" }
-        edges += UsecaseRelationship(from.id, to.id, edgeLabel, edgeId, startMarker, endMarker, operator == "..>")
+        edges += UsecaseRelationship(from.id, to.id, edgeLabel, edgeId ?: "edge-${anonymousEdgeCount++}", startMarker, endMarker, operator == "..>")
     }
     private fun styleValues(): Map<String, String> {
         val text = lineText(); if (';' in text) fail("Semicolons are not CSS separators")
@@ -151,7 +152,7 @@ public class UsecaseParser(private val source: String) {
                 "accDescr" -> { pos += 8; if (take(":")) accDescr = lineText() else { requireText("{"); val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description"); accDescr = source.substring(pos, end).trim(); pos = end + 1 } }
                 "systemBoundary" -> { pos += 14; val e = entity(boundary = true); boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
                 "actor" -> { pos += 5; val e = entity(actor = true); publish(e, true); if (take(",")) { do { publish(entity(actor = true), true) } while (take(",")) } else { hws(); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) fail("Relations are not allowed inside a boundary"); relation(e) } } }
-                "note" -> { pos += 4; if (identifier() != "for") fail("Expected note for"); val target = identifier(); if (at(",")) fail("Notes require a single target"); val text = if (at("\"")) quoted() else lineText(); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text) }
+                "note" -> { pos += 4; if (identifier() != "for") fail("Expected note for"); val target = identifier(); if (at(",")) fail("Notes require a single target"); val text = if (at("\"")) quoted() else lineText(); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
                 "json" -> { pos += 4; val id = identifier(); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
                 "classDef" -> { pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
                 "class" -> { pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }

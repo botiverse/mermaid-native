@@ -675,7 +675,7 @@ public data class UsecaseRelationship(
     }
 }
 public data class UsecaseBoundary(val id: String, val label: String, val labelType: String = "text")
-public data class UsecaseNote(val targetId: String, val label: String)
+public data class UsecaseNote(val targetId: String, val label: String, val id: String? = null)
 public data class UsecaseJsonNode(val id: String, val source: String, val data: UsecaseOrderedJsonObject? = null)
 public data class UsecaseAttributes(
     val properties: Map<String, String> = emptyMap(),
