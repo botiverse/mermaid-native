@@ -12,6 +12,9 @@ public class UsecaseParser(private val source: String) {
     private var statementNodes = mutableListOf<Map<String, Any?>>()
     private var statementEdges = mutableListOf<Map<String, Any?>>()
     private var metadataOccurrences = mutableListOf<Map<String, Any?>>()
+    private data class MetadataProperty(val key: String, val value: String, val boolean: Boolean, val range: List<Int>)
+    private var metadataProperties = mutableListOf<MetadataProperty>()
+    private val metadataAssignments = mutableListOf<Pair<String, List<MetadataProperty>>>()
     private fun span(start: Int, end: Int = pos): List<Int> = listOf(start, end)
     private fun labelSpan(start: Int, end: Int): List<Int> {
         val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) in listOf('"', '\'')) 1 else 0
@@ -117,7 +120,8 @@ public class UsecaseParser(private val source: String) {
         while (true) {
             hws(); val keyStart = pos
             val key = if (at("\"")) quoted() else identifier(); val keyEnd = pos; requireText(":"); hws()
-            val valueStart = pos; val value = if (at("\"")) quoted() else identifier(); val valueEnd = pos
+            val valueStart = pos; val quotedValue = at("\""); val value = if (quotedValue) quoted() else identifier(); val valueEnd = pos
+            metadataProperties += MetadataProperty(key, value, !quotedValue && value in listOf("true", "false"), span(keyStart, keyEnd))
             metadataOccurrences += mapOf("key" to key, "span" to span(keyStart, valueEnd), "keySpan" to labelSpan(keyStart, keyEnd), "valueSpan" to labelSpan(valueStart, valueEnd))
             result[key] = value; hws()
             if (take("}")) return result
@@ -127,7 +131,7 @@ public class UsecaseParser(private val source: String) {
     }
     private fun classList(): List<String> { val result = mutableListOf(identifier()); while (take(",")) result += identifier(); return result }
     private fun entity(actor: Boolean = false, boundary: Boolean = false): Entity {
-        hws(); val start = pos; metadataOccurrences = mutableListOf()
+        hws(); val start = pos; metadataOccurrences = mutableListOf(); metadataProperties = mutableListOf()
         val generated = at("\"")
         var labelType = if (at("\"`")) "markdown" else "text"
         val (id, initialLabel) = name(); val idEnd = pos
@@ -138,6 +142,7 @@ public class UsecaseParser(private val source: String) {
         else if (!actor && take("[")) { hws(); val textStart = pos; labelType = if (at("\"`")) "markdown" else "text"; text = label(']'); textSpan = labelSpan(textStart, pos); requireText("]"); shape = UsecaseShape.RECTANGLE; explicit = true; endpointDeclaration = true }
         val hasMetadata = at("@{")
         val properties = if (hasMetadata) metadata() else emptyMap()
+        if (hasMetadata) metadataAssignments += id to metadataProperties.toList()
         var stereotype: String? = null; var stereotypeSpan: List<Int>? = null
         if (!actor && !boundary && !explicit && hasMetadata && edges.any { it.id == id } && at("<<")) failGrammarToken("end of edge metadata")
         if (!boundary && take("<<")) {
@@ -317,6 +322,14 @@ public class UsecaseParser(private val source: String) {
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid usecase syntax", (e as? LocatedSyntaxError)?.location ?: (e as? DeclarationError)?.location ?: SourceLocation(lines.size, lines.last().length + 1))))
     }
 
+    private fun semanticFailure(message: String, range: List<Int>): MermaidParseResult.Failure {
+        val location = sourceLocation(range[0])
+        return MermaidParseResult.Failure(listOf(MermaidDiagnostic(
+            MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,
+            "$message at line ${location.line}, column ${location.column} [${range[0]},${range[1]})",
+            location,
+        )))
+    }
     public fun parseValidated(): MermaidParseResult {
         val result = parse(); if (result !is MermaidParseResult.Success) return result
         val d = result.diagram as UsecaseDiagram
@@ -327,6 +340,24 @@ public class UsecaseParser(private val source: String) {
             }
         } catch (e: UsecaseJsonError) {
             return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid JSON", SourceLocation(e.line, e.column))))
+        }
+        val metadataKinds = d.actors.associate { it.id to "actor" } +
+            d.useCases.associate { it.id to "usecase" } + d.boundaries.associate { it.id to "boundary" }
+        for ((id, properties) in metadataAssignments) {
+            val kind = metadataKinds[id] ?: continue
+            for (property in properties) {
+                val valid = when (kind) {
+                    "actor" -> when (property.key) {
+                        "type" -> !property.boolean && property.value in listOf("normal", "hollow", "awesome")
+                        "icon" -> !property.boolean
+                        "business" -> property.boolean
+                        else -> false
+                    }
+                    "usecase" -> property.key == "business" && property.boolean
+                    else -> property.key == "type" && property.value in listOf("rect", "package")
+                }
+                if (!valid) return semanticFailure("Metadata property '${property.key}' is invalid for $kind '$id'", property.range)
+            }
         }
         val nodeIds = (d.actors.map { it.id } + d.useCases.map { it.id }).toSet()
         val allIds = nodeIds + d.boundaries.map { it.id } + d.jsonNodes.map { it.id } + d.relationships.mapNotNull { it.id }
@@ -339,15 +370,18 @@ public class UsecaseParser(private val source: String) {
             val icon = properties["icon"]?.takeIf { it.isNotEmpty() }
             val business = properties["business"] == "true"
             val error = when {
-                declared !in listOf("normal", "hollow", "awesome") -> "Invalid actor type '$declared' for '${actor.id}'"
-                properties["business"] != null && properties["business"] !in listOf("true", "false") -> "Invalid business value for '${actor.id}'"
                 icon != null && declared != "normal" -> "Actor '${actor.id}' cannot combine icon with type '$declared'"
                 business && (icon != null || declared == "awesome") -> "Business actor '${actor.id}' must use normal or hollow geometry"
                 else -> null
             }
-            if (error != null) return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error, SourceLocation(1, 1))))
+            if (error != null) return semanticFailure(error, declarations.getValue(actor.id).range)
             val type = if (icon != null) UsecaseActorType.ICON else when (declared) { "hollow" -> UsecaseActorType.HOLLOW; "awesome" -> UsecaseActorType.AWESOME; else -> UsecaseActorType.NORMAL }
             validatedActors += actor.copy(type = type, icon = icon, business = business)
+        }
+        for (node in d.useCases) {
+            if (node.shape == UsecaseShape.RECTANGLE && d.attributes[node.id]?.properties?.get("business") == "true") {
+                return semanticFailure("Rectangular use case '${node.id}' cannot be a business use case", declarations.getValue(node.id).range)
+            }
         }
         val complete = d.copy(actors = validatedActors, jsonNodes = validatedJson)
         sourceAst = buildAst(complete)
