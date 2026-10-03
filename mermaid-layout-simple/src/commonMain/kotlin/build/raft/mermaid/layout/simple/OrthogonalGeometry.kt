@@ -10,6 +10,33 @@ import kotlin.math.min
 public object OrthogonalGeometry {
     public data class RectEntry(val id: String, val rect: SceneRect)
     public data class Edge(val points: List<ScenePoint>, val isLayoutOnly: Boolean = false)
+    public data class NodeBounds(val id: String, val rect: SceneRect, val isGroup: Boolean = false, val isEdgeLabel: Boolean = false)
+    public enum class RouteKind { HVH, VHV }
+    public data class ThreeSegmentRoute(val kind: RouteKind, val points: List<ScenePoint>)
+
+    /** Convert the center-based layout contract without duplicating geometry in callers. */
+    public fun nodeBoundsFromCenter(id: String, x: Double, y: Double, width: Double, height: Double,
+        isGroup: Boolean = false, isEdgeLabel: Boolean = false): NodeBounds =
+        NodeBounds(id, SceneRect(x - width / 2, y - height / 2, width, height), isGroup, isEdgeLabel)
+
+    /** Only measured leaf nodes are obstacles; group boxes and edge labels have separate routing roles. */
+    public fun collectRealNodeBounds(nodes: List<NodeBounds>): List<RectEntry> = nodes
+        .filter { !it.isGroup && !it.isEdgeLabel && it.rect.width > 0 && it.rect.height > 0 }
+        .map { RectEntry(it.id, it.rect) }
+
+    public fun classifyThreeSegmentRoute(points: List<ScenePoint>, epsilon: Double = 1e-3): ThreeSegmentRoute? {
+        if (points.size != 4) return null
+        fun horizontal(a: ScenePoint, b: ScenePoint) = abs(a.y - b.y) < epsilon && abs(a.x - b.x) > epsilon
+        fun vertical(a: ScenePoint, b: ScenePoint) = abs(a.x - b.x) < epsilon && abs(a.y - b.y) > epsilon
+        val (a, b, c, d) = points
+        val kind = when {
+            horizontal(a, b) && vertical(b, c) && horizontal(c, d) -> RouteKind.HVH
+            vertical(a, b) && horizontal(b, c) && vertical(c, d) -> RouteKind.VHV
+            else -> return null
+        }
+        return ThreeSegmentRoute(kind, points)
+    }
+
 
     public fun segmentsCross(a: ScenePoint, b: ScenePoint, c: ScenePoint, d: ScenePoint,
         epsilon: Double = 1e-3, endpointTolerance: Double = 1e-6): Boolean {

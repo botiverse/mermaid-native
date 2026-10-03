@@ -20,7 +20,7 @@ internal fun flowObstacleRoutes(diagram: FlowchartDiagram,rects: Map<String,Scen
     }
     fun point(main: Double,cross: Double)=if(horizontal)ScenePoint(main*sign,cross)else ScenePoint(cross,main*sign)
     val boxes=rects.mapValues { box(it.value) }
-    val obstacles=rects.map { OrthogonalGeometry.RectEntry(it.key,it.value) }
+    val obstacles=OrthogonalGeometry.collectRealNodeBounds(rects.map { OrthogonalGeometry.NodeBounds(it.key,it.value) })
     val edges=diagram.edges.mapIndexed { i,e ->
         val a=boxes[e.sourceId];val b=boxes[e.targetId]
         OrthogonalGeometry.Edge(existing[i]?.points ?: if(a!=null && b!=null)
