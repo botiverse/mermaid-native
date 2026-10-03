@@ -1974,7 +1974,7 @@ class MermaidParserTest {
                 FlowDirection.LR,
                 listOf(UsecaseActor("Customer", "Customer")),
                 listOf(UsecaseNode("1Checkout", "Place order", UsecaseShape.ELLIPSE), UsecaseNode("Report", "Generate report", UsecaseShape.RECTANGLE)),
-                listOf(UsecaseRelationship("Customer", "1Checkout", "starts", id = "edge-0"), UsecaseRelationship("1Checkout", "Report", id = "edge-1")),
+                listOf(UsecaseRelationship("Customer", "1Checkout", "starts", id = "edge-0", labelType = "text"), UsecaseRelationship("1Checkout", "Report", id = "edge-1")),
             ),
             result.diagram,
         )

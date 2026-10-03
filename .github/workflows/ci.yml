@@ -16,6 +16,13 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew check :mermaid-core:allTests :mermaid-layout-simple:allTests :mermaid-testkit:allTests :mermaid-web:allTests :mermaid-kuikly:allTests cyclonedxBom
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify optimized production Wasm Usecase semantics
+        run: |
+          ./gradlew :mermaid-web:wasmJsBrowserDistribution
+          node scripts/verify-usecase-production-wasm.mjs
       - run: ./scripts/verify-web-consumer-mutation.sh
       - uses: actions/upload-artifact@v4
         with:

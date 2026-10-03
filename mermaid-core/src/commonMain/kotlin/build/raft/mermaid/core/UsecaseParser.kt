@@ -32,6 +32,9 @@ public class UsecaseParser(private val source: String) {
     private val notes = mutableListOf<UsecaseNote>()
     private val jsonNodes = mutableListOf<UsecaseJsonNode>()
     private val jsonStarts = mutableListOf<Int>()
+    private val relationRanges = mutableListOf<List<Int>>()
+    private val noteTargets = mutableListOf<Pair<String, List<Int>>>()
+    private val styleTargets = mutableListOf<Pair<String, List<Int>>>()
     private val attrs = linkedMapOf<String, UsecaseAttributes>()
     private val classes = linkedMapOf<String, Map<String, String>>()
     private var direction = FlowDirection.LR
@@ -210,18 +213,19 @@ public class UsecaseParser(private val source: String) {
         var edgeId: String? = null; hws(); val relationStart = pos; var idSpan: List<Int>? = null; var edgeLabelSpan: List<Int>? = null; val candidate = idPattern.find(source, pos)?.takeIf { it.range.first == pos }
         if (candidate != null && source.getOrNull(candidate.range.last + 1) == '@') { edgeId = candidate.value; idSpan = span(candidate.range.first, candidate.range.last + 1); pos = candidate.range.last + 2 }
         hws(); val match = Regex("--\\|>|\\.\\.>|<--+|o--|x--|--o|--x|--+>|--+").find(source, pos)?.takeIf { it.range.first == pos } ?: fail("Expected usecase relation")
-        var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null
-        if (operator == "..>") { requireText(":"); hws(); val labelStart = pos; edgeLabel = identifier().lowercase(); edgeLabelSpan = span(labelStart); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
+        var operator = match.value; pos = match.range.last + 1; var edgeLabel: String? = null; var edgeLabelType: String? = null
+        if (operator == "..>") { requireText(":"); hws(); val labelStart = pos; edgeLabel = identifier().lowercase(); edgeLabelType = "text"; edgeLabelSpan = span(labelStart); if (edgeLabel !in listOf("include", "extend")) fail("Expected include or extend") }
         else if (operator in listOf("--", "<--", "o--", "x--")) {
             val restStart = pos
             hws()
             if (source.getOrNull(pos) == '"') {
+                val textType = if (source.startsWith("\"`", pos)) "markdown" else "text"
                 val text = quoted(); hws()
                 val right = Regex("--+(?:>|[ox])?").find(source, pos)?.takeIf { it.range.first == pos }
                 if (right == null) pos = restStart // A quoted destination, not a relation label.
                 else {
                     if (operator != "--" && right.value != "--") fail("Invalid reverse labelled relation")
-                    edgeLabel = text
+                    edgeLabel = text; edgeLabelType = textType
                     if (operator == "--") operator = right.value
                     pos = right.range.last + 1
                 }
@@ -232,7 +236,7 @@ public class UsecaseParser(private val source: String) {
                 if (right != null) {
                     val raw = rest.substring(0, right.range.first).trim()
                     if (raw.isNotEmpty()) {
-                        edgeLabel = raw
+                        edgeLabel = raw; edgeLabelType = "text"
                         val rightOperator = right.groupValues[1]
                         if (operator != "--" && rightOperator != "--") fail("Invalid reverse labelled relation")
                         if (operator == "--") operator = rightOperator
@@ -246,11 +250,19 @@ public class UsecaseParser(private val source: String) {
         val endMarker = when { operator == "--|>" -> "generalization"; operator.endsWith('>') -> "arrow"; operator.endsWith('o') -> "circle"; operator.endsWith('x') -> "cross"; else -> "none" }
         if (edgeId != null) declare(edgeId, Declaration("edge", idSpan!!))
         val resolvedId = edgeId ?: "edge-${anonymousEdgeCount++}"
-        edges += UsecaseRelationship(from.id, to.id, edgeLabel, resolvedId, startMarker, endMarker, operator == "..>")
+        edges += UsecaseRelationship(from.id, to.id, edgeLabel, resolvedId, startMarker, endMarker, operator == "..>",
+            explicitId = edgeId != null, minlen = if (operator == "..>" || operator == "--|>") 1 else (operator.count { it == '-' } - 1).coerceAtLeast(1),
+            labelType = edgeLabelType)
+        relationRanges += span(relationStart)
         val occurrence = linkedMapOf<String, Any?>("id" to resolvedId, "span" to span(relationStart))
         if (idSpan != null) occurrence["idSpan"] = idSpan
         if (edgeLabelSpan != null) occurrence["labelSpan"] = edgeLabelSpan
         statementEdges += occurrence
+    }
+    private fun styleTargetList(): List<String> {
+        val ids = mutableListOf<String>()
+        do { hws(); val start = pos; val id = identifier(); ids += id; styleTargets += id to span(start) } while (take(","))
+        return ids
     }
     private fun styleValues(): Map<String, String> {
         val text = lineText(); if (';' in text) fail("Semicolons are not CSS separators")
@@ -282,11 +294,11 @@ public class UsecaseParser(private val source: String) {
                 "accDescr" -> { kind = "accDescr"; pos += 8; if (take(":")) accDescr = lineText() else { requireText("{"); val end = source.indexOf('}', pos); if (end < 0) fail("Unclosed accessibility description"); accDescr = source.substring(pos, end).trim(); pos = end + 1 } }
                 "systemBoundary" -> { kind = "group"; pos += 14; val e = entity(boundary = true); declareEntity(e, "boundary"); extra["group"] = e.id; extra["idSpan"] = e.occurrence["idSpan"]; extra["titleSpan"] = e.occurrence["labelSpan"]; boundaries += UsecaseBoundary(e.id, e.label, e.labelType); if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes; parent = e.id }
                 "actor" -> { pos += 5; val e = entity(actor = true); publish(e, true); if (take(",")) { do { publish(entity(actor = true), true) } while (take(",")) } else { hws(); if (pos < source.length && source[pos] !in "\r\n") { if (parent != null) failGrammarToken("end of boundary declaration"); relation(e) } } }
-                "note" -> { kind = "note"; pos += 4; if (identifier() != "for") fail("Expected note for"); hws(); val targetStart = pos; val target = identifier(); val targetEnd = pos; if (at(",")) fail("Notes require a single target"); hws(); val textStart = pos; val text = if (at("\"")) quoted() else lineText(); extra["ref"] = "note-${notes.size}"; extra["refSpan"] = labelSpan(textStart, pos); statementNodes += mapOf("id" to target, "span" to span(targetStart, targetEnd), "idSpan" to span(targetStart, targetEnd)); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
+                "note" -> { kind = "note"; pos += 4; if (identifier() != "for") fail("Expected note for"); hws(); val targetStart = pos; val target = identifier(); val targetEnd = pos; noteTargets += target to span(targetStart, targetEnd); if (at(",")) fail("Notes require a single target"); hws(); val textStart = pos; val text = if (at("\"")) quoted() else lineText(); extra["ref"] = "note-${notes.size}"; extra["refSpan"] = labelSpan(textStart, pos); statementNodes += mapOf("id" to target, "span" to span(targetStart, targetEnd), "idSpan" to span(targetStart, targetEnd)); if (text.isBlank() || text.startsWith("as ")) fail("Invalid note label"); notes += UsecaseNote(target, text, "note-${notes.size}") }
                 "json" -> { kind = "json"; pos += 4; hws(); val idStart = pos; val id = identifier(); declare(id, Declaration("json", span(idStart))); statementNodes += mapOf("id" to id, "span" to span(idStart), "idSpan" to span(idStart)); requireText("@"); hws(); jsonStarts += pos; val json = jsonObject(); val assigned = if (take(":::")) classList() else emptyList(); jsonNodes += UsecaseJsonNode(id, json); if (assigned.isNotEmpty()) attrs[id] = UsecaseAttributes(classes = assigned) }
                 "classDef" -> { kind = "classDef"; pos += 8; val ids = classList(); val values = styleValues(); ids.forEach { classes[it] = values } }
-                "class" -> { kind = "classAssign"; pos += 5; val ids = classList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
-                "style" -> { kind = "style"; pos += 5; val id = identifier(); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
+                "class" -> { kind = "classAssign"; pos += 5; val ids = styleTargetList(); val assigned = classList(); ids.forEach { attrs[it] = (attrs[it] ?: UsecaseAttributes()).copy(classes = (attrs[it]?.classes.orEmpty() + assigned)) } }
+                "style" -> { kind = "style"; pos += 5; hws(); val targetStart = pos; val id = identifier(); styleTargets += id to span(targetStart); val values = styleValues(); attrs[id] = (attrs[id] ?: UsecaseAttributes()).copy(styles = attrs[id]?.styles.orEmpty() + values) }
                 else -> {
                     if (keyword?.lowercase() in forbidden) fail("Unsupported PlantUML statement")
                     val e = entity(); hws()
@@ -303,6 +315,10 @@ public class UsecaseParser(private val source: String) {
                 groupStatement = null; groupChildren = mutableListOf()
             } else {
                 if (statementEdges.isNotEmpty()) kind = "edge"
+                if (kind == "edgeMetadata") {
+                    statementEdges = statementNodes.map { occurrence -> occurrence.filterKeys { it !in setOf("labelSpan", "defines") } }.toMutableList()
+                    statementNodes.clear()
+                }
                 val statement = linkedMapOf<String, Any?>("kind" to kind, "span" to span(start))
                 statement.putAll(extra)
                 if (statementNodes.isNotEmpty() && kind != "group") statement["nodes"] = statementNodes.toList()
@@ -344,7 +360,8 @@ public class UsecaseParser(private val source: String) {
             return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid JSON", SourceLocation(e.line, e.column))))
         }
         val metadataKinds = d.actors.associate { it.id to "actor" } +
-            d.useCases.associate { it.id to "usecase" } + d.boundaries.associate { it.id to "boundary" }
+            d.useCases.associate { it.id to "usecase" } + d.boundaries.associate { it.id to "boundary" } +
+            d.relationships.filter { it.explicitId }.associate { it.id!! to "edge" } + d.jsonNodes.associate { it.id to "json" }
         for ((id, properties) in metadataAssignments) {
             val kind = metadataKinds[id] ?: continue
             for (property in properties) {
@@ -356,14 +373,41 @@ public class UsecaseParser(private val source: String) {
                         else -> false
                     }
                     "usecase" -> property.key == "business" && property.boolean
-                    else -> property.key == "type" && property.value in listOf("rect", "package")
+                    "edge" -> when (property.key) {
+                        "animate" -> property.boolean
+                        "animation" -> !property.boolean && property.value in listOf("fast", "slow")
+                        else -> false
+                    }
+                    "boundary" -> property.key == "type" && property.value in listOf("rect", "package")
+                    else -> false
                 }
                 if (!valid) return semanticFailure("Metadata property '${property.key}' is invalid for $kind '$id'", property.range)
             }
         }
         val nodeIds = (d.actors.map { it.id } + d.useCases.map { it.id }).toSet()
-        val allIds = nodeIds + d.boundaries.map { it.id } + d.jsonNodes.map { it.id } + d.relationships.mapNotNull { it.id }
-        val unknown = d.notes.firstOrNull { it.targetId !in nodeIds }?.targetId ?: d.attributes.keys.firstOrNull { it !in allIds }
+        val allIds = nodeIds + d.boundaries.map { it.id } + d.jsonNodes.map { it.id } + d.relationships.filter { it.explicitId }.mapNotNull { it.id }
+        for ((id, range) in styleTargets) {
+            if (id !in allIds) return semanticFailure("Class/style target '$id' is unresolved or anonymous", range)
+        }
+        for ((id, range) in noteTargets) {
+            if (id in nodeIds) continue
+            val origin = declarations[id]
+            if (origin == null) return semanticFailure("Note target '$id' is unresolved", range)
+            val failure = semanticFailure("Note target '$id' must be an actor or use case, not ${origin.kind}", range)
+            return MermaidParseResult.Failure(failure.diagnostics.map { it.copy(message = "${it.message}; previous declaration at ${describe(origin, false)}") })
+        }
+        for ((index, edge) in d.relationships.withIndex()) {
+            val sourceKind = metadataKinds[edge.sourceId]
+            val targetKind = metadataKinds[edge.targetId]
+            val error = when {
+                edge.type in listOf(UsecaseRelationshipType.INCLUDE, UsecaseRelationshipType.EXTEND) && (sourceKind != "usecase" || targetKind != "usecase") -> "${edge.type.name.lowercase()} relationship requires use-case endpoints"
+                edge.type == UsecaseRelationshipType.GENERALIZATION && (sourceKind !in listOf("actor", "usecase") || sourceKind != targetKind) -> "Generalization requires actor-to-actor or use-case-to-use-case endpoints"
+                edge.type == UsecaseRelationshipType.ASSOCIATION && (sourceKind == "json" || targetKind == "json") && edge.arrowType !in 0..2 -> "JSON relationship '${edge.sourceId}' to '${edge.targetId}' permits only point, reversed-point, or markerless solid association"
+                else -> null
+            }
+            if (error != null) return semanticFailure(error, relationRanges[index])
+        }
+        val unknown = d.attributes.keys.firstOrNull { it !in allIds }
         if (unknown != null) return MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, "Unknown usecase target $unknown", SourceLocation(1, 1))))
         val validatedActors = mutableListOf<UsecaseActor>()
         for (actor in d.actors) {
@@ -385,7 +429,12 @@ public class UsecaseParser(private val source: String) {
                 return semanticFailure("Rectangular use case '${node.id}' cannot be a business use case", declarations.getValue(node.id).range)
             }
         }
-        val complete = d.copy(actors = validatedActors, jsonNodes = validatedJson)
+        val validatedEdges = d.relationships.map { edge ->
+            val properties = d.attributes[edge.id]?.properties.orEmpty()
+            val animation = properties["animation"]
+            edge.copy(animate = animation != null || properties["animate"] == "true", animation = animation)
+        }
+        val complete = d.copy(actors = validatedActors, jsonNodes = validatedJson, relationships = validatedEdges)
         sourceAst = buildAst(complete)
         return MermaidParseResult.Success(complete)
     }
@@ -407,18 +456,34 @@ public class UsecaseParser(private val source: String) {
             val shape = if (n.shape == UsecaseShape.RECTANGLE) "rect" else "ellipse"
             node(n.id, n.label, shape, "usecase", mapOf("useCaseShape" to shape, "business" to (d.attributes[n.id]?.properties?.get("business") == "true"), "labelType" to n.labelType))
         }
-        for (n in d.jsonNodes) node(n.id, n.id, "json-table", "json", emptyMap())
+        fun jsonValue(value: UsecaseJsonValue): Any? = when (value) {
+            UsecaseJsonValue.NullValue -> null
+            is UsecaseJsonValue.BooleanValue -> value.value
+            is UsecaseJsonValue.NumberValue -> value.value
+            is UsecaseJsonValue.StringValue -> value.value
+            is UsecaseJsonValue.ArrayValue -> value.value.map(::jsonValue)
+            is UsecaseJsonValue.ObjectValue -> value.value.mapValues { jsonValue(it.value) }
+        }
+        for (n in d.jsonNodes) node(n.id, n.id, "json-table", "json", mapOf("value" to n.data!!.value.mapValues { jsonValue(it.value) }, "propertyOrder" to n.data.propertyOrder, "labelType" to "text"))
         for (n in d.notes) node(n.id.orEmpty(), n.label, "note", "note", mapOf("target" to n.targetId, "labelType" to "text"))
         val groups = d.boundaries.associate { b -> b.id to mapOf("title" to b.label, "nodes" to d.attributes.filterValues { it.parentId == b.id }.keys.toList(), "attrs" to mapOf("kind" to "systemBoundary", "boundaryType" to d.attributes[b.id]?.properties?.get("type"), "labelType" to b.labelType)) }
         val graphEdges = d.relationships.map { e ->
             linkedMapOf<String, Any?>("id" to e.id, "source" to e.sourceId, "target" to e.targetId).also { row ->
                 e.label?.let { row["label"] = it }
-                row["attrs"] = mapOf("relationshipType" to e.type.name.lowercase())
+                val edgeAttrs = linkedMapOf<String, Any?>("relationshipType" to e.type.name.lowercase(), "arrowType" to e.arrowType, "minlen" to e.minlen, "explicitId" to e.explicitId, "animate" to e.animate)
+                e.animation?.let { edgeAttrs["animation"] = it }; e.labelType?.let { edgeAttrs["labelType"] = it }
+                row["attrs"] = edgeAttrs
+                d.attributes[e.id]?.let { attributes ->
+                    if (attributes.classes.isNotEmpty()) row["classes"] = attributes.classes
+                    if (attributes.styles.isNotEmpty()) row["styles"] = attributes.styles.map { "${it.key}:${it.value}" }
+                }
             }
         }
+        val noteEdges = d.notes.map { n -> mapOf("id" to "${n.id}-edge", "source" to n.id, "target" to n.targetId,
+            "attrs" to mapOf("relationshipType" to "note", "arrowType" to 2, "pattern" to "dotted", "minlen" to 1, "explicitId" to false, "animate" to false, "internal" to true)) }
         val data = linkedMapOf<String, Any?>("version" to 1, "diagramType" to "usecase", "source" to source,
             "header" to mapOf("keyword" to "usecase", "direction" to d.direction.name, "span" to headerSpan),
-            "nodes" to graphNodes, "edges" to graphEdges, "groups" to groups,
+            "nodes" to graphNodes, "edges" to (graphEdges + noteEdges), "groups" to groups,
             "classDefs" to d.classDefs.mapValues { (_, values) -> mapOf("styles" to values.map { "${it.key}:${it.value}" }) },
             "statements" to statements.toList())
         accTitle?.let { data["accTitle"] = it }; accDescr?.let { data["accDescr"] = it }

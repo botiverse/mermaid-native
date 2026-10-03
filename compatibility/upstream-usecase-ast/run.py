@@ -52,7 +52,7 @@ for mode in ['official','native']:
 if o.verify_mutations:
  original=cache.read_text();controls={}
  try:
-  for key in ['headerSpan','jsonIdSpan','failedPublication','collisionOrigin','unquotedToken','grammarLocation','metadataLocation']:
+  for key in ['headerSpan','jsonIdSpan','failedPublication','collisionOrigin','unquotedToken','grammarLocation','metadataLocation','relationKind','classTarget','noteTarget','jsonRelation','edgeAnimation','astAnimation','astJson']:
    mutated=json.loads(original);targets=set();changed=0
    for row in mutated:
     source=row.get('source','');snap=row['snapshot']
@@ -63,6 +63,13 @@ if o.verify_mutations:
     elif key=='unquotedToken' and source=='usecase-beta\nLiteral(Literal {nested} markers)':snap['error']=snap['error'].replace('but found:', 'token:')
     elif key=='grammarLocation' and "locates rejected 'JSON' content" in row['test'] and source=='usecase-beta\nsystemBoundary Auth\njson Payload@{}\nend':snap['error']=snap['error'].replace('at line', 'at missing line')
     elif key=='metadataLocation' and source=='usecase-beta\nactor User@{ type: giant }':snap['error']=snap['error'].replace('column', 'missing column')
+    elif key=='relationKind' and source=='usecase-beta\nactor User\nLogin\nUser --|> Login':snap['error']=snap['error'].replace('Generalization', 'Association')
+    elif key=='classTarget' and source=='usecase-beta\nA known@--> B\nclass missingEdge decorated':snap['error']=snap['error'].replace('unresolved or anonymous', 'accepted')
+    elif key=='noteTarget' and source=='usecase-beta\njson Payload@{}\nnote for Payload \"invalid\"':snap['error']=snap['error'].replace('previous declaration at', 'missing origin at')
+    elif key=='jsonRelation' and source=='usecase-beta\njson Payload@{}\nInspect --o Payload':snap['error']=snap['error'].replace('only point', 'any point')
+    elif key=='edgeAnimation' and 'A trueEdge@--> B' in source:snap['relationships'][1]['animate']=False
+    elif key=='astAnimation' and 'A trueEdge@--> B' in source:snap['ast']['edges'][2]['attrs']['animation']='fast'
+    elif key=='astJson' and '%% representative' in source:snap['ast']['nodes']['Payload']['attrs']['value']['ok']=False
     else:continue
     targets.add(row['test'].replace(' > ',' '));changed+=1
    assert changed==1 and len(targets)==1 and not(targets&baseline),(key,targets,baseline)

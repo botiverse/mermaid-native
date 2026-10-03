@@ -26,7 +26,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: docs-site/package-lock.json
       - name: Build documentation site
@@ -36,6 +36,8 @@ jobs:
           DOCS_BASE=/mermaid-native/ npm run docs:build
       - name: Build production Wasm/JS acceptance app
         run: ./gradlew :mermaid-web:wasmJsBrowserProductionWebpack
+      - name: Verify optimized production Wasm Usecase semantics
+        run: node scripts/verify-usecase-production-wasm.mjs
       - name: Assemble Pages preview
         shell: bash
         run: |

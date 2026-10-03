@@ -204,7 +204,7 @@ public object MermaidExamples {
             direction = build.raft.mermaid.core.FlowDirection.LR,
             actors = listOf(UsecaseActor("Customer", "Customer")),
             useCases = listOf(UsecaseNode("Checkout", "Place order", UsecaseShape.ELLIPSE), UsecaseNode("Receipt", "Create receipt", UsecaseShape.RECTANGLE)),
-            relationships = listOf(UsecaseRelationship("Customer", "Checkout", "starts", id = "edge-0"), UsecaseRelationship("Checkout", "Receipt", id = "edge-1")),
+            relationships = listOf(UsecaseRelationship("Customer", "Checkout", "starts", id = "edge-0", labelType = "text"), UsecaseRelationship("Checkout", "Receipt", id = "edge-1")),
         ),
     )
     public val vennTeamOverlap: MermaidExample = MermaidExample(
