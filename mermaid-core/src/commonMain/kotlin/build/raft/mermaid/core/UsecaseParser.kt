@@ -81,8 +81,8 @@ public class UsecaseParser(private val source: String) {
     }
     private fun publish(e: Entity, actor: Boolean) {
         if (!actor && jsonNodes.any { it.id == e.id }) return
-        if (actor) { nodes.remove(e.id); val previous = actors[e.id]; if (previous != null && previous.label != e.label) fail("Conflicting actor declaration ${e.id}"); actors[e.id] = UsecaseActor(e.id, e.label) }
-        else if (e.id !in actors) { val previous = nodes[e.id]; if (previous == null || e.explicit) nodes[e.id] = UsecaseNode(e.id, e.label, e.shape) }
+        if (actor) { nodes.remove(e.id); val previous = actors[e.id]; if (previous != null && previous.label != e.label) fail("Conflicting actor declaration ${e.id}"); actors[e.id] = UsecaseActor(e.id, e.label, labelType = e.labelType) }
+        else if (e.id !in actors) { val previous = nodes[e.id]; if (previous == null || e.explicit) nodes[e.id] = UsecaseNode(e.id, e.label, e.shape, e.labelType) }
         if (e.attributes != UsecaseAttributes()) attrs[e.id] = e.attributes
     }
     private fun relation(from: Entity) {
