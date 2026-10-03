@@ -1,0 +1,54 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "7c2d83ccc454199caa2767493bba5147f5489160",
+  "nativeJarSha256": "183618ec333b92f9ae4fcc468c13c01224c4edb34d3d398d47d6af2e2ebe10c6",
+  "nativeOperations": 52,
+  "operations": {
+    "addRule": 6,
+    "clear": 14,
+    "getAccDescription": 2,
+    "getAccTitle": 2,
+    "getDiagramTitle": 3,
+    "getRule": 3,
+    "getRules": 5,
+    "getTitle": 6,
+    "setAccDescription": 2,
+    "setAccTitle": 2,
+    "setDiagramTitle": 2,
+    "setTitle": 5
+  },
+  "official": {
+    "numTotalTests": 12,
+    "numPassedTests": 12,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 12,
+    "numPassedTests": 12,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "appendDuplicates": [
+      "Railroad Database should handle duplicate rules"
+    ],
+    "lookupLast": [
+      "Railroad Database should handle duplicate rules"
+    ],
+    "clearMetadata": [
+      "Railroad Database should clear all state including accessibility fields"
+    ],
+    "titleCleanup": [
+      "Railroad Database should sanitize titles before storing them"
+    ],
+    "ruleCleanup": [
+      "Railroad Database should sanitize rule names and terminal values at the db boundary"
+    ],
+    "missingRule": [
+      "Railroad Database should return undefined for non-existent rule"
+    ]
+  }
+}
