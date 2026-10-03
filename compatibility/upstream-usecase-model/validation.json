@@ -1,19 +1,19 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
   "nativeJarSha256": "c82849255f702ad60cebd39ec6d8d3f2f670705d8ead5fa17b46a5c9c70b88b0",
-  "uniqueInputs": 27,
+  "uniqueInputs": 31,
   "official": {
     "numTotalTests": 116,
-    "numPassedTests": 29,
+    "numPassedTests": 31,
     "numFailedTests": 0,
-    "numPendingTests": 87,
+    "numPendingTests": 85,
     "success": true
   },
   "native": {
     "numTotalTests": 116,
-    "numPassedTests": 29,
+    "numPassedTests": 31,
     "numFailedTests": 0,
-    "numPendingTests": 87,
+    "numPendingTests": 85,
     "success": true
   },
   "modelMutations": {
@@ -21,39 +21,51 @@
       "failedTests": [
         "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
       ],
-      "passedTests": 28
+      "passedTests": 30
     },
     "members": {
       "failedTests": [
         "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
       ],
-      "passedTests": 28
+      "passedTests": 30
     },
     "numericActorId": {
       "failedTests": [
         "usecase parser publication and normalized AST accepts ids that start with a digit"
       ],
-      "passedTests": 28
+      "passedTests": 30
     },
     "decimalStyles": {
       "failedTests": [
         "usecase parser publication and normalized AST keeps decimal style values intact now that ids may start with a digit"
       ],
-      "passedTests": 28
+      "passedTests": 30
     },
     "overrideType": {
       "failedTests": [
         "usecase parser publication and normalized AST lets a later metadata statement override inline boundary metadata"
       ],
-      "passedTests": 28
+      "passedTests": 30
     },
     "classWordSeparators": {
       "failedTests": [
         "usecase parser publication and normalized AST preserves the separators inside multi-word style and classDef values"
       ],
-      "passedTests": 28
+      "passedTests": 30
+    },
+    "forwardActor": {
+      "failedTests": [
+        "usecase parser publication and normalized AST resolves forward 'actor' refinement independently of declaration order"
+      ],
+      "passedTests": 30
+    },
+    "forwardRectangle": {
+      "failedTests": [
+        "usecase parser publication and normalized AST resolves forward 'rectangular use case' refinement independently of declaration order"
+      ],
+      "passedTests": 30
     }
   },
-  "nativeSource": "fad278b0cf18ba46bb1b7de29a10859c648a0b2b",
-  "scope": "29 original model tests across two files; 87 unselected. Four new model assertions; no renderer or database lifecycle claim."
+  "nativeSource": "a3d64ed1f8edef61607604c918270ebf68fdce4e",
+  "scope": "31 original model tests across two files; 85 unselected. Two new declaration-order refinement assertions; no renderer or database lifecycle claim."
 }

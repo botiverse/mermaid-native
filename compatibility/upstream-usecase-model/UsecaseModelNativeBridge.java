@@ -10,7 +10,7 @@ public class UsecaseModelNativeBridge {
   Map<String,Object> r=row(n);List<String> styles=new ArrayList<>();
   UsecaseAttributes attributes=d.getAttributes().get(n.getId());
   if(attributes!=null)for(var entry:attributes.getStyles().entrySet())styles.add(entry.getKey()+":"+entry.getValue());
-  r.put("styles",styles);nodes.add(r);
+  r.put("styles",styles);r.put("shape",n.getShape()==UsecaseShape.RECTANGLE?"rect":"ellipse");nodes.add(r);
 }out.put("useCases",nodes);
 List<Object> jsonNodes=new ArrayList<>();for(UsecaseJsonNode n:d.getJsonNodes())jsonNodes.add(Map.of("id",n.getId()));out.put("jsonNodes",jsonNodes);List<Object> boundaries=new ArrayList<>();for(UsecaseBoundary n:d.getBoundaries()) {
   Map<String,Object> r=row(n);
@@ -27,6 +27,6 @@ for(var definition:d.getClassDefs().entrySet()) {
  for(var entry:definition.getValue().entrySet())styles.add(entry.getKey()+":"+entry.getValue());
  classDefs.put(definition.getKey(),Map.of("styles",styles));
 }
-out.put("classDefs",classDefs);return out;}
+out.put("classDefs",classDefs);out.put("noteCount",d.getNotes().size());return out;}
  public static void main(String[] args){Scanner lines=new Scanner(System.in,StandardCharsets.UTF_8);while(lines.hasNextLine()){String source=new String(Base64.getDecoder().decode(lines.nextLine()),StandardCharsets.UTF_8);try{System.out.println(json(render(source)));}catch(Throwable e){System.out.println(json(Map.of("error",e.toString())));}}}
 }
