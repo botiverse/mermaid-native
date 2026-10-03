@@ -1,0 +1,128 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeBaseline": "201bb2e1279cad33513b17da9d2af5bf1f96fd72",
+  "filesImported": 159,
+  "assertionsImported": 1519,
+  "referenceCounts": {
+    "passed": 1513,
+    "skipped": 6
+  },
+  "nativeNewPasses": 0,
+  "nativeNotExecuted": 1519,
+  "countsMatchOriginalLedger": true,
+  "hashIntegrityControl": {
+    "hashTamperRejected": true,
+    "restoredSourcesVerified": true
+  },
+  "groups": [
+    {
+      "group": "docs-and-tooling",
+      "filesImported": 9,
+      "assertionsImported": 170,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 169,
+        "skipped": 1
+      },
+      "nativeCounts": {
+        "not_executed": 170
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "examples",
+      "filesImported": 2,
+      "assertionsImported": 5,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 5
+      },
+      "nativeCounts": {
+        "not_executed": 5
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "rendering",
+      "filesImported": 35,
+      "assertionsImported": 296,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 295,
+        "skipped": 1
+      },
+      "nativeCounts": {
+        "not_executed": 296
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "api-config-and-utilities",
+      "filesImported": 16,
+      "assertionsImported": 270,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 270
+      },
+      "nativeCounts": {
+        "not_executed": 270
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "styles-and-themes",
+      "filesImported": 5,
+      "assertionsImported": 241,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 241
+      },
+      "nativeCounts": {
+        "not_executed": 241
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "layout",
+      "filesImported": 63,
+      "assertionsImported": 345,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 342,
+        "skipped": 3
+      },
+      "nativeCounts": {
+        "not_executed": 345
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    },
+    {
+      "group": "diagram-model-and-parser",
+      "filesImported": 29,
+      "assertionsImported": 192,
+      "referenceExitCode": 0,
+      "referenceTimedOut": false,
+      "referenceCounts": {
+        "passed": 191,
+        "skipped": 1
+      },
+      "nativeCounts": {
+        "not_executed": 192
+      },
+      "nativeNewPasses": 0,
+      "suiteErrors": []
+    }
+  ]
+}

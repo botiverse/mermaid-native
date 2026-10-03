@@ -1,0 +1,205 @@
+[
+  {
+    "file": "packages/mermaid/src/diagrams/architecture/architecture.spec.ts",
+    "assertions": 7,
+    "requiredContract": "Cytoscape styles, layout configuration defaults/overrides and prototype-name handling",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/architecture/architectureSeed.spec.ts",
+    "assertions": 7,
+    "requiredContract": "Seeded random callback scope, restoration and return value",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/block/blockDB.spec.ts",
+    "assertions": 4,
+    "requiredContract": "Edge style/arrow interpretation and runtime sanitization configuration",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/class/parser/class.spec.js",
+    "assertions": 3,
+    "requiredContract": "Prototype-name identifiers and quoted namespace grammar",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/cynefin/cynefin.spec.ts",
+    "assertions": 20,
+    "requiredContract": "Mutable database reset/null/configuration and seeded renderer boundary paths",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/er/erDb.spec.js",
+    "assertions": 8,
+    "requiredContract": "Mutable subgraph uniqueness, nesting, relationships and class/style projection",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/eventmodeling/parser.ts",
+    "assertions": 1,
+    "requiredContract": "Direct parser model projection",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/flowchart/flowDb.spec.ts",
+    "assertions": 18,
+    "requiredContract": "Mutable subgraph/class APIs, interpolation, collapsed hierarchy and direction normalization",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/flowchart/flowDiagram.spec.ts",
+    "assertions": 4,
+    "requiredContract": "Diagram initialization and layout configuration precedence",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/gantt/ganttDb.spec.ts",
+    "assertions": 13,
+    "requiredContract": "Mutable clear/default state, timezone behavior and today-marker options",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/git/gitGraphParser.ts",
+    "assertions": 6,
+    "requiredContract": "Direct grammar AST for commit/branch/checkout/merge/cherry-pick",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/info/info.spec.ts",
+    "assertions": 4,
+    "requiredContract": "Diagram parser entry point and rejected grammar",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/mindmap/mindmapDb.getData.test.ts",
+    "assertions": 11,
+    "requiredContract": "Mutable node data, hierarchy/section classes, edge IDs and renderer getData projection",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/quadrant-chart/quadrantDb.spec.ts",
+    "assertions": 5,
+    "requiredContract": "Style-value validation and runtime sanitization configuration",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/radar/radar.spec.ts",
+    "assertions": 5,
+    "requiredContract": "Closed curve geometry and actual renderer draw behavior",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/railroad/abnfDetector.spec.ts",
+    "assertions": 2,
+    "requiredContract": "Detector module identity and diagram loader",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/railroad/ebnfDetector.spec.ts",
+    "assertions": 2,
+    "requiredContract": "Detector module identity and diagram loader",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/railroad/pegDetector.spec.ts",
+    "assertions": 2,
+    "requiredContract": "Detector module identity and diagram loader",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/railroad/railroadDb.spec.ts",
+    "assertions": 7,
+    "requiredContract": "Mutable rule storage, lookup, sanitization and clear lifecycle",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/railroad/railroadDetector.spec.ts",
+    "assertions": 5,
+    "requiredContract": "Detector identity and loaded parser/database/renderer interfaces",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/requirement/requirementDb.spec.ts",
+    "assertions": 1,
+    "requiredContract": "Parallel relationship IDs in database projection",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/state/stateDb.spec.js",
+    "assertions": 6,
+    "requiredContract": "Mutable style/description APIs, sanitization and parser method ownership",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/swimlanes/swimlanesDiagram.spec.ts",
+    "assertions": 2,
+    "requiredContract": "Shared renderer layout defaults and explicit overrides",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/treeView/db.spec.ts",
+    "assertions": 6,
+    "requiredContract": "Mutable root, counter, incrementing IDs and configuration",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/usecase/parser/usecase.lexer.spec.ts",
+    "assertions": 13,
+    "requiredContract": "Production token stream, precedence, exact spans, newline handling and recovery",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/usecase/usecase.spec.ts",
+    "assertions": 13,
+    "requiredContract": "Database lifecycle and complete renderer LayoutData/configuration/style projection",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/usecase/usecaseDb.spec.ts",
+    "assertions": 4,
+    "requiredContract": "Atomic detached model replacement, complete clear state and label clearance",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/user-journey/journeyDb.spec.js",
+    "assertions": 9,
+    "requiredContract": "Mutable lifecycle, task/actor state and accessibility reset",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  },
+  {
+    "file": "packages/mermaid/src/diagrams/wardley/wardleyBuilder.spec.ts",
+    "assertions": 4,
+    "requiredContract": "Node resolution by exact ID, label fallback and missing-node behavior",
+    "state": "production_adapter_required",
+    "basis": "Original imported assertion bodies and existing model preflight; not a Native execution result"
+  }
+]
