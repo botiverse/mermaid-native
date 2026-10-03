@@ -135,6 +135,12 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0
+    },
+    "mermaid-testkit": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
     }
   }
 }
