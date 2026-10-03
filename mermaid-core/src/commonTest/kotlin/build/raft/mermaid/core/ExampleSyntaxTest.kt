@@ -27,16 +27,16 @@ ui --> db
     @Test fun wardleyNamesAndForcesKeepTheirModelValues() {
         val d = assertIs<WardleyMapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("""wardley-beta
 component byte pair encoding (BPE) [0.53, 0.76]
-component Research & Development [0.20, 0.30]
-byte pair encoding (BPE) -> Research & Development
+component Research&Development [0.20, 0.30]
+byte pair encoding (BPE) -> Research&Development
 accelerator Faster Delivery [0.1, 0.2]
 deaccelerator License Play [0.13, 0.78]
-deaccelerator "Quoted Force" [0.4, 0.5]
+deaccelerator "Quoted Force: keep [punctuation]!" [0.4, 0.5]
 """)).diagram)
         assertEquals("byte pair encoding (BPE)", d.nodes.first().name)
-        assertEquals("Research & Development", d.links.single().to)
+        assertEquals("Research&Development", d.links.single().to)
         assertEquals(listOf(WardleyNote("Faster Delivery", 0.1, 0.2)), d.accelerators)
-        assertEquals(listOf(WardleyNote("License Play", 0.13, 0.78), WardleyNote("Quoted Force", 0.4, 0.5)), d.deaccelerators)
+        assertEquals(listOf(WardleyNote("License Play", 0.13, 0.78), WardleyNote("Quoted Force: keep [punctuation]!", 0.4, 0.5)), d.deaccelerators)
         for (force in listOf("deaccelerator Bad [0.1, 0.2] junk", "accelerator Bad [1.1, 0.2]")) {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("wardley-beta\ncomponent A [0.1, 0.2]\n$force"))
         }
