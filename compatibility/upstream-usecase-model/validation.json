@@ -1,20 +1,20 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
-  "nativeJarSha256": "fa8c77a1c96aceb133f694309c8bb34efc76924e15ddcd3fa4f8f278909ce018",
-  "uniqueInputs": 42,
-  "nativeParseCalls": 46,
+  "nativeJarSha256": "1d4fcbe9a95c97f037f39cef35946122703e79385d3ae900b1c24328d9969d4e",
+  "uniqueInputs": 43,
+  "nativeParseCalls": 47,
   "official": {
     "numTotalTests": 116,
-    "numPassedTests": 42,
+    "numPassedTests": 43,
     "numFailedTests": 0,
-    "numPendingTests": 74,
+    "numPendingTests": 73,
     "success": true
   },
   "native": {
     "numTotalTests": 116,
-    "numPassedTests": 42,
+    "numPassedTests": 43,
     "numFailedTests": 0,
-    "numPendingTests": 74,
+    "numPendingTests": 73,
     "success": true
   },
   "modelMutations": {
@@ -22,116 +22,122 @@
       "failedTests": [
         "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "members": {
       "failedTests": [
         "UseCase diagram with Chevrotain parser when parsing system boundaries should parse a boundary with an explicit id, a label, and inline metadata"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "numericActorId": {
       "failedTests": [
         "usecase parser publication and normalized AST accepts ids that start with a digit"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "decimalStyles": {
       "failedTests": [
         "usecase parser publication and normalized AST keeps decimal style values intact now that ids may start with a digit"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "overrideType": {
       "failedTests": [
         "usecase parser publication and normalized AST lets a later metadata statement override inline boundary metadata"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "classWordSeparators": {
       "failedTests": [
         "usecase parser publication and normalized AST preserves the separators inside multi-word style and classDef values"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "forwardActor": {
       "failedTests": [
         "usecase parser publication and normalized AST resolves forward 'actor' refinement independently of declaration order"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "forwardRectangle": {
       "failedTests": [
         "usecase parser publication and normalized AST resolves forward 'rectangular use case' refinement independently of declaration order"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "boundaryMarkdown": {
       "failedTests": [
         "usecase parser publication and normalized AST accepts a bracketed Markdown string boundary label"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "boundaryPlain": {
       "failedTests": [
         "usecase parser publication and normalized AST accepts a parenthesized plain string boundary label"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "boundaryClasses": {
       "failedTests": [
         "usecase parser publication and normalized AST declares a boundary with an explicit id, a label, inline metadata, and classes"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "separateMembers": {
       "failedTests": [
         "usecase parser publication and normalized AST keeps plain ids, derived ids, and separate metadata statements working"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "unresolvedShape": {
       "failedTests": [
         "usecase parser publication and normalized AST finalizes unresolved relation endpoints as ellipse use cases without actor inference"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "repeatedParent": {
       "failedTests": [
         "usecase parser publication and normalized AST merges equivalent repeated declarations, including equivalent parent ownership"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "anonymousEdgeId": {
       "failedTests": [
         "usecase parser publication and normalized AST allocates anonymous edge and note IDs deterministically in source order"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "anonymousNoteId": {
       "failedTests": [
         "usecase parser publication and normalized AST allocates anonymous edge and note IDs deterministically in source order"
       ],
-      "passedTests": 41
+      "passedTests": 42
     },
     "repeatedAnonymousEdgeId": {
       "failedTests": [
         "usecase parser publication and normalized AST allocates anonymous edge and note IDs deterministically in source order"
       ],
-      "passedTests": 41
+      "passedTests": 42
+    },
+    "lexerLocation": {
+      "failedTests": [
+        "usecase parser publication and normalized AST reports the source position of a lexer failure"
+      ],
+      "passedTests": 42
+    },
+    "lexerRejection": {
+      "failedTests": [
+        "usecase parser publication and normalized AST reports the source position of a lexer failure"
+      ],
+      "passedTests": 42
     }
   },
-  "nativeSource": "36f5d0f15fdc96f0b5b5ae5fe8b5c03bd4ca2d7c",
-  "scope": "42 unchanged original model assertions; 74 unselected. Stable anonymous edge/note IDs, including independent repeated production parses. No full AST, singleton database lifecycle or renderer parity claim.",
+  "nativeSource": "0771831c5fb5c1721c7466c72385174c92a2867b",
+  "scope": "43 unchanged original model/diagnostic assertions; 73 unselected. Quoted-label lexical rejection and starting source location. No full lexer recovery, exact end-span, AST, singleton database lifecycle or renderer parity claim.",
   "androidTests": {
     "mermaid-core": {
-      "tests": 285,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0
-    },
-    "mermaid-layout-simple": {
-      "tests": 272,
+      "tests": 288,
       "failures": 0,
       "errors": 0,
       "skipped": 0

@@ -29,16 +29,25 @@ public class UsecaseParser(private val source: String) {
     private fun endLine() { hws(); if (pos < source.length && !newline()) fail("Expected end of usecase statement") }
     private fun lineText(): String { hws(); val start = pos; while (pos < source.length && source[pos] != '\n' && source[pos] != '\r') pos++; return source.substring(start, pos).trim() }
     private fun identifier(): String { hws(); val m = idPattern.find(source, pos)?.takeIf { it.range.first == pos } ?: fail("Expected usecase identifier"); pos = m.range.last + 1; return m.value }
+    private class LabelLexingError(message: String, val location: SourceLocation) : IllegalArgumentException(message)
+    private fun failQuotedLabel(start: Int, reason: String): Nothing {
+        val lines = source.take(start).split(Regex("\\r\\n|\\r|\\n"))
+        val location = SourceLocation(lines.size, lines.last().length + 1)
+        throw LabelLexingError(
+            "Error lexing usecase diagram: $reason at line ${location.line}, column ${location.column} [$start,$pos)",
+            location,
+        )
+    }
     private fun quoted(): String {
-        hws(); requireText("\""); val markdown = source.getOrNull(pos) == '`'; if (markdown) pos++
+        hws(); val quoteStart = pos; requireText("\""); val markdown = source.getOrNull(pos) == '`'; if (markdown) pos++
         val start = pos
         while (pos < source.length) {
             if (markdown && source.startsWith("`\"", pos)) { val value = source.substring(start, pos); pos += 2; return value }
             if (!markdown && source[pos] == '"') { val value = source.substring(start, pos); pos++; return value }
-            if (!markdown && source[pos] in "\r\n") fail("Physical newlines require a Markdown label")
+            if (!markdown && source[pos] in "\r\n") failQuotedLabel(quoteStart, "Physical newlines require a Markdown label")
             pos++
         }
-        fail("Unclosed usecase label")
+        failQuotedLabel(quoteStart, "Unclosed usecase label")
     }
     private fun name(): Pair<String, String> {
         hws(); if (at("\"")) { val label = quoted(); return label.replace(Regex("[^A-Za-z0-9_]"), "_") to label }
@@ -175,7 +184,7 @@ public class UsecaseParser(private val source: String) {
         MermaidParseResult.Success(UsecaseDiagram(direction, actors.values.toList(), nodes.values.toList(), edges, boundaries, notes, jsonNodes, attrs, classes, accTitle, accDescr))
     } catch (e: IllegalArgumentException) {
         val prefix = source.take(pos); val lines = prefix.split(Regex("\\r\\n|\\r|\\n"))
-        MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid usecase syntax", SourceLocation(lines.size, lines.last().length + 1))))
+        MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, e.message ?: "Invalid usecase syntax", (e as? LabelLexingError)?.location ?: SourceLocation(lines.size, lines.last().length + 1))))
     }
 
     public fun parseValidated(): MermaidParseResult {
