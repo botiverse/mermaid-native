@@ -649,6 +649,7 @@ public data class UsecaseDiagram(
     val classDefs: Map<String, Map<String, String>> = emptyMap(),
     val accTitle: String? = null,
     val accDescription: String? = null,
+    val labelInsets: UsecaseDocumentConfig = UsecaseDocumentConfig(),
 ) : MermaidDiagram
 public enum class UsecaseActorType { NORMAL, HOLLOW, AWESOME, ICON }
 public data class UsecaseActor(
@@ -662,6 +663,9 @@ public data class UsecaseNode(
     val id: String, val label: String, val shape: UsecaseShape,
     val labelType: String = "text",
 )
+/** Shared label inset consumed by Native Usecase layout and document clients. */
+public fun UsecaseNode.labelPadding(config: UsecaseDocumentConfig = UsecaseDocumentConfig()): Double =
+    if (shape == UsecaseShape.ELLIPSE) config.ellipsePadding else config.rectanglePadding
 public enum class UsecaseRelationshipType { ASSOCIATION, INCLUDE, EXTEND, GENERALIZATION }
 public data class UsecaseRelationship(
     val sourceId: String, val targetId: String, val label: String? = null,
