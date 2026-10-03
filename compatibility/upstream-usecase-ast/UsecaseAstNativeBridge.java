@@ -39,7 +39,7 @@ List<Object> jsonNodes=new ArrayList<>();for(UsecaseJsonNode n:d.getJsonNodes())
   for(var entry:d.getAttributes().entrySet())
     if(n.getId().equals(entry.getValue().getParentId()))members.add(entry.getKey());
   r.put("members",members);boundaries.add(r);
-}out.put("boundaries",boundaries);List<Object> edges=new ArrayList<>();for(UsecaseRelationship e:d.getRelationships()){Map<String,Object> r=row(e);r.put("source",e.getSourceId());r.put("target",e.getTargetId());r.put("type",getter(e,"getType",null));edges.add(r);}out.put("relationships",edges);Map<String,Object> classDefs=new LinkedHashMap<>();
+}out.put("boundaries",boundaries);List<Object> edges=new ArrayList<>();for(UsecaseRelationship e:d.getRelationships()){Map<String,Object> r=row(e);r.put("source",e.getSourceId());r.put("target",e.getTargetId());r.put("type",e.getType());r.put("animate",e.getAnimate());if(e.getAnimation()!=null)r.put("animation",e.getAnimation());r.put("arrowType",e.getArrowType());r.put("minlen",e.getMinlen());r.put("explicitId",e.getExplicitId());if(e.getLabelType()!=null)r.put("labelType",e.getLabelType());edges.add(r);}out.put("relationships",edges);Map<String,Object> classDefs=new LinkedHashMap<>();
 for(var definition:d.getClassDefs().entrySet()) {
  List<String> styles=new ArrayList<>();
  for(var entry:definition.getValue().entrySet())styles.add(entry.getKey()+":"+entry.getValue());

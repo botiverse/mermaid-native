@@ -666,7 +666,18 @@ public enum class UsecaseRelationshipType { ASSOCIATION, INCLUDE, EXTEND, GENERA
 public data class UsecaseRelationship(
     val sourceId: String, val targetId: String, val label: String? = null,
     val id: String? = null, val startMarker: String = "none", val endMarker: String = "arrow", val dashed: Boolean = false,
+    val explicitId: Boolean = false, val minlen: Int = 1,
+    val animate: Boolean = false, val animation: String? = null, val labelType: String? = null,
 ) {
+    val arrowType: Int get() = when {
+        startMarker == "arrow" -> 1
+        startMarker == "circle" -> 5
+        startMarker == "cross" -> 6
+        endMarker == "circle" -> 3
+        endMarker == "cross" -> 4
+        endMarker == "none" -> 2
+        else -> 0
+    }
     val type: UsecaseRelationshipType get() = when {
         endMarker == "generalization" -> UsecaseRelationshipType.GENERALIZATION
         dashed && label == "include" -> UsecaseRelationshipType.INCLUDE
