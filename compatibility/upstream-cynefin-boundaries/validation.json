@@ -1,0 +1,78 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "4645bd6283aee576e5d74cf37ba89b757ed63d20",
+  "nativeJarSha256": "7941cbb90e31c696a85d62873212f87acbe68256bb1b413bc653662c983c9ce7",
+  "layoutJarSha256": "10fd0bab299ddbd4e2bc072f82b554e5846ad66b5bd57e4a363b911f33ac5036",
+  "referenceGeometryComparisons": 32,
+  "nativeOperations": 69,
+  "operations": {
+    "clear": 12,
+    "generateCliffPath": 1,
+    "generateConfusionPath": 2,
+    "generateFoldPath": 3,
+    "generateHorizontalBoundary": 1,
+    "getConfig": 1,
+    "getDomains": 7,
+    "getTransitions": 6,
+    "hashString": 8,
+    "resolveSeed": 10,
+    "seededRandom": 7,
+    "setDomains": 5,
+    "setTransitions": 6
+  },
+  "official": {
+    "numTotalTests": 27,
+    "numPassedTests": 27,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 27,
+    "numPassedTests": 27,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "emptyState": [
+      "Cynefin Database should start empty"
+    ],
+    "selfLoops": [
+      "Cynefin Database should filter out self-loop transitions"
+    ],
+    "foldCurve": [
+      "Cynefin Boundaries generateFoldPath should return valid SVG path"
+    ],
+    "ellipseRadius": [
+      "Cynefin Boundaries generateConfusionPath should use provided center and radii"
+    ],
+    "explicitSeed": [
+      "resolveSeed returns the configured seed when it is a non-zero number"
+    ],
+    "randomRange": [
+      "Cynefin Boundaries seededRandom should return values between 0 and 1"
+    ]
+  },
+  "localValidation": {
+    "coreTests": 315,
+    "layoutTests": 284,
+    "sampleTests": 5,
+    "browser": {
+      "cases": 8,
+      "exactSvgComparisons": [
+        "flow-control",
+        "railroad-control"
+      ],
+      "textBounds": "PASS",
+      "wasmUrl": "http://localhost:5228/wasm/1f68164122945bbeba05.wasm",
+      "wasmSha256": "3023f2973174f511614070e4b1b63d6c2f93dd897919a1d40e99b742f3013295"
+    },
+    "screenshotsViewed": [
+      "domains",
+      "transitions",
+      "overflow",
+      "unicode"
+    ]
+  }
+}
