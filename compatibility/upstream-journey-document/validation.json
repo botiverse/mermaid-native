@@ -1,0 +1,90 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "aad589cfdcb116a3ecea979309c6ef3344a9a81a",
+  "nativeJarSha256": "8e39feffe98e42bdec42fd57d1b54e97accbbeb3e94c7351f4319b63710d6a92",
+  "nativeOperations": 62,
+  "official": {
+    "numTotalTests": 9,
+    "numPassedTests": 9,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 9,
+    "numPassedTests": 9,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "resetTasks": [
+      "when using the journeyDb when calling the clear function should clear 'getTasks'#0",
+      "when using the journeyDb when calling the clear function should clear 'getTasks'#1"
+    ],
+    "resetTitle": [
+      "when using the journeyDb when calling the clear function should clear 'getAccTitle'#0",
+      "when using the journeyDb when calling the clear function should clear 'getAccTitle'#1"
+    ],
+    "taskScore": [
+      "when using the journeyDb tasks and actors should be added#0"
+    ],
+    "actorOrder": [
+      "when using the journeyDb tasks and actors should be added#0"
+    ],
+    "sectionOrder": [
+      "when using the journeyDb tasks and actors should be added#0"
+    ]
+  },
+  "regression": {
+    "parser": {
+      "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+      "nativeJarSha256": "8e39feffe98e42bdec42fd57d1b54e97accbbeb3e94c7351f4319b63710d6a92",
+      "uniqueInputs": 7,
+      "official": {
+        "numTotalTests": 7,
+        "numPassedTests": 7,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      },
+      "native": {
+        "numTotalTests": 7,
+        "numPassedTests": 7,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      }
+    }
+  },
+  "localValidation": {
+    "tests": {
+      "AndroidDebug": 331,
+      "iOSSimulatorArm64": 331,
+      "WasmBrowser": 331,
+      "layout": 288,
+      "sample": 5
+    },
+    "browser": {
+      "svgExactBaselineOrLocal": 8,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/e6d6d144e9e6a039c2d1.wasm",
+      "wasmSha256": "1bd181abda7a73a6c3e73c33b06f46c3cfbbf52c3e81892b6faaf96f5e715e9e"
+    },
+    "screenshotsInspected": 4,
+    "productionWasmGate": {
+      "productionModule": "mermaid-web/build/compileSync/wasmJs/main/productionExecutable/optimized/mermaid-native-mermaid-web-wasm-js.mjs",
+      "rejectedJsonMarkers": 4,
+      "acceptedJsonMarkers": 3,
+      "mixedKindRejected": true,
+      "typedAnimationRejected": true,
+      "validRecovery": true
+    },
+    "wasmRetry": "Existing lexer stress test exceeded 2 seconds with simultaneous UI validation; rerun with no own browser or audit activity passed all 331, with no source or timeout changes."
+  },
+  "scope": {
+    "newOriginalOccurrences": 9,
+    "priorParserAssertionsPreserved": 7,
+    "fullBrowserReadSideEffects": false,
+    "sdkPublished": false
+  }
+}
