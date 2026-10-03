@@ -1,7 +1,7 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
-  "nativeJarSha256": "1d4fcbe9a95c97f037f39cef35946122703e79385d3ae900b1c24328d9969d4e",
-  "nativeSource": "5e4eb8224a474f3ef7426542f4ced8476b26b678",
+  "nativeJarSha256": "632e2658814bfc6a355f97f6a81a09ec262a711cee785962d7ea9a75b38d06ef",
+  "nativeSource": "aec297e8c347d91e3d0802909b9fe41bfa24992a",
   "nativeParseCalls": 79,
   "uniqueInputs": 79,
   "official": {
@@ -13,15 +13,16 @@
   },
   "native": {
     "numTotalTests": 83,
-    "numPassedTests": 66,
-    "numFailedTests": 13,
+    "numPassedTests": 69,
+    "numFailedTests": 10,
     "numPendingTests": 4,
     "success": false
   },
   "corruptionControl": {
-    "mutatedFamilies": 32,
+    "mutatedFamilies": 33,
     "expectedNewFailures": [
       "examples should have valid examples Architecture Diagram: Basic System Architecture",
+      "examples should have valid examples Block Diagram: Three-Tier Web Architecture",
       "examples should have valid examples C4 Diagram: Internet Banking System Context",
       "examples should have valid examples Class Diagram: Basic Class Inheritance",
       "examples should have valid examples Cynefin Framework: Incident Response",
@@ -56,6 +57,7 @@
     ],
     "actualNewFailures": [
       "examples should have valid examples Architecture Diagram: Basic System Architecture",
+      "examples should have valid examples Block Diagram: Three-Tier Web Architecture",
       "examples should have valid examples C4 Diagram: Internet Banking System Context",
       "examples should have valid examples Class Diagram: Basic Class Inheritance",
       "examples should have valid examples Cynefin Framework: Incident Response",
@@ -89,5 +91,5 @@
       "examples should have valid examples XY Chart: Sales Revenue"
     ]
   },
-  "scope": "79 unchanged original parse assertions, 66 passing and 13 failing;4 registry/render assertions unselected. All79 actual production parser invocations; no source stripping, upstream parser fallback or rendering claim. Known failures are not counted as passing."
+  "scope": "79 unchanged original parse assertions, 69 passing and 10 failing;4 registry/render assertions unselected. All79 actual production parser invocations; no source stripping, upstream parser fallback or rendering parity claim. Known failures are not counted as passing."
 }
