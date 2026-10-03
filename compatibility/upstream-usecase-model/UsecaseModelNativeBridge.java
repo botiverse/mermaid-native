@@ -17,6 +17,10 @@ List<Object> jsonNodes=new ArrayList<>();for(UsecaseJsonNode n:d.getJsonNodes())
   r.put("labelType",n.getLabelType());
   UsecaseAttributes attributes=d.getAttributes().get(n.getId());
   if(attributes!=null)r.put("type",attributes.getProperties().get("type"));
+  r.put("classes",attributes==null?List.of():attributes.getClasses());
+  List<String> styles=new ArrayList<>();
+  if(attributes!=null)for(var entry:attributes.getStyles().entrySet())styles.add(entry.getKey()+":"+entry.getValue());
+  r.put("styles",styles);
   // Project the Native parent links in their production insertion order. No source parsing.
   List<String> members=new ArrayList<>();
   for(var entry:d.getAttributes().entrySet())
