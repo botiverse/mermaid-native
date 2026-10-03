@@ -43,6 +43,8 @@ for mode in ['official','native']:
  d=json.loads((w/f'{mode}.json').read_text());summary[mode]={k:d[k] for k in ['numTotalTests','numPassedTests','numFailedTests','numPendingTests','success']}
 (w/'failures.json').write_text(json.dumps([{'test':row['test'],'source':row['source'],'diagnostic':value} for row,value in zip(captured,values) if value!='PASS'],indent=2)+'\n')
 def failed(d):return {a['fullName'] for suite in d['testResults'] for a in suite['assertionResults'] if a['status']=='failed'}
+assert failed(json.loads((w/'native.json').read_text())) == {row['test'].replace(' > ',' ') for row,value in zip(captured,values) if value!='PASS'}
+assert summary['native']['numPassedTests'] + summary['native']['numFailedTests'] == 79 and summary['native']['numPendingTests'] == 4
 if o.verify_mutations:
  original=cache.read_text();baseline_failed=failed(json.loads((w/'native.json').read_text()));selected={}
  for i,(row,value) in enumerate(zip(captured,values)):
