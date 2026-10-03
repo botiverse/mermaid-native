@@ -14,23 +14,32 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         boundary.id to FlowMarkdownLabel(boundary.label, textStyle, measurer, maxWidth = 240.0)
     }
     fun headerLines(boundary: UsecaseBoundary) = markdownHeaders[boundary.id]?.lineCount ?: wrapped(boundary.label).size
-    data class Item(val id: String, val label: String, val actor: Boolean = false, val ellipse: Boolean = false, val body: String? = null)
-    val items = d.actors.map { Item(it.id, it.label, actor = true) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE) } + d.jsonNodes.map { Item(it.id, it.id, body = if (it.data == null) it.source else null) }
-    val lines = items.associate { item -> item.id to buildList {
+    data class Item(val id: String, val label: String, val actor: Boolean = false, val ellipse: Boolean = false, val body: String? = null, val labelType: String = "text")
+    val items = d.actors.map { Item(it.id, it.label, actor = true, labelType = it.labelType) } + d.useCases.map { Item(it.id, it.label, ellipse = it.shape == UsecaseShape.ELLIPSE, labelType = it.labelType) } + d.jsonNodes.map { Item(it.id, it.id, body = if (it.data == null) it.source else null) }
+    val markdownLabels = items.filter { it.labelType == "markdown" }.associate { item ->
+        item.id to FlowMarkdownLabel(item.label, textStyle, measurer, maxWidth = 240.0)
+    }
+    val prefixes = items.associate { item -> item.id to buildList {
         d.attributes[item.id]?.stereotype?.let { add("«$it»") }
         if (d.attributes[item.id]?.properties?.get("business") == "true") add("«business»")
-        addAll(wrapped(item.label)); item.body?.let { addAll(wrapped(it)) }
     } }
+    val lines = items.associate { item -> item.id to buildList {
+        addAll(prefixes.getValue(item.id))
+        if (item.id !in markdownLabels) addAll(wrapped(item.label))
+        item.body?.let { addAll(wrapped(it)) }
+    } }
+    val rowSizes = items.associate { item -> item.id to (
+        lines.getValue(item.id).map { measurer.measure(it, textStyle) } + markdownLabels[item.id]?.lineSizes.orEmpty()
+    ) }
     val tables = d.jsonNodes.mapNotNull { node -> node.data?.let { node.id to UsecaseJsonTableLayout(it, lines.getValue(node.id), measurer) } }.toMap()
-    val nodeW = maxOf(180.0, (lines.values.flatten().maxOfOrNull { measurer.measure(it, textStyle).width } ?: 0.0) + 40.0)
-    val nodeH = maxOf(76.0, (lines.values.maxOfOrNull { it.size } ?: 1) * 20.0 + 28.0)
+    val nodeW = maxOf(180.0, (rowSizes.values.flatten().maxOfOrNull { it.width } ?: 0.0) + 40.0)
+    val nodeH = maxOf(76.0, (rowSizes.values.maxOfOrNull { it.size } ?: 1) * 20.0 + 28.0)
     // Rectangular padding alone does not contain the first/last wrapped rows
     // inside an ellipse. Grow only ellipses whose padded text corners need it.
     val ellipseSizes = items.filter { it.ellipse }.associate { item ->
-        val rows = lines.getValue(item.id)
+        val rows = rowSizes.getValue(item.id)
         var scale = 1.0
-        rows.forEachIndexed { index, line ->
-            val measured = measurer.measure(line, textStyle)
+        rows.forEachIndexed { index, measured ->
             val baseline = -(rows.size - 1) * 10.0 + 5.0 + index * 20.0
             val x = measured.width / 2.0 + 8.0
             // TextMeasurer exposes height, not ascent/descent. Reserve that
@@ -44,7 +53,7 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
     fun itemHeight(item: Item): Double = tables[item.id]?.height ?: ellipseSizes[item.id]?.height ?: nodeH
     val slotW = maxOf(nodeW, items.maxOfOrNull(::itemWidth) ?: 0.0)
     val slotH = maxOf(nodeH, items.maxOfOrNull(::itemHeight) ?: 0.0)
-    val actorExtent = items.filter { it.actor }.maxOfOrNull { 56.0 + (lines.getValue(it.id).size - 1) * 20.0 + 20.0 } ?: 0.0
+    val actorExtent = items.filter { it.actor }.maxOfOrNull { 56.0 + (rowSizes.getValue(it.id).size - 1) * 20.0 + 20.0 } ?: 0.0
     val rowH = maxOf(140.0, slotH + 60.0, actorExtent * 2.0)
     val horizontal = d.direction == FlowDirection.LR || d.direction == FlowDirection.RL
     val reverse = d.direction == FlowDirection.RL || d.direction == FlowDirection.BT
@@ -123,7 +132,12 @@ internal fun layoutUsecaseExtended(d: UsecaseDiagram, measurer: TextMeasurer, co
         } else if (item.ellipse) commands += DrawEllipse(p, itemWidth(item) / 2, itemHeight(item) / 2, fill = fill, stroke = stroke)
         else commands += DrawRect(SceneRect(p.x - nodeW / 2, p.y - nodeH / 2, nodeW, nodeH), 4.0, fill = fill, stroke = stroke)
         val rows = lines.getValue(item.id)
-        rows.forEachIndexed { index, line -> commands += DrawText(line, ScenePoint(p.x, if (item.actor) p.y + 56 + index * 20 else p.y - (rows.size - 1) * 10 + 5 + index * 20), anchor = TextAnchor.MIDDLE, style = textStyle.copy(color = color(item.id, "color", DiagramPalette.INK))) }
+        val firstBaseline = if (item.actor) p.y + 56 else p.y - (rowSizes.getValue(item.id).size - 1) * 10 + 5
+        val textColor = color(item.id, "color", DiagramPalette.INK)
+        rows.forEachIndexed { index, line -> commands += DrawText(line, ScenePoint(p.x, firstBaseline + index * 20), anchor = TextAnchor.MIDDLE, style = textStyle.copy(color = textColor)) }
+        markdownLabels[item.id]?.let { label ->
+            commands += label.drawCentered(ScenePoint(p.x, firstBaseline + rows.size * 20), 20.0).map { it.copy(style = it.style.copy(color = textColor)) }
+        }
     }
     var noteY = config.padding
     for (note in d.notes) {
