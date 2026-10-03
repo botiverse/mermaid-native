@@ -8,10 +8,10 @@ manifest=json.loads((h/'sources.json').read_text())
 for f,sha in manifest['files'].items():
  for path in (u/f,r/'compatibility/upstream-batch/originals'/f):assert hashlib.sha256(path.read_bytes()).hexdigest()==sha,path
 calls=w/'official-calls.jsonl';calls.write_text('')
-shared="""import {vi,expect,afterEach} from 'vitest';
+shared="""import {vi,expect,afterEach,beforeEach} from 'vitest';
 import {db} from '../packages/mermaid/src/diagrams/usecase/usecaseDb.js';
 const name=()=>expect.getState().currentTestName??'';
-const ids=new WeakMap(),raws=new WeakMap();let counter=0;
+const ids=new WeakMap(),raws=new WeakMap();let counter=0;beforeEach(()=>{counter=0;});
 const plain=x=>x===undefined?null:x instanceof Map?{$map:[...x].map(([k,v])=>[k,plain(v)])}:Array.isArray(x)?x.map(plain):x&&typeof x==='object'?Object.fromEntries(Object.entries(x).map(([k,v])=>[k,plain(v)])):x;
 const unpack=x=>x&&typeof x==='object'?('$map' in x?new Map(x.$map.map(([k,v])=>[k,unpack(v)])):Array.isArray(x)?x.map(unpack):Object.fromEntries(Object.entries(x).map(([k,v])=>[k,unpack(v)]))):x;
 const proxy=(value,id,path,call)=>{
