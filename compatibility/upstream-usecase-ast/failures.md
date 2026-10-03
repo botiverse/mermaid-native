@@ -1,50 +1,6 @@
 # Remaining original Usecase publication/AST failures
 
-Source6ef0d1b498d59da279c38ee558073ec83a3f9f81. All77 reference assertions pass; Native40pass/37fail, zero skipped. These failures remain nonzero and are not counted as passes. Detailed raw results are preserved with the audit.
-
-## rejects conflicting kind declarations transactionally
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects conflicting shape declarations transactionally
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects conflicting label declarations transactionally
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects conflicting stereotype declarations transactionally
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects conflicting parent declarations transactionally
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects a generated ID collision in the diagram-global namespace
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects a generated and explicit ID collision in the diagram-global namespace
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects a global cross-kind ID collision in the diagram-global namespace
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects a element and explicit edge ID collision in the diagram-global namespace
-
-Error: promise resolved "undefined" instead of rejecting
-
-## rejects a duplicate explicit edge ID collision in the diagram-global namespace
-
-Error: promise resolved "undefined" instead of rejecting
-
-## names both exact locations and the source labels for generated and explicit ID collisions
-
-AssertionError: expected undefined to be an instance of Error
+Production 9136ffda01230cd8eeb9876cb21ea712e44fec13. All 77 reference assertions pass; Native 51 pass / 26 fail, zero skipped. Eleven previously failing declaration/ID assertions now pass. Detailed raw results are preserved with the audit.
 
 ## still rejects a parenthesis inside an unquoted label
 
@@ -88,7 +44,7 @@ AssertionError: expected undefined to be an instance of Error
 
 ## rejects duplicate and unknown edge class/style targets with exact locations
 
-AssertionError: expected undefined to be an instance of Error
+AssertionError: expected 'Unknown usecase target missingEdge' to be 'Class/style target \'missingEdge\' is…' // Object.is equality
 
 ## publishes exact true, fast, slow, and false animation state and rejects invalid values
 
@@ -128,7 +84,7 @@ AssertionError: expected false to be true // Object.is equality
 
 ## locates a stereotype on invalid edge syntax
 
-AssertionError: expected undefined to be an instance of Error
+AssertionError: expected false to be true // Object.is equality
 
 ## rejects business icon, awesome, and rectangular declarations at exact locations
 
