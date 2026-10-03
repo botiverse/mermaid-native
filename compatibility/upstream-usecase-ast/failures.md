@@ -1,38 +1,6 @@
 # Remaining original Usecase publication/AST failures
 
-Production 9136ffda01230cd8eeb9876cb21ea712e44fec13. All 77 reference assertions pass; Native 51 pass / 26 fail, zero skipped. Eleven previously failing declaration/ID assertions now pass. Detailed raw results are preserved with the audit.
-
-## still rejects a parenthesis inside an unquoted label
-
-AssertionError: expected false to be true // Object.is equality
-
-## still rejects a bracket inside an unquoted label
-
-AssertionError: expected false to be true // Object.is equality
-
-## still rejects a brace inside an unquoted label
-
-AssertionError: expected undefined to be an instance of Error
-
-## still rejects a relationship operator inside an unquoted label
-
-AssertionError: expected undefined to be an instance of Error
-
-## still rejects the class suffix inside an unquoted label
-
-AssertionError: expected undefined to be an instance of Error
-
-## still rejects the metadata suffix inside an unquoted label
-
-AssertionError: expected false to be true // Object.is equality
-
-## still rejects a double quote inside an unquoted label
-
-Error: promise resolved "undefined" instead of rejecting
-
-## still rejects a single quote inside an unquoted label
-
-Error: promise resolved "undefined" instead of rejecting
+Production fbbba3f906e1e7308c6557f9a79e35d536de5514. All 77 reference assertions pass; Native 59 pass / 18 fail, zero skipped. Eight previously failing unquoted-label assertions now pass. Detailed raw results are preserved with the audit.
 
 ## reports exact actor metadata and incompatible icon locations
 

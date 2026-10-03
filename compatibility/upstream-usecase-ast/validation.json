@@ -1,7 +1,7 @@
 {
   "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
-  "nativeSource": "9136ffda01230cd8eeb9876cb21ea712e44fec13",
-  "nativeJarSha256": "fa17103b83132d0b4b344981af20e022f3df15a7e63674043c2161de6231ed97",
+  "nativeSource": "fbbba3f906e1e7308c6557f9a79e35d536de5514",
+  "nativeJarSha256": "d3c4aa86f902b5865d774599d15d32763594963d46b7207f4a19643dc7c11ccc",
   "nativeOperations": 180,
   "nativeParseCalls": 102,
   "nativeClearCalls": 78,
@@ -14,8 +14,8 @@
   },
   "native": {
     "numTotalTests": 77,
-    "numPassedTests": 51,
-    "numFailedTests": 26,
+    "numPassedTests": 59,
+    "numFailedTests": 18,
     "numPendingTests": 0,
     "success": false
   },
@@ -31,7 +31,10 @@
     ],
     "collisionOrigin": [
       "usecase parser publication and normalized AST names both exact locations and the source labels for generated and explicit ID collisions"
+    ],
+    "unquotedToken": [
+      "usecase parser publication and normalized AST still rejects a brace inside an unquoted label"
     ]
   },
-  "scope": "Full77 original parser assertions:51passed26failed0skipped.11priorfailuresfixed;18passesremainownedbyusecase-model.180actualNativeoperationsand4negativecontrols. IncompleteAST/semanticcontractsremain."
+  "scope": "Full77 original parser assertions:59passed18failed0skipped.8priorfailuresfixed;18passesremainownedbyusecase-model.180actualNativeoperationsand5negativecontrols. IncompleteAST/semanticcontractsremain."
 }
