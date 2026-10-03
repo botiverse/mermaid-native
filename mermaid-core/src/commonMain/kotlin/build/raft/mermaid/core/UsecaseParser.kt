@@ -14,7 +14,7 @@ public class UsecaseParser(private val source: String) {
     private var metadataOccurrences = mutableListOf<Map<String, Any?>>()
     private fun span(start: Int, end: Int = pos): List<Int> = listOf(start, end)
     private fun labelSpan(start: Int, end: Int): List<Int> {
-        val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) == '"') 1 else 0
+        val trim = if (source.startsWith("\"`", start)) 2 else if (source.getOrNull(start) in listOf('"', '\'')) 1 else 0
         return span(start + trim, end - trim)
     }
     private fun appendStatement(statement: MutableMap<String, Any?>) {
@@ -57,11 +57,11 @@ public class UsecaseParser(private val source: String) {
         )
     }
     private fun quoted(): String {
-        hws(); val quoteStart = pos; requireText("\""); val markdown = source.getOrNull(pos) == '`'; if (markdown) pos++
+        hws(); val quoteStart = pos; val quote = source.getOrNull(pos) ?: fail("Expected quoted label"); requireText(quote.toString()); val markdown = quote == '"' && source.getOrNull(pos) == '`'; if (markdown) pos++
         val start = pos
         while (pos < source.length) {
             if (markdown && source.startsWith("`\"", pos)) { val value = source.substring(start, pos); pos += 2; return value }
-            if (!markdown && source[pos] == '"') { val value = source.substring(start, pos); pos++; return value }
+            if (!markdown && source[pos] == quote) { val value = source.substring(start, pos); pos++; return value }
             if (!markdown && source[pos] in "\r\n") failQuotedLabel(quoteStart, "Physical newlines require a Markdown label")
             pos++
         }
@@ -79,7 +79,7 @@ public class UsecaseParser(private val source: String) {
         )
     }
     private fun label(close: Char): String {
-        hws(); if (at("\"")) return quoted()
+        hws(); if (at("\"") || at("'")) return quoted()
         val start = pos
         while (pos < source.length && source[pos] != close) {
             val char = source[pos]

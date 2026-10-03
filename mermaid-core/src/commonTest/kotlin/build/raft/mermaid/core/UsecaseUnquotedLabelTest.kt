@@ -14,8 +14,8 @@ class UsecaseUnquotedLabelTest {
 
     @Test fun punctuationRemainsLiteralAndQuotedDelimitersStayValid() {
         val doc = UsecaseDocument()
-        assertIs<MermaidParseResult.Success>(doc.parse("usecase-beta\nLiteral(Review; 50% done — @user)\nQuoted(\"Literal [brackets] @{ ::: -- markers\")"))
-        assertEquals(listOf("Review; 50% done — @user", "Literal [brackets] @{ ::: -- markers"), doc.diagram!!.useCases.map { it.label })
+        assertIs<MermaidParseResult.Success>(doc.parse("usecase-beta\nLiteral(Review; 50% done — @user)\nQuoted(\"Literal [brackets] @{ ::: -- markers\")\nSingle('Quoted [literal]')"))
+        assertEquals(listOf("Review; 50% done — @user", "Literal [brackets] @{ ::: -- markers", "Quoted [literal]"), doc.diagram!!.useCases.map { it.label })
     }
 
     @Test fun lexicalAndGrammarFailuresClearPriorPublishedState() {
