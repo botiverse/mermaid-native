@@ -12,13 +12,11 @@ public object OrthogonalLayoutValidator {
     public fun validate(input: LayoutValidationInput): LayoutValidationResult = Validation(input).run()
 }
 
-private data class Segment(val a: ScenePoint, val b: ScenePoint) {
-    val orientation: Char = when {
+private data class Segment(val a: ScenePoint, val b: ScenePoint, val orientation: Char = when {
         abs(b.x-a.x)<=1 && abs(b.y-a.y)<=1 -> 'Z'
         abs(b.y-a.y)<=1 -> 'H'
         else -> 'V'
-    }
-}
+    })
 private data class EdgeGeometry(val edge: LayoutValidationEdge) {
     val raw = edge.points.zipWithNext(::Segment)
     val segments = normalize(raw)
@@ -31,7 +29,7 @@ private fun normalize(raw: List<Segment>): List<Segment> {
         val merge=current!=null && current.orientation==next.orientation &&
             if(next.orientation=='H') abs(current.b.y-next.a.y)<=1 && abs(current.a.y-next.a.y)<=1
             else abs(current.b.x-next.a.x)<=1 && abs(current.a.x-next.a.x)<=1
-        if(merge)result[result.lastIndex]=Segment(current!!.a,next.b) else result+=next
+        if(merge)result[result.lastIndex]=current!!.copy(b=next.b) else result+=next
     }
     return result
 }
@@ -245,7 +243,7 @@ private class Validation(val input:LayoutValidationInput) {
             if(same)issue("edge-same-port-departure",nodes=listOf(id),details=details+mapOf("direction" to da))
             if(d<=3)issue("edge-shared-attachment-point",nodes=listOf(id),details=details+mapOf("distance" to d,"alsoSamePortDeparture" to same))
             else byId[id]?.bounds?.let { r->
-                fun project(p:ScenePoint)=ScenePoint(p.x.coerceIn(r.x,r.right),p.y.coerceIn(r.y,r.bottom))
+                fun project(p:ScenePoint)=ScenePoint(min(max(p.x,r.x),r.right),min(max(p.y,r.y),r.bottom))
                 val p1=project(pa.first);val p2=project(pb.first);val pd=distance(p1,p2)
                 if(pd<=3)issue("edge-shared-projected-port",nodes=listOf(id),details=details+mapOf("projectedPorts" to listOf(p1,p2),"rawDistance" to d,"projectedDistance" to pd))
             }

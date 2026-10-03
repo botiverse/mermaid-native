@@ -12,7 +12,7 @@ shared="""import {vi,expect,afterEach} from 'vitest';
 import * as validator from '../packages/mermaid/src/rendering-util/layout-algorithms/layout-utils/validateLayout.js';
 """
 (w/'capture.ts').write_text(shared+"""import {appendFileSync} from 'node:fs';
-const original=validator.validateLayout;vi.spyOn(validator,'validateLayout').mockImplementation((input)=>{appendFileSync(CALLS,JSON.stringify({test:expect.getState().currentTestName,input})+'\\n');return original(input);});
+const original=validator.validateLayout;vi.spyOn(validator,'validateLayout').mockImplementation((input)=>{const result=original(input);appendFileSync(CALLS,JSON.stringify({test:expect.getState().currentTestName,input,reference:result})+'\\n');return result;});
 """.replace('CALLS',json.dumps(str(calls))))
 config="""import {defineConfig} from 'vitest/config';export default defineConfig({test:{environment:'node',globals:true,maxWorkers:1,testTimeout:30000,include:FILES,setupFiles:['.native-layout-validation-audit/SETUP.ts']}});""".replace('FILES',json.dumps(list(manifest['files'])))
 for mode,setup in [('official','capture'),('native','adapter')]:
@@ -29,7 +29,10 @@ subprocess.run(['javac','-cp',cp,'-d',str(w),str(h/'LayoutValidationBridge.java'
 trace=[json.loads(x)for x in calls.read_text().splitlines()]
 res=subprocess.run(['java','-cp',cp,'LayoutValidationBridge'],input='\n'.join(base64.b64encode(json.dumps(x['input']).encode()).decode()for x in trace)+'\n',text=True,capture_output=True,check=True,timeout=60)
 snapshots=[json.loads(x)for x in res.stdout.splitlines()];assert len(trace)==len(snapshots)
-cache=w/'native-snapshots.json';cache.write_text(json.dumps([{**call,'result':snap}for call,snap in zip(trace,snapshots)]))
+def semantic(v):
+ return {'ok':v['ok'],'score':v['score'],'breakdown':v['breakdown'],'issues':[{'type':i['type'],'edgeId':i.get('edgeId'),'nodeIds':i.get('nodeIds',[])}for i in v['issues']]}
+for call,snap in zip(trace,snapshots):assert semantic(call['reference'])==semantic(snap),(call['test'],semantic(call['reference']),semantic(snap))
+cache=w/'native-snapshots.json' ;cache.write_text(json.dumps([{**call,'result':snap}for call,snap in zip(trace,snapshots)]))
 (w/'adapter.ts').write_text(shared+"""import {readFileSync} from 'node:fs';
 const rows=JSON.parse(readFileSync(CACHE,'utf8')),byTest=new Map();for(const row of rows){if(!byTest.has(row.test))byTest.set(row.test,[]);byTest.get(row.test).push(row);}
 vi.spyOn(validator,'validateLayout').mockImplementation((input)=>{const key=expect.getState().currentTestName;const row=byTest.get(key)?.shift();if(!row||JSON.stringify(row.input)!==JSON.stringify(input))throw new Error('Native trace mismatch '+key);return row.result;});
@@ -37,7 +40,7 @@ afterEach(()=>{const key=expect.getState().currentTestName;if(byTest.get(key)?.l
 """.replace('CACHE',json.dumps(str(cache))))
 status=test('native')
 def failed():return {a['fullName']for suite in json.loads((w/'native.json').read_text())['testResults']for a in suite['assertionResults']if a['status']=='failed'}
-baseline=failed();summary={'upstreamRevision':manifest['revision'],'nativeSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip(),'nativeJars':{j.name:hashlib.sha256(j.read_bytes()).hexdigest()for j in jars},'nativeCalls':len(trace)}
+baseline=failed();summary={'upstreamRevision':manifest['revision'],'nativeSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip(),'nativeJars':{j.name:hashlib.sha256(j.read_bytes()).hexdigest()for j in jars},'nativeCalls':len(trace),'semanticDifferentials':len(trace)}
 for mode in ['official','native']:
  d=json.loads((w/f'{mode}.json').read_text());summary[mode]={k:d[k]for k in ['numTotalTests','numPassedTests','numFailedTests','numPendingTests','success']}
 if o.verify_mutations and not baseline:
