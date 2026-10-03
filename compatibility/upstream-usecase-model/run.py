@@ -28,10 +28,10 @@ export default defineConfig({plugins:[jsonSchemaPlugin()],resolve:{alias:{'@merm
 for mode,setup in [('official','capture'),('native','adapter')]:
  (w/f'{mode}.config.ts').write_text(config.replace('SETUP',setup));(w/f'{mode}.workspace.ts').write_text("import {defineWorkspace} from 'vitest/config';export default defineWorkspace(['.native-usecase-model-audit/"+mode+".config.ts']);")
 def test(mode):
- with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-usecase-model-audit/{mode}.config.ts','--workspace',f'.native-usecase-model-audit/{mode}.workspace.ts','--testNamePattern','^.*when parsing (basic actors|use cases|relationships|system boundaries|direction|actor metadata|complex diagrams|class definitions)|^usecase parser publication.*(accepts ids that start with a digit|keeps decimal style values intact now that ids may start with a digit|lets a later metadata statement override inline boundary metadata|preserves the separators inside multi-word style and classDef values|resolves forward .* refinement independently of declaration order|accepts a .* boundary label|declares a boundary with an explicit id, a label, inline metadata, and classes|keeps plain ids, derived ids, and separate metadata statements working|finalizes unresolved relation endpoints as ellipse use cases without actor inference|merges equivalent repeated declarations, including equivalent parent ownership)$|database methods should get specific (actor|use case) by id$','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
+ with (w/f'{mode}.log').open('w') as f:return subprocess.run(['pnpm','exec','vitest','run','--config',f'.native-usecase-model-audit/{mode}.config.ts','--workspace',f'.native-usecase-model-audit/{mode}.workspace.ts','--testNamePattern','^.*when parsing (basic actors|use cases|relationships|system boundaries|direction|actor metadata|complex diagrams|class definitions)|^usecase parser publication.*(accepts ids that start with a digit|keeps decimal style values intact now that ids may start with a digit|lets a later metadata statement override inline boundary metadata|preserves the separators inside multi-word style and classDef values|resolves forward .* refinement independently of declaration order|accepts a .* boundary label|declares a boundary with an explicit id, a label, inline metadata, and classes|keeps plain ids, derived ids, and separate metadata statements working|allocates anonymous edge and note IDs deterministically in source order|finalizes unresolved relation endpoints as ellipse use cases without actor inference|merges equivalent repeated declarations, including equivalent parent ownership)$|database methods should get specific (actor|use case) by id$','--reporter=json',f'--outputFile={w/(mode+".json")}'],cwd=u,stdout=f,stderr=subprocess.STDOUT,timeout=240)
 if test('official').returncode:raise SystemExit('Original Usecase production model suite failed')
-assert json.loads((w/'official.json').read_text())['numPassedTests']==41
-sources=list(dict.fromkeys(json.loads(x)['source'] for x in calls.read_text().splitlines()))
+assert json.loads((w/'official.json').read_text())['numPassedTests']==42
+sources=[json.loads(x)['source'] for x in calls.read_text().splitlines()]
 result=subprocess.run(['java','-cp',cp,'UsecaseModelNativeBridge'],input=''.join(base64.b64encode(s.encode()).decode()+'\n' for s in sources),text=True,capture_output=True,check=True,timeout=60)
 models=[json.loads(x) for x in result.stdout.splitlines()];assert len(models)==len(sources)
 cache=w/'native-models.json';cache.write_text(json.dumps(list(zip(sources,models))))
@@ -39,9 +39,15 @@ cache=w/'native-models.json';cache.write_text(json.dumps(list(zip(sources,models
 import {Diagram} from '../packages/mermaid/src/Diagram.js';
 import {db} from '../packages/mermaid/src/diagrams/usecase/usecaseDb.js';
 import {parser} from '../packages/mermaid/src/diagrams/usecase/parser/usecase.chevrotain.js';
-const models=new Map(JSON.parse(readFileSync(CACHE,'utf8')));let current;
-vi.spyOn(parser,'parse').mockImplementation(async source=>{current=models.get(source);if(!current)throw new Error('Missing Native model');if(current.error)throw new Error(current.error);});
-vi.spyOn(Diagram,'fromText').mockImplementation(async source=>{current=models.get(source);if(!current)throw new Error('Missing Native model');if(current.error)throw new Error(current.error);return {type:current.diagramType};});
+const models=new Map();
+for(const [source,model] of JSON.parse(readFileSync(CACHE,'utf8'))){
+ if(!models.has(source))models.set(source,[]);
+ models.get(source).push(model);
+}
+let current;
+const nextModel=source=>{const queue=models.get(source);if(!queue?.length)throw new Error('Missing Native parse invocation');return queue.shift();};
+vi.spyOn(parser,'parse').mockImplementation(async source=>{current=nextModel(source);if(!current)throw new Error('Missing Native model');if(current.error)throw new Error(current.error);});
+vi.spyOn(Diagram,'fromText').mockImplementation(async source=>{current=nextModel(source);if(!current)throw new Error('Missing Native model');if(current.error)throw new Error(current.error);return {type:current.diagramType};});
 vi.spyOn(db,'clear').mockImplementation(()=>{current=undefined;});
 for(const [method,key] of [['getActors','actors'],['getUseCases','useCases'],['getSystemBoundaries','boundaries'],['getJsonNodes','jsonNodes']])vi.spyOn(db,method).mockImplementation(()=>new Map((current?.[key]??[]).map(x=>[x.id,x])));
 vi.spyOn(db,'getUseCase').mockImplementation(id=>current?.useCases?.find(x=>x.id===id));
@@ -49,22 +55,26 @@ vi.spyOn(db,'getActor').mockImplementation(id=>current?.actors?.find(x=>x.id===i
 vi.spyOn(db,'getSystemBoundary').mockImplementation(id=>current?.boundaries?.find(x=>x.id===id));
 vi.spyOn(db,'getRelationships').mockImplementation(()=>current?.relationships??[]);
 vi.spyOn(db,'getClassDefs').mockImplementation(()=>new Map(Object.entries(current?.classDefs??{})));
-vi.spyOn(db,'getNotes').mockImplementation(()=>{
- if(current?.noteCount!==0)throw new Error('Native note ID projection is not covered by this adapter');
- return new Map();
-});
+vi.spyOn(db,'getNotes').mockImplementation(()=>new Map((current?.notes??[]).map(x=>[x.id,x])));
 vi.spyOn(db,'getDirection').mockImplementation(()=>current?.direction);
 """.replace('CACHE',json.dumps(str(cache))))
-status=test('native');summary={'upstreamRevision':m['revision'],'nativeJarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'uniqueInputs':len(sources)}
+status=test('native');summary={'upstreamRevision':m['revision'],'nativeJarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'uniqueInputs':len(set(sources)),'nativeParseCalls':len(sources)}
 for mode in ['official','native']:
  d=json.loads((w/f'{mode}.json').read_text());summary[mode]={k:d[k] for k in ['numTotalTests','numPassedTests','numFailedTests','numPendingTests','success']}
 if status.returncode==0 and o.verify_model_mutations:
  original_cache=cache.read_text();mutations={}
  try:
-  for field in ['type','members','numericActorId','decimalStyles','overrideType','classWordSeparators','forwardActor','forwardRectangle','boundaryMarkdown','boundaryPlain','boundaryClasses','separateMembers','unresolvedShape','repeatedParent']:
-   mutated=json.loads(original_cache);changed=0
+  for field in ['type','members','numericActorId','decimalStyles','overrideType','classWordSeparators','forwardActor','forwardRectangle','boundaryMarkdown','boundaryPlain','boundaryClasses','separateMembers','unresolvedShape','repeatedParent','anonymousEdgeId','anonymousNoteId','repeatedAnonymousEdgeId']:
+   mutated=json.loads(original_cache);changed=0;touched=set();seen={}
    for source, model in mutated:
-    if field=='unresolvedShape' and source=='usecase-beta\nLeft --> Right':
+    before=changed;occurrence=seen.get(source,0);seen[source]=occurrence+1
+    if field=='repeatedAnonymousEdgeId' and 'note for User "first"' in source and occurrence==1:
+     model['relationships'][0]['id']='wrong-repeat-edge';changed+=1
+    elif field=='anonymousEdgeId' and 'note for User "first"' in source:
+     model['relationships'][0]['id']='wrong-edge';changed+=1
+    elif field=='anonymousNoteId' and 'note for User "first"' in source:
+     model['notes'][0]['id']='wrong-note';changed+=1
+    elif field=='unresolvedShape' and source=='usecase-beta\nLeft --> Right':
      model['useCases'][0]['shape']='rect';changed+=1
     elif field=='repeatedParent' and source.count('actor User("Person")')==2:
      model['actors'][0]['parentId']='Wrong';changed+=1
@@ -97,11 +107,13 @@ if status.returncode==0 and o.verify_model_mutations:
     for boundary in model.get('boundaries',[]) if field in ['type','members'] else []:
      if boundary['id']=='sb1' and boundary.get('type')=='package' and not boundary.get('classes'):
       boundary[field]='system' if field=='type' else [];changed+=1
-   assert changed==1, 'Expected one model fixture'
+    if changed!=before:touched.add(source)
+   assert len(touched)==1 and changed>=1, 'Expected only one source fixture'
+   if field=='repeatedAnonymousEdgeId':assert changed==1, 'Expected only the second parse result'
    cache.write_text(json.dumps(mutated));mutation_status=test('native')
    result=json.loads((w/'native.json').read_text())
    failures=[a['fullName'] for suite in result['testResults'] for a in suite['assertionResults'] if a['status']=='failed']
-   expected='finalizes unresolved relation endpoints' if field=='unresolvedShape' else 'merges equivalent repeated declarations' if field=='repeatedParent' else 'declares a boundary with an explicit id' if field=='boundaryClasses' else 'keeps plain ids, derived ids' if field=='separateMembers' else 'accepts ids that start with a digit' if field=='numericActorId' else 'keeps decimal style values' if field=='decimalStyles' else 'lets a later metadata statement override' if field=='overrideType' else 'preserves the separators' if field=='classWordSeparators' else "resolves forward 'actor' refinement" if field=='forwardActor' else "resolves forward 'rectangular use case' refinement" if field=='forwardRectangle' else 'accepts a bracketed Markdown string boundary label' if field=='boundaryMarkdown' else 'accepts a parenthesized plain string boundary label' if field=='boundaryPlain' else 'explicit id'
+   expected='allocates anonymous edge and note IDs' if field in ['anonymousEdgeId','anonymousNoteId','repeatedAnonymousEdgeId'] else 'finalizes unresolved relation endpoints' if field=='unresolvedShape' else 'merges equivalent repeated declarations' if field=='repeatedParent' else 'declares a boundary with an explicit id' if field=='boundaryClasses' else 'keeps plain ids, derived ids' if field=='separateMembers' else 'accepts ids that start with a digit' if field=='numericActorId' else 'keeps decimal style values' if field=='decimalStyles' else 'lets a later metadata statement override' if field=='overrideType' else 'preserves the separators' if field=='classWordSeparators' else "resolves forward 'actor' refinement" if field=='forwardActor' else "resolves forward 'rectangular use case' refinement" if field=='forwardRectangle' else 'accepts a bracketed Markdown string boundary label' if field=='boundaryMarkdown' else 'accepts a parenthesized plain string boundary label' if field=='boundaryPlain' else 'explicit id'
    assert mutation_status.returncode!=0 and len(failures)==1 and expected in failures[0], failures
    mutations[field]={'failedTests':failures,'passedTests':result['numPassedTests']}
    shutil.copy2(w/'native.json',w/f'mutation-{field}.json')

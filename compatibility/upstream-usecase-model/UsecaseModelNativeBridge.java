@@ -45,6 +45,6 @@ for(var definition:d.getClassDefs().entrySet()) {
  for(var entry:definition.getValue().entrySet())styles.add(entry.getKey()+":"+entry.getValue());
  classDefs.put(definition.getKey(),Map.of("styles",styles));
 }
-out.put("classDefs",classDefs);out.put("noteCount",d.getNotes().size());return out;}
+out.put("classDefs",classDefs);List<Object> notes=new ArrayList<>();for(UsecaseNote n:d.getNotes()){Map<String,Object> r=new LinkedHashMap<>();r.put("id",n.getId());r.put("label",n.getLabel());r.put("targetId",n.getTargetId());notes.add(r);}out.put("notes",notes);return out;}
  public static void main(String[] args){Scanner lines=new Scanner(System.in,StandardCharsets.UTF_8);while(lines.hasNextLine()){String source=new String(Base64.getDecoder().decode(lines.nextLine()),StandardCharsets.UTF_8);try{System.out.println(json(render(source)));}catch(Throwable e){System.out.println(json(Map.of("error",e.toString())));}}}
 }
