@@ -1414,7 +1414,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if (n.type == "composite") {
                     val inner = plan(n.children, n.columns); plans[n.id] = inner
                     SceneSize(max(inner.width + 32.0, textMeasurer.measure(n.label, textStyle).width + 32.0), inner.height + if (n.label.isEmpty()) 32.0 else 56.0)
-                } else SceneSize(textMeasurer.measure(n.label, textStyle).width + 32.0, 64.0)
+                } else {
+                    val width = textMeasurer.measure(n.label, textStyle).width + 32.0
+                    SceneSize(width, if (n.type == "circle") max(width, 64.0) else 64.0)
+                }
             }
             val cell = max(160.0, nodes.indices.maxOf { i -> val span = nodes[i].columnSpan.coerceIn(1, columns); (sizes[i].width - 24.0 * (span - 1)) / span })
             var x = 0; var y = 0.0; var rowHeight = 0.0
@@ -1430,7 +1433,13 @@ public object SimpleMermaidLayout : DiagramLayout {
         val commands = mutableListOf<DrawCommand>(); val placed = linkedMapOf<String, SceneRect>()
         fun draw(nodes: List<build.raft.mermaid.core.BlockNode>, layout: Plan, originX: Double, originY: Double) {
             nodes.forEachIndexed { i, node ->
-                val local = layout.rects[i]; val rect = local.copy(x = local.x + originX, y = local.y + originY); placed[node.id] = rect
+                val local = layout.rects[i]
+                val cellRect = local.copy(x = local.x + originX, y = local.y + originY)
+                val rect = if (node.type == "circle") {
+                    val diameter = cellRect.height
+                    cellRect.copy(x = cellRect.x + (cellRect.width - diameter) / 2.0, width = diameter)
+                } else cellRect
+                placed[node.id] = rect
                 if (node.type == "space") return@forEachIndexed
                 val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
@@ -1452,6 +1461,15 @@ public object SimpleMermaidLayout : DiagramLayout {
                     if ("left" in directions) points += ScenePoint(rect.x, cy)
                     commands += DrawPolygon(points, fill)
                     commands += DrawPolyline(points + points.first(), stroke, strokeWidth)
+                } else if (node.type == "circle") {
+                    commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2), rect.width / 2, rect.height / 2, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                } else if (node.type == "cylinder") {
+                    val cx = rect.x + rect.width / 2; val ry = 8.0
+                    commands += DrawEllipse(ScenePoint(cx, rect.y + rect.height - ry), rect.width / 2, ry, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                    commands += DrawRect(SceneRect(rect.x, rect.y + ry, rect.width, rect.height - 2 * ry), fill = fill, stroke = SceneColor("none"))
+                    commands += DrawLine(ScenePoint(rect.x, rect.y + ry), ScenePoint(rect.x, rect.y + rect.height - ry), stroke, strokeWidth)
+                    commands += DrawLine(ScenePoint(rect.x + rect.width, rect.y + ry), ScenePoint(rect.x + rect.width, rect.y + rect.height - ry), stroke, strokeWidth)
+                    commands += DrawEllipse(ScenePoint(cx, rect.y + ry), rect.width / 2, ry, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                 } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                 if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", DiagramPalette.INK)))
                 if (node.type == "composite") draw(node.children, plans.getValue(node.id), rect.x + 16.0, rect.y + if (node.label.isEmpty()) 16.0 else 40.0)
@@ -1474,7 +1492,7 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        if (diagram.nodes.isEmpty() || diagram.columns <= 0 || diagram.nodes.any { it.type in setOf("composite", "space", "block_arrow") || it.columnSpan > diagram.columns || it.classes.isNotEmpty() || it.styles.isNotEmpty() } || diagram.edges.any { it.label != null }) return layoutAdvancedBlock(diagram, textMeasurer, config)
+        if (diagram.nodes.isEmpty() || diagram.columns <= 0 || diagram.nodes.any { it.type in setOf("composite", "space", "block_arrow", "circle", "cylinder") || it.columnSpan > diagram.columns || it.classes.isNotEmpty() || it.styles.isNotEmpty() } || diagram.edges.any { it.label != null }) return layoutAdvancedBlock(diagram, textMeasurer, config)
         val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
         val columnGap = 24.0
         val rowGap = 40.0
