@@ -1,0 +1,11 @@
+# Native orthogonal layout validation
+
+The complete, unchanged `validateLayout.spec.ts` (39 original test occurrences) runs against the Native validator. Every call passes the original measured nodes, groups, labels and edge points to Kotlin. The adapter only transports values and checks call order; it does not compute geometry or manufacture Mermaid source. All original files are verified against the pinned upstream hash.
+
+The validator checks node overlaps and group containment, endpoint clearance, shared ports, node/title intersections, nearby parallel runs, shared paths, border hugging and label ownership/marker overlap. It retains the reference fixed tolerances, polyline normalization, bend/crossing penalties and zero score on any hard issue. The runner also compares all 47 original call results for issue identifiers, node/edge attribution, validity, score and the entire breakdown. Eight negative controls remove or corrupt independent results and must fail exactly their targeted original tests.
+
+`LayoutConfig(validateOrthogonalLayout = true)` attaches a `LayoutValidationReport` to the actual flowchart scene. It contains final translated coordinates from the same node boxes, routed paths and text draw commands used to paint. Invisible edges are excluded. Validation is opt-in because pairwise checks are quadratic; it never changes the drawing or blocks rendering. An integration test compares the reported geometry to real draw commands, including return routes and group labels.
+
+This is a diagnostic for **orthogonal paths and rectangular bounds**. Existing diagonal routes are reported as non-orthogonal, and nonrectangular node bounds are conservative. Text bounds use the configured measurer and baseline, not platform glyph ascent/descent. Native issue messages and optional diagnostic details are not byte-for-byte copies of the JS diagnostics; tested identifiers, attribution and score contracts are preserved. It does not fix the remaining routing defects, establish browser visual parity, or implement the separate `scoreLayout` quality-metric module.
+
+Build `:mermaid-layout-simple:bundleLibRuntimeToJarDebug :mermaid-layout-api:bundleLibRuntimeToJarDebug :mermaid-core:bundleLibRuntimeToJarDebug`, then run `run.py --upstream /path/to/upstream --stdlib /path/to/kotlin-stdlib.jar --verify-mutations`.
