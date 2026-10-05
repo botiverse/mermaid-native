@@ -1,0 +1,64 @@
+{
+  "sourceProducer": "fc273a7d2ba75445c2b571e051cdf07286572b08",
+  "original": {
+    "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+    "nativeSource": "fc273a7d2ba75445c2b571e051cdf07286572b08",
+    "nativeJars": {
+      "mermaid-core.jar": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+      "mermaid-layout-api.jar": "6abbb7a221b48c9e831d0a3578893c6c5ccf91b6667217e500cdf5fc8a1342b1",
+      "mermaid-layout-simple.jar": "9279c2926822d9aa25dfda597cc890ebc7cedb94f830a9d218d53fa9284ca1c0"
+    },
+    "nativeCalls": 4,
+    "semanticDifferentials": 4,
+    "official": {
+      "numTotalTests": 4,
+      "numPassedTests": 4,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "native": {
+      "numTotalTests": 4,
+      "numPassedTests": 4,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "mutationControls": {
+      "ports": [
+        "portSwapToLShape rewrites a non-collinear HVH detour to a 3-point L shape from the source face"
+      ],
+      "terminal": [
+        "collapseShortTerminalStub retargets a short perpendicular destination stub to the destination face center"
+      ],
+      "shared": [
+        "nudgeSharedInteriorSubpaths separates near-parallel interior rails with long projected overlap"
+      ],
+      "source": [
+        "nudgeSharedInteriorSubpaths separates the close B/I exit rails from fixture 12"
+      ]
+    }
+  },
+  "jvm": {
+    "layout": 304,
+    "samples": 5,
+    "svg": 10
+  },
+  "regressions": {
+    "endpointAssertions": 11,
+    "geometryAssertions": 12,
+    "geometryInputs": 24
+  },
+  "actualFlowProbe": {
+    "graphs": 160,
+    "finalChanged": 0,
+    "unsafeTwoPixelTerminalRewritesRejected": 3
+  },
+  "pending": [
+    "iOS",
+    "Wasm",
+    "optimized production",
+    "local browser",
+    "main/public page"
+  ]
+}
