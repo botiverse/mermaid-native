@@ -1,0 +1,80 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "aa59839fb0caef090bd5cc52dd6620c8a3a785d3",
+  "nativeJars": {
+    "mermaid-core.jar": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+    "mermaid-layout-api.jar": "6abbb7a221b48c9e831d0a3578893c6c5ccf91b6667217e500cdf5fc8a1342b1",
+    "mermaid-layout-simple.jar": "42c21d02b642cc26759f81314c05e6f8f346063888124bb63ff91f1d63b6741f"
+  },
+  "nativeCalls": 17,
+  "semanticDifferentials": 17,
+  "official": {
+    "numTotalTests": 17,
+    "numPassedTests": 17,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 17,
+    "numPassedTests": 17,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "length": [
+      "scoreLayout simple 3-node chain (A\u2192B\u2192C) returns reasonable values for all metrics"
+    ],
+    "rank": [
+      "scoreLayout cyclic graph (A\u2192B\u2192C\u2192A) returns NaN for rankFaithfulness"
+    ],
+    "threshold": [
+      "scoreLayout threshold evaluation fails when value is below min threshold"
+    ],
+    "bend": [
+      "scoreLayout edges with bends correctly counts bends"
+    ],
+    "cross": [
+      "scoreLayout segmentsCross \u2014 T-intersections and shared endpoints detects T-intersection where H endpoint lies on V interior"
+    ],
+    "shared": [
+      "scoreLayout segmentsCross \u2014 T-intersections and shared endpoints excludes shared endpoint (both segments end at the same point)"
+    ]
+  },
+  "hardValidatorRegression": {
+    "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+    "nativeSource": "aa59839fb0caef090bd5cc52dd6620c8a3a785d3",
+    "nativeJars": {
+      "mermaid-core.jar": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+      "mermaid-layout-api.jar": "6abbb7a221b48c9e831d0a3578893c6c5ccf91b6667217e500cdf5fc8a1342b1",
+      "mermaid-layout-simple.jar": "42c21d02b642cc26759f81314c05e6f8f346063888124bb63ff91f1d63b6741f"
+    },
+    "nativeCalls": 47,
+    "semanticDifferentials": 47,
+    "official": {
+      "numTotalTests": 39,
+      "numPassedTests": 39,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "native": {
+      "numTotalTests": 39,
+      "numPassedTests": 39,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    }
+  },
+  "localValidation": {
+    "AndroidLayoutTests": 295,
+    "sampleTests": 5
+  },
+  "scope": {
+    "newOriginalOccurrences": 17,
+    "orthogonalValidatorRegressionOccurrences": 39,
+    "sdkPublished": false,
+    "fullVisualParity": false
+  }
+}

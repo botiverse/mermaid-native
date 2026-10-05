@@ -61,4 +61,4 @@ public data class LayoutValidationResult(
 )
 
 /** Input uses final scene coordinates, after any padding/route translation. */
-public data class LayoutValidationReport(val geometry: LayoutValidationInput, val result: LayoutValidationResult)
+public data class LayoutValidationReport(val geometry: LayoutValidationInput, val result: LayoutValidationResult, val quality: LayoutQualityResult? = null)
