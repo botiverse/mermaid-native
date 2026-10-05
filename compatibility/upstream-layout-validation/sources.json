@@ -1,0 +1,6 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/layout-utils/validateLayout.spec.ts": "b11ed3f638d6c32cdd2d0575477b84017f5d80ef274d74f199c23c5b6b1ab8dd"
+  }
+}

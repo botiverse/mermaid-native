@@ -1,0 +1,80 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "65a6dffde78bb2c7fd60ecdcbb934e4e4c49711f",
+  "nativeJars": {
+    "mermaid-core.jar": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+    "mermaid-layout-api.jar": "a2d0347185cf806ba667e7a5b8c0fceb6cc1a3d0cf059d75e55a74324e5a7b30",
+    "mermaid-layout-simple.jar": "1e46585b9f47c09c298d7b27dca0215d0249daa82752573622930402666850a2"
+  },
+  "nativeCalls": 47,
+  "semanticDifferentials": 47,
+  "official": {
+    "numTotalTests": 39,
+    "numPassedTests": 39,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 39,
+    "numPassedTests": 39,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "score": [
+      "validateLayout scoring (DDLT unified, 0\u20131000 fixed cap) returns 1000 for a clean tiny graph (no penalties)"
+    ],
+    "crossings": [
+      "validateLayout scoring (DDLT unified, 0\u20131000 fixed cap) charges crossings less than a single 4-point edge bend"
+    ],
+    "bend": [
+      "validateLayout new hard-validation rules flags edge-bend-near-endpoint when the LAST segment is shorter than 10"
+    ],
+    "obstacle": [
+      "validateLayout new geometric issues flags edge-intersects-obstacle when an edge loops back through its OWN src node interior"
+    ],
+    "port": [
+      "validateLayout new hard-validation rules flags edge-shared-projected-port when a detached out-edge stub projects to an in-edge port"
+    ],
+    "parallel": [
+      "validateLayout new geometric issues flags edge-parallel-segment-too-close for long nearby parallel sections"
+    ],
+    "label": [
+      "validateLayout new geometric issues flags edge-label-overlaps-own-arrowhead when an overlay label covers its end marker"
+    ],
+    "title": [
+      "validateLayout new geometric issues flags edge-intersects-group-title when an edge crosses a group title section"
+    ]
+  },
+  "localValidation": {
+    "tests": {
+      "AndroidLayout": 292,
+      "iOSSimulatorArm64Layout": 292,
+      "sample": 5,
+      "SVGEachAndroidIosWasm": 10,
+      "WasmBrowserLayout": 292
+    },
+    "productionWasmGate": {
+      "productionModule": "mermaid-web/build/compileSync/wasmJs/main/productionExecutable/optimized/mermaid-native-mermaid-web-wasm-js.mjs",
+      "rejectedJsonMarkers": 4,
+      "acceptedJsonMarkers": 3,
+      "mixedKindRejected": true,
+      "typedAnimationRejected": true,
+      "validRecovery": true
+    },
+    "browser": {
+      "svgExactBaselineOrLocal": 8,
+      "wasmUrl": "http://127.0.0.1:5228/wasm/a31cf2795e903712cbe0.wasm",
+      "wasmSha256": "5e79a809cdf5d344de9906546d8e955491382dd53b8278122bc8d8d7602cc538"
+    },
+    "screenshotsInspected": 4
+  },
+  "scope": {
+    "newOriginalOccurrences": 39,
+    "automaticRoutingRepair": false,
+    "fullVisualParity": false,
+    "sdkPublished": false
+  }
+}
