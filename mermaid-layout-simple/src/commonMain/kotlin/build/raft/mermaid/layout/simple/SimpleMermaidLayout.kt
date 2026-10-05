@@ -3148,7 +3148,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
             val anchors=edgeAnchors(source,target,placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
-        }.toMap().let { paths -> cleanFlowEndpointPaths(diagram,rects,paths) }
+        }.toMap().let { paths -> refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths)) }
         val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()

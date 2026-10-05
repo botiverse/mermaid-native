@@ -1,0 +1,8 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.portSwap.spec.ts": "d2a56e1155de67411ea33f9fe3dff7a4254998501ad2ae11f000556b75b62784",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.terminalStub.spec.ts": "1a3e3b540de1725358765b55c10c3ad6599da439068f8c9bc5c0e9a936a71464",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.sharedTrackNudging.spec.ts": "095272134604dea5dc343bc6ec2217a254524e2d461015d140f2a5942bdfa0cb"
+  }
+}
