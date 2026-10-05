@@ -39,7 +39,8 @@ public object LayoutQualityScorer {
             val value=values.getValue(key)
             fun number(n:Double)=if(n.isFinite() && n==n.toLong().toDouble())n.toLong().toString()else n.toString()
             val description=listOfNotNull(bounds.min?.let { "min: ${number(it)}" },bounds.max?.let { "max: ${number(it)}" }).joinToString(", ")
-            LayoutThresholdResult(value,description,!value.isNaN() && (bounds.min==null || value>=bounds.min) && (bounds.max==null || value<=bounds.max))
+            val minimum=bounds.min;val maximum=bounds.max
+            LayoutThresholdResult(value,description,!value.isNaN() && (minimum==null || value>=minimum) && (maximum==null || value<=maximum))
         }
         return LayoutQualityResult(scores,results)
     }
@@ -53,7 +54,8 @@ public object LayoutQualityScorer {
     private fun rank(nodes:List<LayoutValidationNode>,edges:List<LayoutValidationEdge>):Double {
         if(nodes.size<2)return Double.NaN
         val byId=nodes.associateBy { it.id };val adjacency=byId.keys.associateWith { mutableListOf<String>() };val degree=byId.keys.associateWith { 0 }.toMutableMap()
-        for(e in edges)if(e.start in byId && e.end in byId){adjacency.getValue(e.start!!).add(e.end!!);degree[e.end]=degree.getValue(e.end)+1}
+        for(e in edges){val start=e.start;val end=e.end
+            if(start!=null && end!=null && start in byId && end in byId){adjacency.getValue(start).add(end);degree[end]=degree.getValue(end)+1}}
         val roots=degree.filterValues { it==0 }.keys
         if(roots.isEmpty())return Double.NaN
         val depths=roots.associateWith { 0 }.toMutableMap();val queue=roots.toMutableList();var at=0
