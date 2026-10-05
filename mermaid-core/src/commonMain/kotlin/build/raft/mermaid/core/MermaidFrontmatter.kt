@@ -168,6 +168,7 @@ private class YamlReader(source: String, val firstLine: Int, val dedent: Int) {
                     pos++; ws(); val values = mutableListOf<UsecaseJsonValue>()
                     while (text.getOrNull(pos) != ']') {
                         if (pos == text.length) error("Unclosed YAML sequence")
+                        if (text[pos] == ',') error("Missing YAML sequence value")
                         values += value(level + 1); ws()
                         if (text.getOrNull(pos) == ']') break
                         if (text.getOrNull(pos++) != ',') error("Expected comma in YAML sequence")
@@ -196,6 +197,9 @@ private class YamlReader(source: String, val firstLine: Int, val dedent: Int) {
                     val start = pos
                     while (pos < text.length && (level == depth || text[pos] !in ",]}")) pos++
                     val raw = text.substring(start, pos).trim()
+                    if (mappingColon(raw) >= 0) error("A colon followed by whitespace requires a quoted YAML scalar")
+                    if (Regex("[-+]?(?:0[xob].*|\\.(?:inf|nan))", RegexOption.IGNORE_CASE).matches(raw))
+                        error("Non-decimal or non-finite YAML numbers are not supported")
                     if (raw.firstOrNull() in listOf('!', '&', '*', '?', '@', '`')) error("Unsupported YAML tag, anchor, alias or complex key")
                     when {
                         raw.isEmpty() || raw in listOf("null", "Null", "NULL", "~") -> UsecaseJsonValue.NullValue

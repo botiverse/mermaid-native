@@ -37,7 +37,7 @@ The dependency-free YAML reader supports block mappings/sequences, flow mappings
 and sequences, quoted/plain scalars, decimal numbers, booleans/null, and literal or
 folded block strings. It explicitly rejects tags, anchors, aliases, merge keys,
 complex keys, mapping entries inline after a block-sequence dash, and unsupported
-block-scalar modifiers/escapes. It is a bounded subset, not general YAML or complete
+block-scalar modifiers/escapes and non-decimal/non-finite numeric forms. It is a bounded subset, not general YAML or complete
 Mermaid configuration compatibility. Limits are 256 KiB and 64 nesting levels.
 
 Validation evidence and cumulative promotion are recorded separately after all

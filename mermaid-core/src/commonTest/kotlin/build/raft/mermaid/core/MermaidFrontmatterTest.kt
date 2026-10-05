@@ -40,6 +40,13 @@ class MermaidFrontmatterTest {
         assertEquals(SourceLocation(2, 4), error.location)
         assertContains(error.message!!, "tag suffix cannot contain exclamation marks")
     }
+    @Test fun malformedPlainScalarsAndEmptySequenceSlotsAreNotReinterpreted() {
+        for (yaml in listOf("title: foo: bar", "title: [a, , b]", "title: 0xff", "title: .inf")) {
+            assertFailsWith<MermaidFrontmatterError>(yaml) { MermaidFrontmatter.extract("---\n$yaml\n---\ndiagram") }
+        }
+        assertEquals("foo: bar", MermaidFrontmatter.extract("---\ntitle: 'foo: bar'\n---\ndiagram").metadata.title)
+        assertEquals("0xff", MermaidFrontmatter.extract("---\ntitle: '0xff'\n---\ndiagram").metadata.title)
+    }
     @Test fun limitsRejectExcessiveInputAndRecursiveCollections() {
         assertFailsWith<MermaidFrontmatterError> { MermaidFrontmatter.extract("---\ntitle: " + "x".repeat(262145) + "\n---\ngraph TD") }
         assertFailsWith<MermaidFrontmatterError> { MermaidFrontmatter.extract("---\nconfig: " + "[".repeat(70) + "0" + "]".repeat(70) + "\n---\ngraph TD") }
