@@ -36,5 +36,5 @@ internal fun flowLayoutValidation(
                 label=e.label,labelBounds=labels[index]?.let(::bounds),arrowTypeStart=marker(e.fromMarker),arrowTypeEnd=marker(e.toMarker)) }
         },
     )
-    return LayoutValidationReport(measured,OrthogonalLayoutValidator.validate(measured))
+    return LayoutValidationReport(measured,OrthogonalLayoutValidator.validate(measured),LayoutQualityScorer.score(measured))
 }

@@ -1,0 +1,9 @@
+# Native layout quality metrics
+
+The complete unchanged scoreLayout.spec.ts contains 17 original assertions: 13 score/threshold tests and four segment-crossing tests. Both entry points are replaced by direct Native calls over the original measured geometry. The transport encodes NaN and infinity explicitly; JavaScript never computes a score or threshold decision. Reference inputs, call order and all returned numeric metrics are compared before the original assertions run. Six corruption controls independently exercise length ratio, undefined cyclic ranks, threshold failure, bends, T intersections and shared endpoints.
+
+LayoutQualityScorer measures edge length ratio, aspect ratio, bends, crossings, vertical rank correlation, neighborhood preservation, bounding area and straight-edge fraction. Undefined metrics stay NaN and fail thresholds. Symmetry is explicitly unimplemented, matching the reference. The reference renderedDiagonalEndpoints metric simulates its rectangle endpoint snapping and does not claim to measure Native paint; Native actual routes are available in the report geometry.
+
+Opt-in flow validation attaches quality metrics for the same final translated geometry that is checked for hard issues. Drawing remains unchanged. Large graphs (>500 leaf nodes) sample unconnected neighbors with a fixed Native seed; their individual values need not equal the reference Math.random sample. Native connected-pair keys are structured pairs rather than pipe-joined IDs. Unknown threshold keys are rejected. Diagnostic API compatibility is bounded by these original assertions; it is not a claim of exact arbitrary-JavaScript coercion or browser drawing parity.
+
+Build the core, layout-api and layout-simple debug runtime jars, then run run.py with --upstream, --stdlib and --verify-mutations. No SDK publication is part of this change.

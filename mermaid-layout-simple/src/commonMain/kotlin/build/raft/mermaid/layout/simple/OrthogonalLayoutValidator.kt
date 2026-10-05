@@ -12,18 +12,18 @@ public object OrthogonalLayoutValidator {
     public fun validate(input: LayoutValidationInput): LayoutValidationResult = Validation(input).run()
 }
 
-private data class Segment(val a: ScenePoint, val b: ScenePoint, val orientation: Char = when {
+internal data class OrthogonalSegment(val a: ScenePoint, val b: ScenePoint, val orientation: Char = when {
         abs(b.x-a.x)<=1 && abs(b.y-a.y)<=1 -> 'Z'
         abs(b.y-a.y)<=1 -> 'H'
         else -> 'V'
     })
 private data class EdgeGeometry(val edge: LayoutValidationEdge) {
-    val raw = edge.points.zipWithNext(::Segment)
-    val segments = normalize(raw)
+    val raw = edge.points.zipWithNext(::OrthogonalSegment)
+    val segments = normalizeOrthogonalPolyline(raw)
     val points = if(segments.isEmpty()) edge.points else listOf(segments.first().a)+segments.map { it.b }
 }
-private fun normalize(raw: List<Segment>): List<Segment> {
-    val result = mutableListOf<Segment>()
+internal fun normalizeOrthogonalPolyline(raw: List<OrthogonalSegment>): List<OrthogonalSegment> {
+    val result = mutableListOf<OrthogonalSegment>()
     for (next in raw.filter { it.orientation!='Z' }) {
         val current=result.lastOrNull()
         val merge=current!=null && current.orientation==next.orientation &&
@@ -36,16 +36,16 @@ private fun normalize(raw: List<Segment>): List<Segment> {
 private val SceneRect.right get()=x+width
 private val SceneRect.bottom get()=y+height
 private fun SceneRect.corners()=listOf(ScenePoint(x,y),ScenePoint(right,y),ScenePoint(right,bottom),ScenePoint(x,bottom))
-private fun SceneRect.sides(): List<Segment> { val p=corners();return p.indices.map { Segment(p[it],p[(it+1)%4]) } }
+private fun SceneRect.sides(): List<OrthogonalSegment> { val p=corners();return p.indices.map { OrthogonalSegment(p[it],p[(it+1)%4]) } }
 private fun SceneRect.valid()=listOf(x,y,right,bottom).all { it.isFinite() } && width>0 && height>0
 private fun close(a:Double,b:Double)=abs(a-b)<=1e-6
-private fun distance(a:ScenePoint,b:ScenePoint)=sqrt((a.x-b.x).pow(2)+(a.y-b.y).pow(2))
+internal fun geometryDistance(a:ScenePoint,b:ScenePoint)=sqrt((a.x-b.x).pow(2)+(a.y-b.y).pow(2))
 private fun overlap(a:Double,b:Double,c:Double,d:Double)=max(0.0,min(max(a,b),max(c,d))-max(min(a,b),min(c,d)))
 private fun overlaps(a:SceneRect,b:SceneRect): Map<String,Any?>? {
     val x=overlap(a.x,a.right,b.x,b.right);val y=overlap(a.y,a.bottom,b.y,b.bottom)
     return if(x>0 && y>0) mapOf("overlapX" to x,"overlapY" to y) else null
 }
-private fun intersects(s:Segment,r:SceneRect):Boolean {
+private fun intersects(s:OrthogonalSegment,r:SceneRect):Boolean {
     // The reference helper includes a line lying on a boundary, but excludes
     // zero-length, diagonal and mere endpoint touches along the segment axis.
     if(s.a.x==s.b.x && s.a.y==s.b.y)return false
@@ -63,33 +63,33 @@ private fun direction(a:ScenePoint,b:ScenePoint,epsilon:Double=1.0):String? {
 private fun side(p:ScenePoint,r:SceneRect):String?=when {
     close(p.x,r.x)->"W";close(p.x,r.right)->"E";close(p.y,r.y)->"N";close(p.y,r.bottom)->"S";else->null
 }
-private fun sameCorridor(s:Segment,e:LayoutValidationEdge)=listOf(e.points.first(),e.points.last()).any { distance(s.a,it)<=8 && distance(s.b,it)<=8 }
-private fun eitherCorridor(s:Segment,e:LayoutValidationEdge)=listOf(s.a,s.b).all { p->distance(p,e.points.first())<=8 || distance(p,e.points.last())<=8 }
-private fun hug(s:Segment,r:SceneRect):Double=when {
+private fun sameCorridor(s:OrthogonalSegment,e:LayoutValidationEdge)=listOf(e.points.first(),e.points.last()).any { geometryDistance(s.a,it)<=8 && geometryDistance(s.b,it)<=8 }
+private fun eitherCorridor(s:OrthogonalSegment,e:LayoutValidationEdge)=listOf(s.a,s.b).all { p->geometryDistance(p,e.points.first())<=8 || geometryDistance(p,e.points.last())<=8 }
+private fun hug(s:OrthogonalSegment,r:SceneRect):Double=when {
     s.orientation=='H' && (abs(s.a.y-r.y)<=2 || abs(s.a.y-r.bottom)<=2)->overlap(s.a.x,s.b.x,r.x,r.right)
     s.orientation=='V' && (abs(s.a.x-r.x)<=2 || abs(s.a.x-r.right)<=2)->overlap(s.a.y,s.b.y,r.y,r.bottom)
     else->0.0
 }
-private fun parallelGap(a:Segment,b:Segment):Double?=when {
+private fun parallelGap(a:OrthogonalSegment,b:OrthogonalSegment):Double?=when {
     a.orientation!=b.orientation || a.orientation=='Z'->null
     a.orientation=='H'->abs(a.a.y-b.a.y)
     else->abs(a.a.x-b.a.x)
 }
-private fun projectedOverlap(a:Segment,b:Segment):Double=when {
+private fun projectedOverlap(a:OrthogonalSegment,b:OrthogonalSegment):Double=when {
     a.orientation!=b.orientation || a.orientation=='Z'->0.0
     a.orientation=='H'->overlap(a.a.x,a.b.x,b.a.x,b.b.x)
     else->overlap(a.a.y,a.b.y,b.a.y,b.b.y)
 }
-private fun crossing(a:Segment,b:Segment):Boolean {
+internal fun orthogonalSegmentsCross(a:OrthogonalSegment,b:OrthogonalSegment):Boolean {
     if(a.orientation=='Z' || b.orientation=='Z' || a.orientation==b.orientation)return false
     val h=if(a.orientation=='H')a else b;val v=if(a.orientation=='V')a else b
     val p=ScenePoint(v.a.x,h.a.y)
     if(p.x !in min(h.a.x,h.b.x)..max(h.a.x,h.b.x) || p.y !in min(v.a.y,v.b.y)..max(v.a.y,v.b.y))return false
-    fun endpoint(s:Segment)=listOf(s.a,s.b).any { abs(it.x-p.x)<1e-6 && abs(it.y-p.y)<1e-6 }
+    fun endpoint(s:OrthogonalSegment)=listOf(s.a,s.b).any { abs(it.x-p.x)<1e-6 && abs(it.y-p.y)<1e-6 }
     return !(endpoint(h) && endpoint(v))
 }
 private fun labelDummy(n:LayoutValidationNode)=n.isEdgeLabel || n.isDummy || n.id.startsWith("edge-label-")
-private fun band(s:Segment,side:String,r:SceneRect):Double? {
+private fun band(s:OrthogonalSegment,side:String,r:SceneRect):Double? {
     val vertical=side=="W" || side=="E"
     if(s.orientation!=if(vertical)'V' else 'H')return null
     val d=when(side){"W"->r.x-s.a.x;"E"->s.a.x-r.right;"N"->r.y-s.a.y;else->s.a.y-r.bottom}
@@ -126,7 +126,7 @@ private class Validation(val input:LayoutValidationInput) {
         while(parent!=null && seen.add(parent)){if(parent==id)return true;parent=byId[parent]?.parentId}
         return false
     }
-    fun hit(g:EdgeGeometry,r:SceneRect,skip:(Segment)->Boolean={false}):Map<String,Any?>? {
+    fun hit(g:EdgeGeometry,r:SceneRect,skip:(OrthogonalSegment)->Boolean={false}):Map<String,Any?>? {
         val i=g.raw.indexOfFirst { !sameCorridor(it,g.edge) && !skip(it) && intersects(it,r) }
         return if(i<0)null else mapOf("segmentIndex" to i,"a" to g.raw[i].a,"b" to g.raw[i].b)
     }
@@ -154,7 +154,7 @@ private class Validation(val input:LayoutValidationInput) {
         for(i in sorted.indices)for(j in i+1 until sorted.size){
             val a=sorted[i];val b=sorted[j]
             for(s in a.segments)for(t in b.segments){
-                if(crossing(s,t))crossings++
+                if(orthogonalSegmentsCross(s,t))crossings++
                 val gap=parallelGap(s,t) ?: continue
                 val overlap=projectedOverlap(s,t)
                 val corridor=eitherCorridor(s,a.edge) && eitherCorridor(t,b.edge)
@@ -172,7 +172,7 @@ private class Validation(val input:LayoutValidationInput) {
     fun perEdge(g:EdgeGeometry) {
         val e=g.edge;val p=e.points;val start=p.first();val end=p.last();val sNode=byId[e.start];val tNode=byId[e.end]
         if(g.segments.size>=2){
-            val first=distance(g.segments.first().a,g.segments.first().b);val last=distance(g.segments.last().a,g.segments.last().b)
+            val first=geometryDistance(g.segments.first().a,g.segments.first().b);val last=geometryDistance(g.segments.last().a,g.segments.last().b)
             for((which,len)in listOf("start" to first,"end" to last))if(len<10)issue("edge-bend-near-endpoint",e.id,details=mapOf("which" to which,"length" to len,"threshold" to 10))
             if(tNode!=null && last>=10)side(end,tNode.bounds)?.let { side->band(g.segments[g.segments.lastIndex-1],side,tNode.bounds) }?.let { d->issue("edge-bend-near-endpoint",e.id,listOf(tNode.id),mapOf("which" to "end-band","distance" to d,"threshold" to 18)) }
         }
@@ -181,10 +181,10 @@ private class Validation(val input:LayoutValidationInput) {
         for(n in obstacles.values)if(n.id!=e.labelNodeId)hit(g,n.bounds)?.let { issue("edge-intersects-obstacle",e.id,listOf(n.id),it) }
         for(n in groups.values){
             val title=n.groupTitleBounds?.takeIf { it.valid() } ?: continue
-            val hit=hit(g,title) { s->(ancestor(n.id,sNode) && (distance(s.a,start)<=1 || distance(s.b,start)<=1)) || (ancestor(n.id,tNode) && (distance(s.a,end)<=1 || distance(s.b,end)<=1)) }
+            val hit=hit(g,title) { s->(ancestor(n.id,sNode) && (geometryDistance(s.a,start)<=1 || geometryDistance(s.b,start)<=1)) || (ancestor(n.id,tNode) && (geometryDistance(s.a,end)<=1 || geometryDistance(s.b,end)<=1)) }
             if(hit!=null){issue("edge-intersects-group-title",e.id,listOf(n.id),hit+mapOf("titleRect" to title));break}
         }
-        for((node,point)in listOf(sNode to start,tNode to end))if(node!=null && node.bounds.corners().minOf { distance(point,it) }<=3)issue("edge-corner-connection",e.id,listOf(node.id),mapOf("point" to point))
+        for((node,point)in listOf(sNode to start,tNode to end))if(node!=null && node.bounds.corners().minOf { geometryDistance(point,it) }<=3)issue("edge-corner-connection",e.id,listOf(node.id),mapOf("point" to point))
         if(sNode!=null && tNode!=null){
             for((node,pair)in listOf(sNode to (start to p[1]),tNode to (end to p[p.lastIndex-1]))){
                 val side=side(pair.first,node.bounds);val dir=direction(pair.first,pair.second,1e-6)
@@ -236,7 +236,7 @@ private class Validation(val input:LayoutValidationInput) {
         for((id,list)in incident)for(i in list.indices)for(j in i+1 until list.size){
             val a=list[i].edge;val b=list[j].edge
             fun port(e:LayoutValidationEdge)=if(e.start==id)e.points.first() to e.points[1]else e.points.last() to e.points[e.points.lastIndex-1]
-            val pa=port(a);val pb=port(b);val d=distance(pa.first,pb.first)
+            val pa=port(a);val pb=port(b);val d=geometryDistance(pa.first,pb.first)
             val da=direction(pa.first,pa.second);val db=direction(pb.first,pb.second)
             val same=d<=2 && da!=null && da==db
             val details=mapOf("edgeIds" to listOf(a.id,b.id),"attachPoints" to listOf(pa.first,pb.first))
@@ -244,14 +244,14 @@ private class Validation(val input:LayoutValidationInput) {
             if(d<=3)issue("edge-shared-attachment-point",nodes=listOf(id),details=details+mapOf("distance" to d,"alsoSamePortDeparture" to same))
             else byId[id]?.bounds?.let { r->
                 fun project(p:ScenePoint)=ScenePoint(min(max(p.x,r.x),r.right),min(max(p.y,r.y),r.bottom))
-                val p1=project(pa.first);val p2=project(pb.first);val pd=distance(p1,p2)
+                val p1=project(pa.first);val p2=project(pb.first);val pd=geometryDistance(p1,p2)
                 if(pd<=3)issue("edge-shared-projected-port",nodes=listOf(id),details=details+mapOf("projectedPorts" to listOf(p1,p2),"rawDistance" to d,"projectedDistance" to pd))
             }
         }
     }
-    fun sharedTerminal(a:EdgeGeometry,s:Segment,b:EdgeGeometry,t:Segment):Boolean {
-        fun terminal(g:EdgeGeometry,seg:Segment,id:String):Boolean {
-            fun touches(p:ScenePoint)=distance(seg.a,p)<=1 || distance(seg.b,p)<=1
+    fun sharedTerminal(a:EdgeGeometry,s:OrthogonalSegment,b:EdgeGeometry,t:OrthogonalSegment):Boolean {
+        fun terminal(g:EdgeGeometry,seg:OrthogonalSegment,id:String):Boolean {
+            fun touches(p:ScenePoint)=geometryDistance(seg.a,p)<=1 || geometryDistance(seg.b,p)<=1
             return (g.edge.start==id && touches(g.points.first())) || (g.edge.end==id && touches(g.points.last()))
         }
         return listOfNotNull(a.edge.start,a.edge.end).filter { it.isNotEmpty() && (it==b.edge.start || it==b.edge.end) }.any { terminal(a,s,it) && terminal(b,t,it) }
