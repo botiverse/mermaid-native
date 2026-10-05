@@ -6,6 +6,7 @@ import build.raft.mermaid.core.MermaidParser
 import build.raft.mermaid.core.MermaidParseResult
 import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
+import build.raft.mermaid.layout.simple.layout
 import build.raft.mermaid.layout.simple.SimpleMermaidLayout
 import build.raft.mermaid.render.svg.SvgRenderer
 
@@ -55,7 +56,7 @@ public object MermaidWebAdapter {
         is MermaidParseResult.Failure -> MermaidWebResult.Failure(parsed.diagnostics)
         is MermaidParseResult.Success -> {
             val scene = SimpleMermaidLayout.layout(
-                parsed.diagram,
+                parsed,
                 FixedWidthTextMeasurer,
                 LayoutConfig(padding = request.layout.padding),
             )
@@ -77,7 +78,7 @@ public object MermaidWebAdapter {
         is MermaidParseResult.Failure -> MermaidWebCanvasResult.Failure(parsed.diagnostics)
         is MermaidParseResult.Success -> {
             val scene = SimpleMermaidLayout.layout(
-                parsed.diagram,
+                parsed,
                 FixedWidthTextMeasurer,
                 LayoutConfig(padding = request.layout.padding),
             )

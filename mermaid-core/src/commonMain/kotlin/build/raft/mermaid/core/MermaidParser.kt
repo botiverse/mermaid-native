@@ -8,6 +8,25 @@ package build.raft.mermaid.core
  */
 public object MermaidParser {
     public fun parse(source: String): MermaidParseResult {
+        val document = try { MermaidFrontmatter.extract(source) } catch (error: MermaidFrontmatterError) {
+            return failure(MermaidDiagnosticCode.INVALID_VALUE, error.message ?: "Invalid frontmatter", error.location)
+        }
+        val result = parseBody(document.text)
+        val prefix = source.take(document.bodyOffset).replace("\r\n", "\n").replace('\r', '\n')
+        val removedLines = prefix.count { it == '\n' }
+        val removedColumns = prefix.length - prefix.lastIndexOf('\n') - 1
+        return if (result is MermaidParseResult.Success) {
+            try { result.copy(diagram = MermaidDocumentOptions.apply(result.diagram, document.metadata), frontmatter = document.metadata) }
+            catch (error: IllegalArgumentException) { failure(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error.message ?: "Unsupported document configuration", SourceLocation(1, 1)) }
+        } else if (result is MermaidParseResult.Failure && document.bodyOffset > 0) {
+            result.copy(diagnostics = result.diagnostics.map { diagnostic ->
+                val at = diagnostic.location
+                diagnostic.copy(location = SourceLocation(at.line + removedLines, at.column + if (at.line == 1) removedColumns else 0))
+            })
+        } else result
+    }
+
+    private fun parseBody(source: String): MermaidParseResult {
         val statements = source.toStatements()
         val header = statements.firstOrNull()
             ?: return failure(
@@ -81,10 +100,11 @@ public object MermaidParser {
      *
      * Uses the same comment/whitespace handling and header dispatch as [parse]. A non-null
      * result does not mean the body or header options are valid. Empty/unknown headers return
-     * null. This does not extract YAML frontmatter or apply Mermaid init configuration.
+     * null. YAML frontmatter is recognized; Mermaid init directives are not configuration inputs.
      */
-    public fun detectType(source: String): MermaidDiagramType? =
-        source.toStatements().firstOrNull()?.let { detectHeader(it.text) }
+    public fun detectType(source: String): MermaidDiagramType? = try {
+        MermaidFrontmatter.extract(source).text.toStatements().firstOrNull()?.let { detectHeader(it.text) }
+    } catch (_: MermaidFrontmatterError) { null }
 
     private fun detectHeader(header: String): MermaidDiagramType? {
         val railroadSyntax = RailroadSyntax.detect(header)

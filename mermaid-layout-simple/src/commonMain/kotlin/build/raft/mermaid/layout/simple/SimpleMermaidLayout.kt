@@ -1337,7 +1337,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val incoming = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.targetId == node.id }.sumOf { it.value } }
         val outgoing = diagram.nodes.associate { node -> node.id to diagram.links.filter { it.sourceId == node.id }.sumOf { it.value } }
         fun nodeWeight(id: String): Double = max(incoming.getValue(id), outgoing.getValue(id))
-        fun nodeCaption(label: String, id: String): String = "${label} ${nodeWeight(id).canonicalNumber()}"
+        fun nodeCaption(label: String, id: String): String = if (diagram.showValues) "${label} ${nodeWeight(id).canonicalNumber()}" else label
         val nodeWidth = max(160.0, diagram.nodes.maxOf { textMeasurer.measure(nodeCaption(it.label, it.id), textStyle).width + 32.0 }).xyCoordinate()
         val nodeHeights = diagram.nodes.associate { node ->
             node.id to max(40.0, max(incoming.getValue(node.id), outgoing.getValue(node.id)) / maxValue * 100.0).xyCoordinate()
@@ -2528,7 +2528,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 }
             }
         }
-        valueLabels.forEach { addXyValueLabel(commands, it, textMeasurer, config.padding, height) }
+        if (diagram.showDataLabel) valueLabels.forEach { addXyValueLabel(commands, it, textMeasurer, config.padding, height) }
         return LayoutScene(width, height, commands)
     }
 
@@ -2586,7 +2586,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             if(series.kind == XySeriesKind.BAR) barIndex++
         }
-        valueLabels.forEach { addXyValueLabel(commands, it, textMeasurer, config.padding, height) }
+        if (diagram.showDataLabel) valueLabels.forEach { addXyValueLabel(commands, it, textMeasurer, config.padding, height) }
         return LayoutScene(width, height, commands)
     }
 

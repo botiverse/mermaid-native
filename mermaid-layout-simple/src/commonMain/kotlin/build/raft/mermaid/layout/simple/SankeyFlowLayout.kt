@@ -44,7 +44,7 @@ internal fun sankeyFlowLayout(diagram: SankeyDiagram,measurer: TextMeasurer,conf
     fun caption(n: FlowNode): String {
         val value=round(n.value*100)/100
         val label=if(value==value.toLong().toDouble())value.toLong().toString()else value.toString()
-        return "${n.label} $label"
+        return if (diagram.showValues) "${n.label} $label" else n.label
     }
     val nodeWidth=10.0
     val maxCaption=nodes.maxOf { measurer.measure(caption(it),text).width }

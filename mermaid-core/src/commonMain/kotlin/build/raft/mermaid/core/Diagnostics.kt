@@ -22,7 +22,10 @@ public data class MermaidDiagnostic(
 )
 
 public sealed interface MermaidParseResult {
-    public data class Success(val diagram: MermaidDiagram) : MermaidParseResult
+    public data class Success(
+        val diagram: MermaidDiagram,
+        val frontmatter: MermaidFrontmatterMetadata = MermaidFrontmatterMetadata(),
+    ) : MermaidParseResult
 
     public data class Failure(val diagnostics: List<MermaidDiagnostic>) : MermaidParseResult {
         init {
