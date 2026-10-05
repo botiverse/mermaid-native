@@ -6,4 +6,4 @@ The flow renderer invokes endpoint clipping only for finite, already-orthogonal 
 
 Native empty and singleton input paths are safe. API outputs are immutable lists by convention and caller inputs are not mutated. Upstream dimensions default to zero; only positive rectangles participate. These APIs do not emulate arbitrary JavaScript coercion.
 
-Build core/layout-api/layout-simple Android debug runtime jars, then run run.py --upstream PATH --stdlib PATH --verify-mutations. Validation pending; no original coverage promoted and no SDK release.
+Build core/layout-api/layout-simple Android debug runtime jars, then run run.py --upstream PATH --stdlib PATH --verify-mutations. The full 11 original assertions, 12 semantic call comparisons and six corruption controls pass. JVM layout299, samples5 and SVG10 pass; previous geometry12 also pass. Other platform and browser checks remain pending. No original coverage promoted and no SDK release.

@@ -1,0 +1,56 @@
+{
+  "upstreamRevision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "nativeSource": "6313c287b7ccef036772ee5d3937fc81353cc56e",
+  "nativeJars": {
+    "mermaid-core.jar": "2ec2627c5265c380723be268b305a0bc818caf003814458f7925c68b44f42de6",
+    "mermaid-layout-api.jar": "6abbb7a221b48c9e831d0a3578893c6c5ccf91b6667217e500cdf5fc8a1342b1",
+    "mermaid-layout-simple.jar": "039ded6d08408af21d147f1be6be6584fb861517a7f5efe0146b5fd30f865f2d"
+  },
+  "nativeCalls": 12,
+  "semanticDifferentials": 12,
+  "official": {
+    "numTotalTests": 11,
+    "numPassedTests": 11,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "native": {
+    "numTotalTests": 11,
+    "numPassedTests": 11,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "mutationControls": {
+    "orientation": [
+      "direction geometry helpers preserves incoming vertical orientation when inserting an L-bend"
+    ],
+    "spike": [
+      "direction geometry helpers removes out-and-back spikes"
+    ],
+    "buried": [
+      "direction endpoint clipping clips buried endpoints to source and destination node boundaries"
+    ],
+    "corner": [
+      "direction endpoint clipping moves straight side-to-side endpoints away from node corners"
+    ],
+    "duplicates": [
+      "direction endpoint clipping duplicates snapped endpoints so renderer clipping becomes a no-op"
+    ],
+    "approach": [
+      "direction endpoint clipping snaps renderer endpoints to the boundary entered by the approach segment"
+    ]
+  },
+  "jvm": {
+    "layoutTests": 299,
+    "sampleTests": 5,
+    "svgTests": 10
+  },
+  "geometryRegression": {
+    "originalTests": 12,
+    "uniqueInputs": 24,
+    "newCoverage": 0
+  },
+  "platformAndBrowserVerification": "pending"
+}
