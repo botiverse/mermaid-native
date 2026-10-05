@@ -1,0 +1,7 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.geometry.spec.ts": "1f528eada2a39bf707da252220eafe4b620e001fe7863680668e42509911876e",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.endpointClip.spec.ts": "a9028795159fd19d864459eb689d8a3800d53d648e1bcf76e7c5d38c79c93035"
+  }
+}
