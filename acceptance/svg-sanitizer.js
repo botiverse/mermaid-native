@@ -4,11 +4,12 @@
  * Enforces strict tag allowlists, attribute allowlists, duplicate attribute detection,
  * per-attribute value grammar, and document structure validation.
  * Rejects doctypes, processing instructions (e.g. xml-stylesheet), external references,
- * CSS escapes, backslashes, controls, event handlers, and URL/resource schemes.
+ * CSS escapes, backslashes, controls, event handlers, and resource references.
+ * Direct ticket anchors permit explicit HTTP(S) navigation only.
  */
 
 export const ALLOWED_TAGS = new Set([
-  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan', 'title', 'desc', 'defs', 'lineargradient', 'stop'
+  'svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'tspan', 'title', 'desc', 'defs', 'lineargradient', 'stop', 'a'
 ])
 
 export const ALLOWED_ATTRS = new Set([
@@ -19,7 +20,7 @@ export const ALLOWED_ATTRS = new Set([
   'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'opacity',
   'transform', 'text-anchor', 'font-family', 'font-size', 'font-weight', 'font-style',
   'letter-spacing', 'dominant-baseline', 'alignment-baseline',
-  'gradientunits', 'offset', 'stop-color'
+  'gradientunits', 'offset', 'stop-color', 'href', 'target', 'rel', 'pointer-events'
 ])
 
 /**
@@ -34,6 +35,19 @@ export function validateAttributeValue(attrName, attrVal) {
 
   // Reject ASCII control characters and DEL
   if (/[\x00-\x1f\x7f]/.test(attrVal)) return false
+
+  if (attrName === 'href') {
+    if (!/^https?:\/\//i.test(attrVal) || /\s/.test(attrVal)) return false
+    const authority = attrVal.split('://')[1].split(/[/?#]/)[0]
+    if (!authority || authority.includes('@')) return false
+    try {
+      const url = new URL(attrVal)
+      return ['http:', 'https:'].includes(url.protocol) && !!url.hostname && !url.username && !url.password
+    } catch { return false }
+  }
+  if (attrName === 'target') return attrVal === '_blank'
+  if (attrName === 'rel') return attrVal === 'noopener noreferrer'
+  if (attrName === 'pointer-events') return attrVal === 'all'
 
   // Reject URL/resource schemes and function calls
   const stripped = attrVal.toLowerCase().replace(/\s+/g, '')
@@ -53,7 +67,7 @@ export function validateAttributeValue(attrName, attrVal) {
   if (attrName === 'offset') return /^(0(\.[0-9]+)?|1(\.0+)?)$/.test(attrVal)
   if (attrName === 'fill' || attrName === 'stroke' || attrName === 'stop-color') {
     const trimmed = attrVal.trim()
-    if (trimmed === 'none') return true
+    if (trimmed === 'none' || (attrName === 'fill' && trimmed === 'transparent')) return true
     if (/^#[0-9a-fA-F]{3,8}$/.test(trimmed)) return true
     return false
   }
@@ -209,6 +223,22 @@ export function validateSvgDomTree(docOrElement) {
 
     // Only direct, inert gradient definitions and polygon-local references are admitted.
     const parentTag = (el.parentNode?.localName || el.parentNode?.nodeName || '').toLowerCase()
+    if (tagName === 'a') {
+      if (el.parentNode !== rootElement || el.namespaceURI !== 'http://www.w3.org/2000/svg' ||
+          !el.hasAttribute('href') || el.getAttribute('target') !== '_blank' ||
+          el.getAttribute('rel') !== 'noopener noreferrer') {
+        return { ok: false, error: 'Ticket anchors require direct SVG placement and safe navigation attributes' }
+      }
+      let rectangles = 0
+      for (let child = el.firstChild; child; child = child.nextSibling) {
+        if (child.nodeType === 3 && !child.nodeValue.trim()) continue
+        if (child.nodeType !== 1 || child.localName !== 'rect' || child.namespaceURI !== 'http://www.w3.org/2000/svg') {
+          return { ok: false, error: 'Ticket anchors may contain only one SVG hit rectangle' }
+        }
+        rectangles++
+      }
+      if (rectangles !== 1) return { ok: false, error: 'Ticket anchors require one hit rectangle' }
+    }
     if ((tagName === 'defs' && el.parentNode !== rootElement) ||
         (tagName === 'lineargradient' && parentTag !== 'defs') ||
         (tagName === 'stop' && parentTag !== 'lineargradient') ||
@@ -242,11 +272,16 @@ export function validateSvgDomTree(docOrElement) {
       if (attrName.startsWith('on')) {
         return { ok: false, error: `Forbidden event handler attribute "${attrName}" in SVG output` }
       }
-      if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'class') {
+      if ((attrName === 'href' && tagName !== 'a') || attrName.endsWith(':href') || attrName === 'src' || attrName === 'style' || attrName === 'class') {
         return { ok: false, error: `Forbidden attribute "${attrName}" in SVG output` }
       }
       if (!ALLOWED_ATTRS.has(attrName)) {
         return { ok: false, error: `Disallowed attribute "${attrName}" in SVG output` }
+      }
+      if ((tagName === 'a' && !['href', 'target', 'rel', 'aria-label'].includes(attrName)) ||
+          (['target', 'rel'].includes(attrName) && tagName !== 'a') ||
+          (attrName === 'pointer-events' && !(tagName === 'rect' && parentTag === 'a'))) {
+        return { ok: false, error: 'Navigation attributes are limited to ticket anchors and hit rectangles' }
       }
       if (gradientAttrs[tagName] && !gradientAttrs[tagName].includes(attrName)) {
         return { ok: false, error: 'Invalid gradient definition attribute' }

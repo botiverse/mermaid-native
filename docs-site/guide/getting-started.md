@@ -181,6 +181,10 @@ If your host sanitizes SVG, its allowlist must support inert local `defs`,
 `linearGradient`, `stop`, and `fill="url(#...)"` references for Sankey. Do not
 allow arbitrary external references or script/style content. The repository's
 `acceptance/svg-sanitizer.js` shows the supported bounded format.
+Kanban ticket links also require direct SVG `<a>` elements with absolute HTTP(S)
+destinations, `target="_blank"`, `rel="noopener noreferrer"`, and a transparent
+hit rectangle. The shared sanitizer validates this navigation format separately
+from resource references; it still rejects executable schemes and external images.
 
 ## Confirm the version in the client
 

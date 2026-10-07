@@ -59,3 +59,29 @@ test('consumer accepts only inert locally resolved Sankey gradients', () => {
     body.replace('stop-color="#4e79a7"', 'stop-color="url(#native-gradient-0)"'),
   ]) assert.equal(sanitize(bad).ok, false, bad)
 })
+
+test('consumer admits bounded HTTP(S) ticket anchors without resource references', () => {
+  const body = '<a href="https://example.com/issues/2038?q=&quot;&amp;n=1" target="_blank" rel="noopener noreferrer" aria-label="2038"><rect x="10" y="20" width="30" height="12" fill="transparent" pointer-events="all"/></a>'
+  const good = sanitize(body)
+  assert.equal(good.ok, true, good.error)
+  assert.equal(good.element.getElementsByTagName('a')[0].getAttribute('href'), 'https://example.com/issues/2038?q="&n=1')
+  assert.equal(sanitize(body.replace('https://example.com', 'http://example.com')).ok, true)
+  for (const destination of ['javascript:alert(1)', 'data:text/html,bad', '//example.com', '/relative', 'https://', 'https://user:pass@example.com', 'https://user%40name@example.com', 'https://example.com/ bad', 'https://example.com/&#10;bad', 'https://example.com/\\bad']) {
+    assert.equal(sanitize(body.replace('https://example.com/issues/2038?q=&quot;&amp;n=1', destination)).ok, false, destination)
+  }
+  for (const bad of [
+    body.replace('target="_blank"', 'target="_top"'),
+    body.replace('rel="noopener noreferrer"', ''),
+    body.replace('<a ', '<a onclick="alert(1)" '),
+    body.replace('<a ', '<a xmlns="http://www.w3.org/1999/xhtml" '),
+    body.replace('<rect ', '<rect xmlns="http://www.w3.org/1999/xhtml" '),
+    '<g>' + body + '</g>',
+    body.replace('<rect ', '<image '),
+    body.replace('<rect ', '<rect href="https://example.com/image" '),
+    body.replace('</a>', '<a href="https://example.com"/></a>'),
+    body.replace('href=', 'xlink:href='),
+    '<rect target="_blank"/>',
+    '<rect pointer-events="all"/>',
+    '<use href="https://example.com/external.svg#x"/>',
+  ]) assert.equal(sanitize(bad).ok, false, bad)
+})
