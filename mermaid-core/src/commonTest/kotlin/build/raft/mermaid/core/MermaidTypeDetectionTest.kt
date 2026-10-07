@@ -29,7 +29,7 @@ class MermaidTypeDetectionTest {
             assertEquals(expected, error.code)
             assertEquals(SourceLocation(2, 3), error.location)
         }
-        assertNull(MermaidParser.detectType("---\ntitle: foo\n---\ngraph TD\nA-->B"))
+        assertEquals(MermaidDiagramType.FLOWCHART, MermaidParser.detectType("---\ntitle: foo\n---\ngraph TD\nA-->B"))
     }
 
     @Test fun familyDetectionDoesNotRelaxCaseOrDirectionValidation() {

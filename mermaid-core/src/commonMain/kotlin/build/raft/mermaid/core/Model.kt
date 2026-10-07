@@ -340,6 +340,7 @@ public data class XyChartDiagram(
     val orientation: XyOrientation? = null,
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
+    val showDataLabel: Boolean = true,
 ) : MermaidDiagram
 
 public enum class XyOrientation { VERTICAL, HORIZONTAL }
@@ -603,6 +604,7 @@ public data class BlockEdge(val from: String, val to: String, val label: String?
 public data class SankeyDiagram(
     val nodes: List<SankeyNode>,
     val links: List<SankeyLink>,
+    val showValues: Boolean = true,
 ) : MermaidDiagram
 
 public data class SankeyNode(val id: String, val label: String)
