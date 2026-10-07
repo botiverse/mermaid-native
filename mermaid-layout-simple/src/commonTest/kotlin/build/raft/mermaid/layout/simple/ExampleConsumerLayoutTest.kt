@@ -20,7 +20,7 @@ class ExampleConsumerLayoutTest {
         for((number,expected) in listOf(0.0 to "0",-12.5 to "−12.5",1.23e-7 to "1.23e-7",1e12 to "1e+12",1234567890123.0 to "1.23456789012e+12",999999999999.9 to "1e+12")) assertEquals(expected,formatTreemapValue(number,","))
     }
     @Test fun ticketHitRegionFollowsTextMetricsAndDocumentTitleShift() {
-        val body="kanban\n Todo\n  task[Example]@{ticket: 123, priority: High, assigned: Owner}"
+        val body="kanban\n Todo\n  task[Example]@{ticket: 123, priority: High, assigned: Owner, icon: star}"
         val config="config:\n  kanban: {ticketBaseUrl: 'https://example.com/#TICKET#'}"
         val plain=scene("---\n$config\n---\n$body");val titled=scene("---\ntitle: Board\n$config\n---\n$body")
         val a=plain.links.single();val b=titled.links.single()
@@ -28,6 +28,11 @@ class ExampleConsumerLayoutTest {
         assertEquals(measure.measure("123",TextStyle(fontSize=10.0)).width,a.rect.width)
         assertEquals(titled.height-plain.height,b.rect.y-a.rect.y)
         assertTrue(plain.commands.filterIsInstance<DrawLine>().any { it.from.x==a.rect.x && it.to.x==a.rect.x+a.rect.width })
+        val ticket = plain.commands.filterIsInstance<DrawText>().single { it.text == "123" }
+        assertEquals(TextAnchor.START,ticket.anchor)
+        assertEquals(a.rect.x,ticket.origin.x)
+        assertTrue(ticket.origin.y in a.rect.y..(a.rect.y+a.rect.height))
+        assertTrue(plain.commands.filterIsInstance<DrawText>().any { it.text == " · star" && it.origin.x >= a.rect.x+a.rect.width })
         assertTrue(scene(body).links.isEmpty())
     }
     @Test fun expandedShapesHaveDifferentRealOutlinesAndClipToThoseOutlines() {

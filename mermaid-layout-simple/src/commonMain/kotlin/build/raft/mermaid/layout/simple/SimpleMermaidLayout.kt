@@ -1603,15 +1603,21 @@ public object SimpleMermaidLayout : DiagramLayout {
         val width = (config.padding * 2 + widths.sum() + gap * (widths.size - 1).coerceAtLeast(0)).xyCoordinate()
         val commands = mutableListOf<DrawCommand>()
         val links = mutableListOf<build.raft.mermaid.layout.SceneLink>()
-        fun ticketLink(metadata: KanbanMetadata, startX: Double, baseline: Double) {
-            val ticket = metadata.ticket ?: return
+        fun ticketLink(metadata: KanbanMetadata, startX: Double, baseline: Double): Boolean {
+            val ticket = metadata.ticket ?: return false
             val url = diagram.ticketUrl(ticket)
-            if (url == null || ticket.isEmpty()) return
+            if (url == null || ticket.isEmpty()) return false
             val prefix = listOfNotNull(metadata.priority, metadata.assigned?.let { "@$it" }).joinToString(" · ").let { if(it.isEmpty()) "" else "$it · " }
             val left = startX + textMeasurer.measure(prefix,detailStyle).width
             val size = textMeasurer.measure(ticket,detailStyle)
+            // Position the linked text itself at the hit rectangle's origin. Hosts may
+            // use different font metrics from the layout's approximate measurer.
+            if (prefix.isNotEmpty()) commands += DrawText(prefix,ScenePoint(startX,baseline),style=detailStyle)
+            commands += DrawText(ticket,ScenePoint(left,baseline),style=detailStyle.copy(color=SceneColor(DiagramPalette.BLUE)))
+            metadata.icon?.let { commands += DrawText(" · $it",ScenePoint(left+size.width,baseline),style=detailStyle) }
             links += build.raft.mermaid.layout.SceneLink(SceneRect(left,baseline-size.height,size.width,size.height+3),url,ticket)
             commands += DrawLine(ScenePoint(left,baseline+2),ScenePoint(left+size.width,baseline+2),stroke=SceneColor(DiagramPalette.BLUE),strokeWidth=1.0)
+            return true
         }
         var x = config.padding
         diagram.columns.forEachIndexed { index, column ->
@@ -1620,8 +1626,8 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawRect(SceneRect(x, config.padding, columnWidth, columnHeights[index]), cornerRadius = 8.0, fill = SceneColor(DiagramPalette.SURFACE))
             commands += DrawText(column.title, ScenePoint(x + columnWidth / 2.0, config.padding + 26.0), TextAnchor.MIDDLE, titleStyle)
             details(column.metadata).takeIf { it.isNotEmpty() }?.let {
-                commands += DrawText(it, ScenePoint(x + columnWidth / 2.0, config.padding + 44.0), TextAnchor.MIDDLE, detailStyle)
-                ticketLink(column.metadata,x+columnWidth/2-textMeasurer.measure(it,detailStyle).width/2,config.padding+44)
+                if (!ticketLink(column.metadata,x+columnWidth/2-textMeasurer.measure(it,detailStyle).width/2,config.padding+44))
+                    commands += DrawText(it, ScenePoint(x + columnWidth / 2.0, config.padding + 44.0), TextAnchor.MIDDLE, detailStyle)
             }
             commands += DrawLine(ScenePoint(x + 12.0, config.padding + headerHeight), ScenePoint(x + columnWidth - 12.0, config.padding + headerHeight), stroke = SceneColor(DiagramPalette.BORDER))
             var y = config.padding + headerHeight + 12.0
@@ -1630,8 +1636,8 @@ public object SimpleMermaidLayout : DiagramLayout {
                 commands += DrawRect(SceneRect(x + 10.0, y, columnWidth - 20.0, cardHeight), cornerRadius = 6.0, fill = SceneColor(DiagramPalette.CANVAS))
                 commands += DrawText(card.label, ScenePoint(x + 22.0, y + 29.0), style = cardStyle)
                 details(card.metadata).takeIf { it.isNotEmpty() }?.let {
-                    commands += DrawText(it, ScenePoint(x + 22.0, y + 49.0), style = detailStyle)
-                    ticketLink(card.metadata,x+22,y+49)
+                    if (!ticketLink(card.metadata,x+22,y+49))
+                        commands += DrawText(it, ScenePoint(x + 22.0, y + 49.0), style = detailStyle)
                 }
                 y += cardHeight + cardGap
             }
