@@ -84,6 +84,11 @@ public data class DrawText(
     val style: TextStyle = TextStyle(),
 ) : DrawCommand
 
+/** Host-owned navigation target. Rect is in the same coordinates as drawing commands. */
+public data class SceneLink(val rect: SceneRect, val url: String, val label: String) {
+    init { require(build.raft.mermaid.core.isSafeMermaidLink(url)) { "Scene links require an absolute HTTP(S) URL" } }
+}
+
 public data class LayoutScene(
     val width: Double,
     val height: Double,
@@ -91,6 +96,7 @@ public data class LayoutScene(
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
     val layoutValidation: LayoutValidationReport? = null,
+    val links: List<SceneLink> = emptyList(),
 )
 
 public fun interface TextMeasurer {

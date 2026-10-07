@@ -50,6 +50,12 @@ public object SvgRenderer {
                 append(command.toSvg("$baseId-gradient-$index"))
                 append('\n')
             }
+            scene.links.forEach { link ->
+                append("  <a href=\"").append(link.url.escapeXml()).append("\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"").append(link.label.escapeXml()).append("\">")
+                append("<rect x=\"").append(link.rect.x.svgNumber()).append("\" y=\"").append(link.rect.y.svgNumber())
+                append("\" width=\"").append(link.rect.width.svgNumber()).append("\" height=\"").append(link.rect.height.svgNumber())
+                append("\" fill=\"transparent\" pointer-events=\"all\"/></a>\n")
+            }
             append("</svg>\n")
         }
     }

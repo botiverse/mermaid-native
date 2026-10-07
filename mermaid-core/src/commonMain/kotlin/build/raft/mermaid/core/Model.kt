@@ -87,6 +87,7 @@ public enum class FlowNodeShape {
     TRAPEZOID,
     TRAPEZOID_ALT,
     SUBROUTINE, CYLINDER, HEXAGON, ASYMMETRIC, ELLIPSE,
+    MANUAL_INPUT, DOCUMENTS, PROCESSES,
 }
 
 /** Ordered sequence events are the source of truth for vertical placement. */
@@ -341,6 +342,7 @@ public data class XyChartDiagram(
     val accessibilityTitle: String? = null,
     val accessibilityDescription: String? = null,
     val showDataLabel: Boolean = true,
+    val plotColorPalette: List<String> = emptyList(),
 ) : MermaidDiagram
 
 public enum class XyOrientation { VERTICAL, HORIZONTAL }
@@ -563,7 +565,7 @@ public data class RequirementRelationship(
 
 public enum class RequirementRelationshipKind { CONTAINS, COPIES, DERIVES, SATISFIES, VERIFIES, REFINES, TRACES }
 
-public data class KanbanDiagram(val columns: List<KanbanColumn>) : MermaidDiagram
+public data class KanbanDiagram(val columns: List<KanbanColumn>, val ticketBaseUrl: String? = null) : MermaidDiagram
 public data class KanbanColumn(val id: String, val title: String, val cards: List<KanbanCard>, val metadata: KanbanMetadata = KanbanMetadata())
 public data class KanbanCard(val id: String, val label: String, val metadata: KanbanMetadata = KanbanMetadata())
 public data class KanbanMetadata(
@@ -618,6 +620,7 @@ public data class TreemapDiagram(
     val accessibilityDescription: String? = null,
     val classes: Map<String, String> = emptyMap(),
     val classAssignments: Map<String, String> = emptyMap(),
+    val valueFormat: String? = null,
 ) : MermaidDiagram
 public data class TreemapNode(
     val label: String,
