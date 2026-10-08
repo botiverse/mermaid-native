@@ -9,7 +9,7 @@ artifacts; HarmonyOS consumes a separate OHOS build of the same source.
 
 Use `mermaid-core`, `mermaid-layout-simple` and optionally `mermaid-render-svg` for a UI-independent KMP integration. These modules have no Kuikly dependency. Add `mermaid-kuikly` only when your application already uses Kuikly.
 
-The Kuikly adapter is implemented and tested with the **Raft Kuikly distribution**. Integration with the official upstream Kuikly distribution is **not independently verified**. Compiler compatibility, resolved dependencies and actual rendering must be checked before using another distribution; source-level API similarity is not a compatibility guarantee.
+The Kuikly adapter is implemented and tested with the **Raft Kuikly distribution**. A standalone [official Kuikly example](https://github.com/botiverse/mermaid-native/tree/main/kuikly-examples) also verifies **2.28.0-2.1.21 + Mermaid 0.1.11** on an Android API 34 emulator (flowchart, expanded shapes, Treemap and sequence). iOS shared code compiles, but native linking and rendering have not been tested. The example explicitly excludes the published adapter's Raft Kuikly dependency and supplies official core; follow that exact dependency configuration. Other versions and platforms require separate validation.
 
 The normal build provides Android/iOS KMP libraries and Kotlin/Wasm for applicable modules. There is no standalone JVM/Desktop target in the current build. The browser playground is a Kotlin/Wasm application, not a Kuikly H5 or WeChat mini-program adapter.
 
