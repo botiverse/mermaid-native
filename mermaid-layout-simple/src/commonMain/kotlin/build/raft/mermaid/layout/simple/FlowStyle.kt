@@ -24,6 +24,7 @@ internal class FlowStyle(node:FlowNode,diagram:FlowchartDiagram,defaults:List<St
         is DrawPolygon->listOf(command.copy(fill=resolved.fill))
         is DrawLine->listOf(command.copy(stroke=resolved.stroke,strokeWidth=resolved.strokeWidth,pattern=if(dashed)StrokePattern.DASHED else command.pattern))
         is DrawPolyline->listOf(command.copy(stroke=resolved.stroke,strokeWidth=resolved.strokeWidth,pattern=if(dashed)StrokePattern.DASHED else command.pattern))
+        is DrawPath->listOf(command.copy(stroke=resolved.stroke,strokeWidth=resolved.strokeWidth,pattern=if(dashed)StrokePattern.DASHED else command.pattern))
         else->listOf(command)
     }
 }

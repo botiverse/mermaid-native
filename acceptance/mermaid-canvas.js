@@ -55,6 +55,21 @@ export function drawMermaidCanvas(canvas, script, resolutionScale = 1) {
         tracePath(ctx, op.pts);
         strokePath(ctx, op.stroke, op.sw, op.dash);
         break;
+      case 'path':
+        ctx.beginPath();
+        for (const s of op.segments) {
+          switch (s[0]) {
+            case 'M': ctx.moveTo(s[1], s[2]); break;
+            case 'L': ctx.lineTo(s[1], s[2]); break;
+            case 'Q': ctx.quadraticCurveTo(s[1], s[2], s[3], s[4]); break;
+            case 'A':
+              ctx.lineTo(s[1] + s[3] * Math.cos(s[4]), s[2] + s[3] * Math.sin(s[4]));
+              if (s[5] !== 0) ctx.arc(s[1], s[2], s[3], s[4], s[4] + s[5], s[5] < 0);
+              break;
+          }
+        }
+        strokePath(ctx, op.stroke, op.sw, op.dash);
+        break;
       case 'polygon':
         tracePath(ctx, op.pts, true);
         if (op.fill && op.fill !== 'none') {

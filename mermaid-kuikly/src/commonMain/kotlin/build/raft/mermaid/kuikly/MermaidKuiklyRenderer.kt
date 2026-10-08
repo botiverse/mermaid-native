@@ -1,5 +1,6 @@
 package build.raft.mermaid.kuikly
 
+import build.raft.mermaid.layout.*
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
@@ -76,6 +77,7 @@ public object MermaidKuiklyRenderer {
             is DrawEllipse -> renderEllipse(command, context)
             is DrawLine -> renderLine(command, context)
             is DrawPolyline -> renderPolyline(command, context)
+            is DrawPath -> renderPath(command, context)
             is DrawPolygon -> renderPolygon(command, context)
             is DrawText -> renderText(command, context)
         }
@@ -189,6 +191,25 @@ public object MermaidKuiklyRenderer {
         }
 
         context.strokeStyle(strokeColor)
+        context.lineWidth(cmd.strokeWidth.toFloat())
+        applyPattern(cmd.pattern, context)
+        context.stroke()
+    }
+
+    private fun renderPath(cmd: DrawPath, context: ContextApi) {
+        if (cmd.segments.isEmpty() || cmd.strokeWidth <= 0) return
+        val color = parseSceneColor(cmd.stroke) ?: return
+        context.beginPath()
+        cmd.segments.forEach { when (it) {
+            is PathMove -> context.moveTo(it.to.x.toFloat(), it.to.y.toFloat())
+            is PathLine -> context.lineTo(it.to.x.toFloat(), it.to.y.toFloat())
+            is PathQuadratic -> context.quadraticCurveTo(it.control.x.toFloat(), it.control.y.toFloat(), it.to.x.toFloat(), it.to.y.toFloat())
+            is PathArc -> {
+                context.lineTo(it.start.x.toFloat(), it.start.y.toFloat())
+                if (it.sweepAngle != 0.0) context.arc(it.center.x.toFloat(), it.center.y.toFloat(), it.radius.toFloat(), it.startAngle.toFloat(), (it.startAngle + it.sweepAngle).toFloat(), it.sweepAngle < 0)
+            }
+        } }
+        context.strokeStyle(color)
         context.lineWidth(cmd.strokeWidth.toFloat())
         applyPattern(cmd.pattern, context)
         context.stroke()

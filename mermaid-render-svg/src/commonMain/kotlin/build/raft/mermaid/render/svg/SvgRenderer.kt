@@ -1,5 +1,6 @@
 package build.raft.mermaid.render.svg
 
+import build.raft.mermaid.layout.*
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
@@ -85,6 +86,21 @@ private fun DrawCommand.toSvg(gradientId: String): String = when (this) {
         val serializedPoints = points.joinToString(" ") { "${it.x.svgNumber()},${it.y.svgNumber()}" }
         append("<polyline points=\"$serializedPoints\" stroke=\"${stroke.value.escapeXml()}\"")
         append(" stroke-width=\"${strokeWidth.svgNumber()}\"")
+        appendPattern(pattern)
+        append(" fill=\"none\"/>")
+    }
+    is DrawPath -> buildString {
+        val path = segments.joinToString(" ") { segment ->
+            fun point(p: ScenePoint): String = "${p.x.svgNumber()},${p.y.svgNumber()}"
+            when (segment) {
+                is PathMove -> "M${point(segment.to)}"
+                is PathLine -> "L${point(segment.to)}"
+                is PathQuadratic -> "Q${point(segment.control)} ${point(segment.to)}"
+                is PathArc -> "L${point(segment.start)}" + if (segment.sweepAngle == 0.0) "" else
+                    " A${segment.radius.svgNumber()},${segment.radius.svgNumber()} 0 0 ${if (segment.sweepAngle > 0) 1 else 0} ${point(segment.end)}"
+            }
+        }
+        append("<path d=\"${path.escapeXml()}\" stroke=\"${stroke.value.escapeXml()}\" stroke-width=\"${strokeWidth.svgNumber()}\"")
         appendPattern(pattern)
         append(" fill=\"none\"/>")
     }

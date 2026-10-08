@@ -2143,6 +2143,7 @@ class SimpleMermaidLayoutTest {
                 )
                 is DrawLine -> listOf(command.from, command.to)
                 is DrawPolyline -> command.points
+                is build.raft.mermaid.layout.DrawPath -> command.conservativeBounds()?.let { listOf(ScenePoint(it.x, it.y), ScenePoint(it.x + it.width, it.y + it.height)) }.orEmpty()
                 is DrawPolygon -> command.points
                 is DrawEllipse -> listOf(
                     ScenePoint(command.center.x - command.radiusX, command.center.y - command.radiusY),

@@ -97,6 +97,7 @@ import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
 import build.raft.mermaid.layout.DrawPolygon
+import build.raft.mermaid.layout.DrawPath
 import build.raft.mermaid.layout.DrawPolyline
 import build.raft.mermaid.layout.DrawRect
 import build.raft.mermaid.layout.DrawText
@@ -527,6 +528,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is DrawLine -> copy(from = ScenePoint(from.x + dx, from.y + dy), to = ScenePoint(to.x + dx, to.y + dy))
         is DrawPolyline -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) })
         is DrawPolygon -> copy(points = points.map { point -> ScenePoint(point.x + dx, point.y + dy) }, gradient=gradient?.let { it.copy(from=ScenePoint(it.from.x+dx,it.from.y+dy),to=ScenePoint(it.to.x+dx,it.to.y+dy)) })
+        is DrawPath -> translated(dx, dy)
         is DrawText -> copy(origin = ScenePoint(origin.x + dx, origin.y + dy))
     }
 
@@ -536,6 +538,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         is DrawLine -> copy(from = from.canonical(), to = to.canonical())
         is DrawPolyline -> copy(points = points.map { point -> point.canonical() })
         is DrawPolygon -> copy(points = points.map { point -> point.canonical() })
+        is DrawPath -> this // Preserve curve parameters together; rounding endpoints alone distorts arcs.
         is DrawText -> copy(origin = origin.canonical())
     }
 

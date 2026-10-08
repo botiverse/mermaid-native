@@ -24,6 +24,7 @@ public fun SimpleMermaidLayout.layout(
         is DrawEllipse -> command.copy(center = command.center.move())
         is DrawLine -> command.copy(from = command.from.move(), to = command.to.move())
         is DrawPolyline -> command.copy(points = command.points.map { it.move() })
+        is DrawPath -> command.translated(0.0, dy)
         is DrawPolygon -> command.copy(points = command.points.map { it.move() }, gradient = command.gradient?.let { it.copy(from = it.from.move(), to = it.to.move()) })
         is DrawText -> command.copy(origin = command.origin.move())
     } }
