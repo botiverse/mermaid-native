@@ -4,6 +4,8 @@
 
 The main branch includes additional edge-route refinement and typed stroke paths (moves, lines, quadratic curves and circular arcs) across SVG, browser Canvas and Kuikly. These changes are **not included in 0.1.11**. The typed-path addition introduces a new draw command for custom renderers to handle; main also enables configurable arc/gap crossing hops in swimlane diagrams. Set `config.swimlane.lineHops: false` to retain straight crossing strokes. This behavior is also unreleased.
 
+Block arrows on main now use the original multi-direction polygon geometry, including axis shorthands, natural and spanning widths, four-way tip bounds, and painted-boundary edge clipping. This is also unreleased; the complete upstream Block grid algorithm and configurable block padding are not included.
+
 Use a release tag and the matching published artifacts for a reproducible integration. The latest verified release remains the pair below.
 
 ## 0.1.11 / 0.1.11-ohos
@@ -22,7 +24,7 @@ Changes since 0.1.9:
 
 Upgrade all normal modules together to `0.1.11` and the separate HarmonyOS modules to `0.1.11-ohos`. Keep the host’s existing Kuikly pins and verify the resolved dependency graph; the adapter itself was built against `2.24.0-raft.1`, so other host distributions need their own compile/runtime check. Rebuild host code and custom scene renderers because binary compatibility is not promised. New public model members and shape variants require review of exhaustive host switches. `LayoutScene.links` describes link rectangles/URLs/labels; apply the same zoom/pan transform as drawing, reject unsupported schemes, and let the host decide how to open them. SVG sanitizers must allow only the bounded anchor/rectangle structure described in the integration guide.
 
-Parsing tests are not visual parity. Native still lacks some original Mermaid behavior, small Treemap cells may have cramped/overflowing labels, and downstream Android/iOS/OHOS app/device acceptance remains required. Kotlin/Wasm is not an H5 or WeChat mini-program Kuikly adapter. The Kuikly module remains built against the Raft Kuikly distribution, not independently verified against the public upstream distribution.
+Parsing tests are not visual parity. Native still lacks some original Mermaid behavior, small Treemap cells may have cramped/overflowing labels, and downstream Android/iOS/OHOS app/device acceptance remains required. Kotlin/Wasm is not an H5 or WeChat mini-program Kuikly adapter. The Kuikly artifact was built against the Raft distribution. The [standalone example](https://github.com/botiverse/mermaid-native/tree/main/kuikly-examples) independently verifies official Kuikly 2.28.0 with 0.1.11 on Android by excluding that transitive core and supplying the official dependency. iOS shared code compiles; native linking and rendering remain unverified.
 
 ## 0.1.10 / 0.1.10-ohos — incomplete release pair
 

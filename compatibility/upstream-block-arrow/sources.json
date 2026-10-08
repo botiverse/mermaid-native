@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/rendering-elements/shapes/blockArrow.spec.ts": "367a104c0ba4042feb83a884444488dc47f71a470fb25da5fa9f077ccc515d62"
+  },
+  "productionFiles": {
+    "packages/mermaid/src/rendering-util/rendering-elements/shapes/blockArrow.ts": "1e2e91d9d4a5a6f9680e5ad5942c989d405051d1a2fb387e355ee3827a4ff3c7"
+  }
+}
