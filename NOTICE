@@ -58,3 +58,9 @@ mermaid-layout-simple/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
 BlockArrowGeometry adapts Mermaid blockArrow.ts at the pinned revision in
 compatibility/upstream-block-arrow/sources.json, copyright Knut Sveidqvist and
 contributors, under the MIT License packaged in mermaid-layout-simple.
+
+BlockGridLayout adapts Mermaid diagrams/block/layout.ts at revision
+04ee3364045d6573f84034d3c9368cc50233a92f (MIT). It provides measured-tree
+sizing, row placement and bounds; Native optionally reserves composite headings.
+Original source hashes and unmodified-test replay are recorded in
+compatibility/upstream-block-grid/sources.json.

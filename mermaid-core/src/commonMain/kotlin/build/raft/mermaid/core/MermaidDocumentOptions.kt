@@ -29,6 +29,15 @@ internal object MermaidDocumentOptions {
                         }
                         diagram = diagram.copy(iconConfig = TreeViewIconConfig(boolean("showIcons", false), string("defaultIconPack", ""), icons("filenameIcons"), icons("extensionIcons")))
                     }
+                    "block" -> {
+                        allowed("padding"); require(diagram is BlockDiagram) { "block configuration requires a Block diagram" }
+                        val setting = fields["padding"]
+                        val padding = if (setting == null) diagram.padding else {
+                            require(setting is UsecaseJsonValue.NumberValue && setting.value.isFinite() && setting.value >= 0.0) { "config.block.padding must be a finite non-negative number" }
+                            setting.value
+                        }
+                        diagram = diagram.copy(padding = padding)
+                    }
                     "swimlane" -> {
                         allowed("lineHops"); require(diagram is SwimlaneDiagram) { "swimlane configuration requires a Swimlane diagram" }
                         val setting = fields["lineHops"]

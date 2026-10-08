@@ -1438,56 +1438,48 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
-    private fun layoutAdvancedBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
+    private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
-        data class Plan(val width: Double, val height: Double, val rects: List<SceneRect>)
-        val plans = mutableMapOf<String, Plan>()
+        val padding = diagram.padding
         val arrowLabels = mutableMapOf<String, SceneSize>()
         fun arrow(node: build.raft.mermaid.core.BlockNode, width: Double = 0.0): BlockArrowGeometry.Shape =
-            BlockArrowGeometry.shape(node.directions, arrowLabels.getValue(node.id), positioned = width > 0.0, widthInColumns = node.columnSpan, nodeWidth = width)
-        fun plan(nodes: List<build.raft.mermaid.core.BlockNode>, configured: Int): Plan {
-            if (nodes.isEmpty()) return Plan(160.0, 64.0, emptyList())
-            val columns = if (configured > 0) configured else nodes.sumOf { it.columnSpan.coerceIn(1, 512) }.coerceIn(1, 512)
-            val sizes = nodes.map { n ->
-                if (n.type == "composite") {
-                    val inner = plan(n.children, n.columns); plans[n.id] = inner
-                    SceneSize(max(inner.width + 32.0, textMeasurer.measure(n.label, textStyle).width + 32.0), inner.height + if (n.label.isEmpty()) 32.0 else 56.0)
-                } else if (n.type == "block_arrow") {
-                    arrowLabels[n.id] = textMeasurer.measure(n.label.replace("&nbsp;", " "), textStyle)
-                    val shape = arrow(n)
-                    // Allocate nominal geometry as well as tips; singleton arrows retain natural width.
+            BlockArrowGeometry.shape(node.directions, arrowLabels.getValue(node.id), nodePadding = padding, positioned = width > 0.0, widthInColumns = node.columnSpan, nodeWidth = width)
+        val gridNodes = mutableMapOf<String, BlockGridLayout.Node>()
+        fun measured(node: build.raft.mermaid.core.BlockNode): BlockGridLayout.Node {
+            val label = textMeasurer.measure(node.label.replace("&nbsp;", " "), textStyle)
+            val size = when (node.type) {
+                "space" -> SceneSize(0.0, 0.0)
+                "composite" -> SceneSize(label.width + 32.0, 0.0)
+                "block_arrow" -> {
+                    arrowLabels[node.id] = label
+                    val shape = arrow(node)
                     SceneSize(max(shape.width, shape.bounds.width), max(64.0, max(shape.height, shape.bounds.height)))
-                } else {
-                    val width = textMeasurer.measure(n.label, textStyle).width + 32.0
-                    SceneSize(width, if (n.type == "circle") max(width, 64.0) else 64.0)
                 }
+                "circle" -> SceneSize(max(label.width + 32.0, 64.0), max(label.width + 32.0, 64.0))
+                else -> SceneSize(label.width + 32.0, max(64.0, label.height + 32.0))
             }
-            val cell = max(160.0, nodes.indices.maxOf { i -> val span = nodes[i].columnSpan.coerceIn(1, columns); (sizes[i].width - 24.0 * (span - 1)) / span })
-            var x = 0; var y = 0.0; var rowHeight = 0.0
-            val rects = nodes.mapIndexed { i, node ->
-                val span = node.columnSpan.coerceIn(1, columns)
-                if (x > 0 && x + span > columns) { y += rowHeight + 40.0; x = 0; rowHeight = 0.0 }
-                val rect = SceneRect(x * (cell + 24.0), y, cell * span + 24.0 * (span - 1), sizes[i].height)
-                x += span; rowHeight = max(rowHeight, rect.height); rect
-            }
-            return Plan(columns * cell + (columns - 1) * 24.0, y + rowHeight, rects)
+            return BlockGridLayout.Node(node.id, node.type, node.columns, node.columnSpan, node.children.map(::measured),
+                BlockGridLayout.Size(size.width, size.height), if (node.type == "composite" && node.label.isNotEmpty()) 32.0 else 0.0
+            ).also { gridNodes[node.id] = it }
         }
-        val rootPlan = plan(diagram.nodes, diagram.columns)
+        val root = BlockGridLayout.Node("root", columns = diagram.columns, children = diagram.nodes.map(::measured))
+        val bounds = BlockGridLayout.layout(root, padding)
+        val translateX = config.padding - bounds.x; val translateY = config.padding - bounds.y
         val commands = mutableListOf<DrawCommand>(); val placed = linkedMapOf<String, SceneRect>()
         val arrowPoints = mutableMapOf<String, List<ScenePoint>>()
         val arrowCenters = mutableMapOf<String, ScenePoint>()
         val circleIds = mutableSetOf<String>()
-        fun draw(nodes: List<build.raft.mermaid.core.BlockNode>, layout: Plan, originX: Double, originY: Double) {
-            nodes.forEachIndexed { i, node ->
-                val local = layout.rects[i]
-                val cellRect = local.copy(x = local.x + originX, y = local.y + originY)
+        fun draw(nodes: List<build.raft.mermaid.core.BlockNode>) {
+            nodes.forEach { node ->
+                val size = gridNodes.getValue(node.id).size!!
+                val cellRect = SceneRect(size.x - size.width / 2 + translateX, size.y - size.height / 2 + translateY, size.width, size.height)
                 val rect = if (node.type == "circle") {
-                    val diameter = cellRect.height
-                    cellRect.copy(x = cellRect.x + (cellRect.width - diameter) / 2.0, width = diameter)
+                    val diameter = minOf(cellRect.width, cellRect.height)
+                    cellRect.copy(x = cellRect.x + (cellRect.width - diameter) / 2.0, y = cellRect.y + (cellRect.height - diameter) / 2.0, width = diameter, height = diameter)
                 } else cellRect
                 placed[node.id] = rect
                 if (node.type == "circle") circleIds += node.id
-                if (node.type == "space") return@forEachIndexed
+                if (node.type == "space") return@forEach
                 val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
                 }.toMap()
@@ -1516,10 +1508,10 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawEllipse(ScenePoint(cx, rect.y + ry), rect.width / 2, ry, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                 } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
                 if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", DiagramPalette.INK)))
-                if (node.type == "composite") draw(node.children, plans.getValue(node.id), rect.x + 16.0, rect.y + if (node.label.isEmpty()) 16.0 else 40.0)
+                if (node.type == "composite") draw(node.children)
             }
         }
-        draw(diagram.nodes, rootPlan, config.padding, config.padding)
+        draw(diagram.nodes)
         diagram.edges.forEach { edge ->
             val from = placed[edge.from] ?: return@forEach; val to = placed[edge.to] ?: return@forEach
             val fromCenter = arrowCenters[edge.from] ?: ScenePoint(from.x + from.width / 2, from.y + from.height / 2); val toCenter = arrowCenters[edge.to] ?: ScenePoint(to.x + to.width / 2, to.y + to.height / 2)
@@ -1545,70 +1537,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawLine(a, b); commands += arrowHead(a, b)
             edge.label?.let { commands += DrawText(it, ScenePoint((a.x + b.x) / 2, (a.y + b.y) / 2 - 6.0), TextAnchor.MIDDLE, textStyle) }
         }
-        return LayoutScene((rootPlan.width + config.padding * 2).xyCoordinate(), (rootPlan.height + config.padding * 2).xyCoordinate(), commands)
-    }
-
-    private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        if (diagram.nodes.isEmpty() || diagram.columns <= 0 || diagram.nodes.any { it.type in setOf("composite", "space", "block_arrow", "circle", "cylinder") || it.columnSpan > diagram.columns || it.classes.isNotEmpty() || it.styles.isNotEmpty() } || diagram.edges.any { it.label != null }) return layoutAdvancedBlock(diagram, textMeasurer, config)
-        val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
-        val columnGap = 24.0
-        val rowGap = 40.0
-        val nodeHeight = 64.0
-        val cellWidth = max(
-            160.0,
-            diagram.nodes.maxOf { node ->
-                val measured = textMeasurer.measure(node.label, textStyle).width + 32.0
-                (measured - columnGap * (node.columnSpan - 1)) / node.columnSpan
-            },
-        ).xyCoordinate()
-        val placements = linkedMapOf<String, SceneRect>()
-        var row = 0
-        var column = 0
-        diagram.nodes.forEach { node ->
-            if (column + node.columnSpan > diagram.columns) {
-                row += 1
-                column = 0
-            }
-            val x = config.padding + column * (cellWidth + columnGap)
-            val y = config.padding + row * (nodeHeight + rowGap)
-            val width = cellWidth * node.columnSpan + columnGap * (node.columnSpan - 1)
-            placements[node.id] = SceneRect(x.xyCoordinate(), y.xyCoordinate(), width.xyCoordinate(), nodeHeight)
-            column += node.columnSpan
-            if (column == diagram.columns) {
-                row += 1
-                column = 0
-            }
-        }
-        val rowCount = if (column == 0) row else row + 1
-        val width = (config.padding * 2 + diagram.columns * cellWidth + (diagram.columns - 1) * columnGap).xyCoordinate()
-        val height = (config.padding * 2 + rowCount * nodeHeight + max(0, rowCount - 1) * rowGap).xyCoordinate()
-        val commands = mutableListOf<DrawCommand>()
-        diagram.edges.forEach { edge ->
-            val fromRect = placements.getValue(edge.from)
-            val toRect = placements.getValue(edge.to)
-            val fromCenter = ScenePoint(fromRect.x + fromRect.width / 2, fromRect.y + fromRect.height / 2)
-            val toCenter = ScenePoint(toRect.x + toRect.width / 2, toRect.y + toRect.height / 2)
-            val (from, to) = when {
-                toCenter.y > fromCenter.y -> ScenePoint(fromCenter.x, fromRect.y + fromRect.height) to ScenePoint(toCenter.x, toRect.y)
-                toCenter.y < fromCenter.y -> ScenePoint(fromCenter.x, fromRect.y) to ScenePoint(toCenter.x, toRect.y + toRect.height)
-                toCenter.x > fromCenter.x -> ScenePoint(fromRect.x + fromRect.width, fromCenter.y) to ScenePoint(toRect.x, toCenter.y)
-                else -> ScenePoint(fromRect.x, fromCenter.y) to ScenePoint(toRect.x + toRect.width, toCenter.y)
-            }
-            commands += DrawLine(from, to)
-            val head = arrowHead(from, to)
-            commands += head.copy(points = head.points.map { ScenePoint(it.x.xyCoordinate(), it.y.xyCoordinate()) })
-        }
-        diagram.nodes.forEach { node ->
-            val rect = placements.getValue(node.id)
-            commands += DrawRect(rect, cornerRadius = 6.0, fill = SceneColor(DiagramPalette.SURFACE))
-            commands += DrawText(
-                node.label,
-                ScenePoint(rect.x + rect.width / 2, rect.y + 38.0),
-                anchor = TextAnchor.MIDDLE,
-                style = textStyle,
-            )
-        }
-        return LayoutScene(width, height, commands)
+        return LayoutScene((bounds.width + config.padding * 2).xyCoordinate(), (bounds.height + config.padding * 2).xyCoordinate(), commands)
     }
 
     private fun layoutKanban(diagram: KanbanDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {

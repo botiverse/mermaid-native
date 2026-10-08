@@ -592,6 +592,8 @@ public data class BlockDiagram(
     val edges: List<BlockEdge>,
     val classes: Map<String, List<String>> = emptyMap(),
     val warnings: List<String> = emptyList(),
+    /** Internal Block grid/shape padding, independent of outer scene padding. */
+    val padding: Double = 8.0,
 ) : MermaidDiagram
 
 public data class BlockNode(

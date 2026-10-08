@@ -1,0 +1,9 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/diagrams/block/layout.spec.ts": "ad8345e13d0fb969c2a81b9cc0912141d5ebe11ae703492fb5428978215d87a2"
+  },
+  "productionFiles": {
+    "packages/mermaid/src/diagrams/block/layout.ts": "1591740fd874cabc118a4fa87b38461d06db853f74b5de02d7bb7ce6e2d61b8c"
+  }
+}
