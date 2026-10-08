@@ -43,7 +43,18 @@ public object MermaidCanvasRenderer {
             if (index > 0) append(',')
             append(commandJson(command))
         }
-        append("]}")
+        append(']')
+        if (scene.links.isNotEmpty()) {
+            append(",\"links\":[")
+            scene.links.forEachIndexed { index, link ->
+                if (index > 0) append(',')
+                append("{\"x\":").append(number(link.rect.x)).append(",\"y\":").append(number(link.rect.y))
+                append(",\"w\":").append(number(link.rect.width)).append(",\"h\":").append(number(link.rect.height))
+                append(",\"url\":").append(jsonString(link.url)).append(",\"label\":").append(jsonString(link.label)).append('}')
+            }
+            append(']')
+        }
+        append('}')
     }
 
     private fun commandJson(command: DrawCommand): String = when (command) {

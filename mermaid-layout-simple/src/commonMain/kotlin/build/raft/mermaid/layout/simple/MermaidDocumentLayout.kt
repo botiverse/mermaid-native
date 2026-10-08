@@ -30,6 +30,7 @@ public fun SimpleMermaidLayout.layout(
     val width = maxOf(scene.width, lines.maxOf { textMeasurer.measure(it, style).width } + 2 * config.padding)
     return scene.copy(width = width, height = scene.height + dy,
         commands = lines.mapIndexed { i, line -> DrawText(line, ScenePoint(width / 2, config.padding + lineHeight * (i + 0.8)), TextAnchor.MIDDLE, style) } + commands,
+        links = scene.links.map { it.copy(rect = it.rect.move()) },
         accessibilityTitle = scene.accessibilityTitle ?: title,
         layoutValidation = scene.layoutValidation?.let { report ->
             val geometry = report.geometry.copy(

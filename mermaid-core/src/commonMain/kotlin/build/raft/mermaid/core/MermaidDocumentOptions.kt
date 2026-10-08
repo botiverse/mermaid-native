@@ -37,6 +37,28 @@ internal object MermaidDocumentOptions {
                         allowed("showDataLabel"); require(diagram is XyChartDiagram) { "xyChart configuration requires an XY chart" }
                         diagram = diagram.copy(showDataLabel = boolean("showDataLabel", diagram.showDataLabel))
                     }
+                    "kanban" -> {
+                        allowed("ticketBaseUrl"); require(diagram is KanbanDiagram) { "kanban configuration requires a Kanban diagram" }
+                        val template = string("ticketBaseUrl", "")
+                        require(template.isEmpty() || isSafeMermaidLink(template)) { "Kanban ticketBaseUrl must be an absolute HTTP(S) URL" }
+                        diagram = diagram.copy(ticketBaseUrl = template.takeIf { it.isNotEmpty() })
+                    }
+                    "treemap" -> {
+                        allowed("valueFormat"); require(diagram is TreemapDiagram) { "treemap configuration requires a Treemap diagram" }
+                        val format = string("valueFormat", "")
+                        require(format in listOf("", ",", "$0,0")) { "Native Treemap valueFormat currently supports ',' and '$0,0'" }
+                        diagram = diagram.copy(valueFormat = format.takeIf { it.isNotEmpty() })
+                    }
+                    "themeVariables" -> {
+                        allowed("xyChart"); require(diagram is XyChartDiagram) { "Native themeVariables currently requires an XY chart" }
+                        val theme = fields["xyChart"]
+                        require(theme is UsecaseJsonValue.ObjectValue && theme.value.keys.all { it == "plotColorPalette" }) { "Native XY theme supports plotColorPalette only" }
+                        val palette = theme.value["plotColorPalette"]
+                        require(palette is UsecaseJsonValue.StringValue) { "plotColorPalette must be a comma-separated color string" }
+                        val colors = palette.value.split(',').map { it.trim() }
+                        require(colors.isNotEmpty() && colors.all { Regex("#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}").matches(it) }) { "Native plotColorPalette requires hexadecimal colors (3, 6 or 8 digits)" }
+                        diagram = diagram.copy(plotColorPalette = colors)
+                    }
                     else -> throw IllegalArgumentException("Unsupported Native frontmatter configuration: $section")
                 }
             }

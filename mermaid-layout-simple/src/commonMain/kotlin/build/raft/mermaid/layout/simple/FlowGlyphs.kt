@@ -19,6 +19,8 @@ internal fun flowSpecialShape(shape:FlowNodeShape,r:SceneRect):List<DrawCommand>
     val fill=SceneColor(DiagramPalette.SURFACE);val stroke=SceneColor(DiagramPalette.OUTLINE)
     fun point(dx:Double,dy:Double)=ScenePoint(x+dx,y+dy)
     fun polygon(vararg p:ScenePoint)=listOf<DrawCommand>(DrawPolygon(p.toList(),fill=fill),DrawPolyline(p.toList()+p.first(),stroke=stroke,strokeWidth=1.5))
+    val expanded = expandedFlowPolygons(shape, r)
+    if (expanded.isNotEmpty()) return expanded.flatMap { points -> listOf(DrawPolygon(points, fill=fill), DrawPolyline(points+points.first(), stroke=stroke)) }
     return when(shape){
         FlowNodeShape.HEXAGON->polygon(point(inset,0.0),point(w-inset,0.0),point(w,h/2),point(w-inset,h),point(inset,h),point(0.0,h/2))
         FlowNodeShape.ASYMMETRIC->polygon(point(0.0,0.0),point(w,0.0),point(w,h),point(0.0,h),point(inset,h/2))

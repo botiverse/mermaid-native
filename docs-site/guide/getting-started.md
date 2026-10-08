@@ -181,6 +181,10 @@ If your host sanitizes SVG, its allowlist must support inert local `defs`,
 `linearGradient`, `stop`, and `fill="url(#...)"` references for Sankey. Do not
 allow arbitrary external references or script/style content. The repository's
 `acceptance/svg-sanitizer.js` shows the supported bounded format.
+Kanban ticket links also require direct SVG `<a>` elements with absolute HTTP(S)
+destinations, `target="_blank"`, `rel="noopener noreferrer"`, and a transparent
+hit rectangle. The shared sanitizer validates this navigation format separately
+from resource references; it still rejects executable schemes and external images.
 
 ## Confirm the version in the client
 
@@ -257,8 +261,7 @@ val scene = SimpleMermaidLayout.layout(configured, FixedWidthTextMeasurer, Layou
 Explicit annotations win over automatic detection. Exact filename mappings win
 over extension mappings; extensions are matched in lowercase, with or without
 the leading dot. Built-in names always use the built-in pack. A `defaultIconPack`
-qualifies other unprefixed references. These options are programmatic and are
-not read from Mermaid YAML frontmatter.
+qualifies other unprefixed references. These options can be set programmatically or in the supported YAML `config.treeView` mapping.
 
 ## Detect a diagram family before parsing
 
@@ -272,6 +275,17 @@ The detector identifies a supported Native family from the first header, using
 exactly the same comment and whitespace handling as `MermaidParser.parse`.
 A detected family does not validate the body or header options; call `parse`
 to obtain the model or typed diagnostics. Empty or unknown headers return null.
-It does not extract YAML frontmatter or apply Mermaid init configuration.
+It recognizes the leading YAML document header; parsing retains its typed metadata. Mermaid init directives are not applied.
 Family IDs describe Native parser families, independent of upstream renderer
 versions and layout engines; all Railroad dialects belong to `RAILROAD`.
+
+
+## Document titles and supported settings
+
+`MermaidParser.parse` retains leading YAML metadata in `Success.frontmatter` and applies explicitly supported settings to the diagram model. Use `SimpleMermaidLayout.layout(parsed, measurer, config)` with the complete `Success` value to render document titles for families that have no model title field. Existing model titles take precedence. Both Web SVG and Canvas use this overload.
+
+Supported YAML settings are bounded: Sankey `showValues`, XY `showDataLabel`, TreeView icon selection, Kanban `ticketBaseUrl`, Treemap `valueFormat` (`","` or `"$0,0"`), and `themeVariables.xyChart.plotColorPalette` (comma-separated 3-, 6- or 8-digit hexadecimal colors). Unsupported settings and formats produce diagnostics. This is not general YAML, theme or D3 format compatibility.
+
+Kanban replaces the first `#TICKET#` in an absolute HTTP(S) URL with the ticket text. Its rendered scene exposes `links`, containing the measured ticket rectangle, URL and label. SVG emits links; Canvas JSON includes the same link regions, and the Canvas demo supports pointer activation and accessible keyboard links. Native hosts must implement navigation using these regions and their own zoom/pan transform; the Kuikly drawing renderer does not navigate automatically. Document titles shift the regions together with the commands.
+
+Flowchart metadata accepts `manual-input` / `sl-rect`, `docs` / `documents`, and `procs` / `st-rect` as distinct drawn shapes. Their labels and connector endpoints use the visible polygons. Their appearance remains Native and is not an exact copy of the upstream renderer.

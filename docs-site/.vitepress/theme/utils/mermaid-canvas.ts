@@ -7,6 +7,7 @@ export interface MermaidCanvasScript {
   width: number
   height: number
   ops: MermaidCanvasOp[]
+  links?: { x: number; y: number; w: number; h: number; url: string; label: string }[]
 }
 
 export type MermaidCanvasOp =

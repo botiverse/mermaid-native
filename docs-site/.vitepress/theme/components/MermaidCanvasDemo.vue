@@ -16,6 +16,7 @@ const status = ref('')
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const canvasDescription = ref('')
+const ticketLinks = ref<NonNullable<MermaidCanvasScript['links']>>([])
 let lastScript: MermaidCanvasScript | null = null
 
 // CSS positions the canvas; each zoom redraws its backing store at the new scale.
@@ -51,13 +52,21 @@ function onPointerMove(e: PointerEvent) {
   offsetX.value = dragStart.ox + (e.clientX - dragStart.x)
   offsetY.value = dragStart.oy + (e.clientY - dragStart.y)
 }
-function onPointerUp() {
+function onPointerUp(e: PointerEvent) {
+  const clicked = dragging && Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) < 5
   dragging = false
+  if (!clicked || e.type === 'pointercancel' || !lastScript || !canvasRef.value) return
+  const bounds = canvasRef.value.getBoundingClientRect()
+  const x = (e.clientX - bounds.left) * lastScript.width / bounds.width
+  const y = (e.clientY - bounds.top) * lastScript.height / bounds.height
+  const link = ticketLinks.value.find(l => x >= l.x && x <= l.x+l.w && y >= l.y && y <= l.y+l.h)
+  if (link) window.open(link.url, '_blank', 'noopener,noreferrer')
 }
 
 function clearCanvas() {
   lastScript = null
   canvasDescription.value = ''
+  ticketLinks.value = []
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
   if (ctx && canvas) {
@@ -85,6 +94,7 @@ function render() {
     const script = JSON.parse(rt.renderMermaidCanvasJson(source.value))
     if (script.ops) {
       lastScript = script
+      ticketLinks.value = (script.links || []).filter((link: any) => /^https?:\/\//i.test(link.url))
       drawMermaidCanvas(canvas, script, scale.value)
       canvasDescription.value = script.ops.filter((op: any) => op.op === 'text').map((op: any) => op.text).join('; ')
       status.value = 'Rendered on Canvas2D'
@@ -212,6 +222,9 @@ onUnmounted(() => {
               }"
             ></canvas>
           </div>
+          <nav v-if="ticketLinks.length" aria-label="Diagram ticket links">
+            <a v-for="(link, index) in ticketLinks" :key="index" :href="link.url" target="_blank" rel="noopener noreferrer" style="margin-right: 1rem">{{ link.label }}</a>
+          </nav>
         </div>
       </div>
     </section>

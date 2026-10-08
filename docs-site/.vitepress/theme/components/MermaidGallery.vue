@@ -70,12 +70,18 @@ const dragState = ref<{ key: string; startX: number; startY: number; origX: numb
 function onPanStart(key: string, e: PointerEvent) {
   const s = zoomState(key)
   dragState.value = { key, startX: e.clientX, startY: e.clientY, origX: s.x, origY: s.y }
-  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 
 function onPanMove(e: PointerEvent) {
   const d = dragState.value
   if (!d) return
+  const surface = e.currentTarget as HTMLElement
+  if (!surface.hasPointerCapture(e.pointerId)) {
+    // Capturing on pointerdown retargets ordinary SVG link clicks to the
+    // preview surface. Capture only once the gesture is actually a pan.
+    if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) <= 4) return
+    surface.setPointerCapture(e.pointerId)
+  }
   const s = zoomState(d.key)
   s.x = +(d.origX + (e.clientX - d.startX)).toFixed(1)
   s.y = +(d.origY + (e.clientY - d.startY)).toFixed(1)
