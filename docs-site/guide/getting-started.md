@@ -7,7 +7,7 @@ artifacts; HarmonyOS consumes a separate OHOS build of the same source.
 
 ## Version and prerequisites
 
-The current SDK release is **0.1.10** for Android/iOS and **0.1.10-ohos** for HarmonyOS.
+The upcoming SDK release is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS.
 Publication and artifact verification are in progress. The dependency examples below
 target the upcoming release; use the verified 0.1.9 pair until the release receipt
 confirms availability. See the
@@ -56,7 +56,7 @@ In your existing shared module's `build.gradle.kts`, use a single version for al
 Mermaid modules. Gradle selects the Android or iOS variant automatically:
 
 ```kotlin
-val mermaidVersion = "0.1.10"
+val mermaidVersion = "0.1.11"
 kotlin {
     sourceSets {
         commonMain.dependencies {
@@ -80,7 +80,7 @@ Use the host's existing OHOS settings/build entry point and KBA compiler. In tha
 build only, select the OHOS version for **every** Mermaid dependency:
 
 ```kotlin
-val mermaidVersion = "0.1.10-ohos"
+val mermaidVersion = "0.1.11-ohos"
 kotlin {
     sourceSets {
         commonMain.dependencies {
@@ -196,7 +196,7 @@ import build.raft.mermaid.core.MERMAID_NATIVE_VERSION
 println("Mermaid Native: $MERMAID_NATIVE_VERSION")
 ```
 
-Expect `0.1.10` on Android/iOS and `0.1.10-ohos` on HarmonyOS. Inspect the resolved
+Expect `0.1.11` on Android/iOS and `0.1.11-ohos` on HarmonyOS. Inspect the resolved
 Gradle dependency graph as well, since the core version alone cannot prove every
 renderer uses the same release. Rebuild the host's shared framework/HAR after a
 KLIB upgrade. Follow [the upgrade checklist and release notes](./releases).

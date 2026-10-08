@@ -1,8 +1,8 @@
 # SDK releases and upgrading
 
-## 0.1.10 / 0.1.10-ohos
+## 0.1.11 / 0.1.11-ohos
 
-Publication and artifact verification are in progress in [release workflow 37743538290](https://github.com/botiverse/mermaid-native/actions/runs/37743538290), from immutable tag [`v0.1.10`](https://github.com/botiverse/mermaid-native/tree/v0.1.10), source [`d82999c7`](https://github.com/botiverse/mermaid-native/commit/d82999c7727aae91e9f6406d6333f426f974e230), including changes through [PR260](https://github.com/botiverse/mermaid-native/pull/260). Do not upgrade a production consumer until the release receipt confirms both planes.
+Publication and artifact verification are pending. Do not upgrade a production consumer until the release receipt confirms both planes.
 
 Changes since 0.1.9:
 
@@ -12,9 +12,13 @@ Changes since 0.1.9:
 - Additional typed model/document contracts for trees, Railroad, Journey and ER; Cynefin boundaries now use shared Native geometry. Block circle/cylinder paint and Wardley syntax corrections are included.
 - XY palettes, Treemap comma/currency formatting, and Kanban HTTP(S) ticket regions reach their actual rendering consumers. The web demos support bounded SVG links and Canvas pointer/keyboard navigation. Native hosts implement their own navigation.
 
-Upgrade all normal modules together to `0.1.10` and the separate HarmonyOS modules to `0.1.10-ohos`. Keep the existing Kuikly `2.24.0-raft.1` pair; rebuild host code and custom scene renderers because binary compatibility is not promised. New public model members and shape variants require review of exhaustive host switches. `LayoutScene.links` describes link rectangles/URLs/labels; apply the same zoom/pan transform as drawing, reject unsupported schemes, and let the host decide how to open them. SVG sanitizers must allow only the bounded anchor/rectangle structure described in the integration guide.
+Upgrade all normal modules together to `0.1.11` and the separate HarmonyOS modules to `0.1.11-ohos`. Keep the existing Kuikly `2.24.0-raft.1` pair; rebuild host code and custom scene renderers because binary compatibility is not promised. New public model members and shape variants require review of exhaustive host switches. `LayoutScene.links` describes link rectangles/URLs/labels; apply the same zoom/pan transform as drawing, reject unsupported schemes, and let the host decide how to open them. SVG sanitizers must allow only the bounded anchor/rectangle structure described in the integration guide.
 
 Parsing tests are not visual parity. Native still lacks some original Mermaid behavior, small Treemap cells may have cramped/overflowing labels, and downstream Android/iOS/OHOS app/device acceptance remains required. Kotlin/Wasm is not an H5 or WeChat mini-program Kuikly adapter. The Kuikly module remains built against the Raft Kuikly distribution, not independently verified against the public upstream distribution.
+
+## 0.1.10 / 0.1.10-ohos — incomplete release pair
+
+Do not adopt this version pair. [Release workflow 37743538290](https://github.com/botiverse/mermaid-native/actions/runs/37743538290) published the OHOS plane, but normal publication failed during common metadata compilation after some Android files had already been uploaded. The existing tag and files are retained unchanged. 0.1.11 fixes the non-portable frontmatter location API and adds common metadata compilation to CI and before normal uploads.
 
 ## 0.1.9 / 0.1.9-ohos
 
