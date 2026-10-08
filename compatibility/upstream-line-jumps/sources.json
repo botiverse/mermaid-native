@@ -1,0 +1,7 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/rendering-elements/lineJump.spec.ts": "2856f5dfc33889e4813cc93f3c790fa83bde3db8fb3ac082c7aafd135e0ce545",
+    "packages/mermaid/src/rendering-util/rendering-elements/lineJump.integration.spec.ts": "5de506252c8942b5845f8ffe52a821252fc466e0940df04fa886689d9ad3f16e"
+  }
+}

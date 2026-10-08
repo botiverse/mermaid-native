@@ -19,4 +19,20 @@ class ScenePathTest {
         assertEquals(1, ctx.log.count { it == "stroke" })
         assertFalse(ctx.log.contains("closePath"))
     }
+    @Test fun actualSwimlaneProducerReachesKuiklyCanvas() {
+        val source = "swimlane-beta\nsubgraph L1\nA\nB\nend\nsubgraph L2\nC\nD\nend\nA-->D\nB-->C"
+        val diagram = (build.raft.mermaid.core.MermaidParser.parse(source) as build.raft.mermaid.core.MermaidParseResult.Success).diagram as build.raft.mermaid.core.SwimlaneDiagram
+        for (mode in build.raft.mermaid.core.SwimlaneLineHops.entries) {
+            val scene = build.raft.mermaid.layout.simple.SimpleMermaidLayout.layout(diagram.copy(lineHops = mode), build.raft.mermaid.layout.simple.FixedWidthTextMeasurer, LayoutConfig())
+            val ctx = MockCanvasContext()
+            MermaidKuiklyRenderer.render(scene, ctx)
+            assertEquals(mode == build.raft.mermaid.core.SwimlaneLineHops.ARC, ctx.log.any { it.startsWith("arc(") })
+            val paths = scene.commands.filterIsInstance<DrawPath>()
+            if (mode == build.raft.mermaid.core.SwimlaneLineHops.GAP) {
+                val moves = paths.single().segments.filterIsInstance<PathMove>()
+                assertEquals(2, moves.size)
+                for (move in moves) assertTrue(ctx.log.any { it.startsWith("moveTo(${move.to.x.toFloat()}, ${move.to.y.toFloat()}") })
+            }
+        }
+    }
 }

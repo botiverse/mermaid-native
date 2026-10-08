@@ -550,7 +550,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 flow.nodes.any { it.shape !in simpleShapes || it.styles.isNotEmpty() || it.classes.isNotEmpty() || it.borders!=null } ||
                 flow.classDefinitions.isNotEmpty() || flow.defaultEdgeStyles.isNotEmpty() ||
                 flow.edges.any { it.sourceId in groupIds || it.targetId in groupIds || it.length > 1 || it.style!=FlowEdgeStyle.NORMAL || it.fromMarker!=build.raft.mermaid.core.FlowMarker.NONE || it.toMarker!=build.raft.mermaid.core.FlowMarker.POINT || it.styles.isNotEmpty() }
-            if(needsRichLayout)return layoutFlowchart(visibleFlow(flow),textMeasurer,config)
+            if(needsRichLayout)return layoutFlowchart(visibleFlow(flow),textMeasurer,config,diagram.lineHops)
         }
         val laneStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
         val nodeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
@@ -602,6 +602,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
         }
         val commands = mutableListOf<DrawCommand>()
+        val edgeCommands = mutableListOf<Int>()
         diagram.lanes.forEachIndexed { _, lane ->
             val rect = laneRects.getValue(lane.id)
             commands += DrawRect(rect.canonical(), 0.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.0)
@@ -625,6 +626,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val to = swimlaneBoundaryPoint(fromCenter, lower, shape, nodeWidth, nodeHeight)
                 val right = fromCenter.x + nodeWidth / 2 + 16.0
                 val points = listOf(from, ScenePoint(right, from.y), ScenePoint(right, to.y), to)
+                edgeCommands += commands.size
                 commands += DrawPolyline(points, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
                 commands += arrowHead(points[points.lastIndex - 1], to, fill = SceneColor(DiagramPalette.INK))
                 edge.label?.let { label ->
@@ -634,6 +636,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             val from = swimlaneBoundaryPoint(fromCenter, toCenter, nodeById.getValue(edge.sourceId).shape, nodeWidth, nodeHeight)
             val to = swimlaneBoundaryPoint(toCenter, fromCenter, nodeById.getValue(edge.targetId).shape, nodeWidth, nodeHeight)
+            edgeCommands += commands.size
             commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
             commands += arrowHead(from, to, fill = SceneColor(DiagramPalette.INK))
             edge.label?.let { label ->
@@ -660,7 +663,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), TextAnchor.MIDDLE, nodeStyle)
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        val hopBounds = applySwimlaneHops(commands, edgeCommands, diagram.lineHops)
+        val dx = maxOf(0.0, config.padding - (hopBounds.minOfOrNull { it.x } ?: config.padding))
+        val dy = maxOf(0.0, config.padding - (hopBounds.minOfOrNull { it.y } ?: config.padding))
+        return LayoutScene(maxOf(width, (hopBounds.maxOfOrNull { it.x + it.width } ?: 0.0) + config.padding).xyCoordinate() + dx,
+            maxOf(height, (hopBounds.maxOfOrNull { it.y + it.height } ?: 0.0) + config.padding).xyCoordinate() + dy,
+            if (dx == 0.0 && dy == 0.0) commands else commands.map { it.offsetBy(dx, dy) })
     }
 
     private fun swimlaneBoundaryPoint(center: ScenePoint, toward: ScenePoint, shape: SwimlaneNodeShape, nodeWidth: Double, nodeHeight: Double): ScenePoint =
@@ -3139,6 +3147,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram: FlowchartDiagram,
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
+        lineHops: build.raft.mermaid.core.SwimlaneLineHops = build.raft.mermaid.core.SwimlaneLineHops.DISABLED,
     ): LayoutScene {
         val style = TextStyle()
         val nodeStyles=diagram.nodes.associate { it.id to FlowStyle(it,diagram) }
@@ -3180,6 +3189,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
+        val edgeCommands = mutableListOf<Int>()
         val validationLabels = mutableMapOf<Int, DrawText>()
         val validationTitles = mutableMapOf<String, DrawText>()
         val edgeStroke = SceneColor(DiagramPalette.SECONDARY)
@@ -3205,6 +3215,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val markerColor=if(flowEdgeStyles(edge,diagram).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
             val route=returnRoutes[index]
             val pattern=if(edge.style==FlowEdgeStyle.DOTTED)StrokePattern.DASHED else StrokePattern.SOLID
+            edgeCommands += commands.size
             if(points.size==2) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             val lastFrom=points[points.lastIndex-1]
@@ -3266,12 +3277,13 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (!config.validateOrthogonalLayout) return null
             return flowLayoutValidation(diagram, rects, groupRects, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
         }
-        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+        val hopBounds = applySwimlaneHops(commands, edgeCommands, lineHops)
+        if(hopBounds.isEmpty() && returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
         val materializedBounds=if(geometryChanged) groupRects.values+edgePaths.values.map { p ->
             val left=p.minOf { it.x };val top=p.minOf { it.y }
             SceneRect(left,top,p.maxOf { it.x }-left,p.maxOf { it.y }-top)
         } else emptyList()
-        val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }+materializedBounds
+        val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }+materializedBounds+hopBounds
         val dx=maxOf(0.0,config.padding-bounds.minOf { it.x })
         val dy=maxOf(0.0,config.padding-bounds.minOf { it.y })
         return LayoutScene(maxOf(width,bounds.maxOf { it.x+it.width }+config.padding)+dx,

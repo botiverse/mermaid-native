@@ -29,6 +29,21 @@ internal object MermaidDocumentOptions {
                         }
                         diagram = diagram.copy(iconConfig = TreeViewIconConfig(boolean("showIcons", false), string("defaultIconPack", ""), icons("filenameIcons"), icons("extensionIcons")))
                     }
+                    "swimlane" -> {
+                        allowed("lineHops"); require(diagram is SwimlaneDiagram) { "swimlane configuration requires a Swimlane diagram" }
+                        val setting = fields["lineHops"]
+                        val hops = when (setting) {
+                            null -> diagram.lineHops
+                            is UsecaseJsonValue.BooleanValue -> if (setting.value) SwimlaneLineHops.ARC else SwimlaneLineHops.DISABLED
+                            is UsecaseJsonValue.StringValue -> when (setting.value) {
+                                "arc" -> SwimlaneLineHops.ARC
+                                "gap" -> SwimlaneLineHops.GAP
+                                else -> throw IllegalArgumentException("config.swimlane.lineHops must be boolean, 'arc' or 'gap'")
+                            }
+                            else -> throw IllegalArgumentException("config.swimlane.lineHops must be boolean, 'arc' or 'gap'")
+                        }
+                        diagram = diagram.copy(lineHops = hops)
+                    }
                     "sankey" -> {
                         allowed("showValues"); require(diagram is SankeyDiagram) { "sankey configuration requires a Sankey diagram" }
                         diagram = diagram.copy(showValues = boolean("showValues", diagram.showValues))
