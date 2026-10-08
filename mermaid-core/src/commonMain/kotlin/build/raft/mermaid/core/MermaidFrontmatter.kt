@@ -28,9 +28,10 @@ public class MermaidFrontmatterError(message: String, public val location: Sourc
 public object MermaidFrontmatter {
     public fun extract(source: String): MermaidFrontmatterResult {
         val match = delimiter.find(source) ?: return MermaidFrontmatterResult(source, MermaidFrontmatterMetadata())
-        val indent = match.groupValues[1]
-        val yaml = match.groupValues[2].split('\n').joinToString("\n") { if (it.startsWith(indent)) it.drop(indent.length) else it }
-        val yamlStart = match.groups[2]!!.range.first
+        val indent = match.groupValues[2]
+        val yaml = match.groupValues[3].split('\n').joinToString("\n") { if (it.startsWith(indent)) it.drop(indent.length) else it }
+        // Capture the consumed prefix: MatchGroup.range is unavailable in common metadata.
+        val yamlStart = match.groupValues[1].length
         val firstLine = source.take(yamlStart).replace("\r\n", "\n").replace('\r', '\n').count { it == '\n' } + 1
         val value = YamlReader(yaml, firstLine, indent.length).parse()
         val fields = (value as? UsecaseJsonValue.ObjectValue)?.value.orEmpty()
@@ -43,7 +44,7 @@ public object MermaidFrontmatter {
         return MermaidFrontmatterResult(source.substring(end), metadata, end)
     }
 
-    private val delimiter = Regex("^([^\\S\\n\\r]*)-{3}\\s*[\\n\\r]([\\s\\S]*?)[\\n\\r]\\1-{3}\\s*[\\n\\r]+")
+    private val delimiter = Regex("^(([^\\S\\n\\r]*)-{3}\\s*[\\n\\r])([\\s\\S]*?)[\\n\\r]\\2-{3}\\s*[\\n\\r]+")
 }
 
 private fun UsecaseJsonValue.truthy(): Boolean = when (this) {

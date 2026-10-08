@@ -59,6 +59,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-readonly: true
+      - name: Compile common metadata before uploading any normal artifacts
+        run: ./gradlew -Pversion="${{ steps.version.outputs.version }}" compileCommonMainKotlinMetadata
       - name: Publish normal plane (android/ios)
         shell: bash
         run: |

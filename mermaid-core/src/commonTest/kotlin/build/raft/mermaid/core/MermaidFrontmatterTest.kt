@@ -13,6 +13,16 @@ class MermaidFrontmatterTest {
             assertEquals(SourceLocation(4, 1), error.location)
         }
     }
+    @Test fun yamlErrorsKeepTheirOriginalLineAfterDelimiterWhitespace() {
+        for (newline in listOf("\n", "\r\n", "\r")) {
+            for (blankLines in 0..2) {
+                val prefix = "   ---" + newline.repeat(blankLines + 1)
+                val source = prefix + "   !!!" + newline + "   ---" + newline + "graph TD"
+                val error = assertFailsWith<MermaidFrontmatterError> { MermaidFrontmatter.extract(source) }
+                assertEquals(SourceLocation(blankLines + 2, 4), error.location)
+            }
+        }
+    }
     @Test fun typedNestedConfigIsPreservedWithoutExecutingStrings() {
         val extracted = MermaidFrontmatter.extract("---\ntitle: true\nconfig:\n  graph:\n    list: [1, false, null, {path: 'a#b'}]\n    words: |\n      first\n      ---\n---\ngraph TD\nA-->B")
         assertEquals("true", extracted.metadata.title)
