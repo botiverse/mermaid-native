@@ -7,11 +7,10 @@ artifacts; HarmonyOS consumes a separate OHOS build of the same source.
 
 ## Version and prerequisites
 
-The upcoming SDK release is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS.
-Publication and artifact verification are in progress. The dependency examples below
-target the upcoming release; use the verified 0.1.9 pair until the release receipt
-confirms availability. See the
-[release notes](./releases) for the immutable source, validation and upgrade steps.
+The current verified SDK release is **0.1.11** for Android/iOS and **0.1.11-ohos**
+for HarmonyOS. Both planes are published and their artifacts have been read back
+and checked. See the [release notes](./releases) for the immutable source,
+validation receipt and upgrade steps. The incomplete 0.1.10 pair must not be used.
 
 | Consumer | Compiler / platform | Kuikly core used by the adapter |
 | --- | --- | --- |

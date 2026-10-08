@@ -1,0 +1,1806 @@
+{
+  "version": "0.1.11",
+  "source": "feb4d563f25877a5301484d792f43f02f165e6b6",
+  "tag": "v0.1.11",
+  "workflow": "https://github.com/botiverse/mermaid-native/actions/runs/37754435207",
+  "verifiedAt": "2026-10-08",
+  "normalCoordinates": 41,
+  "ohosCoordinates": 8,
+  "fileCount": 217,
+  "consumer": {
+    "artifacts": "published Android AARs; hash matched against readback",
+    "compiled": "three guide functions and Kuikly DSL against adapter build dependency 2.24.0-raft.1",
+    "executed": "SDK version, basic flowchart, Sankey gradient, expanded shapes, Kanban links, XY palette in both orientations, Treemap currency formatting",
+    "result": "Guide functions, Kuikly DSL and five new release consumer fixtures passed",
+    "limits": "No installed Android/iOS/OHOS app or device acceptance; no assertion of compatibility with every host Kuikly distribution"
+  },
+  "modules": [
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published",
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published",
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published",
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published",
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-android/0.1.11/mermaid-core-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-wasm-js/0.1.11/mermaid-core-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11/mermaid-core-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-android/0.1.11/mermaid-layout-api-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-wasm-js/0.1.11/mermaid-layout-api-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-android/0.1.11/mermaid-layout-simple-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-wasm-js/0.1.11/mermaid-layout-simple-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-android/0.1.11/mermaid-render-svg-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-wasm-js/0.1.11/mermaid-render-svg-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-render-svg",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-android/0.1.11/mermaid-kuikly-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-android/0.1.11/mermaid-testkit-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-wasm-js/0.1.11/mermaid-testkit-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-testkit",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-android/0.1.11/mermaid-web-android-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "releaseApiElements-published",
+        "releaseRuntimeElements-published",
+        "releaseSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosArm64ApiElements-published",
+        "iosArm64SourcesElements-published",
+        "iosArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosSimulatorArm64ApiElements-published",
+        "iosSimulatorArm64SourcesElements-published",
+        "iosSimulatorArm64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "iosX64ApiElements-published",
+        "iosX64SourcesElements-published",
+        "iosX64MetadataElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-wasm-js/0.1.11/mermaid-web-wasm-js-0.1.11.module",
+      "component": {
+        "url": "../../mermaid-web/0.1.11/mermaid-web-0.1.11.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-web",
+        "version": "0.1.11",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "wasmJsApiElements-published",
+        "wasmJsRuntimeElements-published",
+        "wasmJsSourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos.module",
+      "component": {
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "metadataApiElements",
+        "metadataSourcesElements",
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-ohosarm64/0.1.11-ohos/mermaid-core-ohosarm64-0.1.11-ohos.module",
+      "component": {
+        "url": "../../mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-core",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-ohosarm64/0.1.11-ohos/mermaid-layout-api-ohosarm64-0.1.11-ohos.module",
+      "component": {
+        "url": "../../mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-api",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-ohosarm64/0.1.11-ohos/mermaid-layout-simple-ohosarm64-0.1.11-ohos.module",
+      "component": {
+        "url": "../../mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-layout-simple",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    },
+    {
+      "url": "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-ohosarm64/0.1.11-ohos/mermaid-kuikly-ohosarm64-0.1.11-ohos.module",
+      "component": {
+        "url": "../../mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos.module",
+        "group": "build.raft.mermaid",
+        "module": "mermaid-kuikly",
+        "version": "0.1.11-ohos",
+        "attributes": {
+          "org.gradle.status": "release"
+        }
+      },
+      "variants": [
+        "ohosArm64ApiElements-published",
+        "ohosArm64SourcesElements-published"
+      ]
+    }
+  ],
+  "files": {
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11/mermaid-core-0.1.11.module": {
+      "size": 11576,
+      "sha256": "8454180117322605deff28be9de87e5901310d45f01bf4ee7f76f81e4075228b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11/mermaid-core-0.1.11.pom": {
+      "size": 1657,
+      "sha256": "1b395aa7f087793705f7065dc41cad74117bfd9346385326fcb97e52c6bebba4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11/mermaid-core-0.1.11.jar": {
+      "size": 72172,
+      "sha256": "bd0ede7473888437fee7dca3314c7f053e7931e30b32bf7c0b3f70fc6a4a8256"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11/mermaid-core-0.1.11-sources.jar": {
+      "size": 158938,
+      "sha256": "4dd297602931fb415a4be03ec65b1f160f87f83356f5dbf2bea2553aadf9567f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.module": {
+      "size": 12039,
+      "sha256": "d5aed587aaafd4899bd6859979f51aef6c0ce636362cbd331972054266f5f574"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.pom": {
+      "size": 1853,
+      "sha256": "8bae481b65bfa28ec5d0f6d3ab915aa92b82a9aaf5dbc562745c09bd0d7b34a9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11.jar": {
+      "size": 9145,
+      "sha256": "ea4a178a9658ef023fcf4c527b874de1f614996eff9c725764bd123de5815cd4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11/mermaid-layout-api-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.module": {
+      "size": 12198,
+      "sha256": "01d5b21f86dbe0a0eb1b63d148f729f04b24669d1715686076abce0a464843cc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.pom": {
+      "size": 1865,
+      "sha256": "f8942eddc23fe986aaaf14c8dfbf2a699561a6a7b13ba0f464397ace0705ae5a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11.jar": {
+      "size": 36414,
+      "sha256": "fbacd6c0309e345359207bc167232b8b4517c619a123857bc1eb3f015f75db6a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11/mermaid-layout-simple-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.module": {
+      "size": 12045,
+      "sha256": "2147f7ae17738c243a1cd1440a17651fa365a27edf73a66e9c434dfbdbc04c90"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.pom": {
+      "size": 1859,
+      "sha256": "d48770a5e3cdd0975897e0a2f3cefe1ef5fea966f79e4d6de01e13ad45488618"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11.jar": {
+      "size": 2648,
+      "sha256": "779be185c8ac544edfe22a8423046b176c4d849c0003da13da4080fedffba692"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg/0.1.11/mermaid-render-svg-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.module": {
+      "size": 10227,
+      "sha256": "21b16edb1b04e5eafa37e34ddcb7699e161da1f5060bf8c363d712194244251e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.pom": {
+      "size": 2046,
+      "sha256": "dc12059b7276fffa1dd375d9f9d6c4ff1518754a618ff6cf5ec520d312edac53"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11.jar": {
+      "size": 3949,
+      "sha256": "e8ed5263ff316d4bee5be27ba697926d955b01ce344f56cb7130e354b7216fde"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11/mermaid-kuikly-0.1.11-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.module": {
+      "size": 12409,
+      "sha256": "2a89399183110ba613cb6f20b4f22dbe172265b1b1ac6d91ada60ef35852167e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.pom": {
+      "size": 2420,
+      "sha256": "ba57d3ccb89ddc6d3e16b66ac208ae6841b3471924cf966e53f8cc44122faa2f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit/0.1.11/mermaid-testkit-0.1.11.jar": {
+      "size": 4293,
+      "sha256": "ed90160253c9eb0ea0b315d85841bbca6de3470e6562130a8a3db9054e382a40"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit/0.1.11/mermaid-testkit-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web/0.1.11/mermaid-web-0.1.11.module": {
+      "size": 12208,
+      "sha256": "552bec9beec3bc87930a50cbcac896c73426fb3291c67a14b4903f1142cbecac"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web/0.1.11/mermaid-web-0.1.11.pom": {
+      "size": 2412,
+      "sha256": "706d88d86ed03b04c026b8bf075d117ddb19fdc3a9884f98b74de1036f1b1bfb"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web/0.1.11/mermaid-web-0.1.11.jar": {
+      "size": 3532,
+      "sha256": "feda977092e3d454492ed887270491fd46a499f55075ccff31c50b08aa603996"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web/0.1.11/mermaid-web-0.1.11-sources.jar": {
+      "size": 4106,
+      "sha256": "658cc52de20a515ab9969d5576d2c6d7634c5a129a979a2630dd18c814e74eb6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-android/0.1.11/mermaid-core-android-0.1.11.module": {
+      "size": 3769,
+      "sha256": "1efbeb5c5e2c38f2cdfac21a40373963e756b0d0b2731b7dd90caffa49d32215"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-android/0.1.11/mermaid-core-android-0.1.11.pom": {
+      "size": 1690,
+      "sha256": "35ccdcee7038a5abce7f3f5e800540eb204b713ed6772a31f48bcdb3b6319724"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-android/0.1.11/mermaid-core-android-0.1.11.aar": {
+      "size": 968356,
+      "sha256": "85a27b5aed973482d175e5b4f8402cababa9d94ac8756c9264e7d84d9f7bf6dd"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-android/0.1.11/mermaid-core-android-0.1.11-sources.jar": {
+      "size": 158937,
+      "sha256": "f7d8a3596328c2cd2bf191d1e542bfbbc795fa0e0004ccd3c5a534a03830edff"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11.module": {
+      "size": 3636,
+      "sha256": "6bb51569edecfca59772cb6eca047fae8f9b600f35759e71501e0040a4869313"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11.pom": {
+      "size": 1692,
+      "sha256": "93fa1588395522ca494dd7fbfe4e65072288d3bcbd981cced23a3b360a957b5d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11.klib": {
+      "size": 1203385,
+      "sha256": "832f21ff7cb49f93d8825e8b451b24c4709143082346745a256e9b21d8bb18fc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11-sources.jar": {
+      "size": 158938,
+      "sha256": "7ba0fb7f24101bd3c1bf3ba31383ffb8d692e1398f2f1e8cb625c8046a90577e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosarm64/0.1.11/mermaid-core-iosarm64-0.1.11-metadata.jar": {
+      "size": 2491,
+      "sha256": "a3a5162fcec5aa2d435266fd7dc32d70b80b7c7b7d1135608cbdfa8b68a2c4a9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11.module": {
+      "size": 3747,
+      "sha256": "bdb825d3994d9873c7ecfa7b555507b405bed70f72be520129b052ca547b76e9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11.pom": {
+      "size": 1701,
+      "sha256": "b82ea39156891286abccc3b4031d27881b1580ffaaaf063ace8fd205d1641550"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11.klib": {
+      "size": 1203470,
+      "sha256": "24958fc9eb4ac672548604c9add8b58278420f54d0ae747bff66704f47b361ea"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 158938,
+      "sha256": "7ba0fb7f24101bd3c1bf3ba31383ffb8d692e1398f2f1e8cb625c8046a90577e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iossimulatorarm64/0.1.11/mermaid-core-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 2491,
+      "sha256": "a3a5162fcec5aa2d435266fd7dc32d70b80b7c7b7d1135608cbdfa8b68a2c4a9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11.module": {
+      "size": 3612,
+      "sha256": "c0383420b2c5fd9e951ddc7b95f04c95e744607dface97e00754f89beaf9e2f9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11.pom": {
+      "size": 1690,
+      "sha256": "c3048c920a11dac64d1c608d53f5952b5bb7dbac1ce160b6a02cb599f0ab74e7"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11.klib": {
+      "size": 1203369,
+      "sha256": "ae684c8dc7d54a396a282f37b990a2609214c3880c43e94755f2441ff1394b33"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11-sources.jar": {
+      "size": 158938,
+      "sha256": "7ba0fb7f24101bd3c1bf3ba31383ffb8d692e1398f2f1e8cb625c8046a90577e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-iosx64/0.1.11/mermaid-core-iosx64-0.1.11-metadata.jar": {
+      "size": 2491,
+      "sha256": "a3a5162fcec5aa2d435266fd7dc32d70b80b7c7b7d1135608cbdfa8b68a2c4a9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-wasm-js/0.1.11/mermaid-core-wasm-js-0.1.11.module": {
+      "size": 3466,
+      "sha256": "eeba2ffed32656f646b41e1c84d0819eb6ba692e1d3f590f5435e7a5db212ca6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-wasm-js/0.1.11/mermaid-core-wasm-js-0.1.11.pom": {
+      "size": 1699,
+      "sha256": "f9b69fd04df10d18f80615ea79cc24325abecebb035fa8ff2c66c2a629eec254"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-wasm-js/0.1.11/mermaid-core-wasm-js-0.1.11.klib": {
+      "size": 1206213,
+      "sha256": "707d887a7ddfebb796532db5a942fa575e356b6c17907ae2886744feed20892b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-wasm-js/0.1.11/mermaid-core-wasm-js-0.1.11-sources.jar": {
+      "size": 158965,
+      "sha256": "55a9a45b32126d818f835c1f5bfd79ddfe61d31ed6d87de1eec2625ed5ac8983"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-android/0.1.11/mermaid-layout-api-android-0.1.11.module": {
+      "size": 4564,
+      "sha256": "a19c491ff6cbc79783451f0a21dbbf66bb6fc2e7a099115ef695d7865c828062"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-android/0.1.11/mermaid-layout-api-android-0.1.11.pom": {
+      "size": 1894,
+      "sha256": "e42a53a18717d30913be2d60a33fc525357bbff93356e43a50270f3e308143c0"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-android/0.1.11/mermaid-layout-api-android-0.1.11.aar": {
+      "size": 70689,
+      "sha256": "b6ca4dded46f413718db9055f048443d530240b4878809257afc1617f67ec888"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-android/0.1.11/mermaid-layout-api-android-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11.module": {
+      "size": 4017,
+      "sha256": "9c43bc1db3166bc899bf30152f77b5ed293acafe03761629a37a7bb420491bc9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11.pom": {
+      "size": 1897,
+      "sha256": "b856dfe5bf434614d37be316c4ca36936c33e1e43659aa874d1f5f4daac705ed"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11.klib": {
+      "size": 75803,
+      "sha256": "cb34d6c1b8a0674dff347d2a7df6e43a19f614aa0d3c897a93090fe316c69765"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosarm64/0.1.11/mermaid-layout-api-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "81d666d1c94ddf3775a98b5c4dcb8085cbaaa99dcc30c4758f76206e63e71649"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11.module": {
+      "size": 4128,
+      "sha256": "40aa6273f2272f5cdfe96fd50fe261572672378c0fd33a1c3952c74845cc5fbe"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11.pom": {
+      "size": 1915,
+      "sha256": "ad4dcdfd81ed4ad7955ab307008d0eb96044284c79dc9b91ee5df814aef78a4e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11.klib": {
+      "size": 75892,
+      "sha256": "78ecf4a765a62c8e5ed70bc59429be9da2abe887c7795497ee2d5148e02eeb77"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iossimulatorarm64/0.1.11/mermaid-layout-api-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "81d666d1c94ddf3775a98b5c4dcb8085cbaaa99dcc30c4758f76206e63e71649"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11.module": {
+      "size": 3993,
+      "sha256": "e290d92d3e952e45fdaf54f9b4b98ff2542116f790fa6e654f4e68e80bdc152f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11.pom": {
+      "size": 1893,
+      "sha256": "d96761b05673af72de7de2365d0e7404e4e9a3cdb5279ea06562b7618f2653d3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11.klib": {
+      "size": 75790,
+      "sha256": "da15b9c21687815decf013d7ea04979da168f7b6bf7604c83e5105ec95a2788e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-iosx64/0.1.11/mermaid-layout-api-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "81d666d1c94ddf3775a98b5c4dcb8085cbaaa99dcc30c4758f76206e63e71649"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-wasm-js/0.1.11/mermaid-layout-api-wasm-js-0.1.11.module": {
+      "size": 3846,
+      "sha256": "8cd05f7e23485ed7b35ebb596dce39733383129843478957317d9a66611f819a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-wasm-js/0.1.11/mermaid-layout-api-wasm-js-0.1.11.pom": {
+      "size": 1903,
+      "sha256": "2405006e8182e0b978c4382ed42ed28ba9145952a903e98ffac66e8394db5747"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-wasm-js/0.1.11/mermaid-layout-api-wasm-js-0.1.11.klib": {
+      "size": 76308,
+      "sha256": "454a1cd82b60c177f1923f246d9dd60ed6a98025512b5f4c7c8e1b3abac243e2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-wasm-js/0.1.11/mermaid-layout-api-wasm-js-0.1.11-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-android/0.1.11/mermaid-layout-simple-android-0.1.11.module": {
+      "size": 4607,
+      "sha256": "67d7a8cc3bd7ade6e55a0558792a8e53af3f57aec06df21e2b9a42facde0ff66"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-android/0.1.11/mermaid-layout-simple-android-0.1.11.pom": {
+      "size": 1906,
+      "sha256": "df1b7e45b7fba88ad13141e7835950515f9d54cc03a2a48b3daad025e50f2f26"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-android/0.1.11/mermaid-layout-simple-android-0.1.11.aar": {
+      "size": 636890,
+      "sha256": "76b98c156426a7872d45fceab9d1dda4c070a3d3754b026b038ca32739bf3532"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-android/0.1.11/mermaid-layout-simple-android-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11.module": {
+      "size": 4059,
+      "sha256": "6dbdd5d322ee9b2ce76a3545159038201ad8830059946c54e44100aff6549644"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11.pom": {
+      "size": 1909,
+      "sha256": "c3b19c76141aa60b97f86cfee3a00724379b701996fde06c86e69c1adf745f03"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11.klib": {
+      "size": 971938,
+      "sha256": "6e5cdbc8c1caad4ed80a29e7cf96daa0fd7575fe43b22413194dc150f41055ce"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosarm64/0.1.11/mermaid-layout-simple-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "1ce3eeb928f89164c29d27789245c703484f6b9374f7163fab3f436e71f67ec4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11.module": {
+      "size": 4170,
+      "sha256": "91610e1f651f52e00877e75e08149a08be5f57f6826238d42109dbb287184036"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11.pom": {
+      "size": 1927,
+      "sha256": "33270c87517f4f3083a940ad454091af7b0a938d398656b0ecf48b589c3d2d35"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11.klib": {
+      "size": 972026,
+      "sha256": "ebe01660a44b5cabbf98ac2ada4f5fc726e066ee9a2b7cea88a5cebe65781f9d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iossimulatorarm64/0.1.11/mermaid-layout-simple-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "1ce3eeb928f89164c29d27789245c703484f6b9374f7163fab3f436e71f67ec4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11.module": {
+      "size": 4035,
+      "sha256": "fba66995ac4d7fc963d09124bfaefb1c22f7acea8a352dbda9b955c91d3a1b20"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11.pom": {
+      "size": 1905,
+      "sha256": "45c22eae448e70697d67c299755a23ebad4d5a8e3eecc5e189baa63b30c29fdb"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11.klib": {
+      "size": 971923,
+      "sha256": "d3d392926b32c558b14c25a41bb96f926fb363697f2d55a9387cd2ba52cde936"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-iosx64/0.1.11/mermaid-layout-simple-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "1ce3eeb928f89164c29d27789245c703484f6b9374f7163fab3f436e71f67ec4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-wasm-js/0.1.11/mermaid-layout-simple-wasm-js-0.1.11.module": {
+      "size": 3889,
+      "sha256": "3aeb9e93ac43345c04d1ae989739e017da941990cf3f32db648fe75a61a27342"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-wasm-js/0.1.11/mermaid-layout-simple-wasm-js-0.1.11.pom": {
+      "size": 1915,
+      "sha256": "6e2020b40bd6d218220bf11b247a5922d402d0954c266833713f397cb77225e5"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-wasm-js/0.1.11/mermaid-layout-simple-wasm-js-0.1.11.klib": {
+      "size": 974428,
+      "sha256": "8fb2a3b269fb2bc720163d2ed24317d769a36edbcbc9af6d07450c1cbf352391"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-wasm-js/0.1.11/mermaid-layout-simple-wasm-js-0.1.11-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-android/0.1.11/mermaid-render-svg-android-0.1.11.module": {
+      "size": 4576,
+      "sha256": "8be9cf8ecd9392ab6dad58b04f044dc5a7c6bee82a56c834c64b9033f62af257"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-android/0.1.11/mermaid-render-svg-android-0.1.11.pom": {
+      "size": 1900,
+      "sha256": "2bc988f372c23fd233c1463f5911277465f524e99ded00820bd17d405dbf6a63"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-android/0.1.11/mermaid-render-svg-android-0.1.11.aar": {
+      "size": 11112,
+      "sha256": "3542f1bf6d7cfd16edccb6aa9dc66973639c33d2c9d6d787678501f66c2defe2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-android/0.1.11/mermaid-render-svg-android-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11.module": {
+      "size": 4029,
+      "sha256": "9873b7c13b8133bc9c3e9d3efdcafd3ea7248b40fa1e69c0d15d742cfde0df41"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11.pom": {
+      "size": 1903,
+      "sha256": "c0d357a0d413742ba91d7c9e7a68b4068ab588910ebe7898e076ee8734bbf236"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11.klib": {
+      "size": 18304,
+      "sha256": "78eb0fcf53b4cce94267b47017c514b40b7b4c037f7da610d91ef0f116208096"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosarm64/0.1.11/mermaid-render-svg-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "9d793c75d4f8bdcacee388521af4011bf051957366e892c776974174a2652253"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11.module": {
+      "size": 4140,
+      "sha256": "84d2fad95694c557fa7c5e5fdcbf186cbba590c8b7dc60f149828ab1a9bcdbcc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11.pom": {
+      "size": 1921,
+      "sha256": "6e7adf7342aa3c38943c3f467fe1fdcdcbfa43b253d08e1d0f0185af62378bd2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11.klib": {
+      "size": 18391,
+      "sha256": "4a86d28f074084ab61c07f0768eae1b95756c06f9d981a929fe4313d1c70d47a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iossimulatorarm64/0.1.11/mermaid-render-svg-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "9d793c75d4f8bdcacee388521af4011bf051957366e892c776974174a2652253"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11.module": {
+      "size": 4005,
+      "sha256": "33cf4972ba1cec8ce2169f14e477bda500322c9c4914bb40a7f4c8e43c1eebea"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11.pom": {
+      "size": 1899,
+      "sha256": "dd314cf89e3d386946796ec5c69768d917e54b29f5c9bd39d2e3b81ff6ee8e62"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11.klib": {
+      "size": 18288,
+      "sha256": "bb122c8151af988a0f11a9a431fe62d392e3e604258e48321912bec28cff0909"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-iosx64/0.1.11/mermaid-render-svg-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "9d793c75d4f8bdcacee388521af4011bf051957366e892c776974174a2652253"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-wasm-js/0.1.11/mermaid-render-svg-wasm-js-0.1.11.module": {
+      "size": 3858,
+      "sha256": "7188ecd5051e5621f833678d1574a57716e3734b8df4d388d4b634242c736264"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-wasm-js/0.1.11/mermaid-render-svg-wasm-js-0.1.11.pom": {
+      "size": 1909,
+      "sha256": "fd9cf099490490ec065932ac4f905a7c12fed8e6c45619f1d3f86b99914834bc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-wasm-js/0.1.11/mermaid-render-svg-wasm-js-0.1.11.klib": {
+      "size": 17946,
+      "sha256": "790b1038af0b60d292f369a0097330da292451bad04ce57b2110eeed561b01d9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-render-svg-wasm-js/0.1.11/mermaid-render-svg-wasm-js-0.1.11-sources.jar": {
+      "size": 3326,
+      "sha256": "a32082090237995b82a3dae70854cd56c7196dbf2e3744bed174070772eb9a60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-android/0.1.11/mermaid-kuikly-android-0.1.11.module": {
+      "size": 5130,
+      "sha256": "691d337bd85a5602236bb649354465b077fee87adeac903b01dd6301b574389c"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-android/0.1.11/mermaid-kuikly-android-0.1.11.pom": {
+      "size": 2583,
+      "sha256": "3b8309b0d133669cf0acf249a4ae11f0ca73a44359696dece42d5d19ccd8eb22"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-android/0.1.11/mermaid-kuikly-android-0.1.11.aar": {
+      "size": 13319,
+      "sha256": "a32c4f3678f1866938bb8cb5e66c8fde8f8e2abfe2925df9be6e64ea4aa9b3e3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-android/0.1.11/mermaid-kuikly-android-0.1.11-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11.module": {
+      "size": 4347,
+      "sha256": "bec93de81a432b41f6ff6a84b9de2ff872591c36a3529ba8f6f84a0b750eaea9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11.pom": {
+      "size": 2099,
+      "sha256": "8088ca104317e6f7844fce75a13099957f01e97a896470df5a4f1d1257e2f181"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11.klib": {
+      "size": 25326,
+      "sha256": "50dc62fe931eaaec489bd180647478eb6545c03ba5ab2214117a153fff073559"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosarm64/0.1.11/mermaid-kuikly-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "35f76e68506b1e40a7f63d9bbdeca905209e5bfc6d2ebfc3645a4d3ed5fd0e1f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11.module": {
+      "size": 4458,
+      "sha256": "e5c15543f481ee9b9ed973d3b974a38a31dc827a58417cc3cfe38c6005fe66c8"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11.pom": {
+      "size": 2126,
+      "sha256": "eaaaed43988a394e446f3886614346a7ba0c081bf1d642e45226650ff9a7fe5a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11.klib": {
+      "size": 25409,
+      "sha256": "6b9dbb8c2d997af18f1a7491ec1d989d100b7d68bb678b9afce17924fc1105b4"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iossimulatorarm64/0.1.11/mermaid-kuikly-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "c6581a7b52b7e09cb17baaf57041ea904a9f61b172b0d91a318188ae673f8161"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11.module": {
+      "size": 4323,
+      "sha256": "fc52e14524da55bc429d22b4bfdfa7b1c910a41ad299adcaa7bad3c80d54a5c2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11.pom": {
+      "size": 2093,
+      "sha256": "3b8f50e3f82fc096da7370b1fcdd7c96ad8fc61b26a656f10a69fb2d1cd7d1d5"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11.klib": {
+      "size": 25309,
+      "sha256": "ea57e9a8626958befba0eb02d7bddd4067f5283d6f534e030d399bc4790a75a8"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-iosx64/0.1.11/mermaid-kuikly-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "0f8a693f9adcb1853744368e9bb44496be0f44b5c9c60c6351eae8daef41b9a2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-android/0.1.11/mermaid-testkit-android-0.1.11.module": {
+      "size": 6815,
+      "sha256": "05eb8294a597a965b419bbee60ccdb9d58d244b555ee05854061515498f32611"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-android/0.1.11/mermaid-testkit-android-0.1.11.pom": {
+      "size": 2485,
+      "sha256": "d89592f56c409a11ac6fc5adf28914a2f3c03704d2746338241f59d5943a5554"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-android/0.1.11/mermaid-testkit-android-0.1.11.aar": {
+      "size": 24415,
+      "sha256": "e902b8018b397af1bc7795fbc44a2d8881e5ac2e54daa93cefb3b1fb84cddecc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-android/0.1.11/mermaid-testkit-android-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11.module": {
+      "size": 5029,
+      "sha256": "fea1582936f11b0b880aa66021468c01fcc1b092b3091753260a55f84c64ee9e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11.pom": {
+      "size": 2491,
+      "sha256": "c938fd1185e36cd381ca08e78e55458e263a0003c0ae7599efbb9cd0eed8c574"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11.klib": {
+      "size": 41008,
+      "sha256": "b1ee0e98f3508bb3aeb7a4b64bcef31b001d0bed986f0320f6e121613d5c6090"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosarm64/0.1.11/mermaid-testkit-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "bcf69bc49a4dea46dbd658360532bed2656e994e0ef6cbb2b81740b2e4e64698"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11.module": {
+      "size": 5140,
+      "sha256": "3c93689c1fcda227baa17e7938b1709df9f22fa9a1067e73fbd29d7d2ca11483"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11.pom": {
+      "size": 2536,
+      "sha256": "94efd019f8bdb0965437fd6342a6cc01f323105da69ee6902b4f5dc4aa0ef963"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11.klib": {
+      "size": 41094,
+      "sha256": "6f2ac08d67a33c73a45a2d58fc2e066782f104e278c7ff6037c1d34662eecc72"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iossimulatorarm64/0.1.11/mermaid-testkit-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "54b74419b72ff160b4a39dbcf93e6db8b3e007260edb885d911246042b1df6ab"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11.module": {
+      "size": 5005,
+      "sha256": "a0ba38ea3b5d6d90a1c142a8041da4a8b8cb30cd48978c59668f15677fff2e20"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11.pom": {
+      "size": 2481,
+      "sha256": "fe844dd4e3d9ba45fe1bea382490c08525440a68645bdbca4b0fd0c603f54a6b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11.klib": {
+      "size": 40991,
+      "sha256": "798df460df42d496fce954c25815998093ee72f7f5d46f18d65a2ca89e476d23"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-iosx64/0.1.11/mermaid-testkit-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "d349d85435ede21c6c8c04404c89474ccdf1f1ee002dc742455d16dd04407e60"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-wasm-js/0.1.11/mermaid-testkit-wasm-js-0.1.11.module": {
+      "size": 4858,
+      "sha256": "05d8a7e41a60b49ae4817cf31bc8ab5b30011634f50da115751ad569260298fe"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-wasm-js/0.1.11/mermaid-testkit-wasm-js-0.1.11.pom": {
+      "size": 2494,
+      "sha256": "287764e0f663dba8796f776f43cbf42a274700caca434ce53a54c02b5c52454a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-wasm-js/0.1.11/mermaid-testkit-wasm-js-0.1.11.klib": {
+      "size": 40692,
+      "sha256": "cb52f02d06cb54370c78cbc7038b9bdc9b1d60510f77b3d6ce67d4a33c0b3294"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-testkit-wasm-js/0.1.11/mermaid-testkit-wasm-js-0.1.11-sources.jar": {
+      "size": 10363,
+      "sha256": "ee9e2d97705ded57f7b1248d36e8f1e9495ea89910208626f405bd1ae32770ba"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-android/0.1.11/mermaid-web-android-0.1.11.module": {
+      "size": 6431,
+      "sha256": "e21ccf5c2f7390df415064b7ea505acb5374db345aea34dcd6822b10523aa343"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-android/0.1.11/mermaid-web-android-0.1.11.pom": {
+      "size": 3453,
+      "sha256": "47751868c298a6048c7203963e7728cacee1809380503f5bf1a1b30327c9462f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-android/0.1.11/mermaid-web-android-0.1.11.aar": {
+      "size": 18628,
+      "sha256": "08ca4bf5f881755307307d5746761f4f52c25c6a8857512abd9ea543d20b55cc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-android/0.1.11/mermaid-web-android-0.1.11-sources.jar": {
+      "size": 4106,
+      "sha256": "658cc52de20a515ab9969d5576d2c6d7634c5a129a979a2630dd18c814e74eb6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11.module": {
+      "size": 4992,
+      "sha256": "e45202d1418ca472dcac5362fc3b4c5a5556aa98faed0532012bb6955003d64e"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11.pom": {
+      "size": 2483,
+      "sha256": "24b890c32f991587fecbe67d8f7303a188ddccac0db6146e4e89d0e3c3c0f416"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11.klib": {
+      "size": 24466,
+      "sha256": "92b83e9748e7db27843af3cc76866ce94755dc27d0915509f20bda9bbc87c9db"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11-sources.jar": {
+      "size": 4106,
+      "sha256": "658cc52de20a515ab9969d5576d2c6d7634c5a129a979a2630dd18c814e74eb6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosarm64/0.1.11/mermaid-web-iosarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "c0f674a8f854472cc904204918da08b80bae8f06adbbaa9ba201e3e1182b92c6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11.module": {
+      "size": 5103,
+      "sha256": "d2f22c26972f42eb31063852846dbca086d5a7b86c29040871ee6599f471a61f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11.pom": {
+      "size": 2528,
+      "sha256": "d273c5d2a589c44aa16680efe32fa98ecc037a2d17278df766050c5e073adca8"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11.klib": {
+      "size": 24553,
+      "sha256": "be31bd69f80ece52f75706abd764d82a484ba6a5ee4fb1aeaeb7626c513a33c8"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11-sources.jar": {
+      "size": 4106,
+      "sha256": "658cc52de20a515ab9969d5576d2c6d7634c5a129a979a2630dd18c814e74eb6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iossimulatorarm64/0.1.11/mermaid-web-iossimulatorarm64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "6effa8b785b6ba6c3a3a5b5825856faa69dbd5d27219019c6a2a6646d0fc29a2"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11.module": {
+      "size": 4968,
+      "sha256": "3150fb0fa46a11260dfdfa33be4dd3f7b4c1125b28144c0bcc65773d51d87125"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11.pom": {
+      "size": 2473,
+      "sha256": "078d2e2eefef5529f245977ab477691439e464af9fd8bc6f0f0210652bd5fa7a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11.klib": {
+      "size": 24450,
+      "sha256": "7ede4191741b621e2981f37451fc0b348a42a09d1080184fea2f502bdad4628b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11-sources.jar": {
+      "size": 4106,
+      "sha256": "658cc52de20a515ab9969d5576d2c6d7634c5a129a979a2630dd18c814e74eb6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-iosx64/0.1.11/mermaid-web-iosx64-0.1.11-metadata.jar": {
+      "size": 261,
+      "sha256": "c8a1827b057d5f4b56259fc13eda0b54f7e0c0d98a515910a7e58310f76b4064"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-wasm-js/0.1.11/mermaid-web-wasm-js-0.1.11.module": {
+      "size": 4474,
+      "sha256": "adcf2c81d4248ab57e923b22dbd7ff453f1d11903eba78263855323402257cd9"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-wasm-js/0.1.11/mermaid-web-wasm-js-0.1.11.pom": {
+      "size": 2486,
+      "sha256": "985434e07ffd55b9020658ff910857e50d612101ea0a055d246c744ba3ac57d1"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-wasm-js/0.1.11/mermaid-web-wasm-js-0.1.11.klib": {
+      "size": 28231,
+      "sha256": "a533e9b4fb609ceda58077e121701578213d3a806093ac7d60b63b9a43f384a0"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-web-wasm-js/0.1.11/mermaid-web-wasm-js-0.1.11-sources.jar": {
+      "size": 5709,
+      "sha256": "ced412c53f1abf9ac2353d567bf2cef7754b48109c18c9bb72385083739a2a49"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos.module": {
+      "size": 3574,
+      "sha256": "599f76c4b3f3c60d839039554b1469082278412c2a940f0cce8ba1bca039b13d"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos.pom": {
+      "size": 1670,
+      "sha256": "32ae62366d4e5344867deed44e6a9eea633815f518713e388339ea7b0cd1b78a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos.jar": {
+      "size": 667,
+      "sha256": "77d5c01535294de771c0c3e7be3519bbb2118f6b73a05503bdfa53d8e680f05b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core/0.1.11-ohos/mermaid-core-0.1.11-ohos-sources.jar": {
+      "size": 261,
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos.module": {
+      "size": 3811,
+      "sha256": "a75202c70c47f55fa54eebbeac8da16436341f5f572f307ac529b42888247c38"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos.pom": {
+      "size": 1871,
+      "sha256": "8a91fc34098d1fdb60f39164958c418d0dcfbb8f5fd9ccea1e4c2357143b2226"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos.jar": {
+      "size": 711,
+      "sha256": "5090d8e9a6c9256f66ca7bf8f80fb6384b0c5fcdd2157f15d3c804fad3fe530f"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api/0.1.11-ohos/mermaid-layout-api-0.1.11-ohos-sources.jar": {
+      "size": 261,
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos.module": {
+      "size": 3850,
+      "sha256": "69b7c8a5043fa4b3f6652c167a25aab69c717f16c73a02836539812aa152f98c"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos.pom": {
+      "size": 1883,
+      "sha256": "521c883d83cbd018a1581eaf8585cfd126bac208636c33d35ce50a4decd734cb"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos.jar": {
+      "size": 691,
+      "sha256": "961864f467034858187b96227c952cfbcadb5a63f8302ac1e08783b703ffe7f6"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple/0.1.11-ohos/mermaid-layout-simple-0.1.11-ohos-sources.jar": {
+      "size": 261,
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos.module": {
+      "size": 3773,
+      "sha256": "5c09d2c2b032f99b2bb5cac8e0d805aa4064a684d82365837472b90f2b0fc9e5"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos.pom": {
+      "size": 1869,
+      "sha256": "e06aca29199783c4a54446eebd211e26ffe3bf162f07d5be754412747bca8343"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos.jar": {
+      "size": 713,
+      "sha256": "eb7f8386563c6c0a94368f7954fdf0e3a5bc52c607f5115c11cf03cea788ac47"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly/0.1.11-ohos/mermaid-kuikly-0.1.11-ohos-sources.jar": {
+      "size": 261,
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-ohosarm64/0.1.11-ohos/mermaid-core-ohosarm64-0.1.11-ohos.module": {
+      "size": 2511,
+      "sha256": "79e3c74e206e8d431506bf983107ae330de93e74022e89a0f2883e2bd3a3acac"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-ohosarm64/0.1.11-ohos/mermaid-core-ohosarm64-0.1.11-ohos.pom": {
+      "size": 1706,
+      "sha256": "1b094eac41e7289117f4d81efd531e2129d392e61132872683de90472ee1dea0"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-ohosarm64/0.1.11-ohos/mermaid-core-ohosarm64-0.1.11-ohos.klib": {
+      "size": 1207427,
+      "sha256": "158891de49edee65a7c82e5b35feb0ccf5e91e4f149f086439e276bf379591d1"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-core-ohosarm64/0.1.11-ohos/mermaid-core-ohosarm64-0.1.11-ohos-sources.jar": {
+      "size": 159142,
+      "sha256": "b5c7f98c6fe0414dfd0df756768e1d8d72a2f5b96c44dd42f10f88109affe6b3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-ohosarm64/0.1.11-ohos/mermaid-layout-api-ohosarm64-0.1.11-ohos.module": {
+      "size": 2720,
+      "sha256": "e196762c9ec43b1fed33312e9683e2a87bfa1d91d4ec394ca2df32c9252a9582"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-ohosarm64/0.1.11-ohos/mermaid-layout-api-ohosarm64-0.1.11-ohos.pom": {
+      "size": 1917,
+      "sha256": "19bbb913ad27a4ef9964c5fa267aed6c7ce90ad07b618f6b02048a0bcb1b049c"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-ohosarm64/0.1.11-ohos/mermaid-layout-api-ohosarm64-0.1.11-ohos.klib": {
+      "size": 76557,
+      "sha256": "b9798c78edc0ed0f53399a0d73304b566e93e3b3f347a50907d33bab00455b2a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-api-ohosarm64/0.1.11-ohos/mermaid-layout-api-ohosarm64-0.1.11-ohos-sources.jar": {
+      "size": 6291,
+      "sha256": "56d5287b336f1963d77ab69a488bd3eeb85afae82dd8ba0a30910eaabf43b672"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-ohosarm64/0.1.11-ohos/mermaid-layout-simple-ohosarm64-0.1.11-ohos.module": {
+      "size": 2750,
+      "sha256": "83c423db150cb7ca9b32ab478b2a21408519c59494ea663085641755873ae8d8"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-ohosarm64/0.1.11-ohos/mermaid-layout-simple-ohosarm64-0.1.11-ohos.pom": {
+      "size": 1929,
+      "sha256": "bf4572734ea40ad70630ad4d4f9721bc4eb7f98718f1453c6afd377ba21363d3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-ohosarm64/0.1.11-ohos/mermaid-layout-simple-ohosarm64-0.1.11-ohos.klib": {
+      "size": 974524,
+      "sha256": "6b0b000ab70a4426275318be29d8edeb6b036c6c54949924e49387026fef1efc"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-layout-simple-ohosarm64/0.1.11-ohos/mermaid-layout-simple-ohosarm64-0.1.11-ohos-sources.jar": {
+      "size": 140821,
+      "sha256": "ae40222693d7b93df80cdc473b6f62022bbc8d958d376483db873af245ae5026"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-ohosarm64/0.1.11-ohos/mermaid-kuikly-ohosarm64-0.1.11-ohos.module": {
+      "size": 2880,
+      "sha256": "7046595654cb2b6291ed5ec634491e0c95da91fe2853510384a6a9d57e653a6b"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-ohosarm64/0.1.11-ohos/mermaid-kuikly-ohosarm64-0.1.11-ohos.pom": {
+      "size": 2125,
+      "sha256": "dccf522020444f480fce59d2d4b5076e6d341431770ca9557e271e00e84f754a"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-ohosarm64/0.1.11-ohos/mermaid-kuikly-ohosarm64-0.1.11-ohos.klib": {
+      "size": 26098,
+      "sha256": "aa80ea0d8c6bd686768b7f096823e60e3ef1b7620161c3ab2d146951442d1ee3"
+    },
+    "https://maven.artifacts.botiverse.dev/build/raft/mermaid/mermaid-kuikly-ohosarm64/0.1.11-ohos/mermaid-kuikly-ohosarm64-0.1.11-ohos-sources.jar": {
+      "size": 4596,
+      "sha256": "8bc8b303d75e0d7a4043f110ab5e9099dc0b06e1b29f085dc1d2e2f641c7d28d"
+    }
+  }
+}
