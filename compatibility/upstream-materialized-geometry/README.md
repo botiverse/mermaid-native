@@ -1,0 +1,13 @@
+# Materialized geometry contract
+
+Ports the complete nine-operation `direction/materializedGeometry.ts` module at upstream revision `04ee3364045d6573f84034d3c9368cc50233a92f`. The immutable Native boundary returns both ordered edge occurrences and nodes: terminal separation, rectangular doglegs, obstacle rails, top/left title bands, destination-tail exchange, external rail channel assignment, redundant jogs and crossing resolution. Duplicate edge IDs do not collapse occurrence identity. Group title passes preserve both title movement and group expansion.
+
+`run.py` captures every call from the complete, unchanged original file (10 assertions), compares the entire mutated edge/node result with Native, then replays those Native results into the original assertions. The Java adapter only transports fields. Corruption controls replace each operation's result with its original input and require the corresponding assertion to fail. `targeted.py` separately compares transformed fixtures and 24 crossing-resolver scenarios, because that ninth export has no direct test in the original file. `decimal-keys.py` checks candidate deduplication equivalence against JavaScript's actual `toFixed(3)` at binary rounding boundaries. Supplemental cases do not count as new original assertions.
+
+The flow renderer admits these passes atomically only for fully orthogonal rectangle-node graphs without edge labels. It requires endpoint attachment, obstacle clearance, at least 8px terminal runs, and no increase in strict crossings. The complete transaction, including title movement, also cannot increase rendered T-junction crossings or any diagnostic issue count. A blocked title move rolls back its coupled rail changes. Labeled, diagonal, nonrectangular and group-endpoint routes keep their previous geometry. Native group titles are horizontal even for LR layouts; this consumer uses top-title movement and does not manufacture a vertical LR title band. Final paths and group bounds must be used by painting, scene bounds and diagnostics together.
+
+The unchanged original file passes all 10 assertions, with 11 full-output comparisons and 10 corruption controls. Supplemental validation passes 68 transformed/resolver cases and 2,012 decimal-key inputs. A 160-graph production probe reduces crossings in 14 graphs and introduces no diagnostic issue-count increases; this does not establish full swimlane or complex-loop parity. Platform and browser verification is tracked separately. No SDK release from this work.
+
+```sh
+python3 compatibility/upstream-materialized-geometry/run.py --upstream /path/to/installed/upstream --stdlib /path/to/kotlin-stdlib.jar --verify-mutations
+```

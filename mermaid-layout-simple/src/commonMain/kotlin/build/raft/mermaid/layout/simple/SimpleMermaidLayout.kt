@@ -3164,12 +3164,16 @@ public object SimpleMermaidLayout : DiagramLayout {
             flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
         else feedbackRoutes+obstacleRoutes
         val returnRoutes=planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
-        val edgePaths=diagram.edges.mapIndexedNotNull { index, edge ->
+        val refinedPaths=diagram.edges.mapIndexedNotNull { index, edge ->
             val source=rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@mapIndexedNotNull null
             val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
             val anchors=edgeAnchors(source,target,placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
         }.toMap().let { paths -> clipExpandedFlowShapes(diagram,rects,refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths))) }
+        val materialized=materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
+        val edgePaths=materialized.paths
+        val groupRects=materialized.groups
+        val geometryChanged=edgePaths!=refinedPaths || groupRects!=placement.groups
         val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
@@ -3183,7 +3187,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             var depth=0;var parent=group.parentId;val seen=mutableSetOf<String>()
             while(parent!=null && seen.add(parent)){depth++;parent=diagram.subgraphs.firstOrNull { it.id==parent }?.parentId};depth
         }.forEach { subgraph ->
-            val rect=placement.groups[subgraph.id] ?: return@forEach
+            val rect=groupRects[subgraph.id] ?: return@forEach
             val groupStyle=flowGroupStyle(subgraph,diagram)
             commands += DrawRect(rect,cornerRadius=4.0,fill=groupStyle.fill,stroke=groupStyle.stroke,strokeWidth=groupStyle.strokeWidth)
             val title = DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+6+groupStyle.text.fontSize),TextAnchor.MIDDLE,groupStyle.text)
@@ -3198,7 +3202,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val markerColor=if(flowEdgeStyles(edge,diagram).any { it.substringBefore(':').trim()=="stroke" })edgeStyle.stroke else arrowFill
             val route=returnRoutes[index]
             val pattern=if(edge.style==FlowEdgeStyle.DOTTED)StrokePattern.DASHED else StrokePattern.SOLID
-            if(route==null) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            if(points.size==2) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             val lastFrom=points[points.lastIndex-1]
             if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, points.last(), fill = markerColor)
@@ -3257,10 +3261,14 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         fun validation(dx: Double, dy: Double): build.raft.mermaid.layout.LayoutValidationReport? {
             if (!config.validateOrthogonalLayout) return null
-            return flowLayoutValidation(diagram, rects, placement.groups, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
+            return flowLayoutValidation(diagram, rects, groupRects, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
         }
-        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty())return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
-        val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }
+        if(returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+        val materializedBounds=if(geometryChanged) groupRects.values+edgePaths.values.map { p ->
+            val left=p.minOf { it.x };val top=p.minOf { it.y }
+            SceneRect(left,top,p.maxOf { it.x }-left,p.maxOf { it.y }-top)
+        } else emptyList()
+        val bounds=returnRoutes.values.map { it.bounds }+adjustedLabels.values.map { it.bounds }+materializedBounds
         val dx=maxOf(0.0,config.padding-bounds.minOf { it.x })
         val dy=maxOf(0.0,config.padding-bounds.minOf { it.y })
         return LayoutScene(maxOf(width,bounds.maxOf { it.x+it.width }+config.padding)+dx,

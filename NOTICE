@@ -48,3 +48,9 @@ UsecaseLexer adapts Mermaid's Usecase token vocabulary and lexical modes at the
 revision recorded in compatibility/upstream-usecase-tokenizer/sources.json.
 Copyright Knut Sveidqvist and contributors, under the MIT License reproduced in
 mermaid-core/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
+
+MaterializedGeometry and its internal operation helpers adapt Mermaid's
+direction/materializedGeometry.ts at the revision recorded in
+compatibility/upstream-materialized-geometry/sources.json. Copyright Knut
+Sveidqvist and contributors, under the MIT License reproduced in
+mermaid-layout-simple/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
