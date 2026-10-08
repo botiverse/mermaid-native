@@ -37,7 +37,7 @@ export default defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Client SDK integration', link: '/guide/getting-started' },
+            { text: 'Getting started', link: '/guide/getting-started' },
             { text: 'Releases and upgrading', link: '/guide/releases' },
             { text: 'Compatibility', link: '/guide/compatibility' },
             { text: 'Architecture', link: '/guide/architecture' },

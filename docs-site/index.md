@@ -6,11 +6,11 @@ hero:
   tagline: Mermaid-compatible parsing, deterministic layout, and native rendering without a WebView or JavaScript runtime.
   actions:
     - theme: brand
-      text: Read the compatibility contract
-      link: /guide/compatibility
+      text: Get started
+      link: /guide/getting-started
     - theme: alt
-      text: Explore examples
-      link: /examples
+      text: Try the playground
+      link: /playground
 features:
   - icon: ✓
     title: Fail-closed compatibility
@@ -20,10 +20,18 @@ features:
     details: Parser, typed AST, layout scene, and draw commands stay platform-neutral in commonMain.
   - icon: ⌁
     title: Native platform adapters
-    details: Android, iOS, OHOS, and Kuikly remain explicit consumers with their own support gates.
+    details: Optional Kuikly Canvas rendering, shared SVG export, and a Kotlin/Wasm browser demo.
 ---
 
-## Start with the contract
+## Integrate diagrams into your application
+
+Current verified SDK: **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS. Parsing, layout and SVG export work independently of Kuikly. The optional Kuikly adapter is tested with the Raft distribution; official upstream Kuikly integration is not yet independently verified.
+
+[Get started](/guide/getting-started) · [Release notes](/guide/releases) · [GitHub](https://github.com/botiverse/mermaid-native)
+
+The website follows main, which can contain unreleased changes. Use the release notes to distinguish published SDK capabilities from newer source code.
+
+## Check the features you need
 
 Mermaid Native is an independent, non-official implementation. Compatibility is declared per diagram family and syntax feature; the support matrix is the source of truth.
 

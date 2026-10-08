@@ -1,5 +1,11 @@
 # SDK releases and upgrading
 
+## Unreleased on main
+
+The main branch includes additional edge-route refinement and typed stroke paths (moves, lines, quadratic curves and circular arcs) across SVG, browser Canvas and Kuikly. These changes are **not included in 0.1.11**. The typed-path addition introduces a new draw command for custom renderers to handle; it does not itself enable crossing hops in existing diagrams.
+
+Use a release tag and the matching published artifacts for a reproducible integration. The latest verified release remains the pair below.
+
 ## 0.1.11 / 0.1.11-ohos
 
 **Available.** Both planes were published by [release workflow 37754435207](https://github.com/botiverse/mermaid-native/actions/runs/37754435207) from immutable tag [`v0.1.11`](https://github.com/botiverse/mermaid-native/tree/v0.1.11), source [`feb4d563`](https://github.com/botiverse/mermaid-native/commit/feb4d563f25877a5301484d792f43f02f165e6b6). Later main-branch commits are not included in these artifacts.
