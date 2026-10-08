@@ -774,7 +774,10 @@ public data class SwimlaneDiagram(
     val lanes: List<Swimlane>,
     val edges: List<SwimlaneEdge>,
     val flowchart: FlowchartDiagram? = null,
+    val lineHops: SwimlaneLineHops = SwimlaneLineHops.ARC,
 ) : MermaidDiagram
+
+public enum class SwimlaneLineHops { DISABLED, ARC, GAP }
 
 public data class Swimlane(
     val id: String,
