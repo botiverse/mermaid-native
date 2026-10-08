@@ -1,5 +1,6 @@
 package build.raft.mermaid.web
 
+import build.raft.mermaid.layout.*
 import build.raft.mermaid.layout.DrawCommand
 import build.raft.mermaid.layout.DrawEllipse
 import build.raft.mermaid.layout.DrawLine
@@ -96,6 +97,28 @@ public object MermaidCanvasRenderer {
         is DrawPolyline -> buildString {
             append("{\"op\":\"polyline\",\"pts\":").append(points(command.points))
             append(",\"stroke\":").append(jsonString(command.stroke.value))
+            append(",\"sw\":").append(number(command.strokeWidth))
+            append(",\"dash\":").append(command.pattern == StrokePattern.DASHED)
+            append('}')
+        }
+        is DrawPath -> buildString {
+            append("{\"op\":\"path\",\"segments\":[")
+            command.segments.forEachIndexed { index, segment ->
+                if (index > 0) append(',')
+                val values: List<Double>
+                val kind: String
+                when (segment) {
+                    is PathMove -> { kind = "M"; values = listOf(segment.to.x, segment.to.y) }
+                    is PathLine -> { kind = "L"; values = listOf(segment.to.x, segment.to.y) }
+                    is PathQuadratic -> { kind = "Q"; values = listOf(segment.control.x, segment.control.y, segment.to.x, segment.to.y) }
+                    is PathArc -> { kind = "A"; values = listOf(segment.center.x, segment.center.y, segment.radius, segment.startAngle, segment.sweepAngle) }
+                }
+                append('[').append(jsonString(kind))
+                // Preserve angles and radii together: decimal rounding can change arc endpoints.
+                values.forEach { append(',').append(if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()) }
+                append(']')
+            }
+            append("],\"stroke\":").append(jsonString(command.stroke.value))
             append(",\"sw\":").append(number(command.strokeWidth))
             append(",\"dash\":").append(command.pattern == StrokePattern.DASHED)
             append('}')
