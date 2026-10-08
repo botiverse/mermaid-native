@@ -1,0 +1,6 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.materializedGeometry.spec.ts": "1e8febf1fd6a8a8e3c11ef77044e7df0e5ff20ab51b9bb1a0dfbc56df2610220"
+  }
+}
