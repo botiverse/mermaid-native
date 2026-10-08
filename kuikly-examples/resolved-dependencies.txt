@@ -1,0 +1,15 @@
+Android debugRuntimeClasspath (Gradle dependencies), 2026-10-09
+|    +--- com.tencent.kuikly-open:core:2.28.0-2.1.21
+|    |    \--- com.tencent.kuikly-open:core-android:2.28.0-2.1.21
+|    +--- com.tencent.kuikly-open:core-annotations:2.28.0-2.1.21
+|    |    \--- com.tencent.kuikly-open:core-annotations-jvm:2.28.0-2.1.21
+|    +--- build.raft.mermaid:mermaid-layout-simple:0.1.11
+|    |    \--- build.raft.mermaid:mermaid-layout-simple-android:0.1.11
+|    |         +--- build.raft.mermaid:mermaid-layout-api:0.1.11
+|    |         |    \--- build.raft.mermaid:mermaid-layout-api-android:0.1.11
+|    |         |         +--- build.raft.mermaid:mermaid-core:0.1.11
+|    |         |         |    \--- build.raft.mermaid:mermaid-core-android:0.1.11
+|    \--- build.raft.mermaid:mermaid-kuikly:0.1.11
+|         \--- build.raft.mermaid:mermaid-kuikly-android:0.1.11
+|              +--- build.raft.mermaid:mermaid-layout-api:0.1.11 (*)
+\--- com.tencent.kuikly-open:core-render-android:2.28.0-2.1.21

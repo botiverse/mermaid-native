@@ -13,7 +13,7 @@ This is an independent implementation, not an official Mermaid project. It cover
 | Parse diagrams and inspect typed models | `mermaid-core` | Android/iOS KMP; separate HarmonyOS publication |
 | Compute layout or build your own renderer | `mermaid-layout-simple`, `mermaid-layout-api` | Same platforms; no Kuikly dependency |
 | Export SVG | `mermaid-render-svg` | Android/iOS KMP and repository Kotlin/Wasm build |
-| Draw in a Kuikly app | `mermaid-kuikly` | Implemented and tested with the Raft Kuikly distribution; official upstream Kuikly integration is not independently verified |
+| Draw in a Kuikly app | `mermaid-kuikly` | Raft integration plus an independent official Kuikly 2.28.0 Android example; see the verified scope below |
 | Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
 The latest verified SDK pair is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS. The native modules do not require a JavaScript runtime. The browser demos do use JavaScript host code. There is currently no standalone JVM/Desktop target, Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
@@ -91,7 +91,7 @@ Your app supplies fonts, a viewport, scrolling/zoom gestures, navigation and acc
 - Unsupported syntax and configuration produce typed diagnostics. Handle failures explicitly; do not treat them as an empty successful diagram.
 - Complex graphs can still overlap. Layout and text appearance are not pixel-identical to upstream Mermaid.
 - Configuration, Markdown, links and accessibility support are bounded. Kuikly hosts implement link activation and semantic accessibility themselves.
-- Official upstream Kuikly, Kuikly H5, and WeChat mini-program integration have not been independently verified.
+- The standalone [kuikly-examples](kuikly-examples/) build verifies official Kuikly **2.28.0-2.1.21** with Mermaid **0.1.11**: Android emulator rendering of four samples and iOS shared-code compilation. iOS native linking/runtime, HarmonyOS with official Kuikly, H5 and WeChat mini-program integration remain unverified.
 - APIs may change during the 0.x series. Recompile consuming code and review custom renderers when upgrading.
 
 Original upstream assertions, Native layout tests, and rendered-image comparisons measure different things. A passing parser test is not proof of visual or device parity. See [testing](docs-site/guide/testing.md) for reproducible checks and coverage boundaries.

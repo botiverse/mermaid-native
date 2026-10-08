@@ -28,7 +28,7 @@ Parsing, layout and SVG export can be used independently of Kuikly. The normal b
 
 ## Kuikly compatibility
 
-The Canvas renderer is implemented. Its current publication is built against the Raft Kuikly distribution, using the versions listed in the integration guide. Independent compilation and rendering against the official upstream Kuikly distribution have **not** been verified. A consumer using a different distribution needs to resolve dependency and compiler compatibility and test actual drawing; replacing a version string is not sufficient evidence.
+The Canvas renderer is implemented. Its current publication is built against the Raft Kuikly distribution, using the versions listed in the integration guide. The standalone [kuikly-examples](https://github.com/botiverse/mermaid-native/tree/main/kuikly-examples) verifies official Kuikly **2.28.0-2.1.21** with Mermaid **0.1.11**: Android emulator drawing in four scenarios and iOS shared-code compilation. The example excludes the Raft transitive dependency and supplies official core. iOS native linking/runtime and other official Kuikly platforms remain unverified; this evidence is not a blanket compatibility guarantee.
 
 Reusable diagram behavior belongs in mermaid-native. A Kuikly framework fix belongs in the framework only when it addresses a framework capability or defect, rather than a Mermaid-specific layout rule.
 
