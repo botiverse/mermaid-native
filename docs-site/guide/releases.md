@@ -4,7 +4,7 @@
 
 The main branch includes additional edge-route refinement and typed stroke paths (moves, lines, quadratic curves and circular arcs) across SVG, browser Canvas and Kuikly. These changes are **not included in 0.1.11**. The typed-path addition introduces a new draw command for custom renderers to handle; main also enables configurable arc/gap crossing hops in swimlane diagrams. Set `config.swimlane.lineHops: false` to retain straight crossing strokes. This behavior is also unreleased.
 
-Block arrows on main now use the original multi-direction polygon geometry, including axis shorthands, natural and spanning widths, four-way tip bounds, and painted-boundary edge clipping. This is also unreleased; the complete upstream Block grid algorithm and configurable block padding are not included.
+Block arrows on main now use the original multi-direction polygon geometry, including axis shorthands, natural and spanning widths, four-way tip bounds, and painted-boundary edge clipping. This is also unreleased. Block grids now use upstream measured-tree sizing, row placement and bounds, including spaces, spans, automatic columns and nested composites. `config.block.padding` (default 8) is read per diagram; it is independent of the outer scene margin. Native retains its own text measurement and a reserved composite-heading band, so this is not DOM typography or pixel parity. Very deep grids are rejected with a bounded-work diagnostic.
 
 Use a release tag and the matching published artifacts for a reproducible integration. The latest verified release remains the pair below.
 

@@ -6,6 +6,15 @@ import build.raft.mermaid.layout.simple.*
 import kotlin.test.*
 
 class BlockArrowCanvasTest {
+    @Test fun configuredGridRectanglesAndNestedLabelsReachCanvas() {
+        val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n  block:\n    padding: 20\n---\nblock-beta\ncolumns 2\nblock:Group\nA B\nend\nC"))
+        val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
+        val context = MockCanvasContext()
+        MermaidKuiklyRenderer.render(scene, context)
+        for (label in listOf("Group", "A", "B", "C")) assertTrue(context.log.any { it.startsWith("fillText($label,") })
+        assertTrue(scene.commands.filterIsInstance<DrawRect>().size == 4)
+        assertTrue(context.log.count { it == "fill" } >= 4)
+    }
     @Test fun actualBlockArrowPolygonAndLabelReachNativeCanvas() {
         val parsed = assertIs<MermaidParseResult.Success>(MermaidParser.parse("block-beta\ncolumns 1\nA<[\"Arrow\"]>(x,y):2"))
         val scene = SimpleMermaidLayout.layout(parsed.diagram, FixedWidthTextMeasurer, LayoutConfig())
