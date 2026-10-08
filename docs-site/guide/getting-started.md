@@ -1,9 +1,19 @@
-# Client SDK integration
+# Getting started
 
 Mermaid Native parses Mermaid text into a typed model, lays it out into a shared
 scene, and renders through Kuikly Canvas or SVG. The native path needs no WebView
 or JavaScript runtime. Android and iOS consume the normal Kotlin Multiplatform
 artifacts; HarmonyOS consumes a separate OHOS build of the same source.
+
+## Choose your integration
+
+Use `mermaid-core`, `mermaid-layout-simple` and optionally `mermaid-render-svg` for a UI-independent KMP integration. These modules have no Kuikly dependency. Add `mermaid-kuikly` only when your application already uses Kuikly.
+
+The Kuikly adapter is implemented and tested with the **Raft Kuikly distribution**. Integration with the official upstream Kuikly distribution is **not independently verified**. Compiler compatibility, resolved dependencies and actual rendering must be checked before using another distribution; source-level API similarity is not a compatibility guarantee.
+
+The normal build provides Android/iOS KMP libraries and Kotlin/Wasm for applicable modules. There is no standalone JVM/Desktop target in the current build. The browser playground is a Kotlin/Wasm application, not a Kuikly H5 or WeChat mini-program adapter.
+
+This guide is maintained on main. Dependency examples use the latest verified release; [release notes](./releases) identify changes that have not yet been published.
 
 ## Version and prerequisites
 
@@ -109,11 +119,12 @@ import build.raft.mermaid.layout.LayoutConfig
 import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
 import build.raft.mermaid.layout.simple.SimpleMermaidLayout
+import build.raft.mermaid.layout.simple.layout
 
 fun makeMermaidScene(source: String, onError: (String) -> Unit): LayoutScene? {
     return when (val result = MermaidParser.parse(source)) {
         is MermaidParseResult.Success -> SimpleMermaidLayout.layout(
-            result.diagram,
+            result,
             FixedWidthTextMeasurer,
             LayoutConfig(),
         )
@@ -205,8 +216,11 @@ KLIB upgrade. Follow [the upgrade checklist and release notes](./releases).
 ```bash
 git clone https://github.com/botiverse/mermaid-native.git
 cd mermaid-native
-./gradlew check
+# With JDK 17 and Android SDK 35 configured:
+./gradlew :mermaid-core:testDebugUnitTest :mermaid-layout-simple:testDebugUnitTest
 ```
+
+See [CONTRIBUTING.md](https://github.com/botiverse/mermaid-native/blob/main/CONTRIBUTING.md) for Xcode, browser and full-suite requirements.
 
 The normal build includes seven modules: core, layout-api, layout-simple,
 render-svg, kuikly, web and testkit. The separate OHOS build uses

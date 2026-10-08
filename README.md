@@ -1,132 +1,105 @@
 # Mermaid Native
 
-Mermaid-compatible diagram parsing and native rendering implemented with Kotlin
-Multiplatform. The project does not use a WebView or JavaScript at runtime.
+Render Mermaid-compatible diagrams in Kotlin Multiplatform applications without a WebView or a JavaScript diagram engine. Mermaid Native provides parsing, typed diagram models, deterministic layout, SVG export, and a Kuikly Canvas renderer.
 
-This is an independent, non-official implementation. Compatibility is declared
-per diagram family and syntax feature; unsupported syntax fails with typed
-diagnostics rather than silently rendering a different diagram.
+[Documentation](https://botiverse.github.io/mermaid-native/) · [Try the playground](https://botiverse.github.io/mermaid-native/playground) · [Integration guide](docs-site/guide/getting-started.md) · [Release notes](docs-site/guide/releases.md)
 
-## Default appearance
+This is an independent implementation, not an official Mermaid project. It covers **32 diagram families with feature-specific limits**, rather than the entire Mermaid API or identical upstream layout. Start with the [support matrix](docs-site/reference/families.md) when adopting advanced syntax.
 
-Most diagram families share `DiagramPalette`: zinc text and neutral surfaces, subtle
-borders, and muted blue, green, rose, amber, purple and cyan accents. Titles retain
-their stronger type hierarchy; category colors, status differences and Journey
-scores remain distinct. Source-authored styles and named CSS colors keep their
-literal values. The palette is shared by native scene commands and SVG output. Sankey uses the upstream Tableau palette and translucent gradients; Packet uses neutral gray fields with black borders.
+## Choose an integration
 
-## Modules
+| What you need | Modules | Current availability |
+| --- | --- | --- |
+| Parse diagrams and inspect typed models | `mermaid-core` | Android/iOS KMP; separate HarmonyOS publication |
+| Compute layout or build your own renderer | `mermaid-layout-simple`, `mermaid-layout-api` | Same platforms; no Kuikly dependency |
+| Export SVG | `mermaid-render-svg` | Android/iOS KMP and repository Kotlin/Wasm build |
+| Draw in a Kuikly app | `mermaid-kuikly` | Implemented and tested with the Raft Kuikly distribution; official upstream Kuikly integration is not independently verified |
+| Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
-- `mermaid-core`: parser, typed AST, and diagnostics.
-- `mermaid-layout-api`: toolkit-neutral scene graph, draw commands, and layout SPI.
-- `mermaid-layout-simple`: deterministic Apache-2.0 starter layout.
-- `mermaid-render-svg`: common SVG serializer.
-- `mermaid-kuikly`: Kuikly Canvas renderer and MermaidView DSL component.
-- `mermaid-testkit`: compatibility fixtures and geometry goldens.
+The latest verified SDK pair is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS. The native modules do not require a JavaScript runtime. The browser demos do use JavaScript host code. There is currently no standalone JVM/Desktop target, Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
 
-Artifacts are published under `build.raft.mermaid`; Android/iOS use the normal version and HarmonyOS uses the matching `-ohos` version. See the [client SDK integration guide](docs-site/guide/getting-started.md) and [release notes](docs-site/guide/releases.md).
+**Release vs. main:** published artifacts come from the release tag. The website and repository describe the current main branch, which may contain unreleased APIs. See [releases and upgrading](docs-site/guide/releases.md); do not assume a feature on main is present in 0.1.11. The incomplete 0.1.10 release pair should not be used.
 
-Read the optimized documentation site at https://botiverse.github.io/mermaid-native/.
-ELK support is deliberately outside the Apache-2.0 core; any future `layout-elk`
-artifact must carry its own EPL-2.0 obligations.
+## Quick start: KMP to SVG
 
-## License
-
-Mermaid Native is licensed under the Apache License, Version 2.0. See
-[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Compatibility fixtures and other
-third-party material retain their upstream licenses and attribution as listed
-in `NOTICE`; the project license does not relicense those materials.
-
-## Current parser support
-
-The parser covers the 32 families in the [support matrix](docs-site/reference/families.md).
-Coverage is bounded per feature; parsing support does not imply complete upstream
-layout, configuration or interaction parity. Consult the matrix before adopting
-an advanced syntax feature.
-
-## Quick start
+For an existing Android/iOS KMP project using Kotlin 2.1.21, add the public Maven repository to `settings.gradle.kts`. Artifact reads do not require credentials:
 
 ```kotlin
-val result = MermaidParser.parse("flowchart LR; A[Start] --> B[Finish]")
-when (result) {
-    is MermaidParseResult.Success -> {
-        // Pass the typed diagram to a layout/render module.
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://maven.artifacts.botiverse.dev") {
+            content { includeGroup("build.raft.mermaid") }
+        }
     }
-    is MermaidParseResult.Failure -> result.diagnostics.forEach(::println)
 }
 ```
 
-The parser is deliberately fail-closed: syntax outside the declared support
-matrix returns a typed diagnostic instead of silently changing diagram type or
-dropping statements. See [compatibility](docs/compatibility.md),
-[architecture](docs/architecture.md), and [testing](docs/testing.md).
+Add these dependencies to your shared module:
 
-## Examples
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("build.raft.mermaid:mermaid-layout-simple:0.1.11")
+            implementation("build.raft.mermaid:mermaid-render-svg:0.1.11")
+        }
+    }
+}
+```
 
-The [`samples`](samples/) directory contains flowchart and sequence sources
-adapted from the pinned beautiful-mermaid corpus and same-named SVG goldens
-generated by the common deterministic layout/renderer. The same inputs have
-normalized AST expectations in `mermaid-testkit`, so examples are executed by
-the multiplatform test suite instead of drifting as documentation-only text.
+Parsing and the layout API are transitive dependencies. This example retains document titles and supported frontmatter settings by passing the complete parse result to layout:
 
-## Contributing
+```kotlin
+import build.raft.mermaid.core.MermaidParseResult
+import build.raft.mermaid.core.MermaidParser
+import build.raft.mermaid.layout.LayoutConfig
+import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
+import build.raft.mermaid.layout.simple.SimpleMermaidLayout
+import build.raft.mermaid.layout.simple.layout
+import build.raft.mermaid.render.svg.SvgRenderer
 
-This is an independent, non-official Mermaid-compatible implementation. New
-syntax needs a support-matrix entry, parser tests, a negative/unsupported case,
-and a fixture or differential vector before it is considered complete. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+fun diagramSvg(source: String): String = when (val parsed = MermaidParser.parse(source)) {
+    is MermaidParseResult.Success -> SvgRenderer.render(
+        SimpleMermaidLayout.layout(parsed, FixedWidthTextMeasurer, LayoutConfig()),
+        baseId = "example-diagram",
+    )
+    is MermaidParseResult.Failure -> error(parsed.diagnostics.joinToString("\n"))
+}
 
-### Architecture grammar and rendering
-Architecture diagrams support nested groups, junction connections and `align row` / `align column` hints. Nested frames enclose child content, and cross-group alignment moves entire subtrees to keep containers separate. Cyclic containment and invalid parent/member references fail before rendering. Layout is deterministic; upstream Cytoscape/fcose solver configuration is not implemented.
+// diagramSvg("flowchart LR\nA[Start] --> B[Finish]")
+```
 
-### Ishikawa hierarchy
-Ishikawa nested causes connect to their immediate parent branch. For example, `Dirty lens` under `LENS` points to the LENS branch, while LENS connects to its Equipment category. Measured horizontal space includes nesting depth so child labels remain inside the scene.
+In an application, show diagnostics in the UI instead of throwing. Give each inline SVG a distinct `baseId`. The fixed-width measasurer is an approximation; provide a host `TextMeasurer` for accurate font metrics.
 
-### Swimlane grammar and rendering
+For Kuikly, add `mermaid-kuikly` and its repository group, then draw a prepared scene with `MermaidView` or `MermaidKuiklyRenderer`. An existing Kuikly host and matching native renderer are required. See the [complete Kuikly and HarmonyOS instructions](docs-site/guide/getting-started.md), including compiler versions and dependency boundaries.
 
-`swimlane-beta` consumes the same typed flow grammar as upstream, including implicit nodes and labeled or nested subgraphs. The model retains the full `FlowchartDiagram` alongside the legacy lanes. Plain lane diagrams preserve the existing lane renderer; diagrams using richer shapes, styles, nested or collapsed groups use the actual Flow renderer so these features are not silently discarded. Complex graph routing remains bounded by the deterministic layout.
+## What lives in the library?
 
-### State grammar and rendering
+```text
+Mermaid text → typed model → layout scene → SVG / Kuikly Canvas / custom renderer
+```
 
-State diagrams support bare identifiers, aliases, repeated descriptions, nested and inline composite states, local directions, accessibility metadata, and single/multiline attached notes. Composite members render inside their containers and multiline description/note geometry is measured. Unterminated and cyclic composites fail explicitly. State CSS/classes retain typed values and affect actual node/group fill, border and measured text geometry. Concurrent regions retain their boundaries and render separated child regions with dashed dividers. Floating notes retain their aliases and render measured yellow note boxes. Italic glyph styling and exact dash-array lengths remain separate work. Original upstream assertions are being integrated separately from actual Native render validation.
+Diagram syntax, layout, styles, geometry, and renderer adapters live in **mermaid-native**. The core, layout, and SVG modules do not depend on Kuikly. `mermaid-kuikly` is the optional UI adapter; its published build currently depends on the Raft Kuikly artifacts. Standard-looking Canvas APIs alone do not establish binary or runtime compatibility with another Kuikly distribution.
 
-Metadata shape names currently cover the existing rectangle, rounded, circle/double-circle, stadium, diamond, hexagon, cylinder, subroutine, asymmetric, parallelogram and trapezoid glyphs and their declared aliases. Additional upstream shapes such as cloud, document and bolt fail explicitly; the full upstream shape catalog is not yet supported.
+Your app supplies fonts, a viewport, scrolling/zoom gestures, navigation and accessibility interactions. `MermaidView` draws the diagram; it does not provide a complete editor or message card. See [architecture and host responsibilities](docs-site/guide/architecture.md).
 
-### Requirement grammar, model and rendering
+## Compatibility and limitations
 
-Requirement diagrams retain optional fields, all six requirement kinds and seven relationship kinds, reverse arrows, multiline accessibility text, classes and repeated styles. Explicit directions change actual card placement; styles affect card paint and measured fonts. The default two-column cards and line spacing remain; elements use the shared blue accent and neutral stroke palette. The pinned original Requirement parser suite passes43/43, with 9 additional original model/style assertions replayed through production Kotlin. Accessibility titles and descriptions remain SVG metadata and do not add source labels or change card geometry. DOM edge IDs and full DB/visual parity are not claimed; see `compatibility/upstream-requirement-model/README.md`.
+- Flowcharts, sequence, class, state, ER, Gantt, pie, XY, Sankey, Treemap and other families are covered within the [declared feature matrix](docs-site/reference/families.md).
+- Unsupported syntax and configuration produce typed diagnostics. Handle failures explicitly; do not treat them as an empty successful diagram.
+- Complex graphs can still overlap. Layout and text appearance are not pixel-identical to upstream Mermaid.
+- Configuration, Markdown, links and accessibility support are bounded. Kuikly hosts implement link activation and semantic accessibility themselves.
+- Official upstream Kuikly, Kuikly H5, and WeChat mini-program integration have not been independently verified.
+- APIs may change during the 0.x series. Recompile consuming code and review custom renderers when upgrading.
 
-### Gantt grammar and dates
+Original upstream assertions, Native layout tests, and rendered-image comparisons measure different things. A passing parser test is not proof of visual or device parity. See [testing](docs-site/guide/testing.md) for reproducible checks and coverage boundaries.
 
-Gantt tasks resolve exclusive end dates, after/until dependencies, combined status tags, milestones, day/week durations and excluded/included dates. Labels preserve semicolons and hashes. Milestones render actual diamonds. Accessibility and axis/calendar directives plus click metadata retain typed values; Native host link/callback binding and automatic today-marker painting remain separate. Time-of-day and arbitrary date-format parsing are not part of this first batch.
+## Build and contribute
 
-Timeline parsing preserves original section-only documents, standalone periods, continuation events, URL colons, semicolons and event whitespace. Explicit LR/TD changes actual placement; unspecified direction keeps the existing Native vertical presentation. Empty sections render without crashing. Original parser assertions and final cross-platform validation are in progress.
+Contributions to syntax coverage, layout quality, platform adapters and documentation are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, focused commands and what to include in a pull request. Report reproducible bugs through [GitHub Issues](https://github.com/botiverse/mermaid-native/issues), with the diagram source, SDK version, platform and expected result. See [SECURITY.md](SECURITY.md) for security reporting and host precautions.
 
-XY charts accept both original headers, optional axes/metadata, numeric ranges in either direction, orientation, named series and point labels. Native draws horizontal bars/lines and numeric axes while retaining the existing vertical colors and value labels. Markdown text types are retained in the model; rich inline Markdown and host interactions are not claimed. Original parser assertion integration is being validated; direct XY database/builder tests remain outside this parser boundary.
-Gantt bars retain a separate render duration for excluded trailing dates while dependencies use the fully adjusted end. Calendar include/exclude tokens accept both the configured date format and ISO dates. Milestones require an explicit start (and may use `0d`); shorthand that treated a non-date ID as an omitted field is rejected. Long spans use a bounded plot width and sampled date ticks, with room for the last label.
+## License
 
-Journey parsing retains empty sections, optional actor lists, accessibility metadata and original task-name whitespace. The renderer handles empty documents/sections and omits empty actors from cards and legends, preserving the existing score palette. The current typed score remains an integer; decimal and non-finite JavaScript Number values are outside this slice.
-
-### Git history grammar and rendering
-
-GitGraph resolves commits, branch heads, checkout/switch, merge and cherry-pick in the shared model. Quoted branch names, explicit branch order, commit messages, repeated tags, merge overrides and accessibility metadata are retained. Cherry-picking a merge requires an immediate parent; invalid references fail with a typed diagnostic. Duplicate commit IDs follow upstream replacement semantics and expose a warning in the model.
-
-The default LR layout keeps Native's branch colors, commit markers and tag flags. TB/BT use vertical lanes with upright measured labels; explicit branch order controls lane order. Native automatic IDs remain deterministic. JavaScript configuration getters and arbitrary renderer theme/directive settings are outside this parser-boundary validation.
-
-### Radar grammar and rendering
-
-Radar accepts empty documents, colon headers, metadata, repeated axes/curves, multiline numeric or named entries and typed min/max/ticks/showLegend/graticule options. The model preserves grammar entries independently of rendering: named entries map by axis ID, positional entries map in order, and missing axis values use the minimum. Values outside the visible domain clamp to its bounds. Empty or short-axis graphs remain finite. Default circular rings, soft fills and diamond markers are preserved; explicit polygon graticules and hidden legends affect actual drawing. Tick count is bounded to 0–32 for rendering; dense grids retain every ring while thinning numeric labels to readable spacing. Without an explicit `max`, the scale uses the largest plotted value rather than a minimum ceiling of 100. The actual model, option resolution and radius calculation are checked by 15 unchanged upstream assertions; see `compatibility/upstream-radar-model/README.md`. Recovery ASTs and arbitrary renderer theme directives are not claimed.
-
-### Cynefin domain model assertions
-
-Seven pinned upstream database assertions replay through production Kotlin parsing for domain blocks/items, transition labels and self-loop filtering; see `compatibility/upstream-cynefin-model/README.md`. JavaScript only translates setter inputs and projects the returned model. The remaining lifecycle/configuration and boundary/seed tests are not counted as Native coverage.
-
-### TreeView hierarchy model assertions
-
-Twelve pinned upstream database assertions replay through production Kotlin for nested/sibling nodes, annotations and diagram/accessibility metadata. The bridge projects Kotlin parent indices into the original nested shape; the renderer consumes those same indices. Lifecycle, generated IDs/counts, configuration, CSS painting and external icon resolution are outside this admission; see `compatibility/upstream-treeview-model/README.md`.
-
-### XY category slots and legend titles
-
-XY charts share category-slot resolution between axis inference and horizontal/vertical drawing. Extra values cannot affect the visible range; missing values keep category slots without painting zero-valued points. Legend titles trim surrounding whitespace while parser text remains intact. Coincident value labels use nearby free vertical positions so ordinary overlapping bar/line labels remain readable. The unchanged upstream model tests are replayed by `compatibility/upstream-xy-model/run.py`.
-
-Five unchanged upstream Railroad title/accessibility assertions run through the production parser and model via `compatibility/upstream-railroad-model/run.py`. Rule lookup, sanitization and database lifecycle assertions remain outside that adapter; they are not counted as Native coverage.
+[Apache-2.0](LICENSE). Third-party code and fixtures retain their original licenses and attribution in [NOTICE](NOTICE). This project is not affiliated with or endorsed by the Mermaid project.
