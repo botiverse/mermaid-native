@@ -1442,6 +1442,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
         data class Plan(val width: Double, val height: Double, val rects: List<SceneRect>)
         val plans = mutableMapOf<String, Plan>()
+        val arrowLabels = mutableMapOf<String, SceneSize>()
+        fun arrow(node: build.raft.mermaid.core.BlockNode, width: Double = 0.0): BlockArrowGeometry.Shape =
+            BlockArrowGeometry.shape(node.directions, arrowLabels.getValue(node.id), positioned = width > 0.0, widthInColumns = node.columnSpan, nodeWidth = width)
         fun plan(nodes: List<build.raft.mermaid.core.BlockNode>, configured: Int): Plan {
             if (nodes.isEmpty()) return Plan(160.0, 64.0, emptyList())
             val columns = if (configured > 0) configured else nodes.sumOf { it.columnSpan.coerceIn(1, 512) }.coerceIn(1, 512)
@@ -1449,6 +1452,11 @@ public object SimpleMermaidLayout : DiagramLayout {
                 if (n.type == "composite") {
                     val inner = plan(n.children, n.columns); plans[n.id] = inner
                     SceneSize(max(inner.width + 32.0, textMeasurer.measure(n.label, textStyle).width + 32.0), inner.height + if (n.label.isEmpty()) 32.0 else 56.0)
+                } else if (n.type == "block_arrow") {
+                    arrowLabels[n.id] = textMeasurer.measure(n.label.replace("&nbsp;", " "), textStyle)
+                    val shape = arrow(n)
+                    // Allocate nominal geometry as well as tips; singleton arrows retain natural width.
+                    SceneSize(max(shape.width, shape.bounds.width), max(64.0, max(shape.height, shape.bounds.height)))
                 } else {
                     val width = textMeasurer.measure(n.label, textStyle).width + 32.0
                     SceneSize(width, if (n.type == "circle") max(width, 64.0) else 64.0)
@@ -1466,6 +1474,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         val rootPlan = plan(diagram.nodes, diagram.columns)
         val commands = mutableListOf<DrawCommand>(); val placed = linkedMapOf<String, SceneRect>()
+        val arrowPoints = mutableMapOf<String, List<ScenePoint>>()
+        val arrowCenters = mutableMapOf<String, ScenePoint>()
+        val circleIds = mutableSetOf<String>()
         fun draw(nodes: List<build.raft.mermaid.core.BlockNode>, layout: Plan, originX: Double, originY: Double) {
             nodes.forEachIndexed { i, node ->
                 val local = layout.rects[i]
@@ -1475,6 +1486,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                     cellRect.copy(x = cellRect.x + (cellRect.width - diameter) / 2.0, width = diameter)
                 } else cellRect
                 placed[node.id] = rect
+                if (node.type == "circle") circleIds += node.id
                 if (node.type == "space") return@forEachIndexed
                 val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
@@ -1483,17 +1495,14 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val fill = color("fill", DiagramPalette.SURFACE); val stroke = color("stroke", DiagramPalette.SECONDARY)
                 val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: 1.5
                 if (node.type == "block_arrow") {
-                    val cx = rect.x + rect.width / 2; val cy = rect.y + rect.height / 2; val tip = 16.0
-                    val core = SceneRect(rect.x + tip, rect.y + tip, rect.width - tip * 2, rect.height - tip * 2)
-                    val directions = node.directions.flatMap { if (it == "x") listOf("left", "right") else if (it == "y") listOf("up", "down") else listOf(it) }
-                    val points = mutableListOf(ScenePoint(core.x, core.y))
-                    if ("up" in directions) points += ScenePoint(cx, rect.y)
-                    points += ScenePoint(core.x + core.width, core.y)
-                    if ("right" in directions) points += ScenePoint(rect.x + rect.width, cy)
-                    points += ScenePoint(core.x + core.width, core.y + core.height)
-                    if ("down" in directions) points += ScenePoint(cx, rect.y + rect.height)
-                    points += ScenePoint(core.x, core.y + core.height)
-                    if ("left" in directions) points += ScenePoint(rect.x, cy)
+                    val natural = arrow(node)
+                    val overhang = max(0.0, natural.bounds.width - natural.width)
+                    val shape = arrow(node, rect.width - overhang)
+                    val center = ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+                    val points = shape.points.map { ScenePoint(it.x + center.x, it.y + center.y) }
+                    arrowCenters[node.id] = center
+                    arrowPoints[node.id] = points
+                    placed[node.id] = shape.bounds.copy(x = shape.bounds.x + center.x, y = shape.bounds.y + center.y)
                     commands += DrawPolygon(points, fill)
                     commands += DrawPolyline(points + points.first(), stroke, strokeWidth)
                 } else if (node.type == "circle") {
@@ -1513,13 +1522,26 @@ public object SimpleMermaidLayout : DiagramLayout {
         draw(diagram.nodes, rootPlan, config.padding, config.padding)
         diagram.edges.forEach { edge ->
             val from = placed[edge.from] ?: return@forEach; val to = placed[edge.to] ?: return@forEach
-            val fromCenter = ScenePoint(from.x + from.width / 2, from.y + from.height / 2); val toCenter = ScenePoint(to.x + to.width / 2, to.y + to.height / 2)
-            val (a, b) = when {
+            val fromCenter = arrowCenters[edge.from] ?: ScenePoint(from.x + from.width / 2, from.y + from.height / 2); val toCenter = arrowCenters[edge.to] ?: ScenePoint(to.x + to.width / 2, to.y + to.height / 2)
+            val (defaultA, defaultB) = when {
                 toCenter.y > fromCenter.y -> ScenePoint(fromCenter.x, from.y + from.height) to ScenePoint(toCenter.x, to.y)
                 toCenter.y < fromCenter.y -> ScenePoint(fromCenter.x, from.y) to ScenePoint(toCenter.x, to.y + to.height)
                 toCenter.x > fromCenter.x -> ScenePoint(from.x + from.width, fromCenter.y) to ScenePoint(to.x, toCenter.y)
                 else -> ScenePoint(from.x, fromCenter.y) to ScenePoint(to.x + to.width, toCenter.y)
             }
+            fun boundary(id: String, rect: SceneRect, center: ScenePoint, target: ScenePoint): ScenePoint {
+                if (id in circleIds) {
+                    val dx = target.x - center.x; val dy = target.y - center.y
+                    val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+                    return if (distance == 0.0) center else ScenePoint(center.x + dx * rect.width / (2.0 * distance), center.y + dy * rect.height / (2.0 * distance))
+                }
+                val points = arrowPoints[id] ?: listOf(ScenePoint(rect.x, rect.y), ScenePoint(rect.x + rect.width, rect.y),
+                    ScenePoint(rect.x + rect.width, rect.y + rect.height), ScenePoint(rect.x, rect.y + rect.height))
+                return BlockArrowGeometry.intersect(points, center, target)
+            }
+            val touchesArrow = edge.from in arrowPoints || edge.to in arrowPoints
+            val a = if (touchesArrow) boundary(edge.from, from, fromCenter, toCenter) else defaultA
+            val b = if (touchesArrow) boundary(edge.to, to, toCenter, fromCenter) else defaultB
             commands += DrawLine(a, b); commands += arrowHead(a, b)
             edge.label?.let { commands += DrawText(it, ScenePoint((a.x + b.x) / 2, (a.y + b.y) / 2 - 6.0), TextAnchor.MIDDLE, textStyle) }
         }

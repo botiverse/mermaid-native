@@ -54,3 +54,7 @@ direction/materializedGeometry.ts at the revision recorded in
 compatibility/upstream-materialized-geometry/sources.json. Copyright Knut
 Sveidqvist and contributors, under the MIT License reproduced in
 mermaid-layout-simple/src/commonMain/resources/META-INF/LICENSE-mermaid.txt.
+
+BlockArrowGeometry adapts Mermaid blockArrow.ts at the pinned revision in
+compatibility/upstream-block-arrow/sources.json, copyright Knut Sveidqvist and
+contributors, under the MIT License packaged in mermaid-layout-simple.
