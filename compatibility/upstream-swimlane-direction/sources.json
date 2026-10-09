@@ -1,0 +1,11 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/__tests__/direction.lr.transform.spec.ts": "98becd8e93ec6767ee63eef1ccd1f3858780d98010862f5d44b538008ca20974"
+  },
+  "productionFiles": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/direction/lrTransform.ts": "1ed8c9ffe8af570bbdba3cc7081d9c9df09be624be3d8d8c07d7d548927dd16c",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/postProcessing.ts": "77c3a3e2c1dd287f0ec1521a89bf2435ed1bf282e24490e631da639ac8711e0b",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/helpers.ts": "7265425f181479c6b2b4b74358cabbffcf8a2bd80cf6f90e28874af8e09d4dfc"
+  }
+}

@@ -649,10 +649,10 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         assertEquals(scene, SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig()))
         val rects = scene.commands.filterIsInstance<DrawRect>()
-        val rails = rects.filter { it.rect.width == 32.0 }
+        val rails = rects.filter { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.MUTED }
         assertEquals(2, rails.size)
         assertTrue(rails.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.MUTED })
-        val bodies = rects.filter { it.rect.width > 32.0 && it.stroke.value == DiagramPalette.MUTED }
+        val bodies = rects.filter { it.fill.value == DiagramPalette.CANVAS && it.stroke.value == DiagramPalette.MUTED }
         assertEquals(2, bodies.size)
         val nodes = rects.filter { it.fill.value == DiagramPalette.CANVAS && it.stroke.value == DiagramPalette.BLUE }
         assertEquals(1, nodes.size)

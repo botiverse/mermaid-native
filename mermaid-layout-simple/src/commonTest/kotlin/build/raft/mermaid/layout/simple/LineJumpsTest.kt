@@ -99,7 +99,7 @@ class LineJumpsTest {
         assertEquals(SwimlaneLineHops.ARC, assertIs<SwimlaneDiagram>(diagram("true")).lineHops)
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  swimlane:\n    lineHops: invalid\n---\n$body"))
     }
-    @Test fun richFallbackHonorsSwitchAndKeepsMarkersAndSceneBounds() {
+    @Test fun styledLanesHonorSwitchAndKeepMarkersAndSceneBounds() {
         val body = "swimlane-beta\nsubgraph L1\nA\nB\nC\nend\nsubgraph L2\nD\nE\nF\nend\nA-->F\nB-->D\nC-->E\nF-->B\nD-->C\nE-->A\nstyle A fill:#abcdef"
         val diagram = assertIs<SwimlaneDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(body)).diagram)
         fun layout(d: MermaidDiagram) = SimpleMermaidLayout.layout(d, FixedWidthTextMeasurer, LayoutConfig())
@@ -107,7 +107,10 @@ class LineJumpsTest {
         val arc = layout(diagram)
         val gap = layout(diagram.copy(lineHops = SwimlaneLineHops.GAP))
         assertTrue(off.commands.none { it is DrawPath })
-        assertEquals(2, arc.commands.filterIsInstance<DrawPath>().size)
+        // Cross-lane handoffs use their facing sides instead of exterior Flow return tracks.
+        assertEquals(5, arc.commands.filterIsInstance<DrawPath>().size)
+        assertEquals(7, arc.commands.filterIsInstance<DrawPath>().sumOf { p -> p.segments.count { it is PathArc } })
+        assertEquals(listOf(2, 2, 2, 3, 3), gap.commands.filterIsInstance<DrawPath>().map { p -> p.segments.count { it is PathMove } })
         assertTrue(gap.commands.filterIsInstance<DrawPath>().all { path -> path.segments.filterIsInstance<PathMove>().size > 1 })
         // Arc ink can expand the padded scene; every marker and label must share that translation.
         val beforeText = off.commands.filterIsInstance<DrawText>()

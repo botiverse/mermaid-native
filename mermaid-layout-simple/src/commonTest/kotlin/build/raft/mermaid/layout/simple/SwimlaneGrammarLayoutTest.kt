@@ -19,7 +19,8 @@ class SwimlaneGrammarLayoutTest {
         val d=assertIs<MermaidParseResult.Success>(MermaidParser.parse("swimlane-beta\nsubgraph L\nA-->A\nend")).diagram
         val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
         val path=scene.commands.filterIsInstance<DrawPolyline>().single()
-        assertEquals(4,path.points.distinct().size)
+        // Unified routing uses two exit/entry segments plus the exterior loop.
+        assertEquals(6,path.points.distinct().size)
         assertTrue(path.points.all { it.x in 0.0..scene.width && it.y in 0.0..scene.height })
         assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.stroke.value==DiagramPalette.BLUE })
     }
