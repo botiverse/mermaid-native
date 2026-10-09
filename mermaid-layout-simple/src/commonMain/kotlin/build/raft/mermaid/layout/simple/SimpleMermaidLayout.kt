@@ -543,142 +543,8 @@ public object SimpleMermaidLayout : DiagramLayout {
     }
 
     private fun layoutSwimlane(diagram: SwimlaneDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
-        diagram.flowchart?.let { flow ->
-            val simpleShapes=setOf(FlowNodeShape.RECTANGLE,FlowNodeShape.ROUNDED,FlowNodeShape.STADIUM,FlowNodeShape.CIRCLE,FlowNodeShape.DIAMOND)
-            val groupIds = flow.subgraphs.map { it.id }.toSet()
-            val needsRichLayout=flow.subgraphs.any { it.parentId!=null || it.collapsed || it.direction!=null } ||
-                flow.nodes.any { it.shape !in simpleShapes || it.styles.isNotEmpty() || it.classes.isNotEmpty() || it.borders!=null } ||
-                flow.classDefinitions.isNotEmpty() || flow.defaultEdgeStyles.isNotEmpty() ||
-                flow.edges.any { it.sourceId in groupIds || it.targetId in groupIds || it.length > 1 || it.style!=FlowEdgeStyle.NORMAL || it.fromMarker!=build.raft.mermaid.core.FlowMarker.NONE || it.toMarker!=build.raft.mermaid.core.FlowMarker.POINT || it.styles.isNotEmpty() }
-            if(needsRichLayout)return layoutFlowchart(visibleFlow(flow),textMeasurer,config,diagram.lineHops)
-        }
-        val laneStyle = TextStyle(fontSize = 15.0, fontWeight = 600)
-        val nodeStyle = TextStyle(fontSize = 13.0, fontWeight = 600)
-        val edgeStyle = TextStyle(fontSize = 11.0)
-        val nodeWidth = max(140.0, diagram.lanes.flatMap { it.nodes }.maxOf { textMeasurer.measure(it.label, nodeStyle).width } + 40.0)
-        val nodeHeight = 64.0
-        val nodeGap = 40.0
-        val laneGap = 24.0
-        val titleRail = 32.0
-        val horizontal = diagram.direction == FlowDirection.LR || diagram.direction == FlowDirection.RL
-        val maxNodes = diagram.lanes.maxOf { it.nodes.size }
-        val laneLabelWidth = diagram.lanes.maxOf { textMeasurer.measure(it.label, laneStyle).width }
-        val edgeLabelWidth = diagram.edges.mapNotNull { it.label }.maxOfOrNull { textMeasurer.measure(it, edgeStyle).width } ?: 0.0
-        val laneWidth = if (horizontal) {
-            max(max(laneLabelWidth + 32.0 + titleRail, maxNodes * nodeWidth + max(0, maxNodes - 1) * nodeGap + 40.0 + titleRail), edgeLabelWidth + 2.0 * config.padding)
-        } else {
-            max(nodeWidth + 40.0, laneLabelWidth + 32.0)
-        }
-        val laneHeight = if (horizontal) 148.0 else maxNodes * nodeHeight + max(0, maxNodes - 1) * nodeGap + 84.0
-        val width = if (horizontal) {
-            config.padding * 2.0 + laneWidth
-        } else {
-            max(edgeLabelWidth + 2.0 * config.padding, config.padding * 2.0 + diagram.lanes.size * laneWidth + max(0, diagram.lanes.size - 1) * laneGap)
-        }
-        val height = if (horizontal) {
-            config.padding * 2.0 + diagram.lanes.size * laneHeight + max(0, diagram.lanes.size - 1) * laneGap
-        } else {
-            config.padding * 2.0 + laneHeight
-        }
-        val laneRects = linkedMapOf<String, SceneRect>()
-        val nodePoints = linkedMapOf<String, ScenePoint>()
-        val nodeById = diagram.lanes.flatMap { it.nodes }.associateBy { it.id }
-        diagram.lanes.forEachIndexed { laneIndex, lane ->
-            val rect = if (horizontal) {
-                SceneRect(config.padding, config.padding + laneIndex * (laneHeight + laneGap), laneWidth, laneHeight)
-            } else {
-                SceneRect(config.padding + laneIndex * (laneWidth + laneGap), config.padding, laneWidth, laneHeight)
-            }
-            laneRects[lane.id] = rect
-            lane.nodes.forEachIndexed { nodeIndex, node ->
-                val point = if (horizontal) {
-                    val forwardX = rect.x + 20.0 + titleRail + nodeWidth / 2.0 + nodeIndex * (nodeWidth + nodeGap)
-                    ScenePoint(if (diagram.direction == FlowDirection.RL) rect.x + rect.width - (forwardX - rect.x) else forwardX, rect.y + 92.0)
-                } else {
-                    val forwardY = rect.y + 54.0 + nodeHeight / 2.0 + nodeIndex * (nodeHeight + nodeGap)
-                    ScenePoint(rect.x + rect.width / 2.0, if (diagram.direction == FlowDirection.BT) rect.y + rect.height - (forwardY - rect.y) else forwardY)
-                }
-                nodePoints[node.id] = point.canonical()
-            }
-        }
-        val commands = mutableListOf<DrawCommand>()
-        val edgeCommands = mutableListOf<Int>()
-        diagram.lanes.forEachIndexed { _, lane ->
-            val rect = laneRects.getValue(lane.id)
-            commands += DrawRect(rect.canonical(), 0.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.MUTED), strokeWidth = 1.0)
-            commands += DrawRect(
-                SceneRect(rect.x, rect.y, titleRail, rect.height).canonical(),
-                0.0,
-                fill = SceneColor(DiagramPalette.SURFACE),
-                stroke = SceneColor(DiagramPalette.MUTED),
-                strokeWidth = 1.0,
-            )
-            commands += DrawText(lane.label, ScenePoint(rect.x + titleRail + 16.0, rect.y + 25.0).canonical(), style = laneStyle)
-        }
-        diagram.edges.forEach { edge ->
-            val fromCenter = nodePoints.getValue(edge.sourceId)
-            val toCenter = nodePoints.getValue(edge.targetId)
-            if (edge.sourceId == edge.targetId) {
-                val shape = nodeById.getValue(edge.sourceId).shape
-                val upper = ScenePoint(fromCenter.x + nodeWidth, fromCenter.y - nodeHeight / 2)
-                val lower = ScenePoint(fromCenter.x + nodeWidth, fromCenter.y + nodeHeight / 2)
-                val from = swimlaneBoundaryPoint(fromCenter, upper, shape, nodeWidth, nodeHeight)
-                val to = swimlaneBoundaryPoint(fromCenter, lower, shape, nodeWidth, nodeHeight)
-                val right = fromCenter.x + nodeWidth / 2 + 16.0
-                val points = listOf(from, ScenePoint(right, from.y), ScenePoint(right, to.y), to)
-                edgeCommands += commands.size
-                commands += DrawPolyline(points, stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
-                commands += arrowHead(points[points.lastIndex - 1], to, fill = SceneColor(DiagramPalette.INK))
-                edge.label?.let { label ->
-                    commands += DrawText(label, ScenePoint(fromCenter.x, fromCenter.y - nodeHeight / 2 - 8), TextAnchor.MIDDLE, edgeStyle)
-                }
-                return@forEach
-            }
-            val from = swimlaneBoundaryPoint(fromCenter, toCenter, nodeById.getValue(edge.sourceId).shape, nodeWidth, nodeHeight)
-            val to = swimlaneBoundaryPoint(toCenter, fromCenter, nodeById.getValue(edge.targetId).shape, nodeWidth, nodeHeight)
-            edgeCommands += commands.size
-            commands += DrawLine(from.canonical(), to.canonical(), stroke = SceneColor(DiagramPalette.SECONDARY), strokeWidth = 1.0)
-            commands += arrowHead(from, to, fill = SceneColor(DiagramPalette.INK))
-            edge.label?.let { label ->
-                commands += DrawText(label, ScenePoint((from.x + to.x) / 2.0, (from.y + to.y) / 2.0 - 8.0).canonical(), TextAnchor.MIDDLE, edgeStyle)
-            }
-        }
-        diagram.lanes.flatMap { it.nodes }.forEach { node ->
-            val point = nodePoints.getValue(node.id)
-            when (node.shape) {
-                SwimlaneNodeShape.RECTANGLE -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 0.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
-                SwimlaneNodeShape.ROUNDED -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), 12.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
-                SwimlaneNodeShape.STADIUM -> commands += DrawRect(SceneRect(point.x - nodeWidth / 2.0, point.y - nodeHeight / 2.0, nodeWidth, nodeHeight).canonical(), nodeHeight / 2.0, fill = SceneColor(DiagramPalette.CANVAS), stroke = SceneColor(DiagramPalette.BLUE), strokeWidth = 1.5)
-                SwimlaneNodeShape.DECISION -> {
-                    val diamond = listOf(
-                        ScenePoint(point.x, point.y - nodeHeight / 2.0),
-                        ScenePoint(point.x + nodeWidth / 2.0, point.y),
-                        ScenePoint(point.x, point.y + nodeHeight / 2.0),
-                        ScenePoint(point.x - nodeWidth / 2.0, point.y),
-                    ).map { it.canonical() }
-                    commands += DrawPolygon(diamond, fill = SceneColor(DiagramPalette.AMBER_SURFACE))
-                    commands += DrawPolyline(diamond + diamond.first(), stroke = SceneColor(DiagramPalette.AMBER), strokeWidth = 1.5)
-                }
-                SwimlaneNodeShape.CIRCLE -> commands += DrawEllipse(point, nodeHeight / 2.0, nodeHeight / 2.0, fill = SceneColor(DiagramPalette.GREEN_SURFACE), stroke = SceneColor(DiagramPalette.GREEN), strokeWidth = 1.5)
-            }
-            commands += DrawText(node.label, ScenePoint(point.x, point.y + 5.0).canonical(), TextAnchor.MIDDLE, nodeStyle)
-        }
-        val hopBounds = applySwimlaneHops(commands, edgeCommands, diagram.lineHops)
-        val dx = maxOf(0.0, config.padding - (hopBounds.minOfOrNull { it.x } ?: config.padding))
-        val dy = maxOf(0.0, config.padding - (hopBounds.minOfOrNull { it.y } ?: config.padding))
-        return LayoutScene(maxOf(width, (hopBounds.maxOfOrNull { it.x + it.width } ?: 0.0) + config.padding).xyCoordinate() + dx,
-            maxOf(height, (hopBounds.maxOfOrNull { it.y + it.height } ?: 0.0) + config.padding).xyCoordinate() + dy,
-            if (dx == 0.0 && dy == 0.0) commands else commands.map { it.offsetBy(dx, dy) })
+        return layoutFlowchart(swimlaneFlow(diagram), textMeasurer, config, diagram.lineHops, swimlane = true)
     }
-
-    private fun swimlaneBoundaryPoint(center: ScenePoint, toward: ScenePoint, shape: SwimlaneNodeShape, nodeWidth: Double, nodeHeight: Double): ScenePoint =
-        usecaseBoundaryPoint(
-            center,
-            toward,
-            if (shape == SwimlaneNodeShape.CIRCLE) nodeHeight / 2.0 else nodeWidth / 2.0,
-            nodeHeight / 2.0,
-            shape == SwimlaneNodeShape.CIRCLE || shape == SwimlaneNodeShape.STADIUM,
-        )
 
     private fun layoutCynefin(diagram: CynefinDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val domainStyle = TextStyle(fontSize = 16.0, fontWeight = 600)
@@ -3099,9 +2965,14 @@ public object SimpleMermaidLayout : DiagramLayout {
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
         lineHops: build.raft.mermaid.core.SwimlaneLineHops = build.raft.mermaid.core.SwimlaneLineHops.DISABLED,
+        swimlane: Boolean = false,
     ): LayoutScene {
         val style = TextStyle()
-        val nodeStyles=diagram.nodes.associate { it.id to FlowStyle(it,diagram) }
+        val nodeStyles=diagram.nodes.associate { node -> node.id to if(!swimlane)FlowStyle(node,diagram)else FlowStyle(node,diagram,when(node.shape) {
+            FlowNodeShape.DIAMOND->listOf("fill:${DiagramPalette.AMBER_SURFACE}","stroke:${DiagramPalette.AMBER}")
+            FlowNodeShape.CIRCLE->listOf("fill:${DiagramPalette.GREEN_SURFACE}","stroke:${DiagramPalette.GREEN}")
+            else->listOf("fill:${DiagramPalette.CANVAS}","stroke:${DiagramPalette.BLUE}")
+        }) }
         val markdownLabels=diagram.nodes.filter { it.labelType=="markdown" }.associate {
             it.id to FlowMarkdownLabel(it.label,nodeStyles.getValue(it.id).text,textMeasurer)
         }
@@ -3117,23 +2988,26 @@ public object SimpleMermaidLayout : DiagramLayout {
             node.id to if(node.shape==FlowNodeShape.DIAMOND)SceneSize(diamondSide,diamondSide)else if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else if(node.shape == FlowNodeShape.MANUAL_INPUT) SceneSize(width,height*1.5) else if(node.shape in listOf(FlowNodeShape.DOCUMENTS,FlowNodeShape.PROCESSES)) SceneSize(width+10,height+18) else SceneSize(width,height)
         }
         val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true)
-        val placement=placer.place()
+        val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
+        val placement=lanePlacement?.placement ?: placer.place()
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
-        val feedbackRoutes=flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
+        val feedbackRoutes=if(swimlane)swimlaneReturnRoutes(diagram,rects,textMeasurer,config)else flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
         val obstacleRoutes=flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
         val planarRoutes=if(feedbackRoutes.isNotEmpty() && obstacleRoutes.isNotEmpty())
             flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
         else feedbackRoutes+obstacleRoutes
-        val returnRoutes=planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
+        val returnRoutes=if(swimlane)planarRoutes else planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
         val refinedPaths=diagram.edges.mapIndexedNotNull { index, edge ->
             val source=rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@mapIndexedNotNull null
             val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
-            val anchors=edgeAnchors(source,target,placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL))
+            val horizontal=if(swimlane && swimlaneCrossesLanes(diagram,edge.sourceId,edge.targetId)) diagram.direction !in listOf(FlowDirection.LR,FlowDirection.RL)
+                else placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL)
+            val anchors=edgeAnchors(source,target,horizontal)
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
         }.toMap().let { paths -> clipExpandedFlowShapes(diagram,rects,refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths))) }
-        val materialized=materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
+        val materialized=if(swimlane)FlowMaterializedResult(refinedPaths,placement.groups)else materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
         val edgePaths=materialized.paths
         val groupRects=materialized.groups
         val geometryChanged=edgePaths!=refinedPaths || groupRects!=placement.groups
@@ -3153,8 +3027,13 @@ public object SimpleMermaidLayout : DiagramLayout {
         }.forEach { subgraph ->
             val rect=groupRects[subgraph.id] ?: return@forEach
             val groupStyle=flowGroupStyle(subgraph,diagram)
-            commands += DrawRect(rect,cornerRadius=4.0,fill=groupStyle.fill,stroke=groupStyle.stroke,strokeWidth=groupStyle.strokeWidth)
-            val title = DrawText(subgraph.label,ScenePoint(rect.x+rect.width/2,rect.y+6+groupStyle.text.fontSize),TextAnchor.MIDDLE,groupStyle.text)
+            val titleBand=lanePlacement?.titles?.get(subgraph.id)
+            val band=titleBand?.takeIf { subgraph.parentId==null }
+            commands += DrawRect(rect,cornerRadius=if(band!=null)0.0 else 4.0,fill=if(band!=null)SceneColor(DiagramPalette.CANVAS)else groupStyle.fill,stroke=if(band!=null)SceneColor(DiagramPalette.MUTED)else groupStyle.stroke,strokeWidth=groupStyle.strokeWidth)
+            if(band!=null)commands += DrawRect(band,0.0,fill=groupStyle.fill,stroke=SceneColor(DiagramPalette.MUTED),strokeWidth=1.0)
+            val titleBox=titleBand ?: rect
+            val titleY=titleBox.y+minOf(titleBox.height-3.0,6+groupStyle.text.fontSize)
+            val title = DrawText(subgraph.label,ScenePoint(titleBox.x+titleBox.width/2,titleY),TextAnchor.MIDDLE,groupStyle.text)
             commands += title
             if(config.validateOrthogonalLayout)validationTitles[subgraph.id] = title
         }
@@ -3186,7 +3065,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val glyphStart=commands.size
             when (node.shape) {
                 FlowNodeShape.RECTANGLE -> {
-                    commands += DrawRect(rect,cornerRadius=if(node.borders==null)5.0 else 0.0,fill=SceneColor(DiagramPalette.SURFACE_STRONG),stroke=SceneColor(if(node.borders==null)DiagramPalette.FAINT else "none"),strokeWidth=1.5)
+                    commands += DrawRect(rect,cornerRadius=if(node.borders==null && !swimlane)5.0 else 0.0,fill=SceneColor(DiagramPalette.SURFACE_STRONG),stroke=SceneColor(if(node.borders==null)DiagramPalette.FAINT else "none"),strokeWidth=1.5)
                     node.borders?.let { borders ->
                         val tl=ScenePoint(rect.x,rect.y);val tr=ScenePoint(rect.x+rect.width,rect.y);val bl=ScenePoint(rect.x,rect.y+rect.height);val br=ScenePoint(rect.x+rect.width,rect.y+rect.height)
                         listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.5) }

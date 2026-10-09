@@ -5,7 +5,7 @@ import build.raft.mermaid.layout.*
 import kotlin.math.max
 
 /** A deterministic hierarchy layout; graph crossing minimization remains separate. */
-internal class FlowPlacement(private val diagram:FlowchartDiagram,private val nodeSizes:Map<String,SceneSize>,private val config:LayoutConfig,private val measurer:TextMeasurer, private val unframedGroups:Set<String> = emptySet(), private val rankByEdges:Boolean = false) {
+internal class FlowPlacement(private val diagram:FlowchartDiagram,private val nodeSizes:Map<String,SceneSize>,private val config:LayoutConfig,private val measurer:TextMeasurer, private val unframedGroups:Set<String> = emptySet(), private val rankByEdges:Boolean = false, private val swimlaneRoots:Boolean = false) {
     data class Result(val width:Double,val height:Double,val nodes:Map<String,SceneRect>,val groups:Map<String,SceneRect>,val returnRoutes:Map<Int,FlowReturnRoute> = emptyMap())
     private val groups=diagram.subgraphs.associateBy { it.id }
     private val parents=groups.mapValues { (_,group) ->
@@ -18,7 +18,7 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     private val rects=linkedMapOf<String,SceneRect>()
     private val groupRects=linkedMapOf<String,SceneRect>()
     private val returnRoutes=linkedMapOf<Int,FlowReturnRoute>()
-    private fun direction(parent:String?)=groups[parent]?.direction ?: diagram.direction
+    private fun direction(parent:String?)=if(swimlaneRoots && parent==null)FlowDirection.LR else groups[parent]?.direction ?: diagram.direction
     private fun horizontal(parent:String?)=direction(parent) in listOf(FlowDirection.LR,FlowDirection.RL)
     private fun children(parent:String?):List<String> = diagram.subgraphs.filter { parents[it.id]==parent }.map { it.id } + diagram.nodes.filter { owners[it.id]==parent }.map { it.id }
     fun edgeDirection(source:String,target:String):FlowDirection {
@@ -36,7 +36,7 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
     // Remove feedback arcs only from ranking where separate return routes are supported:
     // flat flowcharts and framed containers. Original edges remain in the diagram.
     private fun layers(parent:String?):List<Layer>? = layerCache.getOrPut(parent) {
-        if(!rankByEdges)return@getOrPut null
+        if(!rankByEdges || (swimlaneRoots && parent==null))return@getOrPut null
         val ids=children(parent)
         fun sibling(endpoint:String):String? {
             var id=endpoint

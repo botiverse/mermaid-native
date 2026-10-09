@@ -1,24 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="474" height="368" viewBox="0 0 474 368" role="graphics-document document">
-  <rect x="24" y="24" width="426" height="148" rx="0" fill="#ffffff" stroke="#71717a" stroke-width="1"/>
-  <rect x="24" y="24" width="32" height="148" rx="0" fill="#f5f0e8" stroke="#71717a" stroke-width="1"/>
-  <text x="72" y="49" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#141111">Customer &amp; partner</text>
-  <rect x="24" y="196" width="426" height="148" rx="0" fill="#ffffff" stroke="#71717a" stroke-width="1"/>
-  <rect x="24" y="196" width="32" height="148" rx="0" fill="#f5f0e8" stroke="#71717a" stroke-width="1"/>
-  <text x="72" y="221" text-anchor="start" font-family="sans-serif" font-size="15" font-weight="600" fill="#141111">Support team</text>
-  <line x1="154.5" y1="148" x2="154.5" y2="256" stroke="#141111" stroke-width="1" fill="none"/>
-  <polygon points="154.5,256 150,247 159,247" fill="#141111"/>
-  <text x="154.5" y="194" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="400" fill="#141111">handoff &amp; review</text>
-  <line x1="233" y1="288" x2="273" y2="288" stroke="#141111" stroke-width="1" fill="none"/>
-  <polygon points="273,288 264,292.5 264,283.5" fill="#141111"/>
-  <line x1="351.5" y1="256" x2="351.5" y2="148" stroke="#141111" stroke-width="1" fill="none"/>
-  <polygon points="351.5,148 356,157 347,157" fill="#141111"/>
-  <rect x="76" y="84" width="157" height="64" rx="0" fill="#ffffff" stroke="#526f9f" stroke-width="1.5"/>
-  <text x="154.5" y="121" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Request service</text>
-  <ellipse cx="351.5" cy="116" rx="32" ry="32" fill="#dcebe3" fill-opacity="1" stroke="#537966" stroke-width="1.5"/>
-  <text x="351.5" y="121" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Receive update</text>
-  <polygon points="154.5,256 233,288 154.5,320 76,288" fill="#f2e8d6"/>
-  <polyline points="154.5,256 233,288 154.5,320 76,288 154.5,256" stroke="#8b7045" stroke-width="1.5" fill="none"/>
-  <text x="154.5" y="293" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Known issue?</text>
-  <rect x="273" y="256" width="157" height="64" rx="0" fill="#ffffff" stroke="#526f9f" stroke-width="1.5"/>
-  <text x="351.5" y="293" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#141111">Send answer</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="702.4036131774708" height="468.59999999999997" viewBox="0 0 702.4036131774708 468.59999999999997" role="graphics-document document">
+  <rect x="24" y="24" width="654.4036131774708" height="181.6" rx="0" fill="#ffffff" stroke="#71717a" stroke-width="1"/>
+  <rect x="24" y="24" width="167.2" height="181.6" rx="0" fill="#f5f0e8" stroke="#71717a" stroke-width="1"/>
+  <text x="107.6" y="44" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Customer &amp; partner</text>
+  <rect x="24" y="265.8" width="654.4036131774708" height="178.79999999999998" rx="0" fill="#ffffff" stroke="#71717a" stroke-width="1"/>
+  <rect x="24" y="265.8" width="167.2" height="178.79999999999998" rx="0" fill="#f5f0e8" stroke="#71717a" stroke-width="1"/>
+  <text x="107.6" y="285.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Support team</text>
+  <line x1="286.19999999999993" y1="134.8" x2="370.46737513283745" y2="281.79999999999995" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="370.46737513283745,281.79999999999995 362.08739121943916,276.2299129619739 369.8954544152193,271.75396064646566" fill="#141111"/>
+  <text x="328.33369" y="202.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">handoff &amp; review</text>
+  <line x1="443.8673751328374" y1="355.19999999999993" x2="538.0036131774709" y2="355.2" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="538.0036131774709,355.2 529.0036131774709,359.7 529.0036131774709,350.7" fill="#141111"/>
+  <line x1="600.203613177471" y1="335.2" x2="518.089054197662" y2="189.6" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="518.089054197662,189.6 526.4297974089242,195.2286768146505 518.5905586726989,199.64980065780003" fill="#141111"/>
+  <rect x="207.19999999999996" y="94.8" width="158" height="40" rx="0" fill="#ffffff" stroke="#526f9f" stroke-width="1.5"/>
+  <text x="286.19999999999993" y="119.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Request service</text>
+  <ellipse cx="518.089054197662" cy="114.8" rx="74.8" ry="74.8" fill="#dcebe3" fill-opacity="1" stroke="#537966" stroke-width="1.5"/>
+  <text x="518.089054197662" y="119.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Receive update</text>
+  <polygon points="370.46737513283745,281.79999999999995 443.8673751328374,355.19999999999993 370.46737513283745,428.59999999999997 297.0673751328374,355.19999999999993" fill="#f2e8d6"/>
+  <polyline points="370.46737513283745,281.79999999999995 443.8673751328374,355.19999999999993 370.46737513283745,428.59999999999997 297.0673751328374,355.19999999999993 370.46737513283745,281.79999999999995" stroke="#8b7045" stroke-width="1.5" fill="none"/>
+  <text x="370.46737513283745" y="360.0999999999999" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Known issue?</text>
+  <rect x="538.0036131774709" y="335.2" width="124.39999999999999" height="40" rx="0" fill="#ffffff" stroke="#526f9f" stroke-width="1.5"/>
+  <text x="600.203613177471" y="360.09999999999997" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Send answer</text>
 </svg>
