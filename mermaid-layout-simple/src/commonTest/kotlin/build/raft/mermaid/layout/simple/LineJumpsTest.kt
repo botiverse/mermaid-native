@@ -109,8 +109,8 @@ class LineJumpsTest {
         assertTrue(off.commands.none { it is DrawPath })
         // Cross-lane handoffs use their facing sides instead of exterior Flow return tracks.
         assertEquals(5, arc.commands.filterIsInstance<DrawPath>().size)
-        assertEquals(7, arc.commands.filterIsInstance<DrawPath>().sumOf { p -> p.segments.count { it is PathArc } })
-        assertEquals(listOf(2, 2, 2, 3, 3), gap.commands.filterIsInstance<DrawPath>().map { p -> p.segments.count { it is PathMove } })
+        assertEquals(9, arc.commands.filterIsInstance<DrawPath>().sumOf { p -> p.segments.count { it is PathArc } })
+        assertEquals(listOf(3, 2, 4, 2, 3), gap.commands.filterIsInstance<DrawPath>().map { p -> p.segments.count { it is PathMove } })
         assertTrue(gap.commands.filterIsInstance<DrawPath>().all { path -> path.segments.filterIsInstance<PathMove>().size > 1 })
         // Arc ink can expand the padded scene; every marker and label must share that translation.
         val beforeText = off.commands.filterIsInstance<DrawText>()

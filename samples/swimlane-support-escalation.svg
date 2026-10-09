@@ -5,13 +5,13 @@
   <rect x="24" y="265.8" width="654.4036131774708" height="178.79999999999998" rx="0" fill="#ffffff" stroke="#71717a" stroke-width="1"/>
   <rect x="24" y="265.8" width="167.2" height="178.79999999999998" rx="0" fill="#f5f0e8" stroke="#71717a" stroke-width="1"/>
   <text x="107.6" y="285.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Support team</text>
-  <line x1="286.19999999999993" y1="134.8" x2="370.46737513283745" y2="281.79999999999995" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="370.46737513283745,281.79999999999995 362.08739121943916,276.2299129619739 369.8954544152193,271.75396064646566" fill="#141111"/>
-  <text x="328.33369" y="202.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">handoff &amp; review</text>
-  <line x1="443.8673751328374" y1="355.19999999999993" x2="538.0036131774709" y2="355.2" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polyline points="286.19999999999993,134.8 286.19999999999993,273.79999999999995 370.46737513283745,273.79999999999995 370.46737513283745,281.79999999999995" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="370.46737513283745,281.79999999999995 365.96737513283745,272.79999999999995 374.96737513283745,272.79999999999995" fill="#141111"/>
+  <text x="359.3999999999999" y="212.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">handoff &amp; review</text>
+  <polyline points="443.8673751328374,355.19999999999993 530.0036131774709,355.19999999999993 530.0036131774709,355.2 538.0036131774709,355.2" stroke="#141111" stroke-width="1.5" fill="none"/>
   <polygon points="538.0036131774709,355.2 529.0036131774709,359.7 529.0036131774709,350.7" fill="#141111"/>
-  <line x1="600.203613177471" y1="335.2" x2="518.089054197662" y2="189.6" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="518.089054197662,189.6 526.4297974089242,195.2286768146505 518.5905586726989,199.64980065780003" fill="#141111"/>
+  <polyline points="600.203613177471,335.2 600.203613177471,197.6 518.089054197662,197.6 518.089054197662,189.6" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="518.089054197662,189.6 522.589054197662,198.6 513.589054197662,198.6" fill="#141111"/>
   <rect x="207.19999999999996" y="94.8" width="158" height="40" rx="0" fill="#ffffff" stroke="#526f9f" stroke-width="1.5"/>
   <text x="286.19999999999993" y="119.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Request service</text>
   <ellipse cx="518.089054197662" cy="114.8" rx="74.8" ry="74.8" fill="#dcebe3" fill-opacity="1" stroke="#537966" stroke-width="1.5"/>

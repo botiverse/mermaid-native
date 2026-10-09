@@ -70,3 +70,9 @@ revision 04ee3364045d6573f84034d3c9368cc50233a92f. Copyright Knut Sveidqvist and
 contributors, under the MIT License packaged in mermaid-layout-simple.
 Source hashes are recorded in compatibility/upstream-swimlane-direction/sources.json.
 Native measured title reservation and sibling clearance are additional policies.
+
+SwimlaneObstacleRoutes uses Mermaid orthogonalRouter/router.ts's cardinal-side
+preference (vertical bias 3) at revision 04ee3364045d6573f84034d3c9368cc50233a92f.
+Copyright Knut Sveidqvist and contributors, MIT license packaged in
+mermaid-layout-simple. Its visibility-grid path search is an independent Native
+implementation; it does not reproduce the upstream pipe/track algorithm.

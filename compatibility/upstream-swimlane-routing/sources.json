@@ -1,0 +1,11 @@
+{
+  "revision": "04ee3364045d6573f84034d3c9368cc50233a92f",
+  "files": {
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.crossing.spec.ts": "7d892f38b7d9aaf9ecd68a34ea20bfa48c3ab37c6dcf111c1f8e3d9107093ef3",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.detour.spec.ts": "efdaaf9da8aea234f9e890ae1b137c625015fec60782f88aab23236765c6a6ac",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.issues.spec.ts": "0511ddfac0815d416184a2c0533bc1c619886421ac9db9b0de20e20730524085",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.repro_crossing.spec.ts": "1f288f2c4edeeeda14843a0c340ed5919bd9562f37e211497d817cd0abf83706",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.router.spec.ts": "5efb355f326648cdcfd6f822e6dbc8cd512aec4ecadd9da7c0da3745d49090b9",
+    "packages/mermaid/src/rendering-util/layout-algorithms/swimlanes/orthogonalRouter/__tests__/raykov.wide_node.spec.ts": "5af77d3c76da083b188708ac28df9cf06a0b3d5f81150d605c64d226da508317"
+  }
+}

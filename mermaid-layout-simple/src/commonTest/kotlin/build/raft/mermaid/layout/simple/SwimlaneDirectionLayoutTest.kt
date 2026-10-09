@@ -108,8 +108,16 @@ class SwimlaneDirectionLayoutTest {
         for (direction in listOf("TB","BT","LR","RL")) {
             val s = scene("swimlane-beta $direction\nsubgraph One\nsubgraph Nested\nA-->B\nend\nend\nsubgraph Two\nC\nend\nB-->C")
             // Neither edge is a self-loop or a same-lane feedback edge.
-            assertEquals(2, s.commands.filterIsInstance<DrawLine>().size)
-            assertTrue(s.commands.filterIsInstance<DrawPolyline>().isEmpty())
+            assertEquals(1, s.commands.filterIsInstance<DrawLine>().size)
+            val route = s.commands.filterIsInstance<DrawPolyline>().single().points
+            assertTrue(route.size >= 3)
+            for ((a,b) in route.zipWithNext()) {
+                assertTrue(kotlin.math.abs(a.x-b.x)<1e-6 || kotlin.math.abs(a.y-b.y)<1e-6)
+                for (text in s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("One","Nested","Two") }) {
+                    val size=FixedWidthTextMeasurer.measure(text.text,text.style)
+                    assertFalse(segmentEntersRect(a,b,SceneRect(text.origin.x-size.width/2,text.origin.y-size.height,size.width,size.height)))
+                }
+            }
         }
     }
     @Test fun invalidGeometryCannotHangHierarchyTraversal() {
