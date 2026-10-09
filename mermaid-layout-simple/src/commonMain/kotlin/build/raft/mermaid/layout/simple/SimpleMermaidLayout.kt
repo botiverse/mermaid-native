@@ -2998,7 +2998,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         val planarRoutes=if(feedbackRoutes.isNotEmpty() && obstacleRoutes.isNotEmpty())
             flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
         else feedbackRoutes+obstacleRoutes
-        val returnRoutes=if(swimlane)planarRoutes else planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
+        val returnRoutes=if(swimlane)planarRoutes+swimlaneObstacleRoutes(diagram,rects,placement.groups,lanePlacement!!.titles,planarRoutes,textMeasurer) else planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
         val refinedPaths=diagram.edges.mapIndexedNotNull { index, edge ->
             val source=rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@mapIndexedNotNull null
             val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
@@ -3006,12 +3006,12 @@ public object SimpleMermaidLayout : DiagramLayout {
                 else placer.edgeDirection(edge.sourceId,edge.targetId) in listOf(FlowDirection.LR,FlowDirection.RL)
             val anchors=edgeAnchors(source,target,horizontal)
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
-        }.toMap().let { paths -> clipExpandedFlowShapes(diagram,rects,refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths))) }
+        }.toMap().let { paths -> clipExpandedFlowShapes(diagram,rects,if(swimlane)paths else refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths))) }
         val materialized=if(swimlane)FlowMaterializedResult(refinedPaths,placement.groups)else materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
         val edgePaths=materialized.paths
         val groupRects=materialized.groups
         val geometryChanged=edgePaths!=refinedPaths || groupRects!=placement.groups
-        val adjustedLabels=flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
+        val adjustedLabels=if(swimlane)emptyMap() else flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeCommands = mutableListOf<Int>()
