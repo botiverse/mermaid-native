@@ -35,5 +35,6 @@ include(
     ":mermaid-render-svg",
     ":mermaid-web",
     ":mermaid-kuikly",
+    ":mermaid-kuikly-compose",
     ":mermaid-testkit",
 )
