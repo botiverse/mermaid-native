@@ -79,8 +79,12 @@ private fun DrawScope.drawRect(command: DrawRect) {
     val topLeft = Offset(command.rect.x.toFloat(), command.rect.y.toFloat())
     val size = Size(command.rect.width.toFloat(), command.rect.height.toFloat())
     val radius = command.cornerRadius.toFloat().coerceAtLeast(0f)
+    // Match the core Canvas renderer: an oversized radius falls back to a
+    // regular rectangle instead of allowing the platform canvas to choose a
+    // different corner-clamping policy.
+    val rounded = radius > 0f && radius <= size.width / 2f && radius <= size.height / 2f
     fun drawShape(color: Color, style: com.tencent.kuikly.compose.ui.graphics.drawscope.DrawStyle) {
-        if (radius > 0f) drawRoundRect(color, topLeft, size, CornerRadius(radius, radius), style = style)
+        if (rounded) drawRoundRect(color, topLeft, size, CornerRadius(radius, radius), style = style)
         else drawRect(color, topLeft, size, style = style)
     }
     fill?.let { drawShape(it, Fill) }
