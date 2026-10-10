@@ -13,7 +13,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":mermaid-layout-api"))
-            api("com.tencent.kuikly-open:compose:2.28.0-raft.10-2.1.21")
+            api("com.tencent.kuikly-open:compose:2.28.0-raft.11-2.1.21")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
