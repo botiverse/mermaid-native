@@ -2,6 +2,7 @@ import java.security.MessageDigest
 
 plugins {
     kotlin("multiplatform") version "2.1.21" apply false
+    kotlin("plugin.compose") version "2.1.21" apply false
     id("com.android.library") version "8.13.2" apply false
     id("org.cyclonedx.bom") version "3.4.1"
     `maven-publish`

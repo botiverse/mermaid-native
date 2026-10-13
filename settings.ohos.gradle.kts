@@ -54,8 +54,10 @@ include(
     ":mermaid-layout-api",
     ":mermaid-layout-simple",
     ":mermaid-kuikly",
+    ":mermaid-kuikly-compose",
 )
 project(":mermaid-core").buildFileName = buildFileName
 project(":mermaid-layout-api").buildFileName = buildFileName
 project(":mermaid-layout-simple").buildFileName = buildFileName
 project(":mermaid-kuikly").buildFileName = buildFileName
+project(":mermaid-kuikly-compose").buildFileName = buildFileName
