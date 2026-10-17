@@ -41,6 +41,7 @@ export default defineConfig({
             { text: 'Releases and upgrading', link: '/guide/releases' },
             { text: 'Compatibility', link: '/guide/compatibility' },
             { text: 'Architecture', link: '/guide/architecture' },
+            { text: 'Kuikly integration', link: '/guide/kuikly' },
             { text: 'Testing', link: '/guide/testing' },
           ],
         },
