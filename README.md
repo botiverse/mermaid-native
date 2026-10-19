@@ -13,6 +13,7 @@ This is an independent implementation, not an official Mermaid project. It cover
 | Parse diagrams and inspect typed models | `mermaid-core` | Every official KMP target: Android, iOS, macOS, JVM, JS, Wasm, Linux and Windows; separate HarmonyOS publication |
 | Compute layout or build your own renderer | `mermaid-layout-simple`, `mermaid-layout-api` | Same platforms; no Kuikly dependency |
 | Export SVG | `mermaid-render-svg` | Same platforms as `mermaid-core` |
+| Draw in a Compose Multiplatform app | `mermaid-compose` | Android, iOS, desktop JVM and Wasm, on JetBrains Compose Multiplatform 1.8 |
 | Draw in a Kuikly app | `mermaid-kuikly` | Raft integration plus an independent official Kuikly 2.28.0 Android example; see the verified scope below |
 | Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
@@ -72,6 +73,8 @@ fun diagramSvg(source: String): String = when (val parsed = MermaidParser.parse(
 ```
 
 In an application, show diagnostics in the UI instead of throwing. Give each inline SVG a distinct `baseId`. The fixed-width measasurer is an approximation; provide a host `TextMeasurer` for accurate font metrics.
+
+For Compose Multiplatform, add `build.raft.mermaid:mermaid-compose` and draw a scene with `MermaidCanvas(scene, modifier)`. Size the canvas from `scene.width` and `scene.height`, and pass a `scale` to zoom. To draw into your own `DrawScope`, call `drawMermaidScene(scene, textMeasurer)` with a `TextMeasurer` from `rememberTextMeasurer()`.
 
 For Kuikly, add `mermaid-kuikly` and its repository group, then draw a prepared scene with `MermaidView` or `MermaidKuiklyRenderer`. An existing Kuikly host and matching native renderer are required. See the [complete Kuikly and HarmonyOS instructions](docs-site/guide/getting-started.md), including compiler versions and dependency boundaries.
 

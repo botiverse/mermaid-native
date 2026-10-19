@@ -17,7 +17,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile publishable common metadata
         run: ./gradlew compileCommonMainKotlinMetadata
-      - run: ./gradlew check :mermaid-core:allTests :mermaid-layout-simple:allTests :mermaid-testkit:allTests :mermaid-web:allTests :mermaid-kuikly:allTests cyclonedxBom
+      - run: ./gradlew check :mermaid-core:allTests :mermaid-layout-simple:allTests :mermaid-testkit:allTests :mermaid-web:allTests :mermaid-kuikly:allTests :mermaid-compose:jvmTest cyclonedxBom
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
