@@ -1,12 +1,20 @@
 # SDK releases and upgrading
 
-## Unreleased on main
+## 0.1.12 / 0.1.12-ohos
 
-The main branch includes additional edge-route refinement and typed stroke paths (moves, lines, quadratic curves and circular arcs) across SVG, browser Canvas and Kuikly. These changes are **not included in 0.1.11**. The typed-path addition introduces a new draw command for custom renderers to handle; main also enables configurable arc/gap crossing hops in swimlane diagrams. Set `config.swimlane.lineHops: false` to retain straight crossing strokes. This behavior is also unreleased.
+**Pending publication** from tag `v0.1.12`. Until the release receipt below is added, 0.1.11 remains the latest verified pair.
 
-Block arrows on main now use the original multi-direction polygon geometry, including axis shorthands, natural and spanning widths, four-way tip bounds, and painted-boundary edge clipping. This is also unreleased. Block grids now use upstream measured-tree sizing, row placement and bounds, including spaces, spans, automatic columns and nested composites. `config.block.padding` (default 8) is read per diagram; it is independent of the outer scene margin. Native retains its own text measurement and a reserved composite-heading band, so this is not DOM typography or pixel parity. Very deep grids are rejected with a bounded-work diagnostic.
+Changes since 0.1.11:
 
-Use a release tag and the matching published artifacts for a reproducible integration. The latest verified release remains the pair below.
+- Platforms: `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple`, `mermaid-render-svg` and `mermaid-testkit` now publish for every official Kotlin Multiplatform target: Android, iOS, macOS, JVM, JS, Wasm, Linux and Windows. The Kuikly modules keep their existing targets.
+- Compose Multiplatform: the new `mermaid-compose` module draws a scene with JetBrains Compose Multiplatform 1.8 on Android, iOS, desktop JVM and Wasm (`MermaidCanvas`, `drawMermaidScene`). `mermaid-kuikly-compose` draws with the Kuikly Compose distribution, including OHOS.
+- Kotlin/JS correctness: regex patterns with unescaped `]` or `}` no longer fail under the JavaScript `u` flag, and whole-input checks no longer depend on Kotlin/JS `Regex.matches`. Wardley, Venn, quadrant, kanban, mindmap, event modeling, architecture and usecase diagrams parse on JS, and quadrant/XY colors validate there.
+- Rendering: typed stroke paths (moves, lines, quadratic curves and circular arcs) across SVG, browser Canvas and Kuikly. Custom renderers must handle the new draw command.
+- Flowcharts: materialized flow geometry with atomic rendered-layout guards.
+- Swimlanes: configurable arc/gap crossing hops (set `config.swimlane.lineHops: false` to keep straight crossings), unified geometry for styled and nested lanes, and handoffs routed around nodes and lane titles.
+- Block diagrams: upstream multi-direction arrow polygons (axis shorthands, natural and spanning widths, four-way tip bounds, painted-boundary edge clipping) and upstream measured-tree grid sizing. `config.block.padding` (default 8) is read per diagram. Very deep grids are rejected with a bounded-work diagnostic. Native keeps its own text measurement, so this is not DOM typography or pixel parity.
+
+Upgrade all normal modules together to `0.1.12` and HarmonyOS modules to `0.1.12-ohos`. Rebuild host code and custom scene renderers, because binary compatibility is not promised in 0.x.
 
 ## 0.1.11 / 0.1.11-ohos
 
