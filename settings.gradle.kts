@@ -36,5 +36,6 @@ include(
     ":mermaid-web",
     ":mermaid-kuikly",
     ":mermaid-kuikly-compose",
+    ":mermaid-compose",
     ":mermaid-testkit",
 )
