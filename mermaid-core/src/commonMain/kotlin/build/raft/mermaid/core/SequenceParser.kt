@@ -91,7 +91,7 @@ internal class SequenceParser(private val source: String) {
                 check(values.size <= 2, "Invalid autonumber")
                 if (values == listOf("off")) events += SequenceNumbering(false)
                 else {
-                    check(values.all { NUMBER.matches(it) && it.toDoubleOrNull()?.isFinite() == true }, "Sequence numbers allow at most two decimal places")
+                    check(values.all { NUMBER.fullyMatches(it) && it.toDoubleOrNull()?.isFinite() == true }, "Sequence numbers allow at most two decimal places")
                     events += SequenceNumbering(true, values.getOrNull(0)?.toDouble(), values.getOrNull(1)?.toDouble() ?: if (values.isEmpty()) null else 1.0)
                 }
             }

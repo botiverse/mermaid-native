@@ -124,7 +124,7 @@ internal class GanttParser(private val source:String) {
         "YYYY-MM-DD","yyyy-mm-dd" -> parseCalendarDay(text)?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
         "DD-MM-YYYY" -> text.split('-').takeIf { it.size==3 }?.let { parseIsoDay("${it[2]}-${it[1]}-${it[0]}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
         "ss", "s" -> text.toIntOrNull()?.takeIf { it in 0..59 }?.let { todayEpochMillis + it * 1000L }
-        "YYYYMMDD" -> text.takeIf { it.matches(Regex("\\d{8}")) }?.let { parseIsoDay("${it.take(4)}-${it.substring(4,6)}-${it.takeLast(2)}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
+        "YYYYMMDD" -> text.takeIf { Regex("\\d{8}").fullyMatches(it) }?.let { parseIsoDay("${it.take(4)}-${it.substring(4,6)}-${it.takeLast(2)}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
         "x", "X" -> text.toDoubleOrNull()?.let { it * if(format == "X") 1000 else 1 }?.takeIf { it.isFinite() && it >= -62167219200000.0 && it <= 253402300799999.0 }?.toLong()
         else -> null
     }

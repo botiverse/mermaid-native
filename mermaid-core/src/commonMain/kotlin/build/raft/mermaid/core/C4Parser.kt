@@ -102,7 +102,7 @@ internal class C4Parser(private val source: String) {
                 name = text.substring(1, equal).trim(); text = text.substring(equal + 1).trim()
             }
             val result = if (text.startsWith('"') && text.endsWith('"') && text.length >= 2) text.substring(1, text.length - 1).replace("\\\"", "\"").replace("\\\\", "\\")
-                else if (Regex("[A-Za-z0-9_.-]+").matches(text)) text else return null
+                else if (Regex("[A-Za-z0-9_.-]+").fullyMatches(text)) text else return null
             Argument(result, name)
         }
     }

@@ -110,11 +110,11 @@ public object MermaidParser {
         val railroadSyntax = RailroadSyntax.detect(header)
         return when {
             header.equals("sequenceDiagram", ignoreCase = true) -> MermaidDiagramType.SEQUENCE
-            STATE_HEADER.matches(header) -> MermaidDiagramType.STATE
+            STATE_HEADER.fullyMatches(header) -> MermaidDiagramType.STATE
             header.startsWith("pie", ignoreCase = true) -> MermaidDiagramType.PIE
             (header.equals("classDiagram", ignoreCase = true) || header.equals("classDiagram-v2", ignoreCase = true)) -> MermaidDiagramType.CLASS
             header.takeWhile { !it.isWhitespace() }.equals("erDiagram", ignoreCase = true) -> MermaidDiagramType.ER
-            XY_HEADER.matches(header) -> MermaidDiagramType.XY
+            XY_HEADER.fullyMatches(header) -> MermaidDiagramType.XY
             header.equals("mindmap", ignoreCase = true) -> MermaidDiagramType.MINDMAP
             header.equals("gantt", ignoreCase = true) -> MermaidDiagramType.GANTT
             header.takeWhile { !it.isWhitespace() }.equals("timeline", ignoreCase = true) -> MermaidDiagramType.TIMELINE
@@ -129,18 +129,18 @@ public object MermaidParser {
             (header.equals("treemap-beta", ignoreCase = true) || header.equals("treemap", ignoreCase = true)) -> MermaidDiagramType.TREEMAP
             header.equals("venn-beta", ignoreCase = true) -> MermaidDiagramType.VENN
             header.equals("usecase-beta", ignoreCase = true) || header.equals("usecaseDiagram", ignoreCase = true) -> MermaidDiagramType.USECASE
-            Regex("^architecture-beta(?:\\s.*)?$").matches(header) -> MermaidDiagramType.ARCHITECTURE
+            Regex("^architecture-beta(?:\\s.*)?$").fullyMatches(header) -> MermaidDiagramType.ARCHITECTURE
             header in setOf("C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment") -> MermaidDiagramType.C4
             header.lowercase() in setOf("cynefin-beta", "cynefin-beta:", "cynefin") -> MermaidDiagramType.CYNEFIN
             header.equals("ishikawa", ignoreCase = true) || header.equals("ishikawa-beta", ignoreCase = true) || header.equals("fishbone", ignoreCase = true) -> MermaidDiagramType.ISHIKAWA
-            SWIMLANE_HEADER.matches(header) -> MermaidDiagramType.SWIMLANE
+            SWIMLANE_HEADER.fullyMatches(header) -> MermaidDiagramType.SWIMLANE
             header == "treeView-beta" -> MermaidDiagramType.TREEVIEW
             railroadSyntax != null -> MermaidDiagramType.RAILROAD
             header.equals("zenuml", ignoreCase = true) -> MermaidDiagramType.ZENUML
             header.equals("wardley-beta", ignoreCase = true) -> MermaidDiagramType.WARDLEY
             header.startsWith("radar-beta") -> MermaidDiagramType.RADAR
             header == "eventmodeling" -> MermaidDiagramType.EVENTMODELING
-            Regex("^info(?:\\s.*)?$").matches(header) -> MermaidDiagramType.INFO
+            Regex("^info(?:\\s.*)?$").fullyMatches(header) -> MermaidDiagramType.INFO
             header.takeWhile { !it.isWhitespace() }.lowercase() in setOf("flowchart", "graph", "flowchart-elk") -> MermaidDiagramType.FLOWCHART
             else -> null
         }
@@ -748,7 +748,7 @@ public object MermaidParser {
     private val XY_HEADER = Regex("^xychart(?:-beta)?(?:\\s+.*)?$", RegexOption.IGNORE_CASE)
     private const val MINDMAP_INDENT = 2
 
-    private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^]\\r\\n]+)]$")
+    private val KANBAN_ITEM = Regex("^($IDENTIFIER)\\[([^\\]\\r\\n]+)\\]$")
     private const val C4_IDENTIFIER = "[A-Za-z0-9_]+"
     private val C4_TITLE = Regex("^title\\s+(.+)$")
     private val C4_ELEMENT = Regex("^(Person|Person_Ext|System|System_Ext)\\(($C4_IDENTIFIER),\\s*\"([^\"\\r\\n]+)\"(?:,\\s*\"([^\"\\r\\n]+)\")?\\)$")
@@ -877,9 +877,9 @@ private fun String.toMindmapNodeSyntax(index: Int): ParsedMindmapNode? {
 }
 
 private val MINDMAP_DOUBLE_CIRCLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\(\\(([^()\\r\\n]+)\\)\\)$")
-private val MINDMAP_RECTANGLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\[([^]\\r\\n]+)]$")
+private val MINDMAP_RECTANGLE = Regex("^([A-Za-z_][A-Za-z0-9_-]*)\\[([^\\]\\r\\n]+)\\]$")
 private val MINDMAP_ANONYMOUS_DOUBLE_CIRCLE = Regex("^\\(\\(([^()\\r\\n]+)\\)\\)$")
-private val MINDMAP_ANONYMOUS_RECTANGLE = Regex("^\\[([^]\\r\\n]+)]$")
+private val MINDMAP_ANONYMOUS_RECTANGLE = Regex("^\\[([^\\]\\r\\n]+)\\]$")
 
 private fun String.toMindmapLines(): List<MindmapSourceLine> = buildList {
     lineSequence().forEachIndexed { index, rawLine ->

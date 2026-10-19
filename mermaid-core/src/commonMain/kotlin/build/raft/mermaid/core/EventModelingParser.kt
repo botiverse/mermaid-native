@@ -67,7 +67,7 @@ internal class EventModelingParser(private val source: String) {
                 text.startsWith("accDescr:") -> accDescription = text.substringAfter(':').substringBefore("%%").trim()
                 text.startsWith("entity ") -> {
                     val id = text.substring(7).trim()
-                    if (!Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").matches(id)) fail("Invalid model entity")
+                    if (!Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").fullyMatches(id)) fail("Invalid model entity")
                     entities += id
                 }
                 text.startsWith("note ") -> {
@@ -76,7 +76,7 @@ internal class EventModelingParser(private val source: String) {
                 }
                 text.startsWith("gwt ") -> {
                     val frameId = text.substring(4).trim()
-                    if (!Regex("\\d{1,3}").matches(frameId)) fail("Invalid scenario frame")
+                    if (!Regex("\\d{1,3}").fullyMatches(frameId)) fail("Invalid scenario frame")
                     val steps = linkedMapOf("given" to mutableListOf<EventModelingStep>(), "when" to mutableListOf<EventModelingStep>(), "then" to mutableListOf<EventModelingStep>())
                     var phase = ""
                     while (line + 1 < lines.size) {
@@ -93,7 +93,7 @@ internal class EventModelingParser(private val source: String) {
                     if (steps.getValue("given").isEmpty() || steps.getValue("then").isEmpty()) fail("Scenario requires given and then statements")
                     scenarios += EventModelingScenario(frameId, steps.getValue("given"), steps.getValue("when"), steps.getValue("then"))
                 }
-                dataPattern.matches(text) -> {
+                dataPattern.fullyMatches(text) -> {
                     val match = dataPattern.matchEntire(text)!!
                     if (match.groupValues[1] in data) fail("Duplicate data identifier")
                     data[match.groupValues[1]] = payload(match.groupValues[2], true)
@@ -113,7 +113,7 @@ internal class EventModelingParser(private val source: String) {
                     if (sources.any { it !in frames }) fail("Event Modeling relation source must be declared first")
                     var dataRef: String? = null
                     if (rest.startsWith("[[")) {
-                        val ref = Regex("^\\[\\[([A-Za-z_][A-Za-z0-9_]*)]]").find(rest) ?: fail("Invalid data reference")
+                        val ref = Regex("^\\[\\[([A-Za-z_][A-Za-z0-9_]*)\\]\\]").find(rest) ?: fail("Invalid data reference")
                         dataRef = ref.groupValues[1]; rest = rest.substring(ref.value.length).trim()
                     }
                     val inline = rest.takeIf { it.isNotEmpty() }?.let { payload(it, false) }

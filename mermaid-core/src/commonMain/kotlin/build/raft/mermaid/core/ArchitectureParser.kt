@@ -110,7 +110,7 @@ internal class ArchitectureParser(private val source: String) {
     companion object {
         private val JUNCTION = Regex("""^junction\s+([A-Za-z0-9_]+)(?:\s+in\s+([A-Za-z0-9_]+))?\s*(?:%%.*)?$""")
         private val ALIGN = Regex("""^align\s+(row|column)(?:\s+(.*))?$""")
-        private val ENTITY = Regex("""^(group|service)\s+([A-Za-z0-9_]+)(?:\(([A-Za-z0-9_:-]+)\))?(?:\[((?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]\r\n]+))])?(?:\s+in\s+([A-Za-z0-9_]+))?\s*(?:%%.*)?$""")
+        private val ENTITY = Regex("""^(group|service)\s+([A-Za-z0-9_]+)(?:\(([A-Za-z0-9_:-]+)\))?(?:\[((?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]\r\n]+))\])?(?:\s+in\s+([A-Za-z0-9_]+))?\s*(?:%%.*)?$""")
         private val EDGE = Regex("""^([A-Za-z0-9_]+):(T|B|L|R)\s*(-->|--)\s*(T|B|L|R):([A-Za-z0-9_]+)\s*(?:%%.*)?$""")
     }
 }

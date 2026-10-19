@@ -129,7 +129,7 @@ private class YamlReader(source: String, val firstLine: Int, val dedent: Int) {
             return if (index < lines.size && indentation(index) > parentIndent) block(indentation(index), depth) else UsecaseJsonValue.NullValue
         }
         if (clean.first() == '|' || clean.first() == '>') {
-            if (!Regex("[|>][+-]?").matches(clean)) fail("Unsupported YAML block scalar indicator", line, column)
+            if (!Regex("[|>][+-]?").fullyMatches(clean)) fail("Unsupported YAML block scalar indicator", line, column)
             val chunks = mutableListOf<String>(); var contentIndent: Int? = null
             while (index < lines.size) {
                 val next = lines[index]
@@ -199,14 +199,14 @@ private class YamlReader(source: String, val firstLine: Int, val dedent: Int) {
                     while (pos < text.length && (level == depth || text[pos] !in ",]}")) pos++
                     val raw = text.substring(start, pos).trim()
                     if (mappingColon(raw) >= 0) error("A colon followed by whitespace requires a quoted YAML scalar")
-                    if (Regex("[-+]?(?:0[xob].*|\\.(?:inf|nan))", RegexOption.IGNORE_CASE).matches(raw))
+                    if (Regex("[-+]?(?:0[xob].*|\\.(?:inf|nan))", RegexOption.IGNORE_CASE).fullyMatches(raw))
                         error("Non-decimal or non-finite YAML numbers are not supported")
                     if (raw.firstOrNull() in listOf('!', '&', '*', '?', '@', '`')) error("Unsupported YAML tag, anchor, alias or complex key")
                     when {
                         raw.isEmpty() || raw in listOf("null", "Null", "NULL", "~") -> UsecaseJsonValue.NullValue
                         raw in listOf("true", "True", "TRUE") -> UsecaseJsonValue.BooleanValue(true)
                         raw in listOf("false", "False", "FALSE") -> UsecaseJsonValue.BooleanValue(false)
-                        number.matches(raw) -> UsecaseJsonValue.NumberValue(raw.replace("_", "").toDoubleOrNull() ?: error("Invalid YAML number"))
+                        number.fullyMatches(raw) -> UsecaseJsonValue.NumberValue(raw.replace("_", "").toDoubleOrNull() ?: error("Invalid YAML number"))
                         else -> UsecaseJsonValue.StringValue(raw)
                     }
                 }

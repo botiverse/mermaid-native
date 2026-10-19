@@ -18,7 +18,7 @@ internal class VennParser(private val source: String) {
             // Blank/comment lines above remain transparent, like the upstream lexer.
             if (raw.firstOrNull()?.isWhitespace() != true || !text.startsWith("text ")) current = null
             if (text.startsWith("title ")) { title = unquote(text.removePrefix("title ")); return@forEachIndexed }
-            val subset = Regex("^(set|union)\\s+($list)(?:\\s*\\[([^]]*)])?(?:\\s*:\\s*([+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)))?$").matchEntire(text)
+            val subset = Regex("^(set|union)\\s+($list)(?:\\s*\\[([^\\]]*)\\])?(?:\\s*:\\s*([+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)))?$").matchEntire(text)
             if (subset != null) {
                 val members = ids(subset.groupValues[2]); val isSet = subset.groupValues[1] == "set"
                 if (isSet && members.size != 1) return fail("set requires single identifier", line)
@@ -53,8 +53,8 @@ internal class VennParser(private val source: String) {
             }
             if (text.startsWith("text ")) {
                 val content = text.removePrefix("text ")
-                val explicit = Regex("^($list)\\s+($id|[0-9]+)(?:\\s*\\[([^]]*)])?$").matchEntire(content)
-                val implicit = Regex("^($id|[0-9]+)(?:\\s*\\[([^]]*)])?$").matchEntire(content)
+                val explicit = Regex("^($list)\\s+($id|[0-9]+)(?:\\s*\\[([^\\]]*)\\])?$").matchEntire(content)
+                val implicit = Regex("^($id|[0-9]+)(?:\\s*\\[([^\\]]*)\\])?$").matchEntire(content)
                 when {
                     explicit != null -> texts += VennText(ids(explicit.groupValues[1]), unquote(explicit.groupValues[2]), explicit.groups[3]?.value?.let(::unquote))
                     implicit != null && raw.firstOrNull()?.isWhitespace() == true && current != null -> texts += VennText(current!!, unquote(implicit.groupValues[1]), implicit.groups[2]?.value?.let(::unquote))

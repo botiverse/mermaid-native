@@ -80,7 +80,7 @@ internal object MermaidDocumentOptions {
                         val palette = theme.value["plotColorPalette"]
                         require(palette is UsecaseJsonValue.StringValue) { "plotColorPalette must be a comma-separated color string" }
                         val colors = palette.value.split(',').map { it.trim() }
-                        require(colors.isNotEmpty() && colors.all { Regex("#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}").matches(it) }) { "Native plotColorPalette requires hexadecimal colors (3, 6 or 8 digits)" }
+                        require(colors.isNotEmpty() && colors.all { Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").fullyMatches(it) }) { "Native plotColorPalette requires hexadecimal colors (3, 6 or 8 digits)" }
                         diagram = diagram.copy(plotColorPalette = colors)
                     }
                     else -> throw IllegalArgumentException("Unsupported Native frontmatter configuration: $section")

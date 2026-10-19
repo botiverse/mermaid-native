@@ -27,7 +27,7 @@ public object UsecaseLexer {
         rule("GENERALIZATION", "--\\|>"), rule("DEPENDENCY_ARROW", "\\.\\.>"), rule("STEREOTYPE_START", "<<"), rule("CLASS_SEPARATOR", ":::"),
         rule("FORWARD_SOLID", "--+>"), rule("BACKWARD_SOLID", "<--+"), rule("FORWARD_CIRCLE", "--o"), rule("BACKWARD_CIRCLE", "o--"),
         rule("FORWARD_CROSS", "--x"), rule("BACKWARD_CROSS", "x--"), rule("MARKERLESS_SOLID", "--+"), rule("METADATA_START", "@\\{"),
-        rule("AT", "@"), rule("LBRACE", "\\{"), rule("RBRACE", "}"), rule("LBRACKET", "\\["), rule("RBRACKET", "]"),
+        rule("AT", "@"), rule("LBRACE", "\\{"), rule("RBRACE", "\\}"), rule("LBRACKET", "\\["), rule("RBRACKET", "\\]"),
         rule("LPAREN", "\\("), rule("RPAREN", "\\)"), rule("COMMA", ","), rule("COLON", ":"), rule("HASH_COLOR", "#[0-9A-Fa-f]+"),
         rule("PLAIN_STRING", "\"[^\\n\\r\"]*\"|'[^\\n\\r']*'"), rule("CSS_IDENTIFIER", "--[A-Z_a-z][\\w-]*|[A-Z_a-z]\\w*(?:-\\w+)+"),
     )

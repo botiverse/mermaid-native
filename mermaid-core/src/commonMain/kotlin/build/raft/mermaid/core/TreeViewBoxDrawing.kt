@@ -15,7 +15,7 @@ internal object TreeViewBoxDrawing {
     fun preprocess(input: String): Result {
         val lines = input.split('\n'); val header = lines.indexOfFirst { it.trim() == "treeView-beta" }
         if (header < 0) return Result(input, emptyMap())
-        val content = lines.drop(header + 1).filterNot { it.isBlank() || comment.containsMatchIn(it) || metadata.containsMatchIn(it) || decoration.matches(it) }.map { it.replace("\t", "    ") }
+        val content = lines.drop(header + 1).filterNot { it.isBlank() || comment.containsMatchIn(it) || metadata.containsMatchIn(it) || decoration.fullyMatches(it) }.map { it.replace("\t", "    ") }
         if (!isBoxDrawingFormat(content)) return Result(input, emptyMap())
         val segment = content.firstNotNullOfOrNull { branch.find(it)?.range?.first?.takeIf { column -> column > 0 } } ?: 4
         val output = mutableListOf<String>(); val mapping = linkedMapOf<Int, Int>()
@@ -23,7 +23,7 @@ internal object TreeViewBoxDrawing {
         lines.forEachIndexed { index, line ->
             val original = index + 1
             if (index <= header || line.isBlank() || comment.containsMatchIn(line) || metadata.containsMatchIn(line)) { emit(line, original); return@forEachIndexed }
-            if (decoration.matches(line)) return@forEachIndexed
+            if (decoration.fullyMatches(line)) return@forEachIndexed
             val normalized = line.replace("\t", "    "); val match = branch.find(normalized)
             if (match != null) {
                 val column = match.range.first
@@ -34,7 +34,7 @@ internal object TreeViewBoxDrawing {
                 val name = normalized.substring(start).trimEnd()
                 require(name.isNotEmpty()) { "Line $original: Empty node — expected a filename or directory name after the box-drawing prefix" }
                 emit("    ".repeat(depth) + name, original)
-            } else if (Regex("^[\\s─━│┃└┗├┣]+$").matches(normalized)) {
+            } else if (Regex("^[\\s─━│┃└┗├┣]+$").fullyMatches(normalized)) {
                 return@forEachIndexed
             } else if (all.containsMatchIn(normalized)) {
                 emit(line, original)
