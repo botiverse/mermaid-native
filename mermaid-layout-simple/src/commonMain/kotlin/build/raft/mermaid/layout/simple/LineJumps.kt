@@ -146,7 +146,7 @@ public object LineJumps {
     public fun processEdgesWithJumps(edges: List<Edge>, config: Config): Map<String, String> =
         processGeometry(edges, config).mapValues { it.value.d }
 
-    public fun isStraightPath(d: String): Boolean = Regex("^[\\d\\s+,.LMelm-]*$").matches(d)
+    public fun isStraightPath(d: String): Boolean = Regex("^[\\d\\s+,.LMelm-]*$").fullyMatches(d)
     public fun curveSupportsLineHops(curve: String?): Boolean = curve.isNullOrEmpty() ||
         curve in listOf("linear", "rounded", "step", "stepBefore", "stepAfter")
 

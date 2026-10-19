@@ -11,6 +11,14 @@ plugins {
 group = providers.gradleProperty("group").orElse("build.raft.mermaid").get()
 version = providers.gradleProperty("version").orElse("0.1.0-SNAPSHOT").get()
 
+val engineModules = setOf(
+    "mermaid-core",
+    "mermaid-layout-api",
+    "mermaid-layout-simple",
+    "mermaid-render-svg",
+    "mermaid-testkit",
+)
+
 subprojects {
     group = rootProject.group
     version = rootProject.version
@@ -21,6 +29,18 @@ subprojects {
             iosArm64()
             iosSimulatorArm64()
             iosX64()
+            // The engine modules are pure Kotlin, so they also build for every
+            // other official KMP target. UI adapters keep the platforms their
+            // UI toolkit supports.
+            if (project.name in engineModules) {
+                jvm()
+                js { browser(); nodejs() }
+                macosArm64()
+                macosX64()
+                linuxX64()
+                linuxArm64()
+                mingwX64()
+            }
             // OHOS is enabled by the Kuikly host build once its signed toolchain
             // is available; keeping the core graph free of that plugin is
             // intentional and preserves ordinary KMP consumers.

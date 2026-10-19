@@ -1135,7 +1135,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             fun color(key: String, fallback: SceneColor): SceneColor {
                 val value = properties[key] ?: return fallback
                 val named = mapOf("red" to "#ff0000", "blue" to "#0000ff", "green" to "#008000", "white" to "#ffffff", "black" to "#000000", "yellow" to "#ffff00", "transparent" to "transparent")
-                return if (Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").matches(value)) SceneColor(value) else named[value]?.let(::SceneColor) ?: fallback
+                return if (Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").fullyMatches(value)) SceneColor(value) else named[value]?.let(::SceneColor) ?: fallback
             }
             val fill = color("fill", TREEMAP_COLORS[depth % TREEMAP_COLORS.size])
             val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(20.0) ?: 1.0
@@ -1349,7 +1349,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                 val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
                 }.toMap()
-                fun color(key: String, fallback: String) = SceneColor(properties[key]?.takeIf { Regex("#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Z]+").matches(it) } ?: fallback)
+                fun color(key: String, fallback: String) = SceneColor(properties[key]?.takeIf { Regex("(?:#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Z]+)").fullyMatches(it) } ?: fallback)
                 val fill = color("fill", DiagramPalette.SURFACE); val stroke = color("stroke", DiagramPalette.SECONDARY)
                 val strokeWidth = properties["stroke-width"]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: 1.5
                 if (node.type == "block_arrow") {
@@ -1761,7 +1761,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             }
             fun number(key: String, fallback: Double): Double = properties[key]?.removeSuffix("px")?.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }?.coerceAtMost(100.0) ?: fallback
             fun color(key: String, fallback: String): SceneColor = SceneColor(properties[key]?.takeIf {
-                it.matches(Regex("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"))
+                Regex("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})").fullyMatches(it)
             }?.let { if (it.startsWith('#')) it else "#$it" } ?: fallback)
             val radius = number("radius", 5.0)
             val vertices = listOf(ScenePoint(x, y - radius), ScenePoint(x + radius, y), ScenePoint(x, y + radius), ScenePoint(x - radius, y))

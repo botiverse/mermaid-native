@@ -10,13 +10,13 @@ This is an independent implementation, not an official Mermaid project. It cover
 
 | What you need | Modules | Current availability |
 | --- | --- | --- |
-| Parse diagrams and inspect typed models | `mermaid-core` | Android/iOS KMP; separate HarmonyOS publication |
+| Parse diagrams and inspect typed models | `mermaid-core` | Every official KMP target: Android, iOS, macOS, JVM, JS, Wasm, Linux and Windows; separate HarmonyOS publication |
 | Compute layout or build your own renderer | `mermaid-layout-simple`, `mermaid-layout-api` | Same platforms; no Kuikly dependency |
-| Export SVG | `mermaid-render-svg` | Android/iOS KMP and repository Kotlin/Wasm build |
+| Export SVG | `mermaid-render-svg` | Same platforms as `mermaid-core` |
 | Draw in a Kuikly app | `mermaid-kuikly` | Raft integration plus an independent official Kuikly 2.28.0 Android example; see the verified scope below |
 | Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
-The latest verified SDK pair is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS. The native modules do not require a JavaScript runtime. The browser demos do use JavaScript host code. There is currently no standalone JVM/Desktop target, Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
+The latest verified SDK pair is **0.1.11** for Android/iOS and **0.1.11-ohos** for HarmonyOS. The native modules do not require a JavaScript runtime. The browser demos do use JavaScript host code. The engine modules (core, layout and SVG) build for every official Kotlin Multiplatform target on main; 0.1.11 publishes Android and iOS only. There is currently no Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
 
 **Release vs. main:** published artifacts come from the release tag. The website and repository describe the current main branch, which may contain unreleased APIs. See [releases and upgrading](docs-site/guide/releases.md); do not assume a feature on main is present in 0.1.11. The incomplete 0.1.10 release pair should not be used.
 

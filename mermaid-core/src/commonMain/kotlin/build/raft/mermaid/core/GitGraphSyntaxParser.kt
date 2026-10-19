@@ -92,7 +92,7 @@ public object GitGraphSyntaxParser {
                     if (command in setOf("branch", "checkout", "switch", "merge")) {
                         val name = ts.getOrNull(position++)
                         if (name == null) report("Expected branch")
-                        else if (!name.quoted && !Regex("\\w([-./\\w]*[-\\w])?").matches(name.value)) report("Invalid branch name")
+                        else if (!name.quoted && !Regex("\\w([-./\\w]*[-\\w])?").fullyMatches(name.value)) report("Invalid branch name")
                         else branch = name.value
                     }
                     var id: String? = null; var message: String? = null; var kind: GitGraphCommitType? = null

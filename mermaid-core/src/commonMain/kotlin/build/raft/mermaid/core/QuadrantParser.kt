@@ -40,7 +40,7 @@ internal class QuadrantParser(private val source: String) {
                     "stroke-width" -> Regex("[0-9]+px") to "number of pixels (eg. 10px)"
                     else -> error("style named $key is not supported.")
                 }
-                require(pattern.matches(rawValue)) { "value for $key $rawValue is invalid, please use a valid $expected" }
+                require(pattern.fullyMatches(rawValue)) { "value for $key $rawValue is invalid, please use a valid $expected" }
             }
             result
         } catch (error: IllegalArgumentException) {
@@ -85,7 +85,7 @@ internal class QuadrantParser(private val source: String) {
             if (text.isBlank()) continue
             val axis = Regex("^([xy])-axis[ \\t]*(.*)$", RegexOption.IGNORE_CASE).matchEntire(text)
             val quadrant = Regex("^quadrant-([1-4])[ \\t]*(.*)$", RegexOption.IGNORE_CASE).matchEntire(text)
-            val point = Regex("^(.*?)(?::::(\\w+))?\\s*:\\s*\\[\\s*(1|0(?:\\.\\d+)?)\\s*,\\s*(1|0(?:\\.\\d+)?)\\s*]\\s*(.*)$").matchEntire(text)
+            val point = Regex("^(.*?)(?::::(\\w+))?\\s*:\\s*\\[\\s*(1|0(?:\\.\\d+)?)\\s*,\\s*(1|0(?:\\.\\d+)?)\\s*\\]\\s*(.*)$").matchEntire(text)
             when {
                 Regex("^title(?:[ \\t]+|$)", RegexOption.IGNORE_CASE).containsMatchIn(text) && point == null -> title = text.substring(5).trim()
                 Regex("^accTitle\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(text) -> accTitle = text.substringAfter(':').trim()
