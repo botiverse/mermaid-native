@@ -1,15 +1,19 @@
 # SDK releases and upgrading
 
+## 0.1.14 / 0.1.14-ohos
+
+**Pending publication** from tag `v0.1.14`. Same code as 0.1.13, republished under a new version because 0.1.13's normal-plane publish was cut off.
+
 ## 0.1.13 / 0.1.13-ohos
 
-**Pending publication** from tag `v0.1.13`. Until the release receipt is added, use 0.1.12.
+**Incomplete — do not use.** The normal-plane (Android/iOS) publish failed partway (registry DNS errors, then 409 on re-run because published files are immutable): `mermaid-core` and `mermaid-compose` are on Maven, `mermaid-layout-api` and `mermaid-layout-simple` are not. Use 0.1.14, which has the same changes.
 
 Changes since 0.1.12:
 
 - Compose Multiplatform (`mermaid-compose`): `MermaidCanvas` takes an optional `textStyle` as the base style for scene text. A `fontFamily` in that style replaces the scene's font family. The canvas now sizes itself to the scene size × `scale` in dp. It also clamps that scale with the new public `mermaidSafeScale` so neither side exceeds `MermaidMaxSidePx` (32,000 px), and it uses the scene's accessibility title or description as its content description. Text is measured once per scene, measurer and style, not on every frame. `measureMermaidScene` and `drawMermaidScene(measured, scale)` give custom `DrawScope` hosts the same caching, and `drawMermaidScene(scene, textMeasurer, scale, textStyle)` gains the optional style.
 - Compose behavior changes: `MermaidCanvas` treats scene units as dp instead of pixels, so diagrams are drawn larger on high-density screens. Text is measured in scene units, so its size now matches the shapes at every density. Labels have a line height of 1.2 × font size and never wrap. Colors that are malformed or not hex now mean "do not paint", like `none`; before, they drew black or, for invalid hex digits, threw. A polygon whose fill is `none` still draws its gradient.
 
-Upgrade all normal modules together to `0.1.13` and HarmonyOS modules to `0.1.13-ohos`. Hosts that size `MermaidCanvas` themselves keep their size; check text size and canvas size if you relied on pixel units.
+Upgrade all normal modules together to `0.1.14` and HarmonyOS modules to `0.1.14-ohos` (0.1.13 is incomplete). Hosts that size `MermaidCanvas` themselves keep their size; check text size and canvas size if you relied on pixel units.
 
 ## 0.1.12 / 0.1.12-ohos
 
