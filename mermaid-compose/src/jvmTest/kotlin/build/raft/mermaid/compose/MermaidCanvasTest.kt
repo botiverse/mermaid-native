@@ -6,6 +6,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.use
 import build.raft.mermaid.core.MermaidParseResult
 import build.raft.mermaid.core.MermaidParser
@@ -15,6 +17,7 @@ import build.raft.mermaid.layout.simple.FixedWidthTextMeasurer
 import build.raft.mermaid.layout.simple.SimpleMermaidLayout
 import kotlin.math.ceil
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import org.jetbrains.skia.EncodedImageFormat
@@ -56,5 +59,26 @@ class MermaidCanvasTest {
         val large = render(scene, scale = 2f)
         val ratio = large.inkPixels().toDouble() / small.inkPixels()
         assertTrue(ratio in 3.0..5.0, "doubling the scale should roughly quadruple the drawn area, was $ratio")
+    }
+
+    @Test fun sizesItselfFromTheSceneAndScale() {
+        val scene = scene("flowchart TD\nA[Start] --> B[Finish]")
+        val width = ceil(scene.width).toInt()
+        val height = ceil(scene.height).toInt()
+        val image = ImageComposeScene(width * 3, height * 3) {
+            MermaidCanvas(scene, Modifier.background(Color.White), scale = 2f)
+        }.use { it.render() }
+        val bitmap = org.jetbrains.skia.Bitmap.makeFromImage(image)
+        assertEquals(0xFFFFFFFF.toInt(), bitmap.getColor(1, 1), "inside the self-sized canvas")
+        assertEquals(0xFFFFFFFF.toInt(), bitmap.getColor(width * 2 - 2, height * 2 - 2), "inside the scaled canvas")
+        assertTrue(bitmap.getColor(width * 3 - 2, height * 3 - 2) != 0xFFFFFFFF.toInt(), "outside the scaled canvas")
+    }
+
+    @Test fun drawsTextWithAHostStyle() {
+        val scene = scene("flowchart LR\nA[Start]")
+        val image = ImageComposeScene(ceil(scene.width).toInt(), ceil(scene.height).toInt()) {
+            MermaidCanvas(scene, Modifier.background(Color.White), textStyle = TextStyle(fontFamily = FontFamily.Monospace))
+        }.use { it.render() }
+        assertTrue(image.inkPixels() > 0)
     }
 }
