@@ -25,7 +25,7 @@ features:
 
 ## Integrate diagrams into your application
 
-Current SDK: **0.1.14**, with **0.1.14-ohos** for HarmonyOS (the last release with a full readback receipt is 0.1.11). Parsing, layout and SVG export work independently of Kuikly. The optional Kuikly adapter is tested with the Raft distribution; official upstream Kuikly integration is not yet independently verified.
+Current SDK: **0.1.14** (**0.1.14-ohos** for HarmonyOS). Parsing, layout and SVG export work independently of Kuikly. The optional Kuikly adapter is tested with the Raft distribution; official upstream Kuikly integration is not yet independently verified.
 
 [Get started](/guide/getting-started) · [Release notes](/guide/releases) · [GitHub](https://github.com/botiverse/mermaid-native)
 

@@ -17,9 +17,8 @@ This guide is maintained on main. Dependency examples use the latest verified re
 
 ## Version and prerequisites
 
-The current SDK release is **0.1.14**, with **0.1.14-ohos** for HarmonyOS. Both
-planes are published; the last release whose artifacts were read back and checked
-is 0.1.11. See the [release notes](./releases) for the immutable source,
+The current SDK release is **0.1.14** (**0.1.14-ohos** for HarmonyOS). Both planes
+are published. See the [release notes](./releases) for the immutable source,
 validation receipt and upgrade steps. The incomplete 0.1.10 pair must not be used.
 
 | Consumer | Compiler / platform | Kuikly core used by the adapter |

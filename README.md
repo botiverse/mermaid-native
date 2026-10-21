@@ -19,7 +19,7 @@ This is an independent implementation, not an official Mermaid project. It cover
 | Draw in a Kuikly app | `mermaid-kuikly` | Raft integration plus an independent official Kuikly 2.28.0 Android example; see the verified scope below |
 | Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
-The latest SDK release is **0.1.14**, with **0.1.14-ohos** for HarmonyOS. Since 0.1.12 the engine modules (core, layout and SVG) publish for every official Kotlin Multiplatform target, and `mermaid-compose` for Android, iOS, desktop JVM and Wasm. The last release with a full readback receipt is 0.1.11 (see [releases](docs-site/guide/releases.md)). The native modules do not require a JavaScript runtime. The browser demos do use JavaScript host code. There is currently no Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
+Current release: **0.1.14** (**0.1.14-ohos** for HarmonyOS). The engine modules (core, layout and SVG) are published for every official Kotlin Multiplatform target, and `mermaid-compose` for Android, iOS, desktop JVM and Wasm. Nothing needs a JavaScript runtime; the browser demos use JavaScript only to host Wasm. There is currently no Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
 
 **Release vs. main:** published artifacts come from the release tag. The website and repository describe the current main branch, which may contain unreleased APIs. See [releases and upgrading](docs-site/guide/releases.md); do not assume a feature on main is present in 0.1.14. The incomplete 0.1.10 release pair should not be used.
 
