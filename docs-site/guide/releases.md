@@ -2,7 +2,7 @@
 
 ## 0.1.14 / 0.1.14-ohos
 
-**Pending publication** from tag `v0.1.14`. Same code as 0.1.13, republished under a new version because 0.1.13's normal-plane publish was cut off.
+**Available.** Published by [release workflow 39489953840](https://github.com/botiverse/mermaid-native/actions/runs/39489953840) from tag [`v0.1.14`](https://github.com/botiverse/mermaid-native/tree/v0.1.14). Same code as 0.1.13, republished under a new version because 0.1.13's normal-plane publish was cut off. Both planes resolve from the public Maven repository (checked 2026-10-21: `mermaid-compose` for Android, iOS, JVM and Wasm; `mermaid-core` `0.1.14-ohos`), and the Raft mobile app uses it. No readback receipt was recorded for this release.
 
 ## 0.1.13 / 0.1.13-ohos
 

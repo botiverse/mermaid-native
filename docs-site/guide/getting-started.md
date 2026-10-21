@@ -17,9 +17,9 @@ This guide is maintained on main. Dependency examples use the latest verified re
 
 ## Version and prerequisites
 
-The current verified SDK release is **0.1.11** for Android/iOS and **0.1.11-ohos**
-for HarmonyOS. Both planes are published and their artifacts have been read back
-and checked. See the [release notes](./releases) for the immutable source,
+The current SDK release is **0.1.14**, with **0.1.14-ohos** for HarmonyOS. Both
+planes are published; the last release whose artifacts were read back and checked
+is 0.1.11. See the [release notes](./releases) for the immutable source,
 validation receipt and upgrade steps. The incomplete 0.1.10 pair must not be used.
 
 | Consumer | Compiler / platform | Kuikly core used by the adapter |
@@ -65,7 +65,7 @@ In your existing shared module's `build.gradle.kts`, use a single version for al
 Mermaid modules. Gradle selects the Android or iOS variant automatically:
 
 ```kotlin
-val mermaidVersion = "0.1.11"
+val mermaidVersion = "0.1.14"
 kotlin {
     sourceSets {
         commonMain.dependencies {
@@ -89,7 +89,7 @@ Use the host's existing OHOS settings/build entry point and KBA compiler. In tha
 build only, select the OHOS version for **every** Mermaid dependency:
 
 ```kotlin
-val mermaidVersion = "0.1.11-ohos"
+val mermaidVersion = "0.1.14-ohos"
 kotlin {
     sourceSets {
         commonMain.dependencies {
@@ -206,7 +206,7 @@ import build.raft.mermaid.core.MERMAID_NATIVE_VERSION
 println("Mermaid Native: $MERMAID_NATIVE_VERSION")
 ```
 
-Expect `0.1.11` on Android/iOS and `0.1.11-ohos` on HarmonyOS. Inspect the resolved
+Expect `0.1.14` on Android/iOS and `0.1.14-ohos` on HarmonyOS. Inspect the resolved
 Gradle dependency graph as well, since the core version alone cannot prove every
 renderer uses the same release. Rebuild the host's shared framework/HAR after a
 KLIB upgrade. Follow [the upgrade checklist and release notes](./releases).
