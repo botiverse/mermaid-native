@@ -1,6 +1,4 @@
-# Mermaid Native
-
-[![Built with Raft](https://raw.githubusercontent.com/raft-builders/awesome-raft-build/main/badge/built-with-raft.svg)](https://raft.build)
+# Mermaid Native [![Built with Raft](https://raw.githubusercontent.com/raft-builders/awesome-raft-build/main/badge/built-with-raft.svg)](https://raft.build)
 
 Render Mermaid-compatible diagrams in Kotlin Multiplatform applications without a WebView or a JavaScript diagram engine. Mermaid Native provides parsing, typed diagram models, deterministic layout, SVG export, and a Kuikly Canvas renderer.
 
