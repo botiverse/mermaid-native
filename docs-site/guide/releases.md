@@ -2,7 +2,7 @@
 
 ## 0.1.15 / 0.1.15-ohos
 
-**Pending publication** from tag `v0.1.15`. Until it is marked Available, use 0.1.14.
+**Available.** Published by [release workflow 44509051964](https://github.com/botiverse/mermaid-native/actions/runs/44509051964) from tag [`v0.1.15`](https://github.com/botiverse/mermaid-native/tree/v0.1.15). Both planes resolve from the public Maven repository (checked 2026-11-19: `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple` and `mermaid-compose` for Android and iOS; `mermaid-core` `0.1.15-ohos`).
 
 Changes since 0.1.14:
 
