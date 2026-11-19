@@ -1,0 +1,23 @@
+flowchart TB
+  subgraph Core["Core (packages/server)"]
+    direction TB
+    R1["routes/internalAgentApiArtifacts.ts<br/>agent API entry"]
+    R2["routes/artifactsWeb.ts<br/>web API entry"]
+    R3["routes/internalArtifactsContent.ts<br/>content worker entry"]
+    DB["db executor"]
+    VIS["visibilityService<br/>who can see"]
+    FF["featureFlagService<br/>flags"]
+    OE["objectEvents<br/>events"]
+    CORE["other core capabilities<br/>users/agents, conversations, attachments, login"]
+  end
+  subgraph App["apps/artifacts (schema app_artifacts)"]
+    A["Artifacts module"]
+  end
+  R1 -- "import + inject" --> A
+  R2 -- "import + inject" --> A
+  R3 -- "import + inject" --> A
+  R1 & R2 & R3 -. "built into functions" .-> CORE
+  A --> DB
+  A --> VIS
+  A --> FF
+  A --> OE

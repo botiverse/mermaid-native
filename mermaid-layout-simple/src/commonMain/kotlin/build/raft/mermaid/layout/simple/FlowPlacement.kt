@@ -5,7 +5,7 @@ import build.raft.mermaid.layout.*
 import kotlin.math.max
 
 /** A deterministic hierarchy layout; graph crossing minimization remains separate. */
-internal class FlowPlacement(private val diagram:FlowchartDiagram,private val nodeSizes:Map<String,SceneSize>,private val config:LayoutConfig,private val measurer:TextMeasurer, private val unframedGroups:Set<String> = emptySet(), private val rankByEdges:Boolean = false, private val swimlaneRoots:Boolean = false) {
+internal class FlowPlacement(private val diagram:FlowchartDiagram,private val nodeSizes:Map<String,SceneSize>,private val config:LayoutConfig,private val measurer:TextMeasurer, private val unframedGroups:Set<String> = emptySet(), private val rankByEdges:Boolean = false, private val swimlaneRoots:Boolean = false, private val compoundLayering:Boolean = false) {
     data class Result(val width:Double,val height:Double,val nodes:Map<String,SceneRect>,val groups:Map<String,SceneRect>,val returnRoutes:Map<Int,FlowReturnRoute> = emptyMap())
     private val groups=diagram.subgraphs.associateBy { it.id }
     private val parents=groups.mapValues { (_,group) ->
@@ -212,5 +212,9 @@ internal class FlowPlacement(private val diagram:FlowchartDiagram,private val no
             } else rects[id]=r
         }
     }
-    fun place():Result {val content=measure(null);locate(null,config.padding,config.padding);return Result(content.width+2*config.padding,content.height+2*config.padding,rects,groupRects,returnRoutes)}
+    fun place():Result {
+        // Containers whose children connect in both directions need global ranks.
+        if(compoundLayering && rankByEdges && !swimlaneRoots && unframedGroups.isEmpty())
+            flowCompoundLayering(diagram,nodeSizes,config,measurer)?.let { return it }
+        val content=measure(null);locate(null,config.padding,config.padding);return Result(content.width+2*config.padding,content.height+2*config.padding,rects,groupRects,returnRoutes)}
 }
