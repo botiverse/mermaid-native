@@ -347,6 +347,30 @@ internal fun flowCompoundLayering(
     if (!stable) return null
     val cross = DoubleArray(count) { (low[it] + high[it]) / 2 }
     fun crossOf(id: String) = cross[variables.getValue(id)]
+    // Centering alone strands virtual units in the middle of wide frames, so
+    // long edges run flat across them. Pull each virtual unit toward the mean
+    // of its neighbors' lines, inside the interval its constraints allow.
+    val into = constraints.groupBy { it.to }
+    val outOf = constraints.groupBy { it.from }
+    fun line(id: String): Double {
+        val u = units.getValue(id)
+        return crossOf(id) + if (u.real) u.cross / 2 else if (u.label != null) (if (horizontal) u.label.height + 8.0 else 4.0) else 0.0
+    }
+    repeat(8) { iteration ->
+        val sequence = if (iteration % 2 == 0) (0..maxRank).toList() else (maxRank downTo 0).toList()
+        for (k in sequence) for (id in bestOrder[k]) {
+            val u = units.getValue(id)
+            if (u.real) continue
+            val neighbors = upNeighbors[id].orEmpty() + downNeighbors[id].orEmpty()
+            if (neighbors.isEmpty()) continue
+            val v = variables.getValue(id)
+            val offset = line(id) - cross[v]
+            val desired = neighbors.map(::line).average() - offset
+            val lower = into[v].orEmpty().maxOfOrNull { cross[it.from] + it.distance } ?: Double.NEGATIVE_INFINITY
+            val upper = outOf[v].orEmpty().minOfOrNull { cross[it.to] - it.distance } ?: Double.POSITIVE_INFINITY
+            if (lower <= upper) cross[v] = desired.coerceIn(lower, upper)
+        }
+    }
 
     // 5. Main-axis positions: bands per rank, frame paddings in the gaps.
     val band = (0..maxRank).map { k -> rankUnits[k].maxOfOrNull { units.getValue(it).main } ?: 0.0 }
