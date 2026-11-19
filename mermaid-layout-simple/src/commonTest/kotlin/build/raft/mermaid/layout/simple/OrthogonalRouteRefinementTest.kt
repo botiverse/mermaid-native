@@ -67,11 +67,12 @@ N2 --> N2
 N0 --> N3"""
         val diagram=assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram
         val scene=SimpleMermaidLayout.layout(diagram,TextMeasurer { text,style->SceneSize(text.length*7.0,style.fontSize) },LayoutConfig(validateOrthogonalLayout=true))
-        val painted=scene.commands.mapNotNull { when(it){is DrawLine->listOf(it.from,it.to);is DrawPolyline->it.points;else->null} }
+        // Cyclic flat flowcharts paint spline curves through the validated route's points.
+        val painted=scene.commands.filterIsInstance<DrawPath>().map { it.start to it.end }
         val routes=assertNotNull(scene.layoutValidation).geometry.edges
         assertEquals(8,routes.size)
         for(edge in routes) {
-            assertTrue(edge.points in painted)
+            assertTrue((edge.points.first() to edge.points.last()) in painted)
             for((a,b) in listOf(edge.points[0] to edge.points[1],edge.points[edge.points.lastIndex-1] to edge.points.last()))
                 assertTrue(kotlin.math.hypot(b.x-a.x,b.y-a.y)>=8,"Track separation must retain arrow clearance")
         }

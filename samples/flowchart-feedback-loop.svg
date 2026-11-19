@@ -1,34 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="305.2" height="745.6" viewBox="0 0 305.2 745.6" role="graphics-document document">
-  <line x1="177" y1="64" x2="177" y2="120" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,120 172.5,111 181.5,111" fill="#141111"/>
-  <line x1="177" y1="160" x2="177" y2="216" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,216 172.5,207 181.5,207" fill="#141111"/>
-  <text x="152.2" y="182" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">plan</text>
-  <line x1="177" y1="256" x2="177" y2="312" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,312 172.5,303 181.5,303" fill="#141111"/>
-  <line x1="177" y1="352" x2="177" y2="408" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,408 172.5,399 181.5,399" fill="#141111"/>
-  <polyline points="116.2,468.8 48.8,468.8 48.8,246 93.8,246" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="93.8,246 84.8,250.5 84.8,241.5" fill="#141111"/>
-  <text x="32.4" y="363.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">no</text>
-  <line x1="177" y1="529.6" x2="177" y2="585.6" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,585.6 172.5,576.6 181.5,576.6" fill="#141111"/>
-  <text x="156.39999999999998" y="551.6" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">yes</text>
-  <line x1="177" y1="625.6" x2="177" y2="681.6" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="177,681.6 172.5,672.6 181.5,672.6" fill="#141111"/>
-  <rect x="119" y="24" width="116" height="40" rx="20" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Human asks</text>
-  <rect x="72.8" y="120" width="208.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="144.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Agent claims the task</text>
-  <rect x="93.8" y="216" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="240.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Write the change</text>
-  <rect x="131.60000000000002" y="312" width="90.8" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="336.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Open PR</text>
-  <polygon points="177,408 237.8,468.8 177,529.6 116.2,468.8" fill="#f5f0e8"/>
-  <polyline points="177,408 237.8,468.8 177,529.6 116.2,468.8 177,408" stroke="#57534e" stroke-width="1.5" fill="none"/>
-  <text x="177" y="473.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">CI green?</text>
-  <rect x="106.4" y="585.6" width="141.2" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="610.5" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Human reviews</text>
-  <rect x="89.60000000000001" y="681.6" width="174.79999999999998" height="40" rx="20" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="177" y="706.5" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Merged + released</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="256.4" height="787.2" viewBox="0 0 256.4 787.2" role="graphics-document document">
+  <path d="M128.2,64 L128.20000000000002,68.66666666666667 Q128.2,72.3125 128.2,78.58333333333334 Q128.2,84.85416666666666 128.20000000000002,92 Q128.2,99.14583333333334 128.2,105.41666666666666 Q128.2,111.68750000000001 128.20000000000002,115.33333333333333 L128.2,120" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="128.2,120 123.69999999999999,111 132.7,111" fill="#141111"/>
+  <path d="M128.2,160 L128.20000000000002,166.4 Q128.2,171.4 128.2,180 Q128.2,188.60000000000005 128.20000000000002,198.4 Q128.2,208.2 128.2,216.8 Q128.2,225.40000000000006 128.20000000000002,230.4 L128.2,236.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="128.2,236.8 123.69999999999999,227.8 132.7,227.8" fill="#141111"/>
+  <rect x="107.39999999999999" y="188" width="41.6" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="128.2" y="203.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">plan</text>
+  <path d="M112.23,276.8 L108.505,281.46666666666664 Q105.50755208333337,285.11250000000007 100.93854166666668,291.3833333333334 Q96.36953125000001,297.6541666666667 92.67333333333333,304.8 Q89.23901041666667,311.94583333333344 87.55062500000001,318.2166666666667 Q85.86223958333333,324.48750000000007 85.22166666666668,328.1333333333333 L84.29,332.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="84.29,332.8 81.63909839807783,323.0931611377892 90.46493012861538,324.8551754011358" fill="#141111"/>
+  <path d="M84.29,372.8 L85.22166666666668,377.4666666666667 Q85.87453125,381.01703125000006 87.50145833333335,387.76520833333336 Q89.12838541666667,394.5133854166668 92.28000000000002,403.855 Q95.65661458333332,413.4830208333334 99.75854166666667,423.38166666666666 Q103.86046874999998,433.28031250000004 106.53833333333334,439.40833333333336 L109.87,447.13" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="109.87,447.13 102.17269765272388,440.64914075337094 110.43630598893759,437.0836425742017" fill="#141111"/>
+  <path d="M146.53,447.13 L149.86166666666665,439.40833333333336 Q152.51875,433.38447916666667 156.72458333333333,422.96500000000003 Q160.93041666666667,412.54552083333334 164.785,400.5216666666667 Q168.52682291666667,388.7217187499999 170.69395833333334,376.76520833333336 Q172.86109375000004,364.80869791666674 172.90666666666667,352.8 Q172.87338541666668,340.6958333333334 170.64479166666666,329.2166666666667 Q168.41619791666665,317.73750000000007 164.39166666666668,308.1333333333333 Q160.21750000000006,298.5916666666667 155.54458333333335,291.80000000000007 Q150.8716666666667,285.00833333333344 147.89499999999998,281.46666666666664 L144.17,276.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="144.17,276.8 153.30156429960667,281.02664564899266 146.2676220605699,286.6412388290809" fill="#141111"/>
+  <rect x="163.7" y="342.40000000000003" width="24.8" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="176.1" y="357.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">no</text>
+  <path d="M128.2,550.4 L128.20000000000002,556.8000000000001 Q128.2,561.7999999999998 128.2,570.4 Q128.2,579 128.20000000000002,588.8000000000001 Q128.2,598.6000000000001 128.2,607.2 Q128.2,615.8 128.20000000000002,620.8000000000001 L128.2,627.2" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="128.2,627.2 123.69999999999999,618.2 132.7,618.2" fill="#141111"/>
+  <rect x="111.6" y="578.4" width="33.2" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="128.2" y="593.6999999999999" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">yes</text>
+  <path d="M128.2,667.2 L128.20000000000002,671.8666666666667 Q128.2,675.5125 128.2,681.7833333333333 Q128.2,688.0541666666669 128.20000000000002,695.1999999999999 Q128.2,702.3458333333335 128.2,708.6166666666667 Q128.2,714.8875000000002 128.20000000000002,718.5333333333333 L128.2,723.2" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="128.2,723.2 123.69999999999999,714.2 132.7,714.2" fill="#141111"/>
+  <rect x="70.2" y="24" width="116" height="40" rx="20" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="128.2" y="48.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Human asks</text>
+  <rect x="24" y="120" width="208.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="128.2" y="144.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Agent claims the task</text>
+  <rect x="45" y="236.8" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="128.2" y="261.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Write the change</text>
+  <rect x="34.9" y="332.8" width="90.8" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="80.3" y="357.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Open PR</text>
+  <polygon points="128.2,428.8 189,489.6 128.2,550.4 67.4,489.6" fill="#f5f0e8"/>
+  <polyline points="128.2,428.8 189,489.6 128.2,550.4 67.4,489.6 128.2,428.8" stroke="#57534e" stroke-width="1.5" fill="none"/>
+  <text x="128.2" y="494.5" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">CI green?</text>
+  <rect x="57.6" y="627.2" width="141.2" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="128.2" y="652.1" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Human reviews</text>
+  <rect x="40.8" y="723.2" width="174.79999999999998" height="40" rx="20" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="128.2" y="748.1" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Merged + released</text>
 </svg>

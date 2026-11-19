@@ -43,23 +43,24 @@ class FlowObstacleRoutesTest {
             assertTrue(t.origin.y-size.height>=0 && t.origin.y<=s.height)
         }
     }
+    // With a feedback edge the flat flowchart uses the layered loop layout and spline edges.
+    private fun assertCurvesClear(s: LayoutScene, message: String) {
+        val curves=s.edgeCurves().map { it.samples() }
+        for(curve in curves)for(r in s.boxes())assertFalse(curve.entersBox(r),"$message: curve enters $r")
+        for(curve in curves)for(p in curve)assertTrue(p.x>=0 && p.x<=s.width && p.y>=0 && p.y<=s.height,message)
+    }
     @Test fun existingFeedbackRoutesAndForwardDetoursCoexist() {
         val s=scene("graph LR\nA[Start]-->B[Middle]\nB-->C[End]\nA-->|skip|C\nC-->|retry|A")
-        assertEquals(2,routes(s).size);assertClear(s)
+        assertEquals(4,s.edgeCurves().size);assertCurvesClear(s,"LR")
         assertTrue(s.commands.filterIsInstance<DrawText>().any { it.text=="retry" })
     }
     @Test fun skipAndFeedbackPreferOppositeSidesToAvoidInteriorCrossings() {
         for(direction in listOf("TD","TB","LR","RL","BT")) {
             val source="graph $direction\nA[Start]-->B[Middle]\nB-->C[End]\nA-->|skip|C\nC-->|retry|A"
             val s=scene(source)
-            val lines=routes(s);assertEquals(2,lines.size,direction);assertClear(s)
-            // Independent axis-aligned crossing check of the final rendered routes.
-            for((a,b) in lines[0].points.zipWithNext())for((c,d) in lines[1].points.zipWithNext()) {
-                fun interior(x: Double,u: Double,v: Double)=x>minOf(u,v)+.001 && x<maxOf(u,v)-.001
-                val crosses=if(a.y==b.y && c.x==d.x)interior(c.x,a.x,b.x)&&interior(a.y,c.y,d.y)
-                    else if(a.x==b.x && c.y==d.y)interior(a.x,c.x,d.x)&&interior(c.y,a.y,b.y)else false
-                assertFalse(crosses,"$direction routes cross: $a $b / $c $d")
-            }
+            assertCurvesClear(s,direction)
+            val curves=s.edgeCurves().map { it.samples() }
+            for(i in curves.indices)for(j in i+1 until curves.size)assertEquals(0,crossings(curves[i],curves[j]),"$direction curves $i/$j cross")
             assertEquals(s,scene(source),direction)
         }
     }

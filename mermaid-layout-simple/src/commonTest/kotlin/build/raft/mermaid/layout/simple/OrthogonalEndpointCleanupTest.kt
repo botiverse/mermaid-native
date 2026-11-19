@@ -43,10 +43,11 @@ class OrthogonalEndpointCleanupTest {
         val parsed=assertIs<MermaidParseResult.Success>(MermaidParser.parse("flowchart LR\nA[Input] --> B[Review]\nB -->|retry| A\nB --> C[Done]"))
         val scene=SimpleMermaidLayout.layout(parsed.diagram,TextMeasurer { text,style->SceneSize(text.length*7.0,style.fontSize) },LayoutConfig(validateOrthogonalLayout=true))
         val report=assertNotNull(scene.layoutValidation)
-        val painted=scene.commands.mapNotNull { when(it){is DrawLine->listOf(it.from,it.to);is DrawPolyline->it.points;else->null} }
+        // The retry loop makes this a layered loop layout: curves start and end at the diagnostic route's terminals.
+        val painted=scene.commands.filterIsInstance<DrawPath>().map { it.start to it.end }
         assertEquals(3,report.geometry.edges.size)
         for(edge in report.geometry.edges) {
-            assertTrue(edge.points in painted,"Diagnostic route must equal actual painted route")
+            assertTrue((edge.points.first() to edge.points.last()) in painted,"Diagnostic route must match the painted curve")
             assertNotEquals(edge.points[0],edge.points[1])
             assertNotEquals(edge.points[edge.points.lastIndex-1],edge.points.last())
         }

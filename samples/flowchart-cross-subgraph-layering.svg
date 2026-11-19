@@ -1,57 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1506.8" height="440.8" viewBox="0 0 1506.8 440.8" role="graphics-document document">
-  <rect x="414.79999999999995" y="24" width="1068" height="392.8" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
-  <text x="948.8" y="44" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Core (packages/server)</text>
-  <rect x="24" y="184.8" width="334.79999999999995" height="104" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
-  <text x="191.39999999999998" y="204.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">apps/artifacts (schema app_artifacts)</text>
-  <polyline points="593,112 434.79999999999995,140 434.79999999999995,156.8 166.44,216.8 166.44,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="166.44,224.8 161.94,215.8 170.94,215.8" fill="#141111"/>
-  <text x="503.79999999999995" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="931.32,112 588.8,140 588.8,156.8 191.4,216.8 191.4,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="191.4,224.8 186.9,215.8 195.9,215.8" fill="#141111"/>
-  <text x="657.8" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="1244.44,112 742.8,140 742.8,156.8 216.35999999999999,216.8 216.35999999999999,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="216.35999999999999,224.8 211.85999999999999,215.8 220.85999999999999,215.8" fill="#141111"/>
-  <text x="811.8" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="658.2,112 896.8,140 896.8,156.8 884.78,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="884.78,216.8 882.1355435699212,207.09140328423234 890.9602035145668,208.85927682647633" fill="#141111"/>
-  <text x="986.8" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="974.6800000000001,112 1092.8,140 1092.8,156.8 948.8,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="948.8,216.8 955.3769230769229,209.1846153846154 958.8384615384615,217.49230769230772" fill="#141111"/>
-  <text x="1182.8" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="1307.96,112 1288.8,140 1288.8,156.8 1012.8199999999999,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="1012.8199999999999,216.8 1020.658558965226,210.4907216459667 1022.5705580623622,219.28528015976093" fill="#141111"/>
-  <text x="1378.8" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="161.448,264.8 161.448,272.8 430.79999999999995,316.8 619.4000000000001,344.8 619.4000000000001,352.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="619.4000000000001,352.8 614.9000000000001,343.8 623.9000000000001,343.8" fill="#141111"/>
-  <polyline points="181.41600000000003,264.8 181.41600000000003,272.8 508.20000000000005,316.8 825,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="825,344.8 815.6387651913319,348.49016027524283 816.4311308946048,339.5251083182112" fill="#141111"/>
-  <polyline points="201.38400000000001,264.8 201.38400000000001,272.8 625.7,316.8 1060,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="1060,344.8 1050.729125561413,348.7116348428702 1051.3081674625516,339.7302813548526" fill="#141111"/>
-  <polyline points="221.352,264.8 221.352,272.8 732.7,316.8 1274,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="1274,344.8 1264.7795544519881,348.82906737299675 1265.2444787727954,339.84108398538854" fill="#141111"/>
-  <rect x="462.6" y="56" width="326" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="625.6" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalAgentApiArtifacts.ts</text>
-  <text x="625.6" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">agent API entry</text>
-  <rect x="844.6" y="56" width="216.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="953" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/artifactsWeb.ts</text>
-  <text x="953" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">web API entry</text>
-  <rect x="1117.4" y="56" width="317.59999999999997" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1276.2" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalArtifactsContent.ts</text>
-  <text x="1276.2" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">content worker entry</text>
-  <rect x="557.2" y="352.8" width="124.39999999999999" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="619.4000000000001" y="377.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">db executor</text>
-  <rect x="737.6" y="344.8" width="174.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="825" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">visibilityService</text>
-  <text x="825" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">who can see</text>
-  <rect x="968.4" y="344.8" width="183.2" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1060" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">featureFlagService</text>
-  <text x="1060" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">flags</text>
-  <rect x="1207.6" y="344.8" width="132.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1274" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">objectEvents</text>
-  <text x="1274" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">events</text>
-  <rect x="735.4" y="216.8" width="426.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="948.8" y="238.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">other core capabilities</text>
-  <text x="948.8" y="260.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">users/agents, conversations, attachments, login</text>
-  <rect x="108.2" y="224.8" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="191.4" y="249.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Artifacts module</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1651.3886666666667" height="440.8" viewBox="0 0 1651.3886666666667 440.8" role="graphics-document document">
+  <rect x="559.3886666666666" y="24" width="1068" height="392.8" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
+  <text x="1093.3886666666667" y="44" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Core (packages/server)</text>
+  <rect x="24" y="184.8" width="479.3886666666666" height="104" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
+  <text x="187.4" y="204.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">apps/artifacts (schema app_artifacts)</text>
+  <polyline points="737.5886666666667,112 579.3886666666666,140 579.3886666666666,156.8 311.0286666666667,216.8 311.0286666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="311.0286666666667,224.8 306.5286666666667,215.8 315.5286666666667,215.8" fill="#141111"/>
+  <text x="648.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <polyline points="1075.9086666666667,112 733.3886666666666,140 733.3886666666666,156.8 335.9886666666667,216.8 335.9886666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="335.9886666666667,224.8 331.4886666666667,215.8 340.4886666666667,215.8" fill="#141111"/>
+  <text x="802.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <polyline points="1389.0286666666668,112 887.3886666666666,140 887.3886666666666,156.8 360.94866666666667,216.8 360.94866666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="360.94866666666667,224.8 356.44866666666667,215.8 365.44866666666667,215.8" fill="#141111"/>
+  <text x="956.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <polyline points="802.7886666666667,112 1041.3886666666667,140 1041.3886666666667,156.8 1029.3686666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="1029.3686666666667,216.8 1026.7242102365879,207.09140328423234 1035.5488701812335,208.85927682647633" fill="#141111"/>
+  <text x="1131.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <polyline points="1119.2686666666668,112 1237.3886666666667,140 1237.3886666666667,156.8 1093.3886666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="1093.3886666666667,216.8 1099.9655897435896,209.1846153846154 1103.4271282051282,217.49230769230772" fill="#141111"/>
+  <text x="1327.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <polyline points="1452.5486666666668,112 1433.3886666666667,140 1433.3886666666667,156.8 1157.4086666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="1157.4086666666667,216.8 1165.2472256318927,210.4907216459667 1167.159224729029,219.28528015976093" fill="#141111"/>
+  <text x="1523.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <polyline points="306.0366666666667,264.8 306.0366666666667,272.8 575.3886666666666,316.8 763.9886666666667,344.8 763.9886666666667,352.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="763.9886666666667,352.8 759.4886666666667,343.8 768.4886666666667,343.8" fill="#141111"/>
+  <polyline points="326.0046666666667,264.8 326.0046666666667,272.8 652.7886666666667,316.8 969.5886666666667,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="969.5886666666667,344.8 960.2274318579986,348.49016027524283 961.0197975612715,339.5251083182112" fill="#141111"/>
+  <polyline points="345.97266666666667,264.8 345.97266666666667,272.8 770.2886666666667,316.8 1204.5886666666668,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1204.5886666666668,344.8 1195.3177922280797,348.7116348428702 1195.8968341292184,339.7302813548526" fill="#141111"/>
+  <polyline points="365.9406666666667,264.8 365.9406666666667,272.8 877.2886666666667,316.8 1418.5886666666668,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1418.5886666666668,344.8 1409.368221118655,348.82906737299675 1409.8331454394622,339.84108398538854" fill="#141111"/>
+  <rect x="607.1886666666667" y="56" width="326" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="770.1886666666667" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalAgentApiArtifacts.ts</text>
+  <text x="770.1886666666667" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">agent API entry</text>
+  <rect x="989.1886666666667" y="56" width="216.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1097.5886666666668" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/artifactsWeb.ts</text>
+  <text x="1097.5886666666668" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">web API entry</text>
+  <rect x="1261.9886666666669" y="56" width="317.59999999999997" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1420.7886666666668" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalArtifactsContent.ts</text>
+  <text x="1420.7886666666668" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">content worker entry</text>
+  <rect x="701.7886666666667" y="352.8" width="124.39999999999999" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="763.9886666666667" y="377.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">db executor</text>
+  <rect x="882.1886666666667" y="344.8" width="174.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="969.5886666666667" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">visibilityService</text>
+  <text x="969.5886666666667" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">who can see</text>
+  <rect x="1112.9886666666666" y="344.8" width="183.2" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1204.5886666666668" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">featureFlagService</text>
+  <text x="1204.5886666666668" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">flags</text>
+  <rect x="1352.1886666666667" y="344.8" width="132.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1418.5886666666668" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">objectEvents</text>
+  <text x="1418.5886666666668" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">events</text>
+  <rect x="879.9886666666666" y="216.8" width="426.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1093.3886666666667" y="238.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">other core capabilities</text>
+  <text x="1093.3886666666667" y="260.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">users/agents, conversations, attachments, login</text>
+  <rect x="252.7886666666667" y="224.8" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="335.9886666666667" y="249.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Artifacts module</text>
 </svg>

@@ -105,3 +105,62 @@ private fun labelSegmentHitsRect(a: ScenePoint, b: ScenePoint, r: SceneRect): Bo
     return clip(a.x, b.x - a.x, r.x, r.x + r.width) &&
         clip(a.y, b.y - a.y, r.y, r.y + r.height)
 }
+
+internal data class FlowTitlePlacement(val center: Double, val frame: SceneRect)
+
+/**
+ * Horizontal title position that keeps a frame title clear of edges crossing
+ * its title band; Mermaid never draws an edge through a cluster label. The
+ * title stays centered when it is clear, otherwise it slides to the nearest
+ * clear position. When the frame has no clear span wide enough, the frame
+ * grows sideways into free space to make one.
+ */
+internal fun flowTitlePlacement(
+    id: String,
+    diagram: FlowchartDiagram,
+    frames: Map<String, SceneRect>,
+    nodes: Map<String, SceneRect>,
+    baseline: Double,
+    textWidth: Double,
+    fontSize: Double,
+    paths: List<List<ScenePoint>>,
+): FlowTitlePlacement {
+    val frame = frames.getValue(id)
+    val center = frame.x + frame.width / 2
+    val top = baseline - fontSize - 2.0
+    val bottom = baseline + 4.0
+    val half = textWidth / 2 + 4.0
+    val blocked = paths.flatMap { it.zipWithNext() }.mapNotNull { (a, b) ->
+        val low = minOf(a.y, b.y); val high = maxOf(a.y, b.y)
+        if (high < top || low > bottom) return@mapNotNull null
+        fun xAt(y: Double) = a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y)
+        val xs = if (abs(b.y - a.y) < 1e-9) listOf(a.x, b.x) else listOf(maxOf(low, top), minOf(high, bottom)).map(::xAt)
+        xs.min() to xs.max()
+    }
+    fun clear(c: Double) = blocked.none { (l, r) -> l < c + half && r > c - half }
+    if (clear(center)) return FlowTitlePlacement(center, frame)
+    val candidates = (blocked.flatMap { (l, r) -> listOf(l - half - 0.01, r + half + 0.01) }).filter(::clear)
+    val inside = candidates.map { it.coerceIn(frame.x + half, maxOf(frame.x + half, frame.x + frame.width - half)) }
+        .filter { clear(it) && it - half >= frame.x - 1e-6 && it + half <= frame.x + frame.width + 1e-6 }
+    inside.minByOrNull { abs(it - center) }?.let { return FlowTitlePlacement(it, frame) }
+    // Grow the frame only into space no other node or unrelated frame uses.
+    val ancestors = generateSequence(diagram.subgraphs.firstOrNull { it.id == id }?.parentId) { parent ->
+        diagram.subgraphs.firstOrNull { it.id == parent }?.parentId
+    }.toSet()
+    val members = mutableSetOf<String>()
+    fun collect(group: String) {
+        diagram.subgraphs.filter { it.id == group }.forEach { members += it.nodeIds }
+        diagram.subgraphs.filter { it.parentId == group }.forEach { members += it.id; collect(it.id) }
+    }
+    collect(id)
+    val obstacles = nodes.filterKeys { it !in members }.values + frames.filterKeys { it != id && it !in members && it !in ancestors }.values
+    val parent = diagram.subgraphs.firstOrNull { it.id == id }?.parentId?.let { frames[it] }
+    fun overlaps(a: SceneRect, b: SceneRect) = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+    return candidates.sortedBy { abs(it - center) }.firstNotNullOfOrNull { c ->
+        val left = minOf(frame.x, c - half - 4.0); val right = maxOf(frame.x + frame.width, c + half + 4.0)
+        val grown = SceneRect(left, frame.y, right - left, frame.height)
+        val fits = (parent == null || (grown.x >= parent.x && grown.x + grown.width <= parent.x + parent.width)) &&
+            obstacles.none { overlaps(it, grown) }
+        if (fits) FlowTitlePlacement(c, grown) else null
+    } ?: FlowTitlePlacement(center, frame)
+}

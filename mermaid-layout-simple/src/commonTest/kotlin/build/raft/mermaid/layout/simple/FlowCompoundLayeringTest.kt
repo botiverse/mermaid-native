@@ -123,25 +123,29 @@ class FlowCompoundLayeringTest {
         val s = layout(source)
         assertEquals(s, layout(source))
         // Edges paint in declaration order before nodes; every edge here is visible.
-        val paths = s.commands.filter { it is DrawLine || it is DrawPolyline }.take(7).map {
-            when (it) { is DrawLine -> listOf(it.from, it.to); is DrawPolyline -> it.points; else -> error("unreachable") }
-        }
+        val curves = s.edgeCurves()
+        assertEquals(7, curves.size)
         fun same(a: ScenePoint, b: ScenePoint) = abs(a.x - b.x) < 1e-6 && abs(a.y - b.y) < 1e-6
-        val plan = paths[1]; val write = paths[2]; val no = paths[4]; val yes = paths[5]
-        assertFalse(same(no.first(), yes.first()), "back edge must not leave CI green? at the forward port ${yes.first()}")
-        assertFalse(same(no.last(), plan.last()), "back edge must not enter Write the change at the plan port ${plan.last()}")
-        assertFalse(same(no.last(), write.first()), "back edge must not enter at the forward exit port")
+        val plan = curves[1]; val write = curves[2]; val no = curves[4]; val yes = curves[5]
+        assertFalse(same(no.start, yes.start), "back edge must not leave CI green? at the forward port ${yes.start}")
+        assertFalse(same(no.end, plan.end), "back edge must not enter Write the change at the plan port ${plan.end}")
+        assertFalse(same(no.end, write.start), "back edge must not enter at the forward exit port")
         val decision = s.commands.filterIsInstance<DrawPolygon>().map { p ->
             val xs = p.points.map { it.x }; val ys = p.points.map { it.y }
             SceneRect(xs.min(), ys.min(), xs.max() - xs.min(), ys.max() - ys.min())
         }.maxBy { it.width * it.height }
-        // The back edge leaves the decision from its left or right vertex.
-        assertEquals(decision.y + decision.height / 2, no.first().y, 1e-6)
-        assertTrue(abs(no.first().x - decision.x) < 1e-6 || abs(no.first().x - decision.x - decision.width) < 1e-6)
+        // Like dagre, the back edge leaves the decision from its upper right side...
+        assertTrue(no.start.y < decision.y + decision.height / 2)
+        assertTrue(no.start.x > decision.x + decision.width / 2)
+        // ...and enters Write the change from below, right of its center.
         val change = node(s, "Write the change")
-        assertTrue(abs(no.last().x - change.x) < 1e-6 || abs(no.last().x - change.x - change.width) < 1e-6,
-            "back edge enters ${no.last()} on a side of $change")
+        assertEquals(change.y + change.height, no.end.y, 1e-6)
+        assertTrue(no.end.x > change.x + change.width / 2, "back edge enters ${no.end} under $change")
+        // The loop has its own lane: Open PR shifts to the other side of the chain.
+        val pr = node(s, "Open PR")
+        assertTrue(pr.x + pr.width / 2 < change.x + change.width / 2)
         val label = bounds(s.commands.filterIsInstance<DrawText>().single { it.text == "no" })
-        for (r in s.commands.filterIsInstance<DrawRect>().map { it.rect }) assertFalse(intersects(label, r))
+        assertTrue(label.x > pr.x + pr.width)
+        for (r in s.boxes()) assertFalse(intersects(label, r))
     }
 }

@@ -1,5 +1,14 @@
 # SDK releases and upgrading
 
+## Unreleased (main)
+
+**Not published yet.** Changes on `main` since 0.1.15:
+
+- Flowcharts without subgraphs that contain a loop (an edge back to an earlier step, or a self-loop) use a layered layout modelled on Mermaid's default dagre layout. A loop gets its own lane beside the forward chain, and the chain's nodes shift to the other side. The loop leaves and enters nodes on the side facing that lane, so in a top-down chart a back edge enters its target from below. Self-loops are drawn beside their node. Flowcharts without loops, and flowcharts with subgraphs, lay out as before.
+- In those flowcharts, edges are smooth curves (Mermaid's default `basis` curve) drawn with the existing quadratic path command. Labels sit at the middle of their edge on a background. `linkStyle … interpolate linear` keeps straight segments, and `step`, `stepBefore` and `stepAfter` draw axis-aligned steps.
+- A subgraph title moves sideways when edges entering the frame from above would cross it. If no gap in the frame is wide enough, the frame grows into free space.
+- New samples: `flowchart-loop-left-to-right`, `flowchart-two-loops`, `flowchart-nested-loops` and `flowchart-self-loop`.
+
 ## 0.1.15 / 0.1.15-ohos
 
 **Available.** Published by [release workflow 44509051964](https://github.com/botiverse/mermaid-native/actions/runs/44509051964) from tag [`v0.1.15`](https://github.com/botiverse/mermaid-native/tree/v0.1.15). Both planes resolve from the public Maven repository (checked 2026-11-19: `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple` and `mermaid-compose` for Android and iOS; `mermaid-core` `0.1.15-ohos`).
