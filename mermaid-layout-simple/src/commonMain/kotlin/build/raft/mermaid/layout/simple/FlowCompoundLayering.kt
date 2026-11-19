@@ -2,6 +2,7 @@ package build.raft.mermaid.layout.simple
 
 import build.raft.mermaid.core.FlowDirection
 import build.raft.mermaid.core.FlowEdgeStyle
+import build.raft.mermaid.core.FlowNodeShape
 import build.raft.mermaid.core.FlowchartDiagram
 import build.raft.mermaid.layout.*
 import kotlin.math.max
@@ -434,6 +435,24 @@ internal fun flowCompoundLayering(
     }
     data class RankPoint(val cross: Double, val main: Double)
     data class Label(val center: RankPoint, val size: SceneSize)
+    // Spread the forward ports of a rectangle across its middle so edges
+    // fanning out to (or in from) several units do not leave as one bundle.
+    val shapes = diagram.nodes.associate { it.id to it.shape }
+    val ports = mutableMapOf<Pair<Int, Boolean>, Double>()
+    nodeIds.forEach { id ->
+        val u = units.getValue(id)
+        val spread = shapes[id] == FlowNodeShape.RECTANGLE || shapes[id] == FlowNodeShape.ROUNDED
+        for (upperEnd in listOf(true, false)) {
+            val attached = edges.indices.filter { e ->
+                e !in feedback && edges[e].style != FlowEdgeStyle.INVISIBLE &&
+                    (if (upperEnd) chains[e].first() else chains[e].last()) == id
+            }.sortedBy { e -> line(chains[e][if (upperEnd) 1 else chains[e].lastIndex - 1]) }
+            attached.forEachIndexed { i, e ->
+                ports[e to upperEnd] = crossOf(id) + if (spread && attached.size > 1)
+                    u.cross * (0.2 + 0.6 * (i + 1) / (attached.size + 1)) else u.cross / 2
+            }
+        }
+    }
     val paths = mutableMapOf<Int, List<RankPoint>>()
     val labels = mutableMapOf<Int, Label>()
     chains.forEachIndexed { e, chain ->
@@ -475,11 +494,13 @@ internal fun flowCompoundLayering(
                 val sequence = listOf(RankPoint(side, middle), RankPoint(stub, middle), RankPoint(stub, if (first) end else start))
                 points += if (first) sequence else sequence.reversed()
             } else if (first) {
-                points += RankPoint(center, nodeEnd)
-                points += RankPoint(center, end)
+                val port = ports[e to true] ?: center
+                points += RankPoint(port, nodeEnd)
+                points += RankPoint(port, end)
             } else {
-                points += RankPoint(center, start)
-                points += RankPoint(center, nodeStart)
+                val port = ports[e to false] ?: center
+                points += RankPoint(port, start)
+                points += RankPoint(port, nodeStart)
             }
         }
         val distinct = points.fold(emptyList<RankPoint>()) { acc, p ->
