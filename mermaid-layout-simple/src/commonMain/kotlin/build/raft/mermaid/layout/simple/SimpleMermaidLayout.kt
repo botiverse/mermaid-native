@@ -2987,7 +2987,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val diamondSide=max(80.0,text.width+text.height+32.0)
             node.id to if(node.shape==FlowNodeShape.DIAMOND)SceneSize(diamondSide,diamondSide)else if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else if(node.shape == FlowNodeShape.MANUAL_INPUT) SceneSize(width,height*1.5) else if(node.shape in listOf(FlowNodeShape.DOCUMENTS,FlowNodeShape.PROCESSES)) SceneSize(width+10,height+18) else SceneSize(width,height)
         }
-        val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true)
+        val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true,compoundLayering=!swimlane)
         val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
         val placement=lanePlacement?.placement ?: placer.place()
         val width=placement.width

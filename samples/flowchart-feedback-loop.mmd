@@ -1,0 +1,8 @@
+flowchart TD
+  H([Human asks]) --> A[Agent claims the task]
+  A -->|plan| P[Write the change]
+  P --> S[Open PR]
+  S --> C{CI green?}
+  C -->|no| P
+  C -->|yes| R[Human reviews]
+  R --> M([Merged + released])

@@ -497,6 +497,93 @@ public object MermaidExamples {
         ),
     )
 
+    public val flowchartCrossSubgraphLayering: MermaidExample = MermaidExample(
+        path = "samples/flowchart-cross-subgraph-layering.mmd",
+        source = """
+            flowchart TB
+              subgraph Core["Core (packages/server)"]
+                direction TB
+                R1["routes/internalAgentApiArtifacts.ts<br/>agent API entry"]
+                R2["routes/artifactsWeb.ts<br/>web API entry"]
+                R3["routes/internalArtifactsContent.ts<br/>content worker entry"]
+                DB["db executor"]
+                VIS["visibilityService<br/>who can see"]
+                FF["featureFlagService<br/>flags"]
+                OE["objectEvents<br/>events"]
+                CORE["other core capabilities<br/>users/agents, conversations, attachments, login"]
+              end
+              subgraph App["apps/artifacts (schema app_artifacts)"]
+                A["Artifacts module"]
+              end
+              R1 -- "import + inject" --> A
+              R2 -- "import + inject" --> A
+              R3 -- "import + inject" --> A
+              R1 & R2 & R3 -. "built into functions" .-> CORE
+              A --> DB
+              A --> VIS
+              A --> FF
+              A --> OE
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TB,
+            nodes = listOf(
+                FlowNode("R1", "routes/internalAgentApiArtifacts.ts<br/>agent API entry", labelType = "string"),
+                FlowNode("R2", "routes/artifactsWeb.ts<br/>web API entry", labelType = "string"),
+                FlowNode("R3", "routes/internalArtifactsContent.ts<br/>content worker entry", labelType = "string"),
+                FlowNode("DB", "db executor", labelType = "string"),
+                FlowNode("VIS", "visibilityService<br/>who can see", labelType = "string"),
+                FlowNode("FF", "featureFlagService<br/>flags", labelType = "string"),
+                FlowNode("OE", "objectEvents<br/>events", labelType = "string"),
+                FlowNode("CORE", "other core capabilities<br/>users/agents, conversations, attachments, login", labelType = "string"),
+                FlowNode("A", "Artifacts module", labelType = "string"),
+            ),
+            edges = listOf("R1", "R2", "R3").map {
+                FlowEdge(it, "A", label = "import + inject", labelType = "string")
+            } + listOf("R1", "R2", "R3").map {
+                FlowEdge(it, "CORE", FlowEdgeStyle.DOTTED, label = "built into functions", labelType = "string")
+            } + listOf("DB", "VIS", "FF", "OE").map { FlowEdge("A", it) },
+            subgraphs = listOf(
+                FlowSubgraph("Core", "Core (packages/server)", listOf("R1", "R2", "R3", "DB", "VIS", "FF", "OE", "CORE"), FlowDirection.TB),
+                FlowSubgraph("App", "apps/artifacts (schema app_artifacts)", listOf("A")),
+            ),
+        ),
+    )
+
+    public val flowchartFeedbackLoop: MermaidExample = MermaidExample(
+        path = "samples/flowchart-feedback-loop.mmd",
+        source = """
+            flowchart TD
+              H([Human asks]) --> A[Agent claims the task]
+              A -->|plan| P[Write the change]
+              P --> S[Open PR]
+              S --> C{CI green?}
+              C -->|no| P
+              C -->|yes| R[Human reviews]
+              R --> M([Merged + released])
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TD,
+            nodes = listOf(
+                FlowNode("H", "Human asks", FlowNodeShape.STADIUM),
+                FlowNode("A", "Agent claims the task"),
+                FlowNode("P", "Write the change"),
+                FlowNode("S", "Open PR"),
+                FlowNode("C", "CI green?", FlowNodeShape.DIAMOND),
+                FlowNode("R", "Human reviews"),
+                FlowNode("M", "Merged + released", FlowNodeShape.STADIUM),
+            ),
+            edges = listOf(
+                FlowEdge("H", "A"),
+                FlowEdge("A", "P", label = "plan"),
+                FlowEdge("P", "S"),
+                FlowEdge("S", "C"),
+                FlowEdge("C", "P", label = "no"),
+                FlowEdge("C", "R", label = "yes"),
+                FlowEdge("R", "M"),
+            ),
+        ),
+    )
+
     public val sequenceRequestResponse: MermaidExample = MermaidExample(
         path = "samples/sequence-request-response.mmd",
         source = """
@@ -877,6 +964,8 @@ public object MermaidExamples {
         flowchartLinear,
         flowchartThickArrow,
         flowchartLeftToRight,
+        flowchartCrossSubgraphLayering,
+        flowchartFeedbackLoop,
         sequenceRequestResponse,
         stateLifecycle,
         ganttReleasePlan,

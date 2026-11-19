@@ -4,10 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   kmp:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -25,6 +26,12 @@ jobs:
         run: |
           ./gradlew :mermaid-web:wasmJsBrowserDistribution
           node scripts/verify-usecase-production-wasm.mjs
+      - name: Upload production Wasm web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-web-wasm
+          path: mermaid-web/build/dist/wasmJs/productionExecutable/
+          if-no-files-found: error
       - run: ./scripts/verify-web-consumer-mutation.sh
       - uses: actions/upload-artifact@v4
         with:

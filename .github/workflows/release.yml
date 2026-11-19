@@ -23,7 +23,7 @@ jobs:
   # secrets scope, independent caches (cache-readonly avoids the two jobs
   # clobbering each other's dependency cache on save).
   publish:
-    runs-on: macos-14
+    runs-on: macos-15
     environment: raft-artifacts
     if: ${{ github.event_name == 'push' || inputs.plane == 'normal' || inputs.plane == 'both' }}
     env:
@@ -92,7 +92,7 @@ jobs:
           path: build/reports/cyclonedx-direct/bom.*
 
   publish-ohos:
-    runs-on: macos-14
+    runs-on: macos-15
     environment: raft-artifacts
     if: ${{ github.event_name == 'push' || inputs.plane == 'ohos' || inputs.plane == 'both' }}
     env:

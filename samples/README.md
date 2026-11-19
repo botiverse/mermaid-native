@@ -103,3 +103,14 @@ documented `radar-beta` syntax at the pinned Mermaid revision. It covers a
 title, multi-entry axis declarations with quoted labels, curves with per-axis
 values, and an explicit `max`, without claiming configuration, graticule
 customization, interactivity, accessibility, or full radar family parity.
+
+`flowchart-cross-subgraph-layering.mmd` is an original layout fixture: edges
+leave the `Core` frame for the `App` frame and come back. Nodes are ranked by
+their edges across both frames (entries, then the module beside the core
+capability, then the services), the frames grow to their ranks, and the six
+edge labels occupy reserved, non-overlapping slots.
+
+`flowchart-feedback-loop.mmd` is an original layout fixture for a review loop.
+The `no` back edge leaves the decision through a side port and enters
+`Write the change` from the side, apart from the forward `plan` and `yes`
+ports.
