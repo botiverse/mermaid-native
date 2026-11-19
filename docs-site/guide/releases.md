@@ -1,5 +1,17 @@
 # SDK releases and upgrading
 
+## 0.1.15 / 0.1.15-ohos
+
+**Pending publication** from tag `v0.1.15`. Until it is marked Available, use 0.1.14.
+
+Changes since 0.1.14:
+
+- Flowcharts whose subgraphs link to each other both ways (for example nodes in one subgraph pointing into another that points back) are ranked as one graph: edges point down the ranks, each subgraph's frame grows over the ranks its nodes use, labelled edges keep their labels apart, and edges leaving a rectangle spread over its width. Other flowcharts lay out as before.
+- A flowchart edge that goes back up (a loop such as "no → back to an earlier step") leaves and enters its nodes from the side on a track outside them, instead of sharing the point where the forward edges meet the node. Nested loops step outward.
+- Two new samples: `flowchart-cross-subgraph-layering` and `flowchart-feedback-loop`.
+
+Upgrade all normal modules together to `0.1.15` and HarmonyOS modules to `0.1.15-ohos`. No API changes.
+
 ## 0.1.14 / 0.1.14-ohos
 
 **Available.** Published by [release workflow 39489953840](https://github.com/botiverse/mermaid-native/actions/runs/39489953840) from tag [`v0.1.14`](https://github.com/botiverse/mermaid-native/tree/v0.1.14). Same code as 0.1.13, republished under a new version because 0.1.13's normal-plane publish was cut off. Both planes resolve from the public Maven repository (checked 2026-10-21: `mermaid-compose` for Android, iOS, JVM and Wasm; `mermaid-core` `0.1.14-ohos`), and the Raft mobile app uses it. No readback receipt was recorded for this release.
