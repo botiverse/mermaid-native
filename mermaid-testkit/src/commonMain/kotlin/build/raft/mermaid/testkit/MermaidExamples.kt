@@ -584,6 +584,123 @@ public object MermaidExamples {
         ),
     )
 
+    public val flowchartLoopLeftToRight: MermaidExample = MermaidExample(
+        path = "samples/flowchart-loop-left-to-right.mmd",
+        source = """
+            flowchart LR
+              A[Draft] --> B[Review]
+              B --> C{Approved?}
+              C -->|no| A
+              C -->|yes| D[Publish]
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.LR,
+            nodes = listOf(
+                FlowNode("A", "Draft"),
+                FlowNode("B", "Review"),
+                FlowNode("C", "Approved?", FlowNodeShape.DIAMOND),
+                FlowNode("D", "Publish"),
+            ),
+            edges = listOf(
+                FlowEdge("A", "B"),
+                FlowEdge("B", "C"),
+                FlowEdge("C", "A", label = "no"),
+                FlowEdge("C", "D", label = "yes"),
+            ),
+        ),
+    )
+
+    public val flowchartTwoLoops: MermaidExample = MermaidExample(
+        path = "samples/flowchart-two-loops.mmd",
+        source = """
+            flowchart TD
+              S([Start]) --> B[Build]
+              B --> T[Test]
+              T --> Q{Tests pass?}
+              Q -->|no| B
+              Q -->|yes| D[Deploy]
+              D --> V{Healthy?}
+              V -->|no| T
+              V -->|yes| E([Done])
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TD,
+            nodes = listOf(
+                FlowNode("S", "Start", FlowNodeShape.STADIUM),
+                FlowNode("B", "Build"),
+                FlowNode("T", "Test"),
+                FlowNode("Q", "Tests pass?", FlowNodeShape.DIAMOND),
+                FlowNode("D", "Deploy"),
+                FlowNode("V", "Healthy?", FlowNodeShape.DIAMOND),
+                FlowNode("E", "Done", FlowNodeShape.STADIUM),
+            ),
+            edges = listOf(
+                FlowEdge("S", "B"),
+                FlowEdge("B", "T"),
+                FlowEdge("T", "Q"),
+                FlowEdge("Q", "B", label = "no"),
+                FlowEdge("Q", "D", label = "yes"),
+                FlowEdge("D", "V"),
+                FlowEdge("V", "T", label = "no"),
+                FlowEdge("V", "E", label = "yes"),
+            ),
+        ),
+    )
+
+    public val flowchartNestedLoops: MermaidExample = MermaidExample(
+        path = "samples/flowchart-nested-loops.mmd",
+        source = """
+            flowchart TD
+              A[Plan] --> B[Code]
+              B --> C[Unit test]
+              C -->|fail| B
+              C -->|pass| D[Integration]
+              D -->|regression| A
+              D -->|ok| E([Ship])
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TD,
+            nodes = listOf(
+                FlowNode("A", "Plan"),
+                FlowNode("B", "Code"),
+                FlowNode("C", "Unit test"),
+                FlowNode("D", "Integration"),
+                FlowNode("E", "Ship", FlowNodeShape.STADIUM),
+            ),
+            edges = listOf(
+                FlowEdge("A", "B"),
+                FlowEdge("B", "C"),
+                FlowEdge("C", "B", label = "fail"),
+                FlowEdge("C", "D", label = "pass"),
+                FlowEdge("D", "A", label = "regression"),
+                FlowEdge("D", "E", label = "ok"),
+            ),
+        ),
+    )
+
+    public val flowchartSelfLoop: MermaidExample = MermaidExample(
+        path = "samples/flowchart-self-loop.mmd",
+        source = """
+            flowchart TD
+              A[Idle] --> B[Poll]
+              B -->|retry| B
+              B --> C[Handle]
+        """.trimIndent(),
+        expected = FlowchartDiagram(
+            direction = FlowDirection.TD,
+            nodes = listOf(
+                FlowNode("A", "Idle"),
+                FlowNode("B", "Poll"),
+                FlowNode("C", "Handle"),
+            ),
+            edges = listOf(
+                FlowEdge("A", "B"),
+                FlowEdge("B", "B", label = "retry"),
+                FlowEdge("B", "C"),
+            ),
+        ),
+    )
+
     public val sequenceRequestResponse: MermaidExample = MermaidExample(
         path = "samples/sequence-request-response.mmd",
         source = """
@@ -966,6 +1083,10 @@ public object MermaidExamples {
         flowchartLeftToRight,
         flowchartCrossSubgraphLayering,
         flowchartFeedbackLoop,
+        flowchartLoopLeftToRight,
+        flowchartTwoLoops,
+        flowchartNestedLoops,
+        flowchartSelfLoop,
         sequenceRequestResponse,
         stateLifecycle,
         ganttReleasePlan,

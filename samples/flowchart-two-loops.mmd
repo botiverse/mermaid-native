@@ -1,0 +1,9 @@
+flowchart TD
+  S([Start]) --> B[Build]
+  B --> T[Test]
+  T --> Q{Tests pass?}
+  Q -->|no| B
+  Q -->|yes| D[Deploy]
+  D --> V{Healthy?}
+  V -->|no| T
+  V -->|yes| E([Done])

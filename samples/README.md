@@ -111,6 +111,14 @@ capability, then the services), the frames grow to their ranks, and the six
 edge labels occupy reserved, non-overlapping slots.
 
 `flowchart-feedback-loop.mmd` is an original layout fixture for a review loop.
-The `no` back edge leaves the decision through a side port and enters
-`Write the change` from the side, apart from the forward `plan` and `yes`
-ports.
+Like Mermaid's dagre layout, the `no` back edge gets dummy vertices in the
+ranks it spans, so it runs in its own lane beside `Open PR` (which shifts to
+the other side), leaves the decision from its upper side, enters
+`Write the change` from below, and carries its label at the middle of the
+lane. Edges are drawn as basis splines.
+
+`flowchart-loop-left-to-right.mmd`, `flowchart-two-loops.mmd`,
+`flowchart-nested-loops.mmd` and `flowchart-self-loop.mmd` are original layout
+fixtures for the same layered loop layout: a left-to-right loop, two
+overlapping loops, a short loop inside a longer one, and a labelled self-loop
+drawn beside its node.

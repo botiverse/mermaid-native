@@ -2989,17 +2989,19 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true,compoundLayering=!swimlane)
         val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
-        val placement=lanePlacement?.placement ?: placer.place()
+        // Flat flowcharts with loops use the dagre-like layered layout with spline edges.
+        val layered=if(swimlane)null else flowLayeredLoopLayout(diagram,sizes,textMeasurer,config)
+        val placement=layered?.let { FlowPlacement.Result(it.width,it.height,it.nodes,emptyMap()) } ?: lanePlacement?.placement ?: placer.place()
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
-        val feedbackRoutes=if(swimlane)swimlaneReturnRoutes(diagram,rects,textMeasurer,config)else flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
-        val obstacleRoutes=flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
+        val feedbackRoutes=if(layered!=null)emptyMap() else if(swimlane)swimlaneReturnRoutes(diagram,rects,textMeasurer,config)else flowReturnRoutes(diagram,rects,textMeasurer,config)+placement.returnRoutes
+        val obstacleRoutes=if(layered!=null)emptyMap() else flowObstacleRoutes(diagram,rects,feedbackRoutes,textMeasurer,config)
         val planarRoutes=if(feedbackRoutes.isNotEmpty() && obstacleRoutes.isNotEmpty())
             flowMixedRoutes(diagram,rects,feedbackRoutes+obstacleRoutes,textMeasurer)
         else feedbackRoutes+obstacleRoutes
-        val returnRoutes=if(swimlane)planarRoutes+swimlaneObstacleRoutes(diagram,rects,placement.groups,lanePlacement!!.titles,planarRoutes,textMeasurer) else planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
-        val refinedPaths=diagram.edges.mapIndexedNotNull { index, edge ->
+        val returnRoutes=if(layered!=null)emptyMap() else if(swimlane)planarRoutes+swimlaneObstacleRoutes(diagram,rects,placement.groups,lanePlacement!!.titles,planarRoutes,textMeasurer) else planarRoutes+flowCompoundRoutes(diagram,rects,placement.groups,planarRoutes,textMeasurer)
+        val refinedPaths=layered?.paths ?: diagram.edges.mapIndexedNotNull { index, edge ->
             val source=rects[edge.sourceId] ?: placement.groups[edge.sourceId] ?: return@mapIndexedNotNull null
             val target=rects[edge.targetId] ?: placement.groups[edge.targetId] ?: return@mapIndexedNotNull null
             val horizontal=if(swimlane && swimlaneCrossesLanes(diagram,edge.sourceId,edge.targetId)) diagram.direction !in listOf(FlowDirection.LR,FlowDirection.RL)
@@ -3007,11 +3009,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             val anchors=edgeAnchors(source,target,horizontal)
             index to (returnRoutes[index]?.points ?: listOf(anchors.first,anchors.second))
         }.toMap().let { paths -> clipExpandedFlowShapes(diagram,rects,if(swimlane)paths else refineFlowOrthogonalPaths(diagram,rects,cleanFlowEndpointPaths(diagram,rects,paths))) }
-        val materialized=if(swimlane)FlowMaterializedResult(refinedPaths,placement.groups)else materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
+        val materialized=if(swimlane || layered!=null)FlowMaterializedResult(refinedPaths,placement.groups)else materializeFlowGeometry(diagram,rects,placement.groups,refinedPaths,textMeasurer)
         val edgePaths=materialized.paths
-        val groupRects=materialized.groups
+        val groupRects=materialized.groups.toMutableMap()
         val geometryChanged=edgePaths!=refinedPaths || groupRects!=placement.groups
-        val adjustedLabels=if(swimlane)emptyMap() else flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
+        val adjustedLabels=if(swimlane || layered!=null)emptyMap() else flowStraightEdgeLabels(diagram,rects,edgePaths,returnRoutes,textMeasurer)
 
         val commands = mutableListOf<DrawCommand>()
         val edgeCommands = mutableListOf<Int>()
@@ -3033,7 +3035,17 @@ public object SimpleMermaidLayout : DiagramLayout {
             if(band!=null)commands += DrawRect(band,0.0,fill=groupStyle.fill,stroke=SceneColor(DiagramPalette.MUTED),strokeWidth=1.0)
             val titleBox=titleBand ?: rect
             val titleY=titleBox.y+minOf(titleBox.height-3.0,6+groupStyle.text.fontSize)
-            val title = DrawText(subgraph.label,ScenePoint(titleBox.x+titleBox.width/2,titleY),TextAnchor.MIDDLE,groupStyle.text)
+            val titleX=if(band!=null)titleBox.x+titleBox.width/2 else {
+                // Keep the title clear of edges entering through the frame top.
+                val placement=flowTitlePlacement(subgraph.id,diagram,groupRects,rects,titleY,textMeasurer.measure(subgraph.label,groupStyle.text).width,groupStyle.text.fontSize,
+                    diagram.edges.indices.filter { diagram.edges[it].style!=FlowEdgeStyle.INVISIBLE }.mapNotNull { edgePaths[it] })
+                if(placement.frame!=rect){
+                    groupRects[subgraph.id]=placement.frame
+                    commands[commands.lastIndex]=(commands.last() as DrawRect).copy(rect=placement.frame)
+                }
+                placement.center
+            }
+            val title = DrawText(subgraph.label,ScenePoint(titleX,titleY),TextAnchor.MIDDLE,groupStyle.text)
             commands += title
             if(config.validateOrthogonalLayout)validationTitles[subgraph.id] = title
         }
@@ -3046,14 +3058,24 @@ public object SimpleMermaidLayout : DiagramLayout {
             val route=returnRoutes[index]
             val pattern=if(edge.style==FlowEdgeStyle.DOTTED)StrokePattern.DASHED else StrokePattern.SOLID
             edgeCommands += commands.size
-            if(points.size==2) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            val curve=edge.interpolate ?: diagram.defaultInterpolate ?: "basis"
+            val drawn=if(layered!=null)flowEdgeCurvePolyline(points,curve) ?: points else points
+            if(layered!=null)commands+=flowEdgeCurve(points,curve,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            else if(points.size==2) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
-            val lastFrom=points[points.lastIndex-1]
-            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, points.last(), fill = markerColor)
-            else commands += flowMarker(edge.toMarker, lastFrom, points.last(),markerColor,edgeStyle.strokeWidth)
-            commands += flowMarker(edge.fromMarker, points[1], points.first(),markerColor,edgeStyle.strokeWidth)
+            val lastFrom=drawn[drawn.lastIndex-1]
+            if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, drawn.last(), fill = markerColor)
+            else commands += flowMarker(edge.toMarker, lastFrom, drawn.last(),markerColor,edgeStyle.strokeWidth)
+            commands += flowMarker(edge.fromMarker, drawn[1], drawn.first(),markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
-                val mid = adjustedLabels[index]?.origin ?: route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
+                val layeredLabel=layered?.labels?.get(index)?.let { center ->
+                    // Mermaid centers the label on the edge over an opaque background.
+                    val size=textMeasurer.measure(label,style)
+                    commands += DrawRect(SceneRect(center.x-size.width/2-4.0,center.y-size.height/2-2.0,size.width+8.0,size.height+4.0),
+                        fill=SceneColor(DiagramPalette.CANVAS),stroke=SceneColor("none"),strokeWidth=0.0)
+                    ScenePoint(center.x,center.y+style.fontSize*0.35)
+                }
+                val mid = layeredLabel ?: adjustedLabels[index]?.origin ?: route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
                 val text = DrawText(label, mid, TextAnchor.MIDDLE, style)
                 commands += text
                 if(config.validateOrthogonalLayout)validationLabels[index] = text
@@ -3108,8 +3130,9 @@ public object SimpleMermaidLayout : DiagramLayout {
             return flowLayoutValidation(diagram, rects, groupRects, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
         }
         val hopBounds = applySwimlaneHops(commands, edgeCommands, lineHops)
-        if(hopBounds.isEmpty() && returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
-        val materializedBounds=if(geometryChanged) groupRects.values+edgePaths.values.map { p ->
+        if(layered!=null)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+        if(hopBounds.isEmpty() && returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged && groupRects==materialized.groups)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+        val materializedBounds=if(geometryChanged || groupRects!=materialized.groups) groupRects.values+edgePaths.values.map { p ->
             val left=p.minOf { it.x };val top=p.minOf { it.y }
             SceneRect(left,top,p.maxOf { it.x }-left,p.maxOf { it.y }-top)
         } else emptyList()

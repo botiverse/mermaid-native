@@ -1,0 +1,7 @@
+flowchart TD
+  A[Plan] --> B[Code]
+  B --> C[Unit test]
+  C -->|fail| B
+  C -->|pass| D[Integration]
+  D -->|regression| A
+  D -->|ok| E([Ship])

@@ -1,0 +1,4 @@
+flowchart TD
+  A[Idle] --> B[Poll]
+  B -->|retry| B
+  B --> C[Handle]

@@ -1,0 +1,5 @@
+flowchart LR
+  A[Draft] --> B[Review]
+  B --> C{Approved?}
+  C -->|no| A
+  C -->|yes| D[Publish]
