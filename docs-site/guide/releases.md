@@ -1,13 +1,17 @@
 # SDK releases and upgrading
 
-## Unreleased (main)
+## 0.1.16 / 0.1.16-ohos
 
-**Not published yet.** Changes on `main` since 0.1.15:
+**Pending publication** from tag `v0.1.16`. Until it is marked Available, use 0.1.15.
+
+Changes since 0.1.15:
 
 - Flowcharts without subgraphs that contain a loop (an edge back to an earlier step, or a self-loop) use a layered layout modelled on Mermaid's default dagre layout. A loop gets its own lane beside the forward chain, and the chain's nodes shift to the other side. The loop leaves and enters nodes on the side facing that lane, so in a top-down chart a back edge enters its target from below. Self-loops are drawn beside their node. Flowcharts without loops, and flowcharts with subgraphs, lay out as before.
 - In those flowcharts, edges are smooth curves (Mermaid's default `basis` curve) drawn with the existing quadratic path command. Labels sit at the middle of their edge on a background. `linkStyle … interpolate linear` keeps straight segments, and `step`, `stepBefore` and `stepAfter` draw axis-aligned steps.
 - A subgraph title moves sideways when edges entering the frame from above would cross it. If no gap in the frame is wide enough, the frame grows into free space.
 - New samples: `flowchart-loop-left-to-right`, `flowchart-two-loops`, `flowchart-nested-loops` and `flowchart-self-loop`.
+
+Upgrade all normal modules together to `0.1.16` and HarmonyOS modules to `0.1.16-ohos`. No API changes.
 
 ## 0.1.15 / 0.1.15-ohos
 
