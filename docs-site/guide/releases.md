@@ -1,5 +1,17 @@
 # SDK releases and upgrading
 
+## 0.1.18 / 0.1.18-ohos
+
+**Pending publication** from tag `v0.1.18`. Until it is marked Available, use 0.1.17.
+
+Changes since 0.1.17:
+
+- Sequence diagram self-messages (`A->>A: text`) are drawn like Mermaid: a curved loop that leaves the lifeline to the right and returns below it, with the arrowhead pointing back into the lifeline and the label centred above. Neighbouring participants move apart so a long label fits. A self-message takes one message slot plus the loop instead of two slots.
+- `autonumber` draws the number in a filled disc at the start of each message arrow, including self-messages, instead of a `1. ` prefix in the label. Wide numbers such as `10.01` widen the disc into a pill. `autonumber <start> <step>` and `autonumber off` work as before.
+- New sample `sequence-autonumber-self`. Sequence diagrams with self-messages or `autonumber` render differently from 0.1.17; other sample SVGs are unchanged. No API changes.
+
+Upgrade all normal modules together to `0.1.18` and HarmonyOS modules to `0.1.18-ohos`.
+
 ## 0.1.17 / 0.1.17-ohos
 
 **Available.** Published by [release workflow 44686348786](https://github.com/botiverse/mermaid-native/actions/runs/44686348786) from tag [`v0.1.17`](https://github.com/botiverse/mermaid-native/tree/v0.1.17). Both planes resolve from the public Maven repository (checked 2026-11-20: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.17`; `mermaid-core` `0.1.17-ohos`).
