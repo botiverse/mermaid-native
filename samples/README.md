@@ -125,3 +125,9 @@ loops, a short loop inside a longer one, and a labelled self-loop hanging
 below its node as in Mermaid 11. `flowchart-linear.mmd`,
 `flowchart-left-to-right.mmd` and `flowchart-thick-arrow.mmd` use the same
 layered layout and curves without loops.
+
+`sequence-autonumber-self.mmd` is an original fixture for sequence numbering
+and self-messages: as in Mermaid 11, each numbered message starts at a filled
+disc carrying its number, `autonumber off` stops the discs, and the
+self-message loops out to the right of its lifeline and back below its start,
+with the label centred above it.

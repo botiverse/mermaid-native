@@ -24,6 +24,9 @@ import build.raft.mermaid.core.SequenceArrowHead
 import build.raft.mermaid.core.SequenceDiagram
 import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
+import build.raft.mermaid.core.SequenceNote
+import build.raft.mermaid.core.SequenceNotePosition
+import build.raft.mermaid.core.SequenceNumbering
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.PieSection
 import build.raft.mermaid.core.StateDiagram
@@ -732,6 +735,33 @@ public object MermaidExamples {
         ),
     )
 
+    public val sequenceAutonumberSelf: MermaidExample = run {
+        val hello = SequenceMessage("Alice", "John", "Hello John, how are you?", SequenceLineStyle.SOLID, SequenceArrowHead.FILLED)
+        val note = SequenceNote(SequenceNotePosition.RIGHT_OF, listOf("John"), "John thinks")
+        val self = SequenceMessage("John", "John", "Check the calendar", SequenceLineStyle.SOLID, SequenceArrowHead.FILLED)
+        val reply = SequenceMessage("John", "Alice", "Great!", SequenceLineStyle.DASHED, SequenceArrowHead.FILLED)
+        val later = SequenceMessage("Alice", "John", "See you later", SequenceLineStyle.SOLID, SequenceArrowHead.FILLED)
+        MermaidExample(
+            path = "samples/sequence-autonumber-self.mmd",
+            source = """
+                sequenceDiagram
+                  autonumber
+                  Alice->>John: Hello John, how are you?
+                  Note right of John: John thinks
+                  John->>John: Check the calendar
+                  John-->>Alice: Great!
+                  autonumber off
+                  Alice->>John: See you later
+            """.trimIndent(),
+            expected = SequenceDiagram(
+                actors = listOf(SequenceActor("Alice", "Alice"), SequenceActor("John", "John")),
+                messages = listOf(hello, self, reply, later),
+                notes = listOf(note),
+                events = listOf(SequenceNumbering(true), hello, note, self, reply, SequenceNumbering(false), later),
+            ),
+        )
+    }
+
     public val stateLifecycle: MermaidExample = MermaidExample(
         path = "samples/state-lifecycle.mmd",
         source = """
@@ -1088,6 +1118,7 @@ public object MermaidExamples {
         flowchartNestedLoops,
         flowchartSelfLoop,
         sequenceRequestResponse,
+        sequenceAutonumberSelf,
         stateLifecycle,
         ganttReleasePlan,
         timelineProductHistory,
