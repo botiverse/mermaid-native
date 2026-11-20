@@ -2,7 +2,7 @@
 
 ## 0.1.16 / 0.1.16-ohos
 
-**Pending publication** from tag `v0.1.16`. Until it is marked Available, use 0.1.15.
+**Available.** Published by [release workflow 44613317770](https://github.com/botiverse/mermaid-native/actions/runs/44613317770) from tag [`v0.1.16`](https://github.com/botiverse/mermaid-native/tree/v0.1.16). Both planes resolve from the public Maven repository (checked 2026-11-20: `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple`, `mermaid-compose` and `mermaid-render-svg` for Android, iOS, JVM and Wasm; `mermaid-core` `0.1.16-ohos`), and the Raft mobile app uses it.
 
 Changes since 0.1.15:
 
