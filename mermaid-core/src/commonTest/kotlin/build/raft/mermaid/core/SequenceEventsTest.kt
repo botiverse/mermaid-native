@@ -45,6 +45,37 @@ class SequenceEventsTest {
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("sequenceDiagram\nautonumber 1.001"))
     }
 
+    @Test fun parsesAutonumberStartStepAndOffInSourceOrder() {
+        val d = parse("""sequenceDiagram
+            autonumber
+            A->>B: one
+            autonumber 10 5
+            B->>B: self
+            Note right of B: not numbered
+            autonumber off
+            B-->>A: hidden
+            autonumber 3
+            A->>B: restarted
+        """.trimIndent())
+        assertEquals(listOf(SequenceNumbering(true), SequenceNumbering(true, 10.0, 5.0), SequenceNumbering(false), SequenceNumbering(true, 3.0, 1.0)),
+            d.events.filterIsInstance<SequenceNumbering>())
+        assertEquals(listOf("numbering", "message", "numbering", "message", "note", "numbering", "message", "numbering", "message"), d.events.map {
+            when (it) { is SequenceMessage -> "message"; is SequenceNote -> "note"; is SequenceNumbering -> "numbering"; else -> "other" }
+        })
+        listOf("autonumber 1 2 3", "autonumber ten", "autonumber -1").forEach {
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("sequenceDiagram\n$it\nA->>B: x"), it)
+        }
+    }
+
+    @Test fun selfMessagesKeepOneParticipantAndTheirArrow() {
+        val d = parse("sequenceDiagram\nparticipant Bob\nBob->>Bob: think\nBob-->>Bob: reply to self\nBob-)Bob: async")
+        assertEquals(listOf("Bob"), d.actors.map { it.id })
+        assertTrue(d.messages.all { it.from == "Bob" && it.to == "Bob" })
+        assertEquals(listOf("think", "reply to self", "async"), d.messages.map { it.label })
+        assertEquals(listOf(SequenceArrowHead.FILLED, SequenceArrowHead.FILLED, SequenceArrowHead.OPEN), d.messages.map { it.arrowHead })
+        assertEquals(SequenceLineStyle.DASHED, d.messages[1].lineStyle)
+    }
+
     @Test fun keepsCentralAndBidirectionalSemantics() {
         val d=parse("sequenceDiagram; Alice ()<<-->>() Bob: hello")
         assertEquals(SequenceCentralConnection.BOTH,d.messages.single().centralConnection)

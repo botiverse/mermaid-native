@@ -26,7 +26,9 @@ import build.raft.mermaid.core.SequenceLineStyle
 import build.raft.mermaid.core.SequenceMessage
 import build.raft.mermaid.core.PieDiagram
 import build.raft.mermaid.core.PieSection
+import build.raft.mermaid.layout.DrawPath
 import build.raft.mermaid.layout.DrawPolygon
+import build.raft.mermaid.layout.PathQuadratic
 import build.raft.mermaid.layout.LayoutScene
 import build.raft.mermaid.layout.DrawText
 import build.raft.mermaid.core.StateDiagram
@@ -1839,7 +1841,7 @@ class SimpleMermaidLayoutTest {
     }
 
     @Test
-    fun sequenceUsesDashedReturnAndSelfMessagePolyline() {
+    fun sequenceUsesDashedReturnAndCurvedSelfMessage() {
         val diagram = SequenceDiagram(
             actors = listOf(SequenceActor("A", "Alice"), SequenceActor("B", "Bob")),
             messages = listOf(
@@ -1851,7 +1853,8 @@ class SimpleMermaidLayoutTest {
         val scene = SimpleMermaidLayout.layout(diagram, FixedWidthTextMeasurer, LayoutConfig())
         val messageLines = scene.commands.filterIsInstance<DrawLine>().drop(2)
         assertEquals(listOf(StrokePattern.SOLID, StrokePattern.DASHED), messageLines.map { it.pattern })
-        assertEquals(1, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(0, scene.commands.filterIsInstance<DrawPolyline>().size)
+        assertEquals(1, scene.commands.filterIsInstance<DrawPath>().count { path -> path.segments.any { it is PathQuadratic } })
         assertEquals(4, scene.commands.filterIsInstance<DrawRect>().size)
         assertTrue(scene.commands.filterIsInstance<DrawRect>().all { it.rect.valid() })
     }
