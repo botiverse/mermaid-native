@@ -1,5 +1,18 @@
 # SDK releases and upgrading
 
+## Unreleased (main)
+
+Not published yet. These changes are on `main` and will ship in the next release.
+
+- Every flowchart now uses the layered layout modelled on Mermaid's default dagre layout, not only flowcharts without subgraphs that contain a loop. This covers charts without loops and charts with subgraphs, in all directions (`TD`/`TB`, `BT`, `LR`, `RL`). Swimlane diagrams (`swimlane-beta`) keep their lane layout. Flowchart geometry changes, so rendered flowcharts look different from 0.1.16.
+- Edges are smooth curves (Mermaid's `basis` curve) through one bend point per rank, with labels at the middle of the edge on a background. `linkStyle … interpolate` (`linear`, `step`, `stepBefore`, `stepAfter`) still applies, per edge or as `linkStyle default`. Edge labels wider than 200 units wrap onto several lines, as in Mermaid.
+- A chain of single links, such as `A --> B --> C`, is drawn as one straight column. Edges into fan-ins and out of fan-outs curve toward their neighbor.
+- Subgraphs follow Mermaid's compound layout. If no edge crosses a subgraph's border, the subgraph is laid out on its own and placed as one block. It uses its `direction` when set; otherwise it switches direction like Mermaid (left to right inside a top-down chart, top to bottom in any other chart). Edges to the subgraph itself, such as `A --> Group`, do not count as crossing. A subgraph that edges do cross stays part of the surrounding layout. Its members keep together on every rank, sibling frames never overlap, and a frame title gets its own band. Edges to such a subgraph end on its frame.
+- An edge between a subgraph and one of its own members runs straight to the nearest free side of the frame. It no longer makes the whole chart fall back to the older layout.
+- A self-loop now hangs from the side of its node that faces the next rank, like Mermaid 11: below the node in a top-down chart, to the right in a left-to-right chart. Its label sits past the loop, and the loop goes on the side of the node that the node's other edges leave free.
+- Arrowheads point along the end of the curve and their tips touch the node outline. The outline is the shape's own outline for diamonds, circles, hexagons, parallelograms, trapezoids, asymmetric and expanded shapes. Thick strokes end inside the arrowhead.
+- All flowchart sample SVGs changed. No API changes. Other diagram families render as before.
+
 ## 0.1.16 / 0.1.16-ohos
 
 **Available.** Published by [release workflow 44613317770](https://github.com/botiverse/mermaid-native/actions/runs/44613317770) from tag [`v0.1.16`](https://github.com/botiverse/mermaid-native/tree/v0.1.16). Both planes resolve from the public Maven repository (checked 2026-11-20: `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple`, `mermaid-compose` and `mermaid-render-svg` for Android, iOS, JVM and Wasm; `mermaid-core` `0.1.16-ohos`), and the Raft mobile app uses it.

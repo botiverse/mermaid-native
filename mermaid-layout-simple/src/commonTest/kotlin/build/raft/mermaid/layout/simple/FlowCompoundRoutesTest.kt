@@ -26,12 +26,12 @@ class FlowCompoundRoutesTest {
         for(direction in listOf("TD","LR","RL","BT")) {
             val s=scene(direction);assertEquals(s,scene(direction))
             val nodes=s.commands.filterIsInstance<DrawRect>().takeLast(4).map { it.rect }
-            val routes=s.commands.filterIsInstance<DrawPolyline>();assertEquals(2,routes.size,direction)
-            for(route in routes)for((a,b) in route.points.zipWithNext())for(node in nodes)assertFalse(enters(a,b,node),direction)
+            val routes=s.edgeSamples();assertEquals(5,routes.size,direction)
+            for(route in routes)for(node in nodes)assertFalse(route.entersBox(node),direction)
             val labels=s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("retry","rework") }.map(::bounds)
             assertFalse(overlaps(labels[0],labels[1]),direction)
             for(label in labels)for(node in nodes)assertFalse(overlaps(label,node),direction)
-            for(route in routes)for(p in route.points)assertTrue(p.x>=0 && p.y>=0 && p.x<=s.width && p.y<=s.height,direction)
+            for(route in routes)for(p in route)assertTrue(p.x>=0 && p.y>=0 && p.x<=s.width && p.y<=s.height,direction)
             for(label in labels)assertTrue(label.x>=0 && label.y>=0 && label.x+label.width<=s.width && label.y+label.height<=s.height,direction)
         }
     }
@@ -46,8 +46,11 @@ class FlowCompoundRoutesTest {
         val s=scene("LR",middle="subgraph Spare[Unrelated]\nX[Spare node]\nend")
         val rectangles=s.commands.filterIsInstance<DrawRect>()
         val frame=rectangles[1].rect
-        val routes=s.commands.filterIsInstance<DrawPolyline>();assertTrue(routes.size>=2)
-        for(route in routes)for((a,b) in route.points.zipWithNext())assertFalse(enters(a,b,frame))
-        for(group in rectangles.take(3))for(route in routes)for((a,b) in route.points.zipWithNext())assertFalse(enters(a,b,group.rect.copy(height=32.0)))
+        assertEquals("Unrelated",(s.commands[s.commands.indexOf(rectangles[1])+1] as DrawText).text)
+        val routes=s.edgeSamples();assertEquals(5,routes.size)
+        for(route in routes)assertFalse(route.entersBox(frame,0.0))
+        val titles=s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("Group one","Group two","Unrelated") }.map(::bounds)
+        assertEquals(3,titles.size)
+        for(title in titles)for(route in routes)assertFalse(route.entersBox(title,0.0))
     }
 }

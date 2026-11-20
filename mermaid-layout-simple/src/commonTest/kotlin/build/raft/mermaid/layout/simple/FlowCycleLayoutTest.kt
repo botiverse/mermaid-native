@@ -34,7 +34,7 @@ class FlowCycleLayoutTest {
     }
 
     private fun assertLabelsClear(s: LayoutScene, texts: List<String>, message: String) {
-        val labels = s.commands.filterIsInstance<DrawText>().filter { it.text in texts }.map(::textBounds)
+        val labels = texts.map { s.labelBlock(it) }
         assertEquals(texts.size, labels.size, message)
         for (i in labels.indices) for (j in i + 1 until labels.size) assertFalse(intersects(labels[i], labels[j]), message)
         for (label in labels) for (node in s.boxes()) assertFalse(intersects(label, node), message)

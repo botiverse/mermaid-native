@@ -96,9 +96,10 @@ D --> D"""
         val parsed=assertIs<MermaidParseResult.Success>(MermaidParser.parse(source))
         val scene=SimpleMermaidLayout.layout(parsed.diagram,measurer,LayoutConfig(validateOrthogonalLayout=true))
         val geometry=assertNotNull(scene.layoutValidation).geometry
-        val painted=scene.commands.mapNotNull { when(it) { is DrawLine -> listOf(it.from,it.to);is DrawPolyline -> it.points;else -> null } }
+        // Curves are painted through the validated route's control points, from its first to its last point.
+        val painted=scene.edgeCurves().map { it.start to it.end }
         for(edge in geometry.edges) {
-            assertTrue(edge.points in painted)
+            assertTrue((edge.points.first() to edge.points.last()) in painted)
             assertTrue(edge.points.all { it.x>=0 && it.y>=0 && it.x<=scene.width && it.y<=scene.height })
         }
         for(group in geometry.nodes.filter { it.isGroup }) {

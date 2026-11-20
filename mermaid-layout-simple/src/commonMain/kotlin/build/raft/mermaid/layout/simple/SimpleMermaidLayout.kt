@@ -2989,9 +2989,10 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true,compoundLayering=!swimlane)
         val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
-        // Flat flowcharts with loops use the dagre-like layered layout with spline edges.
-        val layered=if(swimlane)null else flowLayeredLoopLayout(diagram,sizes,textMeasurer,config)
-        val placement=layered?.let { FlowPlacement.Result(it.width,it.height,it.nodes,emptyMap()) } ?: lanePlacement?.placement ?: placer.place()
+        // Flowcharts use the dagre-like layered layout with spline edges; swimlanes keep their lanes.
+        val titleSizes=diagram.subgraphs.associate { it.id to flowGroupStyle(it,diagram).text.let { text -> SceneSize(textMeasurer.measure(it.label,text).width,text.fontSize) } }
+        val layered=if(swimlane)null else flowLayeredLayout(diagram,sizes,textMeasurer,config,titleSizes)
+        val placement=layered?.let { FlowPlacement.Result(it.width,it.height,it.nodes,it.groups) } ?: lanePlacement?.placement ?: placer.place()
         val width=placement.width
         val height=placement.height
         val rects=placement.nodes
@@ -3060,23 +3061,32 @@ public object SimpleMermaidLayout : DiagramLayout {
             edgeCommands += commands.size
             val curve=edge.interpolate ?: diagram.defaultInterpolate ?: "basis"
             val drawn=if(layered!=null)flowEdgeCurvePolyline(points,curve) ?: points else points
-            if(layered!=null)commands+=flowEdgeCurve(points,curve,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
+            // The stroke stops inside the end markers, so a thick line never shows past an arrow tip.
+            if(layered!=null)commands+=flowEdgeCurve(flowMarkerInset(points,edge.fromMarker,edge.toMarker,edgeStyle.strokeWidth),curve,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else if(points.size==2) commands+=DrawLine(points.first(),points.last(),edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
             else commands+=DrawPolyline(points,edgeStyle.stroke,edgeStyle.strokeWidth,pattern)
-            val lastFrom=drawn[drawn.lastIndex-1]
+            // Markers follow the end tangent; a stub shorter than the marker (step curves) takes the run before it.
+            fun tangentFrom(end:ScenePoint,run:List<ScenePoint>)=run.firstOrNull { kotlin.math.hypot(it.x-end.x,it.y-end.y)>=6.0 } ?: run.first()
+            val lastFrom=if(layered!=null)tangentFrom(drawn.last(),drawn.dropLast(1).asReversed()) else drawn[drawn.lastIndex-1]
+            val firstFrom=if(layered!=null)tangentFrom(drawn.first(),drawn.drop(1)) else drawn[1]
             if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, drawn.last(), fill = markerColor)
             else commands += flowMarker(edge.toMarker, lastFrom, drawn.last(),markerColor,edgeStyle.strokeWidth)
-            commands += flowMarker(edge.fromMarker, drawn[1], drawn.first(),markerColor,edgeStyle.strokeWidth)
+            commands += flowMarker(edge.fromMarker, firstFrom, drawn.first(),markerColor,edgeStyle.strokeWidth)
             edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
+                val layeredLines=if(layered!=null)flowEdgeLabelLines(label,textMeasurer,style) else emptyList()
                 val layeredLabel=layered?.labels?.get(index)?.let { center ->
-                    // Mermaid centers the label on the edge over an opaque background.
-                    val size=textMeasurer.measure(label,style)
+                    // Mermaid centers the label on the edge over an opaque background, wrapping long text.
+                    val size=flowEdgeLabelSize(layeredLines,textMeasurer,style)
                     commands += DrawRect(SceneRect(center.x-size.width/2-4.0,center.y-size.height/2-2.0,size.width+8.0,size.height+4.0),
                         fill=SceneColor(DiagramPalette.CANVAS),stroke=SceneColor("none"),strokeWidth=0.0)
-                    ScenePoint(center.x,center.y+style.fontSize*0.35)
+                    val lineHeight=size.height/layeredLines.size
+                    layeredLines.dropLast(1).forEachIndexed { line,text ->
+                        commands += DrawText(text,ScenePoint(center.x,center.y+(line-(layeredLines.size-1)/2.0)*lineHeight+style.fontSize*0.35),TextAnchor.MIDDLE,style)
+                    }
+                    ScenePoint(center.x,center.y+((layeredLines.size-1)/2.0)*lineHeight+style.fontSize*0.35)
                 }
                 val mid = layeredLabel ?: adjustedLabels[index]?.origin ?: route?.label ?: MermaidPathGeometry.midpoint(points).let { it.copy(y=it.y-6.0) }
-                val text = DrawText(label, mid, TextAnchor.MIDDLE, style)
+                val text = DrawText(if(layeredLabel!=null)layeredLines.last() else label, mid, TextAnchor.MIDDLE, style)
                 commands += text
                 if(config.validateOrthogonalLayout)validationLabels[index] = text
             }

@@ -19,6 +19,6 @@ class FlowStyleLayoutTest {
         val scene=layout("A:::dashed --> B\nclassDef dashed stroke-dasharray:4\nlinkStyle 0 stroke:#ff0000,stroke-width:4px")
         assertTrue(scene.commands.filterIsInstance<DrawPolygon>().any { it.fill.value=="#ff0000" })
         assertTrue(scene.commands.filterIsInstance<DrawPolyline>().any { it.pattern==StrokePattern.DASHED })
-        assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.stroke.value=="#ff0000" && it.strokeWidth==4.0 })
+        assertTrue(scene.edgeCurves().any { it.stroke.value=="#ff0000" && it.strokeWidth==4.0 })
     }
 }

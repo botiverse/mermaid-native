@@ -7,14 +7,15 @@ class FlowGrammarLayoutTest {
     @Test fun openAndInvisibleEdgesDoNotDrawArrowheads() {
         val open=layout("A --- B")
         assertTrue(open.commands.none { it is DrawPolygon })
-        assertEquals(1,open.commands.filterIsInstance<DrawLine>().size)
-        assertEquals(0,layout("A ~~~ B").commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1,open.edgeCurves().size)
+        assertEquals(0,layout("A ~~~ B").edgeCurves().size)
     }
     @Test fun circleAndCrossMarkersReachTheActualDrawing() {
         val circle=layout("A o--o B")
         assertEquals(2,circle.commands.filterIsInstance<DrawEllipse>().size)
         val cross=layout("A x--x B")
-        assertEquals(5,cross.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1,cross.edgeCurves().size)
+        assertEquals(4,cross.commands.filterIsInstance<DrawLine>().size)
     }
     @Test fun localDirectionNestedBoundsAndMinimumEdgeLengthAffectPlacement() {
         val scene=layout("subgraph Outer[Outer group]\nsubgraph Inner[Inner group]\ndirection TB\nA --> B\nend\nend")

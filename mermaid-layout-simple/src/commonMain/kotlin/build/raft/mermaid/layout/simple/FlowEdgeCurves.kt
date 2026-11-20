@@ -78,3 +78,32 @@ internal fun basisSegments(points: List<ScenePoint>): List<ScenePathSegment> {
     segments += PathLine(x1)
     return segments
 }
+
+/**
+ * Route points with the ends pulled back under their arrowheads, like
+ * Mermaid's marker offsets: a thick stroke stops inside the arrowhead while
+ * the arrow tip still touches the node outline.
+ */
+internal fun flowMarkerInset(
+    points: List<ScenePoint>,
+    fromMarker: build.raft.mermaid.core.FlowMarker,
+    toMarker: build.raft.mermaid.core.FlowMarker,
+    strokeWidth: Double,
+): List<ScenePoint> {
+    // A thin stroke ends unseen under its arrowhead; only thick strokes would show past the tip.
+    if (points.size < 2 || strokeWidth <= 2.0) return points
+    fun inset(marker: build.raft.mermaid.core.FlowMarker) = when (marker) {
+        build.raft.mermaid.core.FlowMarker.POINT -> 3.0 + strokeWidth
+        else -> 0.0
+    }
+    fun pull(end: ScenePoint, toward: ScenePoint, distance: Double): ScenePoint {
+        val dx = toward.x - end.x; val dy = toward.y - end.y
+        val length = kotlin.math.sqrt(dx * dx + dy * dy)
+        if (distance <= 0.0 || length <= distance * 2) return end
+        return ScenePoint(end.x + dx / length * distance, end.y + dy / length * distance)
+    }
+    val result = points.toMutableList()
+    result[result.lastIndex] = pull(points.last(), points[points.lastIndex - 1], inset(toMarker))
+    result[0] = pull(points.first(), points[1], inset(fromMarker))
+    return result
+}

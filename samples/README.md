@@ -105,10 +105,11 @@ values, and an explicit `max`, without claiming configuration, graticule
 customization, interactivity, accessibility, or full radar family parity.
 
 `flowchart-cross-subgraph-layering.mmd` is an original layout fixture: edges
-leave the `Core` frame for the `App` frame and come back. Nodes are ranked by
-their edges across both frames (entries, then the module beside the core
-capability, then the services), the frames grow to their ranks, and the six
-edge labels occupy reserved, non-overlapping slots.
+leave the `Core` frame for the `App` frame and come back. Like Mermaid's
+compound dagre layout, both frames stay in one layered layout: nodes are
+ranked by their edges across both frames, each frame keeps its members
+together on every rank, and the labelled edges carry their labels at their
+middle.
 
 `flowchart-feedback-loop.mmd` is an original layout fixture for a review loop.
 Like Mermaid's dagre layout, the `no` back edge gets dummy vertices in the
@@ -119,6 +120,8 @@ lane. Edges are drawn as basis splines.
 
 `flowchart-loop-left-to-right.mmd`, `flowchart-two-loops.mmd`,
 `flowchart-nested-loops.mmd` and `flowchart-self-loop.mmd` are original layout
-fixtures for the same layered loop layout: a left-to-right loop, two
-overlapping loops, a short loop inside a longer one, and a labelled self-loop
-drawn beside its node.
+fixtures for the same layered layout: a left-to-right loop, two overlapping
+loops, a short loop inside a longer one, and a labelled self-loop hanging
+below its node as in Mermaid 11. `flowchart-linear.mmd`,
+`flowchart-left-to-right.mmd` and `flowchart-thick-arrow.mmd` use the same
+layered layout and curves without loops.

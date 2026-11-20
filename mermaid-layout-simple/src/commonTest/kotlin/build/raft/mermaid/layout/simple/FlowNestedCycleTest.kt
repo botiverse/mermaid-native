@@ -32,9 +32,9 @@ class FlowNestedCycleTest {
             val horizontal=direction in listOf(FlowDirection.LR,FlowDirection.RL)
             fun center(r:SceneRect)=if(horizontal)r.x+r.width/2 else r.y+r.height/2
             assertEquals(center(nodes[1]),center(nodes[2]),0.00001)
-            val route=s.commands.filterIsInstance<DrawPolyline>().single()
-            for(p in route.points)assertTrue(contains(group,SceneRect(p.x,p.y,0.0,0.0)),direction.name)
-            for((a,b) in route.points.zipWithNext())for(node in nodes)assertFalse(enters(a,b,node),direction.name)
+            val curves=s.edgeSamples();assertEquals(3,curves.size)
+            for(curve in curves)for(p in curve)assertTrue(contains(group,SceneRect(p.x,p.y,0.0,0.0)),direction.name)
+            for(curve in curves)for(node in nodes)assertFalse(curve.entersBox(node),direction.name)
             val labels=s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("yes","no","retry","Group") }.map(::textBounds)
             for(label in labels){assertTrue(contains(group,label));for(node in nodes)assertFalse(intersects(label,node))}
             for(i in labels.indices)for(j in i+1 until labels.size)assertFalse(intersects(labels[i],labels[j]))
@@ -46,9 +46,9 @@ class FlowNestedCycleTest {
         val s=layout(source)
         val groups=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==4.0 }.map { it.rect }
         assertEquals(2,groups.size);assertTrue(contains(groups[0],groups[1]))
-        val label=textBounds(s.commands.filterIsInstance<DrawText>().single { it.text.startsWith("A long retry") })
+        val label=s.labelBlock("A long retry label with words")
         assertTrue(contains(groups[1],label))
-        for(p in s.commands.filterIsInstance<DrawPolyline>().single().points)assertTrue(contains(groups[1],SceneRect(p.x,p.y,0.0,0.0)))
+        for(curve in s.edgeSamples())for(p in curve)assertTrue(contains(groups[1],SceneRect(p.x,p.y,0.0,0.0)))
         assertTrue(contains(SceneRect(0.0,0.0,s.width,s.height),groups[0]))
     }
 
@@ -56,8 +56,8 @@ class FlowNestedCycleTest {
         val s=layout("graph LR\nsubgraph G[First]\nA[Work]-->|retry one|A\nend\nsubgraph H[Second]\nB[Wait]-->|retry two|B\nend")
         val groups=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==4.0 }.map { it.rect }
         assertEquals(2,groups.size);assertFalse(intersects(groups[0],groups[1]))
-        val routes=s.commands.filterIsInstance<DrawPolyline>();assertEquals(2,routes.size)
-        for(route in routes)assertEquals(1,groups.count { g->route.points.all { contains(g,SceneRect(it.x,it.y,0.0,0.0)) } })
+        val routes=s.edgeSamples();assertEquals(2,routes.size)
+        for(route in routes)assertEquals(1,groups.count { g->route.all { contains(g,SceneRect(it.x,it.y,0.0,0.0)) } })
         for(t in s.commands.filterIsInstance<DrawText>().filter { it.text.startsWith("retry") })assertEquals(1,groups.count { contains(it,textBounds(t)) })
     }
 
@@ -65,9 +65,9 @@ class FlowNestedCycleTest {
         val d=parse("graph TD\nX-->Y\nsubgraph G[Group]\n$branch\nend")
         val painted=d.copy(edges=d.edges.map { if(it.label=="retry")it.copy(style=FlowEdgeStyle.DOTTED,styles=listOf("stroke:#123456","stroke-width:3px"))else it })
         val s=SimpleMermaidLayout.layout(painted,FixedWidthTextMeasurer,LayoutConfig())
-        val route=s.commands.filterIsInstance<DrawPolyline>().single()
-        assertEquals(StrokePattern.DASHED,route.pattern);assertEquals("#123456",route.stroke.value);assertEquals(3.0,route.strokeWidth)
-        assertEquals(3,s.commands.filterIsInstance<DrawLine>().size)
+        val route=s.edgeCurves().single { it.stroke.value=="#123456" }
+        assertEquals(StrokePattern.DASHED,route.pattern);assertEquals(3.0,route.strokeWidth)
+        assertEquals(4,s.edgeCurves().size)
         assertEquals(1,s.commands.filterIsInstance<DrawText>().count { it.text=="retry" })
     }
 
@@ -93,17 +93,21 @@ class FlowNestedCycleTest {
             val nodes=s.commands.filterIsInstance<DrawRect>().filter { it.cornerRadius==5.0 }.map { it.rect }
             assertEquals(2,frames.size);assertEquals(4,nodes.size)
             assertTrue(contains(frames[0],frames[1]))
-            val routes=s.commands.filterIsInstance<DrawPolyline>();assertEquals(2,routes.size,direction)
+            val routes=s.edgeSamples();assertEquals(5,routes.size,direction)
+            val titles=s.commands.filterIsInstance<DrawText>().filter { it.text.endsWith("group") }.map(::textBounds)
+            assertEquals(2,titles.size)
             for(route in routes) {
-                for(p in route.points)assertTrue(contains(frames[0],SceneRect(p.x,p.y,0.0,0.0)),direction)
-                for((a,b) in route.points.zipWithNext())for(node in nodes)assertFalse(enters(a,b,node),direction)
-                for((a,b) in route.points.zipWithNext())for(frame in frames)assertFalse(enters(a,b,frame.copy(height=32.0)),direction)
+                for(p in route)assertTrue(contains(frames[0],SceneRect(p.x,p.y,0.0,0.0)),direction)
+                for(node in nodes)assertFalse(route.entersBox(node),direction)
+                for(title in titles)assertFalse(route.entersBox(title,0.0),direction)
             }
             val text=s.commands.filterIsInstance<DrawText>().map(::textBounds)
             for(i in text.indices)for(j in i+1 until text.size)assertFalse(intersects(text[i],text[j]),direction)
             for(t in text)assertTrue(contains(frames[0],t),direction)
-            val horizontal=direction in listOf("LR","RL")
-            val sign=if(direction in listOf("RL","BT"))-1 else 1
+            // No edge crosses Outer, so like Mermaid it is laid out on its own in the
+            // toggled direction: LR inside a TB chart, TB inside any other.
+            val horizontal=direction=="TD"
+            val sign=1
             val centers=nodes.map { sign*(if(horizontal)it.x+it.width/2 else it.y+it.height/2) }
             assertTrue(centers.zipWithNext().all { (a,b)->a<b },direction)
         }
@@ -130,7 +134,7 @@ class FlowNestedCycleTest {
         val d=parse("flowchart LR\nX-->Y\n"+compound("LR").substringAfter("\n"))
         val painted=d.copy(edges=d.edges.map { if(it.label=="retry outer")it.copy(style=FlowEdgeStyle.DOTTED,styles=listOf("stroke:#123456","stroke-width:3px"))else it })
         val s=SimpleMermaidLayout.layout(painted,FixedWidthTextMeasurer,LayoutConfig())
-        val route=s.commands.filterIsInstance<DrawPolyline>().single { it.stroke.value=="#123456" }
+        val route=s.edgeCurves().single { it.stroke.value=="#123456" }
         assertEquals(StrokePattern.DASHED,route.pattern);assertEquals(3.0,route.strokeWidth)
         assertEquals(1,s.commands.filterIsInstance<DrawText>().count { it.text=="retry outer" })
     }

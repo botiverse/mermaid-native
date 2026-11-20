@@ -54,13 +54,13 @@ class ExampleConsumerLayoutTest {
     }
     @Test fun paintedConnectorEndpointsTouchTheVisibleExpandedOutlines() {
         val actual=scene("flowchart TD\nA@{shape: manual-input}\nB@{shape: docs}\nA --> B")
-        val line=actual.commands.filterIsInstance<DrawLine>().single()
+        val line=actual.edgeCurves().single()
         val outlines=actual.commands.filterIsInstance<DrawPolyline>()
         fun touches(p:ScenePoint)=outlines.any { outline -> outline.points.zipWithNext().any { (a,b)->
             val cross=(p.x-a.x)*(b.y-a.y)-(p.y-a.y)*(b.x-a.x)
             kotlin.math.abs(cross)<1e-6 && p.x>=minOf(a.x,b.x)-1e-6 && p.x<=maxOf(a.x,b.x)+1e-6 && p.y>=minOf(a.y,b.y)-1e-6 && p.y<=maxOf(a.y,b.y)+1e-6
         } }
-        assertTrue(touches(line.from));assertTrue(touches(line.to))
+        assertTrue(touches(line.start));assertTrue(touches(actual.edgeTip(line)))
     }
 
 }

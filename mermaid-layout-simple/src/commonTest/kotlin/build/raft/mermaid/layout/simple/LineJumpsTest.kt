@@ -125,6 +125,7 @@ class LineJumpsTest {
             val bounds = path.conservativeBounds()!!
             assertTrue(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= arc.width && bounds.y + bounds.height <= arc.height)
         }
-        assertTrue(layout(diagram.flowchart!!).commands.none { it is DrawPath })
+        // The plain flowchart draws its edges as curves without line hops.
+        assertTrue(layout(diagram.flowchart!!).commands.filterIsInstance<DrawPath>().none { p -> p.segments.any { it is PathArc } })
     }
 }

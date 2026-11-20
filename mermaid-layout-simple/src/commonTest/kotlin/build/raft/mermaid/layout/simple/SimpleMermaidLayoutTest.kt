@@ -1181,8 +1181,8 @@ class SimpleMermaidLayoutTest {
             LayoutConfig(),
         )
 
-        assertEquals(3.0, scene.commands.filterIsInstance<DrawLine>().single().strokeWidth)
-        assertEquals(DiagramPalette.SECONDARY, scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals(3.0, scene.edgeCurves().single().strokeWidth)
+        assertEquals(DiagramPalette.SECONDARY, scene.edgeCurves().single().stroke.value)
         assertEquals(DiagramPalette.INK, scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
         assertEquals(setOf(DiagramPalette.SURFACE), scene.commands.filterIsInstance<DrawRect>().map { it.fill.value }.toSet())
         assertEquals(setOf(DiagramPalette.OUTLINE), scene.commands.filterIsInstance<DrawRect>().map { it.stroke.value }.toSet())
@@ -1212,7 +1212,7 @@ class SimpleMermaidLayoutTest {
         val nodes = scene.commands.filterIsInstance<DrawRect>()
         assertEquals(2, nodes.size)
         assertTrue(nodes.all { it.fill.value == DiagramPalette.SURFACE && it.stroke.value == DiagramPalette.OUTLINE && it.cornerRadius == 5.0 })
-        assertEquals(DiagramPalette.SECONDARY, scene.commands.filterIsInstance<DrawLine>().single().stroke.value)
+        assertEquals(DiagramPalette.SECONDARY, scene.edgeCurves().single().stroke.value)
         assertEquals(DiagramPalette.INK, scene.commands.filterIsInstance<DrawPolygon>().single().fill.value)
     }
 
@@ -1229,7 +1229,8 @@ class SimpleMermaidLayoutTest {
             assertEquals(first, second, direction.name)
             assertTrue(first.width > 0.0 && first.height > 0.0, direction.name)
             val nodeRects = first.commands.filterIsInstance<DrawRect>().map { it.rect }
-            val edge = first.commands.filterIsInstance<DrawLine>().single()
+            val curve = first.edgeCurves().single()
+            val edge = DrawLine(curve.start, curve.end)
             assertEquals(2, nodeRects.size, direction.name)
             when (direction) {
                 FlowDirection.TD,
