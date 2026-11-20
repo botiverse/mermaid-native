@@ -62,9 +62,10 @@ class FlowBranchLayoutTest {
         val labels=result.commands.filterIsInstance<DrawText>().associateBy { it.text }
         assertEquals(labels.getValue("Ship").origin.y,labels.getValue("Fix").origin.y)
         assertTrue(labels.getValue("Ship").origin.x<labels.getValue("Fix").origin.x)
-        val branchEdges=result.commands.filterIsInstance<DrawLine>().take(2)
-        assertTrue(branchEdges.all { it.from.y<it.to.y },"Internal edges must follow the group's TB direction")
-        assertEquals(branchEdges[0].from,branchEdges[1].from,"Both branches leave the bottom diamond tip")
+        val branchEdges=result.edgeCurves().take(2)
+        assertTrue(branchEdges.all { it.start.y<it.end.y },"Internal edges must follow the group's TB direction")
+        val diamond=result.commands.filterIsInstance<DrawPolygon>().first { it.points.size==4 }.points
+        assertTrue(branchEdges.all { it.start.y>=diamond.sumOf { p->p.y }/diamond.size-1e-6 },"Both branches leave the lower half of the diamond")
         val group=result.commands.filterIsInstance<DrawRect>().first().rect
         for(name in listOf("Ready?","Ship","Fix")){
             val p=labels.getValue(name).origin

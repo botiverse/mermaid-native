@@ -32,8 +32,8 @@ class OrthogonalLayoutValidatorTest {
         assertNull(plain.layoutValidation);assertEquals(plain.commands,checked.commands);assertEquals(plain.width,checked.width);assertEquals(plain.height,checked.height)
         val report=assertNotNull(checked.layoutValidation)
         assertEquals(2,report.geometry.edges.size)
-        val lines=checked.commands.filterIsInstance<DrawLine>().map { listOf(it.from,it.to) }+checked.commands.filterIsInstance<DrawPolyline>().map { it.points }
-        report.geometry.edges.forEach { assertTrue(it.points in lines);assertNotNull(it.labelBounds) }
+        val curves=checked.edgeCurves().map { it.start to it.end }
+        report.geometry.edges.forEach { assertTrue((it.points.first() to it.points.last()) in curves);assertNotNull(it.labelBounds) }
         val boxes=checked.commands.filterIsInstance<DrawRect>().map { it.rect }
         report.geometry.nodes.forEach { assertTrue(it.bounds in boxes) }
         assertEquals("group",report.geometry.nodes.first { it.id=="A" }.parentId)

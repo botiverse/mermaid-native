@@ -164,3 +164,28 @@ internal fun flowTitlePlacement(
         if (fits) FlowTitlePlacement(c, grown) else null
     } ?: FlowTitlePlacement(center, frame)
 }
+
+/** Mermaid wraps edge label text at this width. */
+internal const val FLOW_EDGE_LABEL_WRAP = 200.0
+
+/** Edge label lines: explicit breaks, then greedy word wrapping like Mermaid's label width limit. */
+internal fun flowEdgeLabelLines(label: String, measurer: TextMeasurer, style: TextStyle = TextStyle()): List<String> =
+    classNoteLines(label).flatMap { line ->
+        val words = line.split(' ').filter { it.isNotEmpty() }
+        if (words.isEmpty() || measurer.measure(line, style).width <= FLOW_EDGE_LABEL_WRAP) return@flatMap listOf(line)
+        val lines = mutableListOf<String>()
+        var current = ""
+        words.forEach { word ->
+            val candidate = if (current.isEmpty()) word else "$current $word"
+            if (current.isNotEmpty() && measurer.measure(candidate, style).width > FLOW_EDGE_LABEL_WRAP) { lines += current; current = word }
+            else current = candidate
+        }
+        if (current.isNotEmpty()) lines += current
+        lines
+    }
+
+/** Text block size of [lines]. */
+internal fun flowEdgeLabelSize(lines: List<String>, measurer: TextMeasurer, style: TextStyle = TextStyle()): SceneSize {
+    val sizes = lines.map { measurer.measure(it, style) }
+    return SceneSize(sizes.maxOfOrNull { it.width } ?: 0.0, (sizes.maxOfOrNull { it.height } ?: style.fontSize * 1.2) * lines.size.coerceAtLeast(1))
+}

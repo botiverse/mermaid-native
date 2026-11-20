@@ -1,57 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1651.3886666666667" height="440.8" viewBox="0 0 1651.3886666666667 440.8" role="graphics-document document">
-  <rect x="559.3886666666666" y="24" width="1068" height="392.8" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
-  <text x="1093.3886666666667" y="44" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Core (packages/server)</text>
-  <rect x="24" y="184.8" width="479.3886666666666" height="104" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
-  <text x="187.4" y="204.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">apps/artifacts (schema app_artifacts)</text>
-  <polyline points="737.5886666666667,112 579.3886666666666,140 579.3886666666666,156.8 311.0286666666667,216.8 311.0286666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="311.0286666666667,224.8 306.5286666666667,215.8 315.5286666666667,215.8" fill="#141111"/>
-  <text x="648.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="1075.9086666666667,112 733.3886666666666,140 733.3886666666666,156.8 335.9886666666667,216.8 335.9886666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="335.9886666666667,224.8 331.4886666666667,215.8 340.4886666666667,215.8" fill="#141111"/>
-  <text x="802.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="1389.0286666666668,112 887.3886666666666,140 887.3886666666666,156.8 360.94866666666667,216.8 360.94866666666667,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="360.94866666666667,224.8 356.44866666666667,215.8 365.44866666666667,215.8" fill="#141111"/>
-  <text x="956.3886666666666" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
-  <polyline points="802.7886666666667,112 1041.3886666666667,140 1041.3886666666667,156.8 1029.3686666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="1029.3686666666667,216.8 1026.7242102365879,207.09140328423234 1035.5488701812335,208.85927682647633" fill="#141111"/>
-  <text x="1131.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="1119.2686666666668,112 1237.3886666666667,140 1237.3886666666667,156.8 1093.3886666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="1093.3886666666667,216.8 1099.9655897435896,209.1846153846154 1103.4271282051282,217.49230769230772" fill="#141111"/>
-  <text x="1327.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="1452.5486666666668,112 1433.3886666666667,140 1433.3886666666667,156.8 1157.4086666666667,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
-  <polygon points="1157.4086666666667,216.8 1165.2472256318927,210.4907216459667 1167.159224729029,219.28528015976093" fill="#141111"/>
-  <text x="1523.3886666666667" y="154.28" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
-  <polyline points="306.0366666666667,264.8 306.0366666666667,272.8 575.3886666666666,316.8 763.9886666666667,344.8 763.9886666666667,352.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="763.9886666666667,352.8 759.4886666666667,343.8 768.4886666666667,343.8" fill="#141111"/>
-  <polyline points="326.0046666666667,264.8 326.0046666666667,272.8 652.7886666666667,316.8 969.5886666666667,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="969.5886666666667,344.8 960.2274318579986,348.49016027524283 961.0197975612715,339.5251083182112" fill="#141111"/>
-  <polyline points="345.97266666666667,264.8 345.97266666666667,272.8 770.2886666666667,316.8 1204.5886666666668,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="1204.5886666666668,344.8 1195.3177922280797,348.7116348428702 1195.8968341292184,339.7302813548526" fill="#141111"/>
-  <polyline points="365.9406666666667,264.8 365.9406666666667,272.8 877.2886666666667,316.8 1418.5886666666668,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
-  <polygon points="1418.5886666666668,344.8 1409.368221118655,348.82906737299675 1409.8331454394622,339.84108398538854" fill="#141111"/>
-  <rect x="607.1886666666667" y="56" width="326" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="770.1886666666667" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalAgentApiArtifacts.ts</text>
-  <text x="770.1886666666667" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">agent API entry</text>
-  <rect x="989.1886666666667" y="56" width="216.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1097.5886666666668" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/artifactsWeb.ts</text>
-  <text x="1097.5886666666668" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">web API entry</text>
-  <rect x="1261.9886666666669" y="56" width="317.59999999999997" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1420.7886666666668" y="77.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalArtifactsContent.ts</text>
-  <text x="1420.7886666666668" y="99.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">content worker entry</text>
-  <rect x="701.7886666666667" y="352.8" width="124.39999999999999" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="763.9886666666667" y="377.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">db executor</text>
-  <rect x="882.1886666666667" y="344.8" width="174.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="969.5886666666667" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">visibilityService</text>
-  <text x="969.5886666666667" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">who can see</text>
-  <rect x="1112.9886666666666" y="344.8" width="183.2" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1204.5886666666668" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">featureFlagService</text>
-  <text x="1204.5886666666668" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">flags</text>
-  <rect x="1352.1886666666667" y="344.8" width="132.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1418.5886666666668" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">objectEvents</text>
-  <text x="1418.5886666666668" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">events</text>
-  <rect x="879.9886666666666" y="216.8" width="426.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="1093.3886666666667" y="238.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">other core capabilities</text>
-  <text x="1093.3886666666667" y="260.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">users/agents, conversations, attachments, login</text>
-  <rect x="252.7886666666667" y="224.8" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
-  <text x="335.9886666666667" y="249.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Artifacts module</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1468.7" height="440.8" viewBox="0 0 1468.7 440.8" role="graphics-document document">
+  <rect x="24" y="24" width="1061.9" height="392.8" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
+  <text x="554.95" y="44" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Core (packages/server)</text>
+  <rect x="1109.9" y="186.8" width="350.4968062827227" height="102" rx="4" fill="#f5f0e8" stroke="#a1a1aa" stroke-width="1"/>
+  <text x="1296.9968062827227" y="206.8" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">apps/artifacts (schema app_artifacts)</text>
+  <path d="M419.5,106.91 L464.75,113.82499999999999 Q499.2296875,119.02135416666667 564.39375,129.34333333333336 Q629.5578125000001,139.66531250000006 718.9,154.99166666666667 Q810.8578125000001,170.93598958333328 904.79375,188.055625 Q998.7296875,205.17526041666667 1056.75,215.93333333333337 L1129.9,229.44" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1129.9,229.44 1120.2325210289641,232.2310303374517 1121.866688347417,223.3806350256422" fill="#141111"/>
+  <rect x="624" y="138" width="134" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="691" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <path d="M692.3,109.57 L717.75,116.04166666666664 Q736.9086979166665,120.90197916666666 774.7277083333333,130.57666666666665 Q812.54671875,140.25135416666672 868.1716666666667,154.66166666666666 Q925.9689583333334,169.65901041666666 987.6837500000001,185.79104166666667 Q1049.398541666667,201.9230729166667 1088.1083333333333,212.0666666666667 L1136.73,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1136.73,224.8 1126.8835691422569,226.87311344689215 1129.1636507278404,218.1667233819408" fill="#141111"/>
+  <rect x="778" y="138" width="134" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="845" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <path d="M945.85,110 L954.7083333333334,116.39999999999999 Q961.0219791666668,121.20208333333335 975.96,130.79166666666666 Q990.8980208333334,140.38125000000002 1018.4216666666667,154.73333333333335 Q1047.76609375,169.67916666666667 1082.7327083333334,185.8 Q1117.699322916667,201.92083333333338 1140.4,212.0666666666667 L1168.68,224.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="1168.68,224.8 1158.6259771551627,225.20819680974807 1162.3210288452992,217.00169980997896" fill="#141111"/>
+  <rect x="932" y="138" width="134" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="999" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">import + inject</text>
+  <path d="M200.63,110 L187.85833333333335,116.39999999999999 Q176.75703125,121.24375 165.21229166666666,130.625 Q153.66755208333336,140.00625000000002 159.95000000000002,153.4 Q169.60276041666668,167.2625 195.13145833333334,181.8 Q220.66015625,196.33750000000006 239.89166666666665,205.4 L263.07,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="263.07,216.8 253.00790997434515,216.8659114225147 256.98001684659533,208.78987483298496" fill="#141111"/>
+  <rect x="36" y="138" width="176" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="124" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <path d="M475.5,109.27 L449.5833333333333,115.79166666666667 Q428.52604166666663,120.73427083333334 397.75,130.26 Q366.9739583333333,139.78572916666664 345.9166666666667,153.27833333333334 Q327.2890625,167.22828125000004 323.23958333333337,181.78479166666668 Q319.19010416666663,196.34130208333337 320,205.4 L320,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="320,216.8 315.5,207.8 324.5,207.8" fill="#141111"/>
+  <rect x="232" y="138" width="176" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="320" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <path d="M748.3,108.96 L709.5833333333334,115.53333333333332 Q678.8503645833332,120.51791666666668 629.2527083333333,130.10500000000002 Q579.6550520833333,139.69208333333336 531.5383333333333,153.2266666666667 Q484.8783333333333,167.21375 451.3045833333333,181.77833333333336 Q417.73083333333335,196.3429166666667 400.10833333333335,205.4 L376.93,216.8" stroke="#141111" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+  <polygon points="376.93,216.8 383.01998315340467,208.78987483298496 386.9920900256548,216.8659114225147" fill="#141111"/>
+  <rect x="428" y="138" width="176" height="20.8" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+  <text x="516" y="153.3" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">built into functions</text>
+  <path d="M1129.9,250.75 L975.8666666666667,261.7583333333333 Q850.7145833333334,270.5151041666667 667.8000000000001,284.525 Q484.8854166666667,298.53489583333334 359.73333333333335,311.7916666666667 Q249.02187499999997,324.57890625 224.95416666666665,333.4239583333333 Q200.88645833333328,342.26901041666673 205.70000000000002,346.8 L205.7,352.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="205.7,352.8 201.2,343.8 210.2,343.8" fill="#141111"/>
+  <path d="M1129.9,252.27 L1010.1333333333333,263.02500000000003 Q912.8229166666667,271.61760416666664 770.6000000000001,285.11833333333334 Q628.3770833333333,298.6190625 531.0666666666667,310.71166666666664 Q444.984375,322.2334895833334 426.27083333333337,329.45562500000005 Q407.5572916666667,336.67776041666673 411.3,340.1333333333333 L411.3,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="411.3,344.8 406.8,335.8 415.8,335.8" fill="#141111"/>
+  <path d="M1129.9,255.37 L1049.3,265.6083333333333 Q983.8125,273.7811458333333 888.1000000000001,286.66833333333335 Q792.3874999999999,299.5555208333334 726.9,311.22833333333335 Q668.9687499999998,322.3788020833334 656.375,329.52020833333336 Q643.7812499999999,336.6616145833334 646.3000000000001,340.1333333333333 L646.3,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="646.3,344.8 641.8,335.8 650.8,335.8" fill="#141111"/>
+  <path d="M1129.9,261.78 L1084.9666666666667,270.95 Q1048.4583333333335,278.2547916666666 995.1000000000001,289.87333333333333 Q941.7416666666666,301.49187499999994 905.2333333333335,312.2966666666667 Q872.9374999999999,322.67927083333336 865.9166666666666,329.65375000000006 Q858.895833333333,336.62822916666676 860.3000000000001,340.1333333333333 L860.3,344.8" stroke="#141111" stroke-width="1.5" fill="none"/>
+  <polygon points="860.3,344.8 855.8,335.8 864.8,335.8" fill="#141111"/>
+  <rect x="93.5" y="54" width="326" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="256.5" y="75.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalAgentApiArtifacts.ts</text>
+  <text x="256.5" y="97.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">agent API entry</text>
+  <rect x="475.5" y="54" width="216.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="583.9" y="75.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/artifactsWeb.ts</text>
+  <text x="583.9" y="97.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">web API entry</text>
+  <rect x="748.3" y="54" width="317.59999999999997" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="907.0999999999999" y="75.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">routes/internalArtifactsContent.ts</text>
+  <text x="907.0999999999999" y="97.9" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">content worker entry</text>
+  <rect x="143.5" y="352.8" width="124.39999999999999" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="205.7" y="377.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">db executor</text>
+  <rect x="323.9" y="344.8" width="174.79999999999998" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="411.29999999999995" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">visibilityService</text>
+  <text x="411.29999999999995" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">who can see</text>
+  <rect x="554.7" y="344.8" width="183.2" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="646.3000000000001" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">featureFlagService</text>
+  <text x="646.3000000000001" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">flags</text>
+  <rect x="793.9" y="344.8" width="132.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="860.3" y="366.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">objectEvents</text>
+  <text x="860.3" y="388.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">events</text>
+  <rect x="106.6" y="216.8" width="426.8" height="56" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="320" y="238.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">other core capabilities</text>
+  <text x="320" y="260.7" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">users/agents, conversations, attachments, login</text>
+  <rect x="1129.9" y="224.8" width="166.4" height="40" rx="5" fill="#f5f0e8" stroke="#57534e" stroke-width="1.5"/>
+  <text x="1213.1000000000001" y="249.70000000000002" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="400" fill="#141111">Artifacts module</text>
 </svg>

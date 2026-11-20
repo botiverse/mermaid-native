@@ -17,7 +17,7 @@ class FlowMetadataLayoutTest {
         val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
         assertEquals(setOf("Visible","Group"),scene.commands.filterIsInstance<DrawText>().map { it.text }.toSet())
         assertEquals(2,scene.commands.filterIsInstance<DrawRect>().size)
-        assertEquals(1,scene.commands.filterIsInstance<DrawLine>().size)
+        assertEquals(1,scene.edgeCurves().size)
     }
     @Test fun collapsedPipelineFollowsEdgesInEveryDirection() {
         for (direction in listOf("LR", "RL", "TB", "BT")) {
@@ -56,7 +56,7 @@ class FlowMetadataLayoutTest {
             val d=assertIs<MermaidParseResult.Success>(MermaidParser.parse(source+suffix)).diagram
             val scene=SimpleMermaidLayout.layout(d,FixedWidthTextMeasurer,LayoutConfig())
             assertTrue(scene.commands.filterIsInstance<DrawRect>().any { it.fill.value=="#ffcccc" && it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
-            assertTrue(scene.commands.filterIsInstance<DrawLine>().any { it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
+            assertTrue(scene.edgeCurves().any { it.stroke.value=="#cc0000" && it.strokeWidth==3.0 })
         }
     }
 }

@@ -25,23 +25,21 @@ class FlowObstacleRoutesTest {
     @Test fun alignedSkipEdgesAvoidWideIntermediateNodesInEveryDirection() {
         for(d in listOf("TD","TB","LR","RL","BT")) {
             val s=scene("graph $d\nA[Start]-->B[A much wider intermediate node]\nB-->C[End]\nA-->C")
-            assertEquals(1,routes(s).size,d);assertEquals(6,routes(s).single().points.size,d)
-            assertClear(s)
+            // The skip edge takes its own lane beside the wide node, as in Mermaid.
+            assertEquals(3,s.edgeCurves().size,d)
+            assertCurvesClear(s,d)
             assertEquals(s,scene("graph $d\nA[Start]-->B[A much wider intermediate node]\nB-->C[End]\nA-->C"))
         }
     }
     @Test fun parallelDetoursKeepDistinctTracksLabelsAndPaint() {
         val s=scene("graph TD\nA[Start]-->B[Middle]\nB-->C[End]\nA-->|first long bypass label|C\nA-.->|second|C\nlinkStyle 2 stroke:#ff0000,stroke-width:4px")
-        val lines=routes(s);assertEquals(2,lines.size);assertNotEquals(lines[0].points,lines[1].points)
-        assertEquals(SceneColor("#ff0000"),lines[0].stroke);assertEquals(4.0,lines[0].strokeWidth)
-        assertEquals(StrokePattern.DASHED,lines[1].pattern)
-        assertClear(s)
-        val texts=s.commands.filterIsInstance<DrawText>().filter { it.text in listOf("first long bypass label","second") }
-        assertEquals(2,texts.size)
-        for(t in texts){val size=FixedWidthTextMeasurer.measure(t.text,t.style)
-            assertTrue(t.origin.x-size.width/2>=0 && t.origin.x+size.width/2<=s.width)
-            assertTrue(t.origin.y-size.height>=0 && t.origin.y<=s.height)
-        }
+        val lines=s.edgeCurves();assertEquals(4,lines.size);assertNotEquals(lines[2].segments,lines[3].segments)
+        assertEquals(SceneColor("#ff0000"),lines[2].stroke);assertEquals(4.0,lines[2].strokeWidth)
+        assertEquals(StrokePattern.DASHED,lines[3].pattern)
+        assertCurvesClear(s,"TD")
+        val labels=listOf("first long bypass label","second").map { s.labelBlock(it) }
+        for(r in labels)assertTrue(r.x>=0 && r.x+r.width<=s.width && r.y>=0 && r.y+r.height<=s.height)
+        assertFalse(labels[0].intersects(labels[1]))
     }
     // With a feedback edge the flat flowchart uses the layered loop layout and spline edges.
     private fun assertCurvesClear(s: LayoutScene, message: String) {
