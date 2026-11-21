@@ -1,0 +1,15 @@
+{
+  "name": "mermaid-native-render-parity",
+  "private": true,
+  "type": "module",
+  "description": "Visual-parity suite: mermaid-native vs upstream mermaid.js rendering tests",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@babel/parser": "7.28.5",
+    "@mermaid-js/layout-elk": "0.2.2",
+    "mermaid": "11.16.1",
+    "playwright": "1.56.1"
+  }
+}

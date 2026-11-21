@@ -24,6 +24,12 @@ recorded in their manifest at the pinned Mermaid commit. They remain available
 under Mermaid's MIT License. No Mermaid JavaScript harness or runtime is
 included in published artifacts.
 
+Rendering-test diagram sources under `compatibility/render-parity` are
+extracted from Mermaid's Cypress rendering specs at the commit recorded in their
+manifest. Copyright Knut Sveidqvist and contributors, under the MIT License
+reproduced in compatibility/render-parity/LICENSE-mermaid.txt. They are used
+only by the CI parity suite and are not included in published artifacts.
+
 Unicode grapheme and East Asian Width property tables, emoji sequence data, and
 conformance cases are derived from Unicode Character Database 17.0.0 and Emoji 17.0, copyright Unicode, Inc., under Unicode License
 v3. The license, exact source URLs and hashes, and reproducible generator are

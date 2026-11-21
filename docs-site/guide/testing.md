@@ -68,3 +68,15 @@ Its eight new parser and six layout regressions cover token boundaries, marker
 endpoints, shapes, group containment and directions. Later style and metadata
 results must be recorded separately once frozen; these counts do not imply
 Native callbacks, animated edges, rich text or full graph-routing equivalence.
+
+## Upstream rendering parity
+
+`.github/workflows/render-parity.yml` renders the flowchart and sequence
+diagrams from Mermaid's Cypress rendering specs (extracted into
+`compatibility/render-parity` at the pinned revision) with both mermaid.js and
+Mermaid Native in headless Chromium. It compares layout metrics (rank order
+along the flow axis, edge crossings, label overlaps, aspect and size ratios;
+participant and message order for sequence diagrams) rather than pixels, and
+classifies each case as `match`, `differs` or `native-fails`. Pull requests fail
+only when a case gets worse than the committed baseline. See
+`compatibility/render-parity/README.md` for thresholds and baseline updates.
