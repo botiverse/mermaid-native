@@ -128,7 +128,7 @@ function pageExtract([hostId, flavor]) {
       if (!hidden(el)) edges.push({ role: 'edge', points: sample(el) });
     }
     for (const el of svg.querySelectorAll('.messageLine0, .messageLine1')) {
-      if (!hidden(el)) edges.push({ role: 'message', points: sample(el) });
+      if (!hidden(el)) edges.push({ role: 'message', points: sample(el), self: el.dataset.from ? el.dataset.from === el.dataset.to : undefined });
     }
     for (const el of svg.querySelectorAll('[data-et="life-line"], line.actor-line')) {
       if (!hidden(el)) edges.push({ role: 'lifeline', points: sample(el) });
@@ -148,7 +148,7 @@ function pageExtract([hostId, flavor]) {
     for (const el of svg.querySelectorAll('circle, ellipse')) {
       if (hidden(el)) continue;
       const r = rectOf(el);
-      if (Math.max(r.w, r.h) / 2 <= 14) circles.push({ cx: r.x + r.w / 2, cy: r.y + r.h / 2, r: Math.max(r.w, r.h) / 2 });
+      if (Math.min(r.w, r.h) / 2 <= 14) circles.push({ cx: r.x + r.w / 2, cy: r.y + r.h / 2, r: Math.min(r.w, r.h) / 2, rx: r.w / 2, ry: r.h / 2 });
     }
   }
   const b = svg.getBBox();
@@ -189,7 +189,8 @@ async function renderRef(page, c) {
       window.mermaid.initialize({ startOnLoad: false, ...cfg });
       const { svg } = await window.mermaid.render(`parity${Date.now()}`, code);
       stage.innerHTML = `<div id="ref">${svg}</div>`;
-      const el = stage.querySelector('svg');
+      const el = stage.querySelector('#ref > svg');
+      if (!el) return { ok: false, error: 'mermaid.js output has no root <svg> (securityLevel sandbox renders an iframe); not measured' };
       const vb = el.viewBox.baseVal;
       if (vb && vb.width) { el.setAttribute('width', vb.width); el.setAttribute('height', vb.height); el.style.maxWidth = 'none'; }
       return { ok: true, svg };
@@ -223,7 +224,7 @@ async function main() {
       if (r.ok) {
         writeFileSync(join(dir, 'ref.svg'), r.svg);
         geometry.ref = await page.evaluate(pageExtract, ['ref', 'mermaid']);
-        await page.locator('#ref svg').screenshot({ path: join(dir, 'ref.png') });
+        await page.locator('#ref > svg').screenshot({ path: join(dir, 'ref.png') });
         res.ref = 'ok';
       } else res.refError = r.error;
     } catch (e) {
@@ -236,7 +237,7 @@ async function main() {
       try {
         await showNative(page, readFileSync(nativeSvg, 'utf8'));
         geometry.native = await page.evaluate(pageExtract, ['native', 'native']);
-        await page.locator('#native svg').screenshot({ path: join(dir, 'native.png') });
+        await page.locator('#native > svg').screenshot({ path: join(dir, 'native.png') });
         res.native = 'ok';
       } catch (e) {
         res.native = 'error';

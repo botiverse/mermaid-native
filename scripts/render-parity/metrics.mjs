@@ -30,24 +30,39 @@ export const normKey = (s) => String(s ?? '').normalize('NFKC').toLowerCase().re
 const cx = (b) => b.x + b.w / 2;
 const cy = (b) => b.y + b.h / 2;
 
+const union = (a, b, text) => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const r = Math.max(a.x + a.w, b.x + b.w);
+  const bt = Math.max(a.y + a.h, b.y + b.h);
+  return { ...a, text, x, y, w: r - x, h: bt - y };
+};
+
 /**
- * Merge text items stacked as consecutive lines (same role, same horizontal
- * centre or left edge, small vertical gap) into one block. Native SVG emits
- * one <text> per line, mermaid.js usually one element per label.
+ * Merge label fragments into blocks: first runs on one baseline (styled
+ * segments emitted as separate <text> elements), then consecutive stacked
+ * lines (same role, same horizontal centre or left edge, small vertical gap).
+ * Native SVG emits one <text> per line or run; mermaid.js usually one element
+ * per label.
  */
 export function mergeStackedTexts(texts) {
-  const out = [];
+  const runs = [];
   for (const t of texts) {
+    const prev = runs[runs.length - 1];
+    if (prev && prev.role === t.role && Math.abs(cy(prev) - cy(t)) < 2 && Math.abs(prev.h - t.h) < 2) {
+      const gap = t.x - (prev.x + prev.w);
+      if (gap > -2 && gap < Math.max(4, t.h * 1.2)) { runs[runs.length - 1] = union(prev, t, `${prev.text} ${t.text}`); continue; }
+    }
+    runs.push({ ...t });
+  }
+  const out = [];
+  for (const t of runs) {
     const prev = out[out.length - 1];
     if (prev && prev.role === t.role && t.text.trim()) {
-      const sameColumn = Math.abs(cx(prev) - cx(t)) < 2 || Math.abs(prev.x - t.x) < 2;
+      const sameColumn = Math.abs(cx(prev) - cx(t)) < Math.max(3, 0.2 * Math.max(prev.w, t.w)) || Math.abs(prev.x - t.x) < 2;
       const gap = t.y - (prev.y + prev.h);
       if (sameColumn && gap > -prev.h * 0.5 && gap < Math.max(4, t.h * 0.6)) {
-        const x = Math.min(prev.x, t.x);
-        const y = Math.min(prev.y, t.y);
-        const r = Math.max(prev.x + prev.w, t.x + t.w);
-        const b = Math.max(prev.y + prev.h, t.y + t.h);
-        out[out.length - 1] = { ...prev, text: `${prev.text} ${t.text}`, x, y, w: r - x, h: b - y, lines: (prev.lines ?? 1) + 1 };
+        out[out.length - 1] = { ...union(prev, t, `${prev.text} ${t.text}`), lines: (prev.lines ?? 1) + 1 };
         continue;
       }
     }
@@ -262,7 +277,9 @@ export function flowchartMetrics(ref, nat, source) {
 export function countSelfLoops(edges) {
   return edges.filter((e) => {
     const p = e.points ?? e;
-    if (e.role === 'lifeline' || p.length < 3) return false;
+    if (e.role === 'lifeline') return false;
+    if (typeof e.self === 'boolean') return e.self; // mermaid.js data-from/data-to
+    if (p.length < 3) return false;
     const a = p[0], b = p[p.length - 1];
     const xs = p.map((q) => q[0]);
     const bulge = Math.max(...xs.map((x) => Math.abs(x - a[0])));
@@ -270,10 +287,13 @@ export function countSelfLoops(edges) {
   }).length;
 }
 
+const SEQ_NUMBER = /^\d+(?:\.\d+)*$/;
+
 /** Autonumber: a seqnum-role text, or a numeric text centred inside a small circle. */
 export function hasAutonumber(geom) {
   if (geom.texts.some((t) => t.role === 'seqnum')) return true;
-  return geom.texts.some((t) => /^\d+$/.test(t.text.trim()) && (geom.circles ?? []).some((c) => c.r <= 14 && Math.hypot(cx(t) - c.cx, cy(t) - c.cy) <= c.r));
+  return geom.texts.some((t) => SEQ_NUMBER.test(t.text.trim()) && (geom.circles ?? []).some((c) => c.r <= 14
+    && Math.abs(cx(t) - c.cx) <= (c.rx ?? c.r) && Math.abs(cy(t) - c.cy) <= (c.ry ?? c.r)));
 }
 
 const sameOrder = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
@@ -282,7 +302,7 @@ const sameOrder = (a, b) => a.length === b.length && a.every((v, i) => v === b[i
 export function sequenceMetrics(ref, nat) {
   const natTexts = mergeStackedTexts(nat.texts);
   // Participants: upstream actor labels (top row only), matched natively by text.
-  const refActorsAll = ref.texts.filter((t) => t.role === 'actor');
+  const refActorsAll = mergeStackedTexts(ref.texts.filter((t) => t.role === 'actor'));
   const topY = new Map();
   for (const t of refActorsAll) {
     const k = normKey(t.text);
@@ -327,7 +347,7 @@ export function sequenceMetrics(ref, nat) {
     refAutonumber: hasAutonumber(ref),
     nativeAutonumber: hasAutonumber(nat),
     refOverlaps: labelOverlaps(ref.texts.filter((t) => t.role !== 'seqnum'), refEdges, refMsgs).total,
-    nativeOverlaps: labelOverlaps(natTexts.filter((t) => !/^\d+$/.test(t.text.trim())), natEdges, pairs.map((p) => p.native)).total,
+    nativeOverlaps: labelOverlaps(natTexts.filter((t) => !SEQ_NUMBER.test(t.text.trim())), natEdges, pairs.map((p) => p.native)).total,
     ...sizeMetrics(ref, nat),
   };
 }

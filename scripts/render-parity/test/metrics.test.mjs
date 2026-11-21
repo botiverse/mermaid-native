@@ -209,3 +209,16 @@ test('dedent, slugify, stableJson, manifest diff', () => {
   assert.equal(d.renamed.length, 1);
   assert.equal(d.removed.length, 0);
 });
+
+test('styled runs on one baseline merge before stacked lines', () => {
+  const merged = mergeStackedTexts([box('The', 100, 10, 30, 16), box('cat', 132, 10, 26, 16), box('in the hat', 160, 10, 70, 16)]);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].text, 'The cat in the hat');
+  const lines = mergeStackedTexts([box('The dog in', 100, 10, 80, 16), box('the', 110, 28, 30, 16), box('hog', 142, 28, 28, 16), box('far', 500, 300)]);
+  assert.deepEqual(lines.map((t) => t.text), ['The dog in the hog', 'far']);
+});
+
+test('self-message flag and dotted autonumber badges', () => {
+  assert.equal(countSelfLoops([{ role: 'message', self: true, points: [[86, 111], [76, 131]] }, { role: 'message', self: false, points: [[0, 0], [0, 10], [20, 5]] }]), 1);
+  assert.equal(hasAutonumber({ texts: [box('10.1', 60, 98, 20, 12)], circles: [{ cx: 68, cy: 104, r: 9, rx: 16.2, ry: 9 }] }), true);
+});
