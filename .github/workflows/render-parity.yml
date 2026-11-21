@@ -1,0 +1,145 @@
+name: Render parity
+
+# Visual-parity suite: renders the upstream Mermaid Cypress rendering corpus
+# (compatibility/render-parity) with mermaid.js and mermaid-native in headless
+# Chromium, computes layout metrics and compares classes with baseline.json.
+# Pull requests fail only on regressions against the committed baseline.
+
+on:
+  pull_request:
+    paths:
+      - 'mermaid-core/**'
+      - 'mermaid-layout-api/**'
+      - 'mermaid-layout-simple/**'
+      - 'mermaid-render-svg/**'
+      - 'mermaid-web/**'
+      - 'compatibility/render-parity/**'
+      - 'compatibility/upstreams.lock'
+      - 'scripts/render-parity/**'
+      - '.github/workflows/render-parity.yml'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      mermaid_ref:
+        description: 'Optional Mermaid sha/ref: re-extract the corpus at this revision and upload the diff (no PR is opened)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    if: github.event_name != 'workflow_dispatch' || inputs.mermaid_ref == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: scripts/render-parity/package-lock.json
+      - name: Install pinned tools (mermaid, playwright, @babel/parser)
+        working-directory: scripts/render-parity
+        run: npm ci
+      - name: Unit-test metric and extraction code
+        working-directory: scripts/render-parity
+        run: node --test test/*.test.mjs
+      - name: Verify committed corpus matches the pinned upstream revision
+        run: |
+          scripts/render-parity/fetch-upstream.sh "" build/render-parity-upstream
+          node scripts/render-parity/extract-corpus.mjs --mermaid build/render-parity-upstream --check
+      - name: Build production Wasm module
+        run: ./gradlew :mermaid-web:wasmJsBrowserProductionWebpack
+      - name: Render with mermaid-native
+        run: node scripts/render-parity/native-render.mjs
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('scripts/render-parity/package-lock.json') }}
+      - name: Install Chromium
+        working-directory: scripts/render-parity
+        run: npx playwright install --with-deps chromium
+      - name: Render with mermaid.js and rasterize both
+        run: node scripts/render-parity/render-browser.mjs
+      - name: Metrics, report and baseline comparison
+        id: report
+        run: |
+          flags=(--write-baseline build/render-parity/baseline.candidate.json)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then flags+=(--fail-on-regression); fi
+          node scripts/render-parity/report.mjs "${flags[@]}"
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f build/render-parity/summary.md ]; then cat build/render-parity/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-parity-report
+          path: |
+            build/render-parity/index.html
+            build/render-parity/summary.json
+            build/render-parity/summary.md
+            build/render-parity/baseline.candidate.json
+            build/render-parity/native.json
+            build/render-parity/browser.json
+            build/render-parity/cases/
+          if-no-files-found: warn
+          retention-days: 30
+
+  reextract:
+    if: github.event_name == 'workflow_dispatch' && inputs.mermaid_ref != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: scripts/render-parity/package-lock.json
+      - name: Install extractor dependencies
+        working-directory: scripts/render-parity
+        run: npm ci
+      - name: Fetch Mermaid at the requested revision
+        env:
+          MERMAID_REF: ${{ inputs.mermaid_ref }}
+        run: |
+          scripts/render-parity/fetch-upstream.sh "$MERMAID_REF" build/render-parity-upstream | tee build-fetch.txt
+          echo "MERMAID_COMMIT=$(git -C build/render-parity-upstream rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Re-extract corpus and produce the diff
+        run: |
+          mkdir -p build/render-parity-reextract
+          node scripts/render-parity/extract-corpus.mjs --mermaid build/render-parity-upstream --diff build/render-parity-reextract/corpus-diff.md
+          sed -i "s/^mermaid=.*/mermaid=${MERMAID_COMMIT}/" compatibility/upstreams.lock
+          git add -A compatibility/render-parity compatibility/upstreams.lock
+          git diff --cached --binary > build/render-parity-reextract/corpus.patch
+          git diff --cached --stat > build/render-parity-reextract/corpus-diffstat.txt
+          cp build-fetch.txt build/render-parity-reextract/
+          cat build/render-parity-reextract/corpus-diff.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-parity-corpus-diff
+          path: build/render-parity-reextract/

@@ -1,0 +1,2054 @@
+{
+ "version": 1,
+ "upstream_commit": "04ee3364045d6573f84034d3c9368cc50233a92f",
+ "mermaid_version": "11.16.1",
+ "counts": {
+  "flowchart": {
+   "extracted": 264,
+   "skipped": 6,
+   "match": 173,
+   "differs": 50,
+   "native-fails": 39,
+   "ref-fails": 2,
+   "native": {
+    "ok": 224,
+    "render-error": 17,
+    "parse-error": 23
+   }
+  },
+  "sequence": {
+   "extracted": 149,
+   "skipped": 14,
+   "match": 137,
+   "differs": 10,
+   "native-fails": 1,
+   "ref-fails": 1,
+   "native": {
+    "ok": 147,
+    "parse-error": 2
+   }
+  }
+ },
+ "cases": {
+  "flowchart|824a7396536c5b0997331e4440370b44d27b985924263dca421fa325ea381112|{}": {
+   "case": "flowchart/001-1-elk-should-render-a-simple-flowchart",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{\"flowchart\":{\"defaultRenderer\":\"elk\"}}": {
+   "case": "flowchart/002-1-elk-should-render-a-simple-flowchart",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a6c9b7dca36094079ab20a6e57a0890ea6d63d7ca772ebbba08df648eebbd55b|{\"flowchart\":{\"diagramPadding\":0}}": {
+   "case": "flowchart/003-2-elk-should-render-a-simple-flowchart-with-diagrampadding-s",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b665feafca4ee2b8a52567911219d6799240b0ace15506b5d9c84e6957015b99|{}": {
+   "case": "flowchart/004-3-elk-a-link-with-correct-arrowhead-to-a-subgraph",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|d8c15f340c3fe91acae8edecaec89226eb04893d380d89af5af48bbb30d4a05d|{}": {
+   "case": "flowchart/005-4-elk-length-of-edges",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|e5f9835d90b429a65021c6c5ac9b999c9049cb05195f95f4e52ee1fd0bcba91a|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
+   "case": "flowchart/006-5-elk-should-render-escaped-without-html-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|19c194d1c03c387c923fbd67a108264c9c696b2283e49b0858d9e9d17a28dec7|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/007-6-elk-should-render-non-escaped-with-html-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|824a7396536c5b0997331e4440370b44d27b985924263dca421fa325ea381112|{\"flowchart\":{\"useMaxWidth\":true}}": {
+   "case": "flowchart/008-7-elk-should-render-a-flowchart-when-usemaxwidth-is-true-def",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|824a7396536c5b0997331e4440370b44d27b985924263dca421fa325ea381112|{\"flowchart\":{\"useMaxWidth\":false}}": {
+   "case": "flowchart/009-8-elk-should-render-a-flowchart-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|67c3de5cdc3a2d2c9ce305f9b749bb34b1cbea1eca78471b558403dc6d4f3e01|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/010-v2-elk-16-render-stadium-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1827a866d50885fd2a104e48595b02c4701e03122ec096660a2f3423fb68951c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/012-51-elk-handle-nested-subgraphs-in-reverse-order",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|435d587aecb3a23850b362c74fb40534e2b78ac016285d9cc1647371fef7823e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/013-52-elk-handle-nested-subgraphs-in-several-levels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|60b35fc068932f3d64424071d66f4e34195ec6337e4bc82334481cca89cf213c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/014-53-elk-handle-nested-subgraphs-with-edges-in-and-out",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|97fffe48d4bd72e2748b6790c2f76a71fee5334f1e09700caf9c96d7721183ff|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/015-54-elk-handle-nested-subgraphs-with-outgoing-links",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|e5f137ae5c55980214004296c407c1568c63070cfc9cf58d0d0a62d447a04981|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/016-55-elk-handle-nested-subgraphs-with-outgoing-links-2",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|720525993452d2bce01c237ae80e9485d99fd1d1cd3ead57feab96e436253fe7|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/017-56-elk-handle-nested-subgraphs-with-outgoing-links-3",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|46b2f12a3bda4fee0a257af267feeba665347d5c49012f74ae69a622e9278228|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/018-57-elk-handle-nested-subgraphs-with-outgoing-links-4",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|b74a2262b1aeb28e993a519a200663b09e2e9cd92936be9a50be427417571375|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/019-57-elk-handle-nested-subgraphs-with-outgoing-links-2",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|c99545c745fd961a78da14978fd4933d0fb424dcff159aaa470d0e1f93b73cc7|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/020-57-x-handle-nested-subgraphs-with-outgoing-links-5",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|26a8e0108697045e7d9aa9d86c412ee3210d14b892efa12c93fe57e071b0ad35|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/021-58-elk-handle-styling-with-style-expressions",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e21d1f953ec5a0759b43dc6287fe3e07b245c29a8b155f35d75b44cfeff82e25|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/022-59-elk-handle-styling-of-subgraphs-and-links",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|efa088d07db8221f4bf6c34b5e9e938e31f9763cef7815555c55325b9164d715|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"logLevel\":2,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/023-60-elk-handle-styling-for-all-node-shapes-v2",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|7e1067a55df6b8fcb712bd1648e04ed5e2489a6d9b9c21628dc5f28c249c03b4|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/024-61-elk-fontawesome-icons-in-edge-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|03d26ed0d9a82fda3cf5fb76d47eeb19243e3db6678468b6d15f754b0e20dfcb|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/025-62-elk-should-render-styled-subgraphs",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|87a9f8bde76971e82c05e22f9842ad3efbe016f70784a3ca46b5754a1f4a481f|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/026-63-elk-title-on-subgraphs-should-be-themeable",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|511d8f9e140f6bb67385a47dcad3e8957fbc367b082705597043bfda0a7f6316|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/027-65-elk-text-color-from-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|dd87ffbf29acc4a6b7a847015c95dbc4d29df54d04b61a0f9e820208fb2187ad|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/028-66-elk-more-nested-subgraph-cases-tb",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|60c428f4ecbf5f0d56cb01973d7dfa1167fd349b3c4be158c67cf3718aeed378|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/029-67-elk-more-nested-subgraph-cases-rl",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e4c0ff8921f1e888f4a14fd5ff6144740071ccaae315519d3256a945208145ce|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/030-68-elk-more-nested-subgraph-cases-bt",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a7f40ca838671182f4d4a89bd805a0362e7e380b50bd64cebb762f2645fc8a80|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/031-69-elk-more-nested-subgraph-cases-lr",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2b6eaa1e8b41afc415ce2cccd6544f50e6295c4a20d374bae457b43e29c78c25|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/032-70-elk-handle-nested-subgraph-cases-tb-link-out-and-link-bet",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|13c392e66e5f64aeaed038c280c6ad63ef571697e48d3dcdcd735df0a1978cea|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/035-74-elk-handle-nested-subgraph-cases-rl-link-out-and-link-bet",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|8f4babfd9d921a25f7a16ff2d3565c4ea61170a9e27be6142738e8c9e2b8505e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/034-72-elk-handle-nested-subgraph-cases-bt-link-out-and-link-bet",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|ceb36aa80b93043fddfbb3709eb90da50fa90e448af4895a44d8c5f31f32771e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/036-74-elk-handle-labels-for-multiple-edges-from-and-to-the-same",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|94e2b105fbc22b55795278ff106fcabc8a98817b7954f2b18d2dde7d69906a62|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/037-76-elk-handle-unicode-encoded-character-with-html-labels-tru",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|00d342dffe0918a8870790d2b4d94e26a80543574f7bcb7e086a4e2e616b13ac|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/038-2050-elk-handling-of-different-rendering-direction-in-subgra",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|add8491609d23516e5f44cbdfa08212e2b9a4c16349290d504a8ce818f53295d|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/039-2388-elk-handling-default-in-the-node-name",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a33fc2d8200224debf2cea91805c3a17db8acaf3db0437fb093c387accaad0d8|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/040-2824-elk-clipping-of-edges",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|27d3e3d148c0a01fe3b6bc25f11e98d6589fbfeab2e5d7d47f4e72e455b4ae0f|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/041-1433-elk-should-render-a-titled-flowchart-with-titletopmargi",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|69bbf1939b11883f3c6475eeb0bc899702001002c99638c8255cfcfe57ece72d|{}": {
+   "case": "flowchart/042-elk-should-include-classes-on-the-edges",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|334ac15419cca80c9b2ff1fa31f418753cbe128fb42f54b8ea1ca6f4b60b2d24|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/043-with-styling-and-classes",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|55e300d4dcbce0c9dc9352a8483203b3cafb66b8c8b8cf590863e14a55dc0a16|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/044-with-formatting-in-a-node",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|3de7c60b2e3f4e6ed101aeb300be7f851f1a0ba4445c2de123e05570ce8b8e53|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/045-new-line-in-node-and-formatted-edge-label",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|036d0c58f81aaec47f557f1af139e059933f2c7513379876de7757770b935455|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/046-wrapping-long-text-with-a-new-line",
+   "class": "ref-fails",
+   "native": "parse-error"
+  },
+  "flowchart|9bd333c032647608e362b47bc1cd4c4ae751ab6a44ea7b66aeef1af8ced2d69a|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/047-sub-graphs-and-markdown-strings",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|08cca80e609b397e7a50dbb2f8654feb202de12e172d563c9eb95ee6d3648f23|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/048-with-styling-and-classes",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|33017c777af6ef5341711046d71992bf4ce496be4583249f4bbddcfadbd89928|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/049-with-formatting-in-a-node",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b8906d4b379952e574fc70bb4f430b589228d96cf9ff3c6772b5abbc258ed508|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/050-new-line-in-node-and-formatted-edge-label",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|7b02fdf2c21c34c140ed8a51435000623fed1ce0a8d7f9a15bba0587100722d4|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/051-wrapping-long-text-with-a-new-line",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|3f32f7580864f32cc7557d581764e65addf0681595f8708d6d1f7e54c84adbdc|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/052-sub-graphs-and-markdown-strings",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|484f244a8d6cd7d678782d540a3fb4659399b98b7ac16ea5ebb1ea4e39dd2e17|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/053-sub-graphs",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|238736e6204bf8964fed45d1fe1bb5a0b405c0cef492995bdfa8c593fe0ff10c|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/058-6088-4-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|0a1909dff6c0914caf7ccbb3c1bc27c272c312bd9b62c617cf017d8879a68ffe|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/055-6088-1-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|b6de4e17ff663694817fd00acdd2670cf55b29aa620d3ad8296e4e2c75bf7e4d|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/056-6088-2-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|76843edb77394cac2ab036ed33d43992258d71636489b58ac8b1d9bf51bb5e73|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/057-6088-3-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|dc547a32c799f5471b6cc4ac17af8c225d8b7620dc248dfadec9a2c8293cfac2|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/059-6088-5-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|d28dbafc93ee5f89455c594af252b17dca869c3ade31669e5d31a95812c84ce4|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/060-6088-6-should-handle-diamond-shape-intersections",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|c584044a2d84cafbb93f2f4e75bb66165acf87e51700b7bacce4814f0eedc9ea|{}": {
+   "case": "flowchart/061-6647-elk-should-keep-node-order-when-using-elk-layout-unless",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|373c9d7f968093978db27fd435dc5468e2eced0f4f381718c9070d18c6f312ba|{\"layout\":\"elk\"}": {
+   "case": "flowchart/062-render-with-stylized-arrows",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|892001b030f8c0581eeb1bbdb5a196c54763f4bd41d5ffd93ca96658a7347de7|{}": {
+   "case": "flowchart/063-7213-should-render-elk-edges-with-right-angles-not-curves",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|ac3bc5f62e8edb70704f44befdc080ee9a9b6b25cdd97c269512744d8ceb4a53|{}": {
+   "case": "flowchart/064-elk-should-merge-edges-within-subgraphs-when-elk-mergeedges",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|b65f07c56e91b215382c8b972129435eda4e0981925b49dc7a7650b1ae0818cd|{}": {
+   "case": "flowchart/065-elk-recursive-flow-with-elk-keepentrynodeontop-false-keeps-t",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|0c617acf148fd892a082552a78a8f286a1fbdf71495be5692290f27017bc14d2|{}": {
+   "case": "flowchart/066-elk-should-keep-the-entry-node-on-top-when-a-flow-recurses-w",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|fa3b917060e3173d6acad27bc687bbe42152fc28768e0fc6a5e052d56b07a537|{}": {
+   "case": "flowchart/067-elk-should-keep-the-entry-node-on-top-of-a-recursive-flow-ne",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/068-fhd1-should-render-a-simple-flowchart-no-htmllabels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"htmlLabels\":true},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/069-fhd2-should-render-a-simple-flowchart-with-htmllabels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|6da261f10448e07d8626834c4b8dd980faf7955526292f8e1c929b6740078d69|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/070-fhd3-should-render-a-simple-flowchart-with-line-breaks",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e44e808803b0a1247a55022d0e4e7aac561ebf72e9ef4cffee2d35c0d25d5672|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/071-fhd4-should-render-a-simple-flowchart-with-trapezoid-and-inv",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|66a7f24752fb80a434d67f6abbb3c18260b76ab72eb9d4e32c792d567e5d23cc|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/072-fhd5-should-style-nodes-via-a-class",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c02a0800cddc97a94cbabca0b8e43febe432c00b5fafc53ea378c23c640d110d|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/073-fhd6-should-render-a-flowchart-full-of-circles",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|231dd28ce12f25db47a1732873f3204b5f109b2191585ea8d176f482d51f1194|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/074-fhd7-should-render-a-flowchart-full-of-icons",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|87a0449855a6b1f0201790b6fece163d3adf73cf3e7f9efa219735f42a239193|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/075-fhd8-should-render-labels-with-numbers-at-the-start",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|db4045d5adb59837169d395fe340a0fa2386d293d7bf2978fe35a8f2046f4c7f|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/076-fhd9-should-render-subgraphs",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f62a933ddf70313c45e9ad8f109d85ce3c721f3c4e9ce811d808c52577da3c20|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/077-fhd10-should-render-subgraphs-with-a-title-starting-with-a-d",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/078-fhd11-should-render-styled-subgraphs",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|b5ea1a0140a56553777d9870d32338cac52897f11a26998dd918dc31f24c0365|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/079-fhd12-should-render-a-flowchart-with-long-names-and-class-de",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|8e8ab190fdc723459e48c2485b9d93ecbd6947c27a559bac1fc5f51ddbbad397|{\"fontFamily\":\"courier\",\"listId\":\"color styling\",\"listUrl\":false,\"logLevel\":0,\"look\":\"handDrawn\"}": {
+   "case": "flowchart/080-fhd13-should-render-color-of-styled-nodes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2126511a596215f2602992e6e2838b7898d7d81fa8bd88cfd9aa15cb93946112|{\"fontFamily\":\"courier\",\"listId\":\"color styling\",\"listUrl\":false,\"logLevel\":0,\"look\":\"handDrawn\"}": {
+   "case": "flowchart/081-fhd14-should-render-hexagons",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/082-fhd15-should-render-a-simple-flowchart-with-comments",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|629fdd223a9008273beb7bb000fe9ec024bb014d21b105fc0d2633303aba1e35|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/083-fhd16-render-stadium-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1126941c2004925df45a391bf201abbcde0ef63fda921b620494adf11798cbb9|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/084-fhd17-render-multiline-texts",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a62fb46f759ac95dfb35409df3e59c7203c2bf9fef75757dba31c373a91e048d|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/085-fhd18-chaining-of-nodes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e2fa3d2a12db4b401938ac6cf7c13e16e6f821e110e29efb7ce725407118b14f|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/086-fhd19-multiple-nodes-and-chaining-in-one-statement",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2c5f71f15ec9349f0aa9b20c0ab75b509059f1636cff81c46b14ddd947e107a2|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/087-fhd20-multiple-nodes-and-chaining-in-one-statement",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|594dc2af52eadfd7a8327164837bff2c573bfefc846d2d25c8b44692db09249a|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/088-fdh21-render-cylindrical-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"nodeSpacing\":50},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/089-fdh22-render-a-simple-flowchart-with-nodespacing-set-to-100",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"rankSpacing\":\"100\"},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/090-fdh23-render-a-simple-flowchart-with-rankspacing-set-to-100",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2b3ffe4631d4079993d2a2601ca669be672b1e38910fa3f36494fbc41f512863|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/091-fdh24-keep-node-label-text-if-already-defined-when-a-style-i",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|c10ac7ff6bcbf41264a4e01fe5b3534338756740feac1d5661d2cb5788a80b21|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/092-fdh25-handle-link-click-events-link-anchor-mailto-other-prot",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|690dbb23690f0734719afdef7c3e71dee27ba168cc1dd45e99763020b5d98242|{\"flowchart\":{\"htmlLabels\":true},\"look\":\"handDrawn\"}": {
+   "case": "flowchart/093-fdh26-set-text-color-of-nodes-and-links-according-to-styles",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|690dbb23690f0734719afdef7c3e71dee27ba168cc1dd45e99763020b5d98242|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/094-fdh27-set-text-color-of-nodes-and-links-according-to-styles",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|4d74501c90a569a0569b5d66cef0b26b10ed3460611ca5a86fae876b74626b09|{\"flowchart\":{\"htmlLabels\":true},\"look\":\"handDrawn\"}": {
+   "case": "flowchart/095-fdh28-apply-default-class-to-all-nodes-which-do-not-have-ano",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|4d74501c90a569a0569b5d66cef0b26b10ed3460611ca5a86fae876b74626b09|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/096-fdh29-apply-default-class-to-all-nodes-which-do-not-have-ano",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|05acafdfe49346a3b76f72a8a03a504250310c43ecf830b4686c82f1afb3753b|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/097-fdh30-possibility-to-style-text-color-of-nodes-and-subgraphs",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2b26340ea527383df43634ae81b15d29b07d89177f6d0d50e4b9b096a3cf7c31|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/098-fdh31-should-not-slice-off-edges-that-are-to-the-left-of-the",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|fdf029b0fb2e06787e3a8215891b1971f30e7d3d0493eb6cbe30bb0e0b0bc198|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
+   "case": "flowchart/099-fdh32-render-subroutine-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"diagramPadding\":0},\"look\":\"handDrawn\"}": {
+   "case": "flowchart/100-fdh33-should-render-a-simple-flowchart-with-diagrampadding-s",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c27c4c25eed7a3fcb5af24fd451f43ea9a4f67e2b92edfcfb4fed18b9d4587e9|{\"handDrawnSeed\":1,\"look\":\"handDrawn\"}": {
+   "case": "flowchart/101-fdh34-testing-the-label-width-in-percy",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b4c59b6df4a92bef9896ab58b3db6a965fd92461c80d57c34e00b658b05ad0be|{\"handDrawnSeed\":1,\"look\":\"handDrawn\"}": {
+   "case": "flowchart/102-fdh35-should-honor-minimum-edge-length-as-specified-by-the-u",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false,\"look\":\"handDrawn\"}": {
+   "case": "flowchart/103-fdh36-should-render-escaped-without-html-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/104-fdh37-should-render-non-escaped-with-html-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{\"flowchart\":{\"useMaxWidth\":true},\"look\":\"handDrawn\"}": {
+   "case": "flowchart/105-fdh38-should-render-a-flowchart-when-usemaxwidth-is-true-def",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"useMaxWidth\":false},\"look\":\"handDrawn\"}": {
+   "case": "flowchart/106-fdh39-should-render-a-flowchart-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f8c0a27b851238e6d56af003572b8e4cda4c093e15cc9a5eb25f9edfc3713f53|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/107-fdh40-handle-styling-with-style-expressions",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|cbeee1435d1f40b34d2529f8394cca2e7d76f2afa8b6c052e7b783ec0306f007|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/108-fdh41-handle-styling-for-all-node-shapes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a6d7ef1f3736b5f75f1c794f53b31959c1572c39e887e1956666d9f433aff283|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/109-fdh42-fontawesome-icons-in-edge-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|5f4da1ced19308a6313435e59f7a938de80dd6099017c79fcecaccb5eb93e20c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/110-fdh43-fontawesome-icons-in-edge-labels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/111-fdh44-fontawesome-icons-in-edge-labels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|972f259eed2cabf5590d85cc550518d5f805290b91a344f2ba34b267eb9bee34|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/112-fdh45-fontawesome-icons-in-edge-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1d42be3a7ee0d6fff605178bfb7462eb3bbeaeb83a1ffeef847cd1d534c6c668|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/113-fdh46-text-color-from-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|ebf84cf974c490ea901e72fa472227ac882a32c396ec32021d4a8d9b62cb0e23|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/114-fdh47-apply-class-called-default-on-node-called-default",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|18430963a023188cf8d548c3f24a1ef37050f886addfdfdff6b4462ad32fcbaf|{\"flowchart\":{\"htmlLabels\":true},\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/115-fdh48-should-be-able-to-style-default-node-independently",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|bd716e43caab4fe039fef2eab6659d9a46c090deee2741841fc9ceee4126ac43|{\"look\":\"handDrawn\",\"screenshot\":false}": {
+   "case": "flowchart/116-fdh49-should-add-edge-animation",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|94435bf3949757ac794e47f0ec18705bc97c632f5cf2065aea2ec377c7d5ec57|{}": {
+   "case": "flowchart/117-should-render-single-aws-icon-with-rect-elements-without-uni",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|1960ad38ae1ddacc35aa2d24bf38c50b22b49c6df52e9e2fb510aa0656f10b1f|{}": {
+   "case": "flowchart/118-should-render-multiple-aws-icons-with-rect-elements-in-a-flo",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|cd4eb98588921e610a3461b86e95aa9c7677871930130a0b65fb5f700ddce1d5|{}": {
+   "case": "flowchart/119-should-render-aws-icons-with-labels-and-rect-elements",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{}": {
+   "case": "flowchart/120-1-should-render-a-simple-flowchart",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|3cb39e634b282d6df8911e79439ee5762037478d5e1b9fa4f800796fdf750e3e|{\"flowchart\":{\"diagramPadding\":0}}": {
+   "case": "flowchart/121-2-should-render-a-simple-flowchart-with-diagrampadding-set-t",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|9d7874390a81227cbfc0f7c2b1ac16245e04fb8e514c6aa3dad77325b4cc65a5|{}": {
+   "case": "flowchart/122-3-a-link-with-correct-arrowhead-to-a-subgraph",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|8b61067dd39cfa4531062667f294c2c513b6ec6bd73d1d828711cd22bda85120|{}": {
+   "case": "flowchart/123-4-length-of-edges",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|7c292aa3bc8635a2bea8f0dbf80a35a5388878e68f508ea99eadcd2ddad7ff62|{}": {
+   "case": "flowchart/124-4b-labeled-open-edges-should-not-have-arrowheads",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|91855709ac3e6e704a861b5b6df405188692df61433f19e209dde5c31058ce89|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
+   "case": "flowchart/125-5-should-render-escaped-without-html-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|17e298ca9e1d465ba349eb2f50a8267863671a51f4228085ffe565d14e37c4b7|{\"htmlLabels\":false,\"logLevel\":1}": {
+   "case": "flowchart/126-5a-should-render-flowchart-with-edge-labels-centered-when-ht",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f65fdd58af1a316b03ad9b3d181f77417e2459b5008915e5351b1b46ce9e0f8b|{\"htmlLabels\":false}": {
+   "case": "flowchart/127-5b-angle-brackets-should-be-work-without-html-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|7957571775dc6a12b1c564ef649c497550a9c4cbb6dad388ff5757d688f57e04|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/128-6-should-render-non-escaped-with-html-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{\"flowchart\":{\"htmlLabels\":true},\"securityLevel\":\"sandbox\"}": {
+   "case": "flowchart/129-6a-should-render-complex-html-in-labels-with-sandbox-securit",
+   "class": "ref-fails",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{\"flowchart\":{\"useMaxWidth\":true}}": {
+   "case": "flowchart/246-38-should-render-a-flowchart-when-usemaxwidth-is-true-defaul",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|5d6377c82bd963abea5f5fb0b42ba48cd6fb863ee1ba6996481371f46842ac5c|{\"flowchart\":{\"useMaxWidth\":false}}": {
+   "case": "flowchart/131-8-should-render-a-flowchart-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e3a2ee0aa55b1d5e5482e2096cb5878675aaa61cd64c331ee0c55662eb3aae28|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/132-v2-16-render-stadium-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b8dd007e90b62c775543792047725780c5c73e5e249e3394443f1cc9f00f11f4|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/134-51-handle-nested-subgraphs-in-reverse-order",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|7e92deb7f10de09cab804cba15a967b847a6cc6c2da33f9989f780d4647a42b6|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/135-52-handle-nested-subgraphs-in-several-levels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|8ec0eb96fa9d0ee8d305cab28bbb6709fa147d3a59ea0d9537ec27b8fa869627|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/136-53-handle-nested-subgraphs-with-edges-in-and-out",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|7d6cbe41cdf65da010cfd9716f6623051f82470342c87209c862c1d48aa0281a|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/137-54-handle-nested-subgraphs-with-outgoing-links",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b00c2ad8ee7192bc915cf0415d0f3f4123ada7f140772ae0f0226d4d8e410891|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/138-55-handle-nested-subgraphs-with-outgoing-links-2",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|5558936354532456c29c28304ca7ed7b4fe68783ec157b68830bec9096eab058|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/139-56-handle-nested-subgraphs-with-outgoing-links-3",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|df31cb7dd485a1711421b2975e737d75ba78ef899d2b1a069d8e8da69317fccc|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/140-57-handle-nested-subgraphs-with-outgoing-links-4",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|d41572bc58dd60e5864470ee53a5a8cb483f276943dc31d625915a6e1c648e0d|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/141-57-handle-nested-subgraphs-with-outgoing-links-2",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|240173b6346a475ab6c1d8033b13a52886c1576f412c742eaba1fa99ed08b512|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/142-57-x-handle-nested-subgraphs-with-outgoing-links-5",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|cc7895a62fbaf07f050253718bced18be03126c06fe361c5b7fe98c1210e1ca3|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/143-58-handle-styling-with-style-expressions",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|81398396fbf2001a92b77205338710d27da914dbb6813f61916d8a330a86247f|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/144-59-handle-styling-of-subgraphs-and-links",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2f54dde38bbcb1c672856d8cee4904b27d714a154de03b268f0b768304138b59|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"logLevel\":2,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/145-60-handle-styling-for-all-node-shapes-v2",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f2340da35964a1dea0058cf340814953f6588aad7323eb0f9a9c3891213e2d10|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/146-61-fontawesome-icons-in-edge-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|e4bba004bc5185b53ba64a1369f8c149afe7442a96650fb8000c54e81ba8845e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/147-62-should-render-styled-subgraphs",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|972f259eed2cabf5590d85cc550518d5f805290b91a344f2ba34b267eb9bee34|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/254-64-fontawesome-icons-in-edge-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1d42be3a7ee0d6fff605178bfb7462eb3bbeaeb83a1ffeef847cd1d534c6c668|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/255-65-text-color-from-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|02b4d7e4a9306b953e1a4f28330635466776aae46abe577f7856622c8d838471|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/150-65-2-bold-text-from-classes",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|0f7c8fabae9a38733488f163908c93a3617c84fc0eece85eebed298db4f930ae|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/151-65-3-bigger-font-from-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|11ae62f6316ea14fea59e8b4e0f3773ece1202f9c47ea8b3a9104c2fe5f0b1a3|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/152-66-more-nested-subgraph-cases-tb",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|9d59c0c77a0bc20f9ff143652e5533728c296aea9364679206e7c6597f1f15a8|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/153-67-more-nested-subgraph-cases-rl",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|ae87ed005452fe8432fba60ce35c3126871aba722c7bbe103e42239d6c4704e8|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/154-68-more-nested-subgraph-cases-bt",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|7dfb508dd81a7caf2d7d6cbb3c2bcfaf49e1d8ba96e4bf4ce2af6bee453b99a9|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/155-69-more-nested-subgraph-cases-lr",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|04ae5392b073aa236de67d1a0bc4e026c7e4d78096b03e03794be093788108fb|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/156-70-handle-nested-subgraph-cases-tb-link-out-and-link-between",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|1a4342f6d89c42b515dafd3a4fb360f8ae0f2a1dcc831f7cdd0b28ccc5e9cc3c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/159-74-handle-nested-subgraph-cases-rl-link-out-and-link-between",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|4d632987c28d0e005717adcd1a7a28a7f2b1c2d251362f193016178b260d4588|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/158-72-handle-nested-subgraph-cases-bt-link-out-and-link-between",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|dbdd7fc5183bf5d6a455583d8363a0d0ff4ea75acc28a72d95a2a068d9516a03|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/160-74-handle-labels-for-multiple-edges-from-and-to-the-same-cou",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|42014334e3f7c8c585d3ada9643e2d819a43cab6736c18cb6254503c49edb5ec|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/161-76-handle-unicode-encoded-character-with-html-labels-true",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|a08e244e09dfc895a6e73378997fa1dc82df79b039634c77ffd4f3b628bdce76|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/162-2050-handling-of-different-rendering-direction-in-subgraphs",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a6a3f6b44f2f2c95603f187d96bf5681bd2d0142bd2ce7a573cec4462ad56a71|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/163-2388-handling-default-in-the-node-name",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|da08db8a28221de7eaaf62fcb996a300ec2a68f5a9130377efd9287386696a84|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/164-2824-clipping-of-edges",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|ac7c613bcccf473e89c724aec21a6cb5d492179234a96839fcf1d3ec8ab2655b|{\"flowchart\":{\"titleTopMargin\":10}}": {
+   "case": "flowchart/165-1433-should-render-a-titled-flowchart-with-titletopmargin-se",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|50ca4bd07c91311af1b88ef0bf9606069f2cda3b214907d24fc7c1358e0709ed|{\"flowchart\":{\"titleTopMargin\":10}}": {
+   "case": "flowchart/166-3192-it-should-be-possible-to-render-flowcharts-with-invisib",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f95d0308c68afbf3d42bec6b4380412298e4c87ffcf54b8004a0862dcff15bc8|{}": {
+   "case": "flowchart/167-4023-should-render-html-labels-with-images-and-or-text-corre",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|0e00ab23f94e973a4ca61c343c09826176a52e3a5323d9deeffbe243e544033d|{}": {
+   "case": "flowchart/168-4439-should-render-the-graph-even-if-some-images-are-missing",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|9fbc0680876b22ef1671bdb7a8ece1a38b006fcae96742256217b84edd8b6535|{}": {
+   "case": "flowchart/169-5064-should-render-when-subgraph-child-has-links-to-outside",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|dc6b5ae77d876789f48f6673d2570f59238956c6b59c45295a5e4ff871421abb|{}": {
+   "case": "flowchart/170-5059-should-render-when-subgraph-contains-only-subgraphs-has",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|76d659736509ab38bbf77e8fc131995ee8e6d8a500f8df9129faeda8cfbf43ca|{\"flowchart\":{\"nodeSpacing\":1,\"rankSpacing\":1}}": {
+   "case": "flowchart/171-3258-should-render-subgraphs-with-main-graph-nodespacing-and",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|11c1666ab5e9ac123e2e4824a2385a4e37b97a8739652f01b00a3e3b4ab7a1c9|{}": {
+   "case": "flowchart/172-3258-should-render-subgraphs-with-large-nodespacing-and-rank",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|3073872018d167ca894177fee2465f0ea0336662c5b1cc7ca3b1b46d78353183|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/173-with-styling-and-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|0089c5a097d52ce719a5a656e397b847908d6ad395a35c8d74758dd381253ce6|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/174-with-formatting-in-a-node",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|d9b4c82b1890d27a4ed78e51126ff7313bf5d017076f47e15540f75410f50b15|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/175-new-line-in-node-and-formatted-edge-label",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|e2c6603c76b6c0ec55203eb6954b0736a511c005936252966eaef85e191b4060|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/176-wrapping-long-text-with-a-new-line",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|2a216a536b51b4a84ef95631a1b9f28e71f0effa37e77db574806e83be3963ad|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/177-sub-graphs-and-markdown-strings",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|3d0848bb5b0cacd411bc4e83d3e9cc1954ec21c4461b2a3104a9bc7bb7152bd1|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/178-with-styling-and-classes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|84a5b98837289bc3ac1ef84583d4f369f57c40025ac047037a1ac6b319e7fbe3|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/179-with-formatting-in-a-node",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|331ab6345d3c16c23a364c142dc6b410c6a40d12c8524797dc03f84b74f28a6d|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/180-new-line-in-node-and-formatted-edge-label",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|9ec0f91f68879869a262bab9fd4fb87f98489eb7aa7daaf219c8873597a6ed63|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/181-wrapping-long-text-with-a-new-line",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|c5c29990526ec02619dcead73553b216a3eb5da423087b9fef4ad04884c29350|{\"flowchart\":{\"titleTopMargin\":0}}": {
+   "case": "flowchart/182-sub-graphs-and-markdown-strings",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|902817d9e667f6daa5631dc3450c579440c726fe15a4cf61df390fcde9ce6fbb|{\"markdownAutoWrap\":false}": {
+   "case": "flowchart/183-should-not-auto-wrap-when-markdownautowrap-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c703072aa68e7ab747e3c1243b3332063a7a8c695bf1c6222a1652e190fd91f5|{\"flowchart\":{\"subGraphTitleMargin\":{\"bottom\":5,\"top\":10}}}": {
+   "case": "flowchart/184-should-render-subgraphs-with-title-margins-set-lr",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|0d7c307086a4c4a9450b8eac22139c3ad5d93f1be1a84e5842144c27f5abd7f2|{\"flowchart\":{\"subGraphTitleMargin\":{\"bottom\":16,\"top\":8}}}": {
+   "case": "flowchart/185-should-render-subgraphs-with-title-margins-set-td",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c703072aa68e7ab747e3c1243b3332063a7a8c695bf1c6222a1652e190fd91f5|{\"flowchart\":{\"htmlLabels\":false,\"subGraphTitleMargin\":{\"bottom\":5,\"top\":10}},\"htmlLabels\":false}": {
+   "case": "flowchart/186-should-render-subgraphs-with-title-margins-set-lr-and-htmlla",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1052cd67979b4b28ca6b3c3d75386b26587ac8261f91b40a62526037ca1a992a|{\"flowchart\":{\"subGraphTitleMargin\":{\"bottom\":5,\"top\":10}}}": {
+   "case": "flowchart/187-should-render-subgraphs-with-title-margins-and-edge-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c13dc0f7a4d0276d2cc748e2fb0dcd3be4a88e9b71824979f4251ca22fac134e|{\"flowchart\":{\"subGraphTitleMargin\":{\"bottom\":5,\"top\":10}}}": {
+   "case": "flowchart/188-should-render-self-loops",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|960b1cbc21cd4f94c59d41bbf2337b47a773d76a1e738c1cf0a85bed4beb9f7c|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
+   "case": "flowchart/189-should-render-labeled-self-loops",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c73d3b9d4feabd34f93943e8d0ac5e46be048900f06a30b84785e0c9724826b1|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
+   "case": "flowchart/190-should-render-self-loops-in-non-tb-directions",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|ff5ec4942494e8fc58486202ce7ed36b26694af3fc76329c44c302968714762e|{}": {
+   "case": "flowchart/192-should-be-possible-to-use-syntax-to-add-labels-with-trail-sp",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|9c841fe75891edabf06ac582bef436f2fed499653c746c1d9554ef880235029b|{}": {
+   "case": "flowchart/193-should-be-possible-to-use-syntax-to-add-labels-with-trail-sp",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|4dac2bb5c77c97e217536438344c3a8174d2d565c772384aaf80b935b11a3c21|{}": {
+   "case": "flowchart/194-should-be-possible-to-use-syntax-to-add-labels-with-trail-sp",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|961c1c605eb2fe1c40a94e28c99213fb8c3cd2d8fcbfe56be4d7d38a77ebd131|{}": {
+   "case": "flowchart/195-should-render-a-stadium-shaped-node",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|3c2fa6e0e9846c57061af61e0c05783684213047070d504f0ab3962083e2be9b|{}": {
+   "case": "flowchart/196-should-render-a-diamond-shaped-node-using-shape-config",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|da59ba9f6d4b086e84f0c2e4fdc628e8b4ac00140fb2a44cd9c135d357ec295e|{}": {
+   "case": "flowchart/197-should-render-a-rounded-rectangle-and-a-normal-rectangle",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2fdb327ec7e34f942647541bae3e1d8edbaadf7c980e0b3dcccdbfb6c45aa983|{\"flowchart\":{\"curve\":\"rounded\"}}": {
+   "case": "flowchart/198-7213-should-render-edges-with-rounded-curve-right-angles-wit",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|821cd818de5f11349de6b646f4572a3010327563c8dad7625a0d92596855fc3d|{}": {
+   "case": "flowchart/199-6617-per-link-curve-styling-using-edge-ids",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b31442bd40c640f466c8c64bd87cea586fba175e649bf9ec63b483f68f9bd759|{}": {
+   "case": "flowchart/200-should-render-raw-strings",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b31442bd40c640f466c8c64bd87cea586fba175e649bf9ec63b483f68f9bd759|{\"htmlLabels\":false}": {
+   "case": "flowchart/201-should-render-raw-strings-with-htmllabels-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|6ddc2fc5ddb5e5ae98f35c27f979b1064386a55ee9c040d7ef0993a567373818|{}": {
+   "case": "flowchart/202-v2-17-should-apply-class-def-colour-to-edge-label",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|47fee8686f0d0622ce10b8c28497af2cc2c00cab26bd669881cbc62fc1a90857|{}": {
+   "case": "flowchart/203-v2-18-should-render-nested-subgraphs-with-edge-from-cluster",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|35df9eacdc5229a9cc87a48574c0d368e6f5aa529be9a911d4fd25b792d18074|{}": {
+   "case": "flowchart/204-should-render-a-collapsed-subgraph-as-a-single-node-with-edg",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|22f0d9618c51e1af0ec1cfccb43222568d3b1c5ea2fc2a02885ea089b4747bd9|{}": {
+   "case": "flowchart/205-should-render-a-collapsed-subgraph-alongside-an-expanded-one",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|5c41d9d4e1733abd0dd2387822d307e664df3bb1d22e01bf192840737d676e2c|{\"look\":\"handDrawn\"}": {
+   "case": "flowchart/206-should-redirect-a-collapsed-subgraph-using-the-handdrawn-loo",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|3dadb6336d33aa2aa96891ed44d7c8e10547bf47c31fce35b8261496b622fa30|{}": {
+   "case": "flowchart/207-should-collapse-nested-subgraphs-to-the-outermost-collapsed",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|fad59f818350528390409cb91386904432cb0203bd701556228dfc71f43567d3|{}": {
+   "case": "flowchart/208-should-redirect-an-edge-targeting-a-deeply-nested-node-to-th",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/209-1-should-render-a-simple-flowchart-no-htmllabels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"htmlLabels\":true},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/210-2-should-render-a-simple-flowchart-with-htmllabels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|6da261f10448e07d8626834c4b8dd980faf7955526292f8e1c929b6740078d69|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/211-3-should-render-a-simple-flowchart-with-line-breaks",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e44e808803b0a1247a55022d0e4e7aac561ebf72e9ef4cffee2d35c0d25d5672|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/212-4-should-render-a-simple-flowchart-with-trapezoid-and-invers",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|66a7f24752fb80a434d67f6abbb3c18260b76ab72eb9d4e32c792d567e5d23cc|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/213-5-should-style-nodes-via-a-class",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c02a0800cddc97a94cbabca0b8e43febe432c00b5fafc53ea378c23c640d110d|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/214-6-should-render-a-flowchart-full-of-circles",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|231dd28ce12f25db47a1732873f3204b5f109b2191585ea8d176f482d51f1194|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/215-7-should-render-a-flowchart-full-of-icons",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|87a0449855a6b1f0201790b6fece163d3adf73cf3e7f9efa219735f42a239193|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/216-8-should-render-labels-with-numbers-at-the-start",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|db4045d5adb59837169d395fe340a0fa2386d293d7bf2978fe35a8f2046f4c7f|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/217-9-should-render-subgraphs",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f62a933ddf70313c45e9ad8f109d85ce3c721f3c4e9ce811d808c52577da3c20|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/218-10-should-render-subgraphs-with-a-title-starting-with-a-digi",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/219-11-should-render-styled-subgraphs",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|b5ea1a0140a56553777d9870d32338cac52897f11a26998dd918dc31f24c0365|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/220-12-should-render-a-flowchart-with-long-names-and-class-defin",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|8e8ab190fdc723459e48c2485b9d93ecbd6947c27a559bac1fc5f51ddbbad397|{\"fontFamily\":\"courier\",\"listId\":\"color styling\",\"listUrl\":false,\"logLevel\":0}": {
+   "case": "flowchart/221-13-should-render-color-of-styled-nodes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2126511a596215f2602992e6e2838b7898d7d81fa8bd88cfd9aa15cb93946112|{\"fontFamily\":\"courier\",\"listId\":\"color styling\",\"listUrl\":false,\"logLevel\":0}": {
+   "case": "flowchart/222-14-should-render-hexagons",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/223-15-should-render-a-simple-flowchart-with-comments",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|629fdd223a9008273beb7bb000fe9ec024bb014d21b105fc0d2633303aba1e35|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/224-16-render-stadium-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|1126941c2004925df45a391bf201abbcde0ef63fda921b620494adf11798cbb9|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/225-17-render-multiline-texts",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a62fb46f759ac95dfb35409df3e59c7203c2bf9fef75757dba31c373a91e048d|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/226-18-chaining-of-nodes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|e2fa3d2a12db4b401938ac6cf7c13e16e6f821e110e29efb7ce725407118b14f|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/227-19-multiple-nodes-and-chaining-in-one-statement",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2c5f71f15ec9349f0aa9b20c0ab75b509059f1636cff81c46b14ddd947e107a2|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/228-20-multiple-nodes-and-chaining-in-one-statement",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|594dc2af52eadfd7a8327164837bff2c573bfefc846d2d25c8b44692db09249a|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/229-21-render-cylindrical-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"nodeSpacing\":50},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/230-22-render-a-simple-flowchart-with-nodespacing-set-to-100",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"rankSpacing\":\"100\"},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/231-23-render-a-simple-flowchart-with-rankspacing-set-to-100",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2b3ffe4631d4079993d2a2601ca669be672b1e38910fa3f36494fbc41f512863|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/232-24-keep-node-label-text-if-already-defined-when-a-style-is-a",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|c10ac7ff6bcbf41264a4e01fe5b3534338756740feac1d5661d2cb5788a80b21|{\"fontFamily\":\"courier\",\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/233-25-handle-link-click-events-link-anchor-mailto-other-protoco",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|690dbb23690f0734719afdef7c3e71dee27ba168cc1dd45e99763020b5d98242|{\"flowchart\":{\"htmlLabels\":true}}": {
+   "case": "flowchart/234-26-set-text-color-of-nodes-and-links-according-to-styles-whe",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|690dbb23690f0734719afdef7c3e71dee27ba168cc1dd45e99763020b5d98242|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/235-27-set-text-color-of-nodes-and-links-according-to-styles-whe",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|4d74501c90a569a0569b5d66cef0b26b10ed3460611ca5a86fae876b74626b09|{\"flowchart\":{\"htmlLabels\":true}}": {
+   "case": "flowchart/236-28-apply-default-class-to-all-nodes-which-do-not-have-anothe",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|4d74501c90a569a0569b5d66cef0b26b10ed3460611ca5a86fae876b74626b09|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/237-29-apply-default-class-to-all-nodes-which-do-not-have-anothe",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|05acafdfe49346a3b76f72a8a03a504250310c43ecf830b4686c82f1afb3753b|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/238-30-possibility-to-style-text-color-of-nodes-and-subgraphs-as",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|2b26340ea527383df43634ae81b15d29b07d89177f6d0d50e4b9b096a3cf7c31|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/239-31-should-not-slice-off-edges-that-are-to-the-left-of-the-le",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|fdf029b0fb2e06787e3a8215891b1971f30e7d3d0493eb6cbe30bb0e0b0bc198|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/240-32-render-subroutine-shape",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|205968d397e5b19a36dc0f27007117b16e582c55cfe590169ab3bfebd94a82f5|{\"flowchart\":{\"diagramPadding\":0}}": {
+   "case": "flowchart/241-33-should-render-a-simple-flowchart-with-diagrampadding-set",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|c27c4c25eed7a3fcb5af24fd451f43ea9a4f67e2b92edfcfb4fed18b9d4587e9|{}": {
+   "case": "flowchart/242-34-testing-the-label-width-in-percy",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|b4c59b6df4a92bef9896ab58b3db6a965fd92461c80d57c34e00b658b05ad0be|{}": {
+   "case": "flowchart/243-35-should-honor-minimum-edge-length-as-specified-by-the-user",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
+   "case": "flowchart/244-36-should-render-escaped-without-html-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/245-37-should-render-non-escaped-with-html-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"useMaxWidth\":false}}": {
+   "case": "flowchart/247-39-should-render-a-flowchart-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|bd716e43caab4fe039fef2eab6659d9a46c090deee2741841fc9ceee4126ac43|{\"screenshot\":false}": {
+   "case": "flowchart/248-40-should-add-edge-animation",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|f8c0a27b851238e6d56af003572b8e4cda4c093e15cc9a5eb25f9edfc3713f53|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/249-58-handle-styling-with-style-expressions",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|cbeee1435d1f40b34d2529f8394cca2e7d76f2afa8b6c052e7b783ec0306f007|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/250-60-handle-styling-for-all-node-shapes",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|a6d7ef1f3736b5f75f1c794f53b31959c1572c39e887e1956666d9f433aff283|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/251-61-fontawesome-icons-in-edge-labels",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|5f4da1ced19308a6313435e59f7a938de80dd6099017c79fcecaccb5eb93e20c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/252-62-fontawesome-icons-in-edge-labels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/253-63-fontawesome-icons-in-edge-labels",
+   "class": "native-fails",
+   "native": "render-error"
+  },
+  "flowchart|ebf84cf974c490ea901e72fa472227ac882a32c396ec32021d4a8d9b62cb0e23|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/256-66-apply-class-called-default-on-node-called-default",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|18430963a023188cf8d548c3f24a1ef37050f886addfdfdff6b4462ad32fcbaf|{\"flowchart\":{\"htmlLabels\":true},\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/257-67-should-be-able-to-style-default-node-independently",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|89df16b814281c090e1aff49803ee0a27f2a92e6bad4764f0e3b74a28c0ae9f5|{\"flowchart\":{\"htmlLabels\":true},\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/258-6369-edge-color-should-affect-arrow-head",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|77952efd38bc88e94dcfeb7d250d291db36e4f192449d247be1faf545ad16753|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/259-68-should-honor-subgraph-direction-when-inheritdir-is-false",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|6fb373e4157d44c69af20e9c367f4ef0ac17530975d9144b2ca31cecb8c3995d|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/260-69-should-inherit-global-direction-when-inheritdir-is-true",
+   "class": "differs",
+   "native": "ok"
+  },
+  "flowchart|ae33684e86daea3c7647f4f494158655a20ebbe8015643c5cb53045c44d48f50|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/261-70-should-render-a-subgraph-with-direction-td",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|54c6c1c7286fc66d1bcfe0a980971d192f5be9fdfd9dd4a431f23f2384ffa43d|{\"flowchart\":{\"htmlLabels\":true},\"securityLevel\":\"loose\"}": {
+   "case": "flowchart/262-5824-should-be-able-to-render-string-and-markdown-labels",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|cedd55f3b693c695b05c71bf260577392340e55e40e959107dc79d4122b5dc2a|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/263-69-should-render-subgraphs-with-adhoc-list-headings",
+   "class": "match",
+   "native": "ok"
+  },
+  "flowchart|d4c550f68cb3d2a8a826fe76b8cf5d540468623a58cb06ae2be59bc6a535a577|{\"fontFamily\":\"courier\"}": {
+   "case": "flowchart/264-70-should-render-subgraphs-with-markdown-headings",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d18922a015ec77699043f7bcc30a9ddae1852b58077c4e22f4ecf9405224fe79|{}": {
+   "case": "sequence/001-should-render-complex-sequence-with-all-features",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ad967963208c3ff834bcdbb1cbdca1c54d796de8dbcbab7628505dffc81675ca|{\"sequence\":{\"wrap\":true}}": {
+   "case": "sequence/002-should-render-with-wrapped-messages-and-notes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|06a0e5361f712f8a84f903b4d58482f3dd52b1969e3a1437f9e7d8d11f686378|{}": {
+   "case": "sequence/003-should-render-a-sequence-diagram-with-various-participant-ty",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|5551646c6e0ff53ac1a78f3716e010f7c251b10b264c38b0afb0bc3f534560e0|{}": {
+   "case": "sequence/004-should-render-participant-creation-and-destruction-with-diff",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ac34f687269a07f64c9b143da495e879313bbb619b02b1d387f459936a08a209|{\"sequence\":{\"useMaxWidth\":false}}": {
+   "case": "sequence/005-should-handle-complex-interactions-between-different-partici",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b395b79d76fff4fea955f07bdcd2b01df5a73f4971af167f219d89b32bfe1e61|{}": {
+   "case": "sequence/006-should-render-parallel-processes-with-different-participant",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|81a3572b4d5826560cc4dada3f99785c18731cc69c312933d808627ca077fbd5|{}": {
+   "case": "sequence/007-should-render-different-participant-types-with-notes-and-loo",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9020cbd18e0e52792aa87025459cb69bfa3ed92cdc4e832028a07f41921ef1fe|{}": {
+   "case": "sequence/008-should-render-different-participant-types-with-alternative-f",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|db355ca9c652c03999af0e2f44fd0cd346945fc85bdc0a55d29e2503fa58f8d0|{\"sequence\":{\"wrap\":true}}": {
+   "case": "sequence/009-should-render-different-participant-types-with-wrapping-text",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|76b31d42ad8c93076b1fb7d97625504bbfe04614f7787e7815ade1ef96bd0f7e|{}": {
+   "case": "sequence/010-should-render-long-notes-left-of-boundary",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|58e1dc0f7edc4d18c1d01ca3931f8f4e373dc92add535fbabf303a196e1cad68|{}": {
+   "case": "sequence/011-should-render-wrapped-long-notes-left-of-control",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6c4949fd56e49c5d1e22fdcd67711baa32a7917b529a5b8f25dab63df435c8e0|{}": {
+   "case": "sequence/012-should-render-long-notes-right-of-entity",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|4251dfd1330144dc7bad67eb6b6bb1c8f31feb5c03f4216cba8b68e631623c0b|{}": {
+   "case": "sequence/013-should-render-wrapped-long-notes-right-of-database",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|844c248045ec614a11d6329a29136bef0c97c6f3c5b692fa4ea7dfb4e744ae38|{}": {
+   "case": "sequence/014-should-render-long-notes-over-collections",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d6a58322a77fdd39ce8df9e52d378ee77790bb2e2f1fc2caa3b2f87a7e3c8ad5|{}": {
+   "case": "sequence/015-should-render-wrapped-long-notes-over-queue",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d06a24874e8a4991fd2a92f333aead9bc4fbf1dfebc22cc2516b2b7fe09c3075|{}": {
+   "case": "sequence/016-should-render-notes-over-actor-and-boundary",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0cc1c66a0a6fe921069d3bada8d222265933379382ee58caa802d6c55921a488|{}": {
+   "case": "sequence/017-should-render-long-messages-from-database-to-collections",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|01ca7811fda184d5a731046ce4513d1430e36c2db208dac570173dce075a5978|{}": {
+   "case": "sequence/018-should-render-wrapped-long-messages-from-control-to-entity",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|86e216c8cc6ea544d8cf78f59818339c677ac5a2b3f8d708f734be98974ead0b|{}": {
+   "case": "sequence/019-should-render-long-messages-from-queue-to-boundary",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|c331c3183af7448c115b367ef89885c0c9c09c1a1b7c848403953f8ff13020ec|{}": {
+   "case": "sequence/020-should-render-wrapped-long-messages-from-actor-to-database",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2629c5cd989eb0d360ef5f09aea81c8fc6811a381806895275c193c69e34fe90|{\"sequence\":{\"useMaxWidth\":true}}": {
+   "case": "sequence/021-should-render-a-sequence-diagram-when-usemaxwidth-is-true-de",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2629c5cd989eb0d360ef5f09aea81c8fc6811a381806895275c193c69e34fe90|{\"sequence\":{\"useMaxWidth\":false}}": {
+   "case": "sequence/022-should-render-a-sequence-diagram-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d565b4a97c7545ef2f071d017aa00b673cd262d64d0796d476881d4d5eb548c6|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/023-should-render-central-connection-circles-on-actor-vertical-l",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|562c7285ffe27d1f2df3d85e38fa51e06e96b1407e11cbc58a96e602643b0295|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/024-should-render-central-connections-with-different-arrow-types",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6115dda11d3495111ea78fc3d24bdb0cb52331418b0e16020fcb37f446ae64e6|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/025-should-render-central-connections-with-bidirectional-arrows",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|afffb1a28cdf45465d20bc52d8ace5da332a35b1dc53a7171020b7cd03634ce4|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/026-should-render-central-connections-with-activations",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|16a2f9ae61e446a2bf49328458bea6f4f5f7776b777c81f64c5c48927c73d731|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/027-should-render-central-connections-mixed-with-normal-messages",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|3e92ce5a1ce00cb79d49cbe5c9607bd2ffa2b500bb04952563c6eebec580a7e4|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/028-should-render-central-connections-with-notes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2dc025230f88b4d357352a548b4860f612edd5da3b38c08701e2173760f0f543|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/029-should-render-central-connections-with-loops-and-alternative",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|67f4a0a51080c3a3579c3d05d3115410016bcab8e8813318657bdedc00f3a091|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/030-should-render-central-connections-with-different-participant",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|de4215fe00e5a6f825269f8091bddf13c1605abb217db570298fabc5bb09c19e|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/031-should-render-all-arrow-types-with-autonumbering",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ee8c51e254619a3427168221322066e429c1b17bc5a563a380dbe559658039b6|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/032-should-render-all-arrow-types-with-autonumbering-left-to-rig",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|a0f91f415b72fd21fa418a88756495d12b70c689527f1f2c2d48e72a65fd2274|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/033-should-render-central-connections-with-autonumbering",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|8c96245a021f4fe9b9df69de69ae1de16048bbdf16a3ee1672f855f6665f56ca|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/034-should-render-bidirectional-arrows-with-autonumbering",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|df903e9cee8412ed7f185416f55520ab1f71d3bd6c8b30761b4b37b0fc36017e|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/035-should-render-reverse-arrows-with-autonumbering",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0c9423125fea7212737c2437932ad0569b3459672d4b59da60d66fd6f4f8d883|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/036-should-render-central-connection-with-normal-arrows-left-to",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|295deb463de11fde5acce40f63ab049fd6930f8a97690cc2216c9e62a6bb8a5f|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/037-should-render-central-connection-with-normal-arrows-right-to",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ea18ada8c830749e36d59cf0a77440f6957b07644299a6a41d3ae703c6539477|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/038-should-render-central-connection-with-reverse-arrows-left-to",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|a4a256ccee3ef80577dbe192351101bc043125aa74ea791d91cdc685e12db8a9|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/039-should-render-central-connection-with-reverse-arrows-right-t",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|cd42a63f18b2dad15146974049f17f9e721fd4b5ccbdf41aef58263d58f40149|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/040-should-render-central-connection-reverse-normal-ltr",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|77af237b4fbe9536d9ae1907804645f9777ccb2eeec8756b773faa3eae996951|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/041-should-render-central-connection-reverse-normal-rtl",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|67cfe419b12048af445235a36a15dbf56d4804b940be6a937ca9b6e07f561ca9|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/042-should-render-central-connection-reverse-reverse-ltr",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|18af82907f7846305064d246e3bbeddefa2e149dac0b65a70966855547e2e5b2|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/043-should-render-central-connection-reverse-reverse-rtl",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|e94d4131118ee67a7b94319750de68c69b5d1d2abc5b63ef2969bae755a3426c|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/044-should-render-central-connection-dual-normal-ltr",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|1ad7310d553c6121edcdee922468005dae5d316846cae1e686461252a7aa81f6|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/045-should-render-central-connection-dual-normal-rtl",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|8f84d9d49139f28f151dad237178efea94ebc097e1a31ab4118dffe8740ca10a|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/046-should-render-central-connection-dual-reverse-ltr",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b15c219511e1e3abb1dbd6a91d4885e57edd1fe2371537231fcc496e0ec590bf|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/047-should-render-central-connection-dual-reverse-rtl",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|866e8587934e6e604ba36376cf7a889b6a4eec8805c2ebfe5d80acb748e1c643|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/048-should-render-mixed-central-connections-with-autonumber",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|1d5c7ff5abad3d4783649ef2776ff7884eadd1a35131990321d8c80ce723b4b9|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/049-should-render-central-connections-with-bidirectional-arrows",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|3d08bcf0900319a5d39feb17d4c28db0a27d642b46b5057c91bac37537b37532|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/050-should-render-self-reference-with-normal-arrows-without-auto",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|3afd101781c28e78e3ccfe255403f5774f040cb84a994a715756fbb1715be93e|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/051-should-render-self-reference-with-normal-arrows-with-autonum",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0c5b0a16fe8f32a4621ac545b6216b2978350ef027013ae10986c0124921d9d0|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/052-should-render-self-reference-with-reverse-arrows-without-aut",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ae4f737ec1343398c78cbe58e3fb460e62c47465c4d333ab21daac6dd4726f9c|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/053-should-render-self-reference-with-reverse-arrows-with-autonu",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|8b0fd2fbf6f748103c4287b77123fe3c6d945d7ebc94f18789b1e37c4c1dc827|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/054-should-render-self-reference-with-bidirectional-arrows-witho",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|99c96a4eb3ab200acfc07e479a208089e088e2eb3118926485cb8bd872dc4d23|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/055-should-render-self-reference-with-bidirectional-arrows-with",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|889755f2c9b1acce847624189c0301b20bd2c510b10bb3140d8b4821ee7ede84|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/056-should-render-comprehensive-self-reference-scenario-all-arro",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|de78a65ea79ffd6fd528349f22c8fb243c176d944dcfff84f05d71d3496b9fe0|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/057-should-render-self-reference-mixed-with-regular-messages-and",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|f708c3bb4f404e02dd1dfa8de7865f63b16f4b1f9995fccfa7fe6341e29579d9|{\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/058-should-render-all-message-types-and-arrow-types-in-a-single",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|f92fc1b1caa3fcbcd1afdc521443bcac12f0c2ff639fabf1388e6f2e7afb3c12|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/059-should-render-participants-with-stereotypes-and-aliases",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|fcbc27dd53c551671f730b462a22f23838b726be47c08a3b05a03bf54e18c2d4|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/060-should-render-actors-with-stereotypes-and-aliases",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2c73a51e40a212e6584948dfd8219ef707f8a751659996b2da377c5a48420214|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/061-should-render-mixed-participants-and-actors-with-stereotypes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b94f89ae9ae7f9e639d026103df062afe799ef510c1b106a2bfa21aa53f8dec4|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/062-should-render-stereotypes-with-aliases-in-boxes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|de39b50a4b9cf14a0e698981c44d8d5865eaf2495c6a59ff04222f552981e893|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/063-should-render-stereotypes-with-aliases-and-complex-interacti",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|fb827ea140ce8c959cbbd6aaeff227b37662546ff58b60062ceefd05f4c80428|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/064-should-render-participants-with-inline-alias-in-config-objec",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|3557e3da1bbe8538c8e28aba64e2c0c88c27e9af30e2850aab1fcfa20c9adbdc|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/065-should-render-actors-with-inline-alias-in-config-object",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2b086a80cb4fe8ccd9019aa7800afa8fd835589ff0ead3959dfac5a46a52c80e|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/066-should-handle-mixed-inline-and-external-alias-syntax",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b4ff164eb6d6a66b75f4b9eeeeb16cb9c42bc1b6b5179352217b13d43ae1d6aa|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/067-should-prioritize-external-alias-over-inline-alias",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|40c57ff63f9e9d8efb03d552fa68930ea7a2c80709e7e55f4564b388198754d8|{\"look\":\"classic\",\"sequence\":{\"diagramMarginX\":50,\"diagramMarginY\":10}}": {
+   "case": "sequence/068-should-render-inline-alias-with-only-alias-field-no-type",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|4509ee431d7a04d5a57630ab9000b7bb8bc873f166de975ff2657be0df929038|{\"sequence\":{\"useMaxWidth\":false}}": {
+   "case": "sequence/069-should-render-a-sequence-diagram-with-boxes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6b375d83a2137c538cb516b1dacfc88aab40a545b5f2c4109cb7cdc2c10390b9|{\"sequence\":{\"actorFontFamily\":\"courier\"}}": {
+   "case": "sequence/070-should-render-a-simple-sequence-diagram",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|aeff446a225813cc8f97dd823754d3c93aca22843314895199f7a2c0e445e273|{}": {
+   "case": "sequence/071-should-render-bidirectional-arrows",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6e89604f1cc800ca6ab07a932dbd612273375bf796e40096d903bb7397a98db6|{}": {
+   "case": "sequence/072-should-handle-different-line-breaks",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|4bb2b1d09ef63e1e6b86e7755399a8a53ea29387c3193ad54d890893e4997223|{}": {
+   "case": "sequence/073-should-handle-empty-lines",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|985c4e05f9c129a1652f7f9516a58613a77a7de94d63270cc7b6123eaea23fb6|{}": {
+   "case": "sequence/074-should-handle-line-breaks-and-wrap-annotations",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0c808bcd1d790ed2dfd1b59fa8ae936815b293a9cd4dbb1f13ddda778bb832da|{}": {
+   "case": "sequence/075-should-render-sequence-rect-with-theme-aware-default-backgro",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9ac3e264ad2805104dfede56140d02c27519e8c1806ba2887269511316843694|{}": {
+   "case": "sequence/076-should-render-sequence-rect-with-theme-aware-default-backgro",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|521b0c3d502849faa98a74f446350f3c7aecf809bca5bd171f9efa020fcdf04f|{}": {
+   "case": "sequence/077-should-render-sequence-rect-with-theme-aware-default-backgro",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|8796efd700fdc1ad0cf7b82a8de33cf13cdb9783e8f94c60222351e0d5a09e57|{\"sequence\":{\"wrap\":true}}": {
+   "case": "sequence/078-should-render-loops-with-a-slight-margin",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|eab5c20b6a943fcebfdf2c9f9641fe80a9ed62f4601d9a77649799e6b9b4316e|{}": {
+   "case": "sequence/079-should-render-a-sequence-diagram-with-par-over",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|19d4d2ca2209c2b35503d759bcc1c28ef6ca02cde1aef98ceb54aa651a369a94|{}": {
+   "case": "sequence/080-should-render-a-sequence-diagram-with-basic-actor-creation-a",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|52b6e188dda4b047719d819bcf3833dd76c84c7b115161883300b6f3cd57eb9a|{}": {
+   "case": "sequence/081-should-render-a-sequence-diagram-with-actor-creation-and-des",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|268c800c3b20f4e254411b16259a50f7be0052dbd3ec47235d205685cfe69a8d|{}": {
+   "case": "sequence/082-should-render-a-sequence-diagram-with-sequence-numbers-that",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|5407736c9a91acea3adc530278f552a805db304402427d878fcb4a3f9ff8d682|{\"sequence\":{\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/083-should-render-different-note-fonts-when-configured",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d146533e65999ab91dc01b036f554b1cff61221a134d345038a5d69469e291c2|{\"sequence\":{\"messageFontFamily\":\"Arial\",\"messageFontSize\":18}}": {
+   "case": "sequence/084-should-render-different-message-fonts-when-configured",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|d146533e65999ab91dc01b036f554b1cff61221a134d345038a5d69469e291c2|{\"sequence\":{\"actorFontFamily\":\"times\",\"actorFontSize\":18}}": {
+   "case": "sequence/085-should-render-different-actor-fonts-when-configured",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|dcda4b5fc8e7b8382731ca4fdeede0e234a922ff26b7f2942898c6cac382abf3|{\"sequence\":{\"noteAlign\":\"left\"}}": {
+   "case": "sequence/086-should-render-notes-aligned-to-the-left-when-configured",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6eaf2b566fc70f6a2a0a48d64b93ccd6bc7583d7631bd6e88208722deae97f15|{\"sequence\":{\"noteAlign\":\"left\"}}": {
+   "case": "sequence/087-should-render-multi-line-notes-aligned-to-the-left-when-conf",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|56a32061875fe248fbc7c24e4030ab3b2c79e20a58286322a2f21c168a3af3da|{\"sequence\":{\"noteAlign\":\"right\"}}": {
+   "case": "sequence/088-should-render-notes-aligned-to-the-right-when-configured",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9e15e59693d0dd4e6369c67e890de18206d9626be65efa7a87ef7628c7a9e434|{\"sequence\":{\"noteAlign\":\"right\"}}": {
+   "case": "sequence/089-should-render-multi-line-notes-aligned-to-the-right-when-con",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9aa7685b431a57ae08e05935f2bf9ce65a2fd1ab1461c9bd959b93e71a90dcd8|{\"sequence\":{\"messageAlign\":\"left\"}}": {
+   "case": "sequence/090-should-render-multi-line-messages-aligned-to-the-left-when-c",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9aa7685b431a57ae08e05935f2bf9ce65a2fd1ab1461c9bd959b93e71a90dcd8|{\"sequence\":{\"messageAlign\":\"right\"}}": {
+   "case": "sequence/091-should-render-multi-line-messages-aligned-to-the-right-when",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|875a058622f3604578f3f1a95b0d6b4bf421c6057ae924dffb9297eed5ef7279|{\"logLevel\":0}": {
+   "case": "sequence/092-should-render-long-actor-descriptions",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|09782335964924e5be2a0910ef79fb5813788f7a33efd9460206da5b78f0c951|{\"logLevel\":0}": {
+   "case": "sequence/093-should-wrap-inline-long-actor-descriptions",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|55899abb828dae6963fdd295e52c2ce602a637b33c55310a7b7b4aa81bef3330|{}": {
+   "case": "sequence/094-should-wrap-directive-long-actor-descriptions",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|73f8932df1b69599b7dc0fad6d5bf8cefc3d4edb68057db8efe7e21d73077610|{}": {
+   "case": "sequence/095-should-be-possible-to-use-actor-symbols-instead-of-boxes",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|db9b8266792687d7288b065856085a99fa9be06e0eca4f8463639bab1a46b913|{}": {
+   "case": "sequence/096-should-have-actor-top-and-actor-bottom-classes-on-top-and-bo",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|1b0a52df3e2d333638b3d13c6a826258bf5b62ef72c1357ebadea666b2959b88|{}": {
+   "case": "sequence/097-should-render-long-notes-left-of-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|c48f1ea6a58fbe37d1e5159713c199865a8c8ce6459a1c2f6a064bb6edd26c0f|{}": {
+   "case": "sequence/098-should-render-long-notes-wrapped-inline-left-of-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|7eb359500c1e7a9db4d4510f8cfa817c2568db041bed0677193f7517c1e6416e|{}": {
+   "case": "sequence/099-should-render-long-notes-right-of-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ec2835312f7cac9dbbc04fecefeaf54abc381e8d0b6365349f2c6904f7728b79|{}": {
+   "case": "sequence/100-should-render-long-notes-wrapped-inline-right-of-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|a48abd15dfd554f8df66e6d9840ed44bea00b40ed3c07bafe9d312cfe02539bf|{}": {
+   "case": "sequence/101-should-render-long-notes-over-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|58408bd5b054a23b9c3f30a6a24f0f1e153b9b0c33bfd3f16c210c1bc513251a|{}": {
+   "case": "sequence/102-should-render-long-notes-wrapped-inline-over-actor",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|21d4215a8ee3e947be4257da9d431f835bd0c3be65e149f166554f4922aca0cf|{}": {
+   "case": "sequence/103-should-render-notes-over-actors-and-participant",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|8b0719382af2370760966728350f3883e52bb38eebd97a887768b521c1ac36de|{}": {
+   "case": "sequence/104-should-render-long-messages-from-an-actor-to-the-left-to-one",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|9ada32abae2e06c8db17323672db0941b0c65118d14166176676e7bc20e2bf91|{}": {
+   "case": "sequence/105-should-render-long-messages-wrapped-inline-from-an-actor-to",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|dcdc540013e9d57bab12a5e8a6a9f23383c925f728bdeb31a13692eb9703702f|{}": {
+   "case": "sequence/106-should-render-long-messages-from-an-actor-to-the-right-to-on",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|e3fb43dd2e022c4cd27a23ce3a36b3d4580266aaddaba06ba2d150c9f74f74ce|{}": {
+   "case": "sequence/107-should-render-long-messages-wrapped-inline-from-an-actor-to",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6a5d4d5be09a9573f6465c5ed6f84ebeb52a8103898dec0f87a8507554419350|{}": {
+   "case": "sequence/108-should-render-a-single-and-nested-rects",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|e4c6cefbab61083b2ed2099842520c23e5f2d95d588f06409509a68054c6a69a|{}": {
+   "case": "sequence/109-should-render-a-single-and-nested-opt-with-long-test-overflo",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|bec55c0d5e928eb95a8730a49cb9881b787f9bb67bb3e2f9f863e2dc8d9f6e96|{}": {
+   "case": "sequence/110-should-render-a-single-and-nested-opt-with-long-test-wrappin",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b15c18bc7b6d810fea31cbdb7a8c87b3e16c267b894facc5b6acee412f25c040|{}": {
+   "case": "sequence/111-should-render-rect-around-and-inside-loops",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b93b634b4c75374e0dcfe432cb866c93e74c19dffeaff492d65831b546c27801|{}": {
+   "case": "sequence/112-should-render-rect-around-and-inside-alts",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|4be8a4317dc73c729dc88df7570d7dcc3dd674f3e3949f0f416e6b74f7edf82f|{}": {
+   "case": "sequence/113-should-render-rect-around-and-inside-opts",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|057b93b8b4fedeb33b6d6131e44b7df78fef86ec731628080f503bb28b19edd9|{}": {
+   "case": "sequence/114-should-render-rect-around-and-inside-criticals",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0feee4ce709c1a5de7ecc75d3b0cd94fdab193dd35e78bc3360ff749f9dede6b|{}": {
+   "case": "sequence/115-should-render-rect-around-and-inside-breaks",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|f4fe1bf6c453e168c3943a0901b6c4da2535c460a9a2425ac8ca3f75aa461643|{\"sequence\":{\"actorMargin\":50,\"showSequenceNumbers\":true}}": {
+   "case": "sequence/116-should-render-autonumber-when-configured-with-such",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|a5bb1dee15f59270c84b646290df1230e82d65b6d3b79ad4906fb38b1f2bad07|{}": {
+   "case": "sequence/117-should-render-autonumber-when-autonumber-keyword-is-used",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|ec556b6bf3bd6a681ed366ec7949ff15ed8fa39734e560466deb0f2bb80c4db6|{}": {
+   "case": "sequence/118-should-render-autonumber-with-different-line-breaks",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|2853361c5cae7def70f8851a4ce573d4fb56379965053f1a2557ad571a94f0f9|{}": {
+   "case": "sequence/119-should-render-dark-theme-from-init-directive-and-configure-f",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|bd30862f1b2a7d4f5058e2f82611bcda9c8601ea83185b82cbc6d5725acdf7c2|{}": {
+   "case": "sequence/120-should-render-with-wrapping-enabled",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|f4dc12514039fc727aabef80741a934aa76cc02bd1c2490c0646902935318a0c|{}": {
+   "case": "sequence/121-should-render-with-an-init-directive",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|75486735dc62e815baf24e91384aced232959a3c6b5d3f97c1810a34c00a5419|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":false,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/122-should-override-config-with-directive-settings",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|1d55ce9988fa46d179cd7b4660a13c2023bdac234252dc44d1a1fba1b6707a66|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":true,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/123-should-override-config-with-directive-settings-2",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|8a7cb11b210e47fe9b341950349f4a86ce089a22878abbbae1461a312454bc4c|{\"securityLevel\":\"loose\"}": {
+   "case": "sequence/124-should-support-actor-links",
+   "class": "native-fails",
+   "native": "parse-error"
+  },
+  "sequence|f705333840b347df8db8b135bca3f19ce77c0c6ce19686f6f978dd19539214ea|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":true,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/125-should-support-actor-links-and-properties-experimental-use-w",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|7cef62ee7e34682c56260ce8d4019691e9852795d7b4cbc38415772aac5d0b12|{}": {
+   "case": "sequence/126-should-handle-bidirectional-arrows-with-autonumber",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|a848873472e604eaf167aa1b15bbb9a6f82e0f98222107c989a7636b8c3661e9|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":false,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/127-should-support-actor-links-and-properties-when-not-mirrored",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|325a13f4396a63e5aa032632cfde0a9e761c4afa4b978c3654a6a6f363d02d36|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":false,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
+   "case": "sequence/128-shouldn-t-display-unused-participants",
+   "class": "differs",
+   "native": "ok"
+  },
+  "sequence|6b375d83a2137c538cb516b1dacfc88aab40a545b5f2c4109cb7cdc2c10390b9|{\"sequence\":{\"useMaxWidth\":true}}": {
+   "case": "sequence/129-should-render-a-sequence-diagram-when-usemaxwidth-is-true-de",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6b375d83a2137c538cb516b1dacfc88aab40a545b5f2c4109cb7cdc2c10390b9|{\"sequence\":{\"useMaxWidth\":false}}": {
+   "case": "sequence/130-should-render-a-sequence-diagram-when-usemaxwidth-is-false",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|3cf7fc8c0a17c274f44b7224bf317203fba6e50a2a47665c93384694a4fbb258|{}": {
+   "case": "sequence/131-should-render-diagram-after-fixing-destroy-participant-error",
+   "class": "ref-fails",
+   "native": "parse-error"
+  },
+  "sequence|2f699ba5ab87f0c3a50b2284b00d6c10fe0dfc0d018c0436db8c2198bad6dde5|{}": {
+   "case": "sequence/132-should-render-diagram-after-fixing-destroy-participant-error",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|5879adf1c3d4d76419228abd2578e9c206748b9718f9379e3f2e8098392fbda8|{}": {
+   "case": "sequence/133-should-render-solid-half-arrow-top",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|7b8ac07fa603dc0c00dd5c7256c63faafd4ab073a24a946b4771e484cc5030f1|{}": {
+   "case": "sequence/134-should-render-solid-half-arrow-bottom",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|4693b321f3e26b439c27aa1357fca9435bc9e067d6081111cfd900adf906935f|{}": {
+   "case": "sequence/135-should-render-stick-half-arrow-top",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|121d20fd42763d732540eefbfa393f98bfb735950d7817db6b194d1657fe346a|{}": {
+   "case": "sequence/136-should-render-stick-half-arrow-bottom",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|de8b2b2851a29f8d3a5f8157e2026f10f3264a0e79982d2fd2a78d97bd923579|{}": {
+   "case": "sequence/137-should-render-solid-half-arrow-top-reverse",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|25be2d1bc26983cb2046e15ae3a63dd18033812c4c42a4ff769db61ba2231c8b|{}": {
+   "case": "sequence/138-should-render-solid-half-arrow-bottom-reverse",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|a30e2188946f2a7e56f5ef735c54b7a6d078883f7f0f0300c95c3f50feaeb628|{}": {
+   "case": "sequence/139-should-render-stick-half-arrow-top-reverse",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|e0887d8c47742bbd61c44ceee12a9eace2ae4aaf5cbd642223bc9b5f30eaf946|{}": {
+   "case": "sequence/140-should-render-stick-half-arrow-bottom-reverse",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|6b569c0bf8048b7fe4db705912c0536dd47c9b43b302cfe7f0165dccd129de15|{}": {
+   "case": "sequence/141-should-render-solid-half-arrow-top-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0c5f6c8ff02ea0e2cab74169c5da29e9f25b9a58f43c3e068fa00222734f8c2d|{}": {
+   "case": "sequence/142-should-render-solid-half-arrow-bottom-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|626faaa996b486455b03826ebdd87540d63d0bd63a39c891646e9251031f7863|{}": {
+   "case": "sequence/143-should-render-stick-half-arrow-top-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|657bd6cd2dde02258a55bbd5d5b517df66ab5d757f39ec751d56294975730c28|{}": {
+   "case": "sequence/144-should-render-stick-half-arrow-bottom-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|0319fcce58f17f16665d2134bfe4e3d2b4900f445b0222fb2fbbb03e579c9c87|{}": {
+   "case": "sequence/145-should-render-solid-half-arrow-top-reverse-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|1bb9d6db0e462555ebece2a61172bb2badee1d7e0246a35b4d042245e9667746|{}": {
+   "case": "sequence/146-should-render-solid-half-arrow-bottom-reverse-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|b97010b8abd4a6458e64d0fef70087925d44a0f1f25777b07057aaaba8193ef3|{}": {
+   "case": "sequence/147-should-render-stick-half-arrow-top-reverse-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|5a5f187f6880fdea1091d63baa402ac7e385791aa1ed2c4c0c56ffdad53d1fdb|{}": {
+   "case": "sequence/148-should-render-stick-half-arrow-bottom-reverse-dotted",
+   "class": "match",
+   "native": "ok"
+  },
+  "sequence|5bf97f4d79d04b760dea401f8be574c32c900b38793a11b1af2e1fe71dbfe95e|{\"themeCSS\":\".loopText { fill: #ffffff !important; } .labelBox { fill: red !important; }\"}": {
+   "case": "sequence/149-should-render-alt-else-section-titles-with-label-box-backgro",
+   "class": "match",
+   "native": "ok"
+  }
+ }
+}
