@@ -2,7 +2,7 @@
 
 ## 0.1.18 / 0.1.18-ohos
 
-**Pending publication** from tag `v0.1.18`. Until it is marked Available, use 0.1.17.
+**Available.** Published by [release workflow 44865360432](https://github.com/botiverse/mermaid-native/actions/runs/44865360432) (Android/iOS plane; the HarmonyOS plane by [44831581726](https://github.com/botiverse/mermaid-native/actions/runs/44831581726)) from tag [`v0.1.18`](https://github.com/botiverse/mermaid-native/tree/v0.1.18). Both planes resolve from the public Maven repository (checked 2026-11-21: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.18`; `mermaid-core` `0.1.18-ohos`).
 
 Changes since 0.1.17:
 
