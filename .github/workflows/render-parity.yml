@@ -61,7 +61,7 @@ jobs:
         run: npm ci
       - name: Unit-test metric and extraction code
         working-directory: scripts/render-parity
-        run: node --test test/
+        run: node --test test/*.test.mjs
       - name: Verify committed corpus matches the pinned upstream revision
         run: |
           scripts/render-parity/fetch-upstream.sh "" build/render-parity-upstream

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Visual-parity suite: mermaid-native vs upstream mermaid.js rendering tests",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@babel/parser": "7.28.5",
