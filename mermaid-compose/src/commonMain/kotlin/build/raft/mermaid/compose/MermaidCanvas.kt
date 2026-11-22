@@ -143,7 +143,7 @@ public fun measureMermaidScene(
     },
 )
 
-private val SceneDensity = Density(1f, 1f)
+internal val SceneDensity = Density(1f, 1f)
 
 /**
  * Draws [scene] into the receiver's Compose [DrawScope], measuring text with [textMeasurer]. One

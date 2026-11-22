@@ -78,6 +78,8 @@ For Compose Multiplatform, add `build.raft.mermaid:mermaid-compose` and draw a s
 
 To draw into your own `DrawScope`, call `drawMermaidScene(scene, textMeasurer, scale, textStyle)` with a `TextMeasurer` from `rememberTextMeasurer()`. This overload draws one scene unit as `scale` pixels and measures text on every call. To avoid that, keep `measureMermaidScene(scene, textMeasurer, textStyle)` in `remember` and call `drawMermaidScene(measured, scale)`.
 
+Lay the diagram out with the font it is drawn in: pass `rememberMermaidTextMeasurer(textStyle)` instead of `FixedWidthTextMeasurer` to `SimpleMermaidLayout.layout`, and the same `textStyle` to the canvas.
+
 For Kuikly, add `mermaid-kuikly` and its repository group, then draw a prepared scene with `MermaidView` or `MermaidKuiklyRenderer`. An existing Kuikly host and matching native renderer are required. See the [complete Kuikly and HarmonyOS instructions](docs-site/guide/getting-started.md), including compiler versions and dependency boundaries.
 
 ## What lives in the library?
