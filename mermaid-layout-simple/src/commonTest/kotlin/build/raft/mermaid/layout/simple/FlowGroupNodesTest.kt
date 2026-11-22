@@ -47,4 +47,16 @@ class FlowGroupNodesTest {
         val scene = layout("flowchart LR\nX --> Y\nsubgraph X\ndirection LR\nA\nC\nend\nsubgraph Y\nB\nD\nend")
         assertEquals(listOf("A", "B", "C", "D", "X", "Y"), scene.commands.filterIsInstance<DrawText>().map { it.text }.sorted())
     }
+
+    @Test fun framesWidenedForTheirTitleStayOnTheCanvas() {
+        val scene = layout("graph TB\nA\nB\nsubgraph foo[Foo SubGraph]\nC\nD\nend\nsubgraph bar[Bar SubGraph]\nE\nF\nend\nG\n" +
+            "A-->B\nB-->C\nC-->D\nB-->D\nD-->E\nE-->A\nE-->F\nF-->D\nF-->G\nB-->G\nG-->D")
+        scene.commands.filterIsInstance<DrawRect>().forEach {
+            assertTrue(it.rect.x >= 0 && it.rect.x + it.rect.width <= scene.width, "$it outside ${scene.width}")
+        }
+        scene.commands.filterIsInstance<DrawText>().forEach {
+            val half = FixedWidthTextMeasurer.measure(it.text, it.style).width / 2
+            assertTrue(it.origin.x - half >= 0 && it.origin.x + half <= scene.width, "$it outside ${scene.width}")
+        }
+    }
 }

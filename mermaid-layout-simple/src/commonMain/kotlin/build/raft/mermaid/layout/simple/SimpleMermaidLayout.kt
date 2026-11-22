@@ -3140,7 +3140,14 @@ public object SimpleMermaidLayout : DiagramLayout {
             return flowLayoutValidation(diagram, rects, groupRects, edgePaths, validationLabels, validationTitles, textMeasurer, dx, dy)
         }
         val hopBounds = applySwimlaneHops(commands, edgeCommands, lineHops)
-        if(layered!=null)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+        if(layered!=null) {
+            // A frame widened for its title may leave the placed area: keep it, its padding and its stroke on the canvas.
+            val grown=groupRects.filter { it.value!=placement.groups[it.key] }.values
+            if(grown.isEmpty())return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
+            val dx=maxOf(0.0,config.padding-grown.minOf { it.x })
+            return LayoutScene(maxOf(width,grown.maxOf { it.x+it.width }+config.padding)+dx,height,
+                if(dx==0.0)commands else commands.map { it.offsetBy(dx,0.0) },layoutValidation=validation(dx,0.0))
+        }
         if(hopBounds.isEmpty() && returnRoutes.isEmpty() && adjustedLabels.isEmpty() && !geometryChanged && groupRects==materialized.groups)return LayoutScene(width,height,commands,layoutValidation=validation(0.0,0.0))
         val materializedBounds=if(geometryChanged || groupRects!=materialized.groups) groupRects.values+edgePaths.values.map { p ->
             val left=p.minOf { it.x };val top=p.minOf { it.y }
