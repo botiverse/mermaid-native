@@ -1,5 +1,19 @@
 # SDK releases and upgrading
 
+## 0.1.19 / 0.1.19-ohos
+
+**Pending publication** from tag `v0.1.19`. Until it is marked Available, use 0.1.18.
+
+Changes since 0.1.18:
+
+- Flowchart node labels wider than 200px wrap like Mermaid's, at spaces, after hyphens and between CJK characters; a longer word stays whole. Edge labels use the same breaks, so Chinese, Japanese and Korean edge labels wrap too. Rounded, stadium, circle and ellipse nodes grow to hold several lines, and edges meet the round outline of rounded and stadium nodes.
+- Markdown edge labels (`` -->|"`1o **bold**`"| ``) are drawn with their emphasis instead of asterisks.
+- Mermaid entity codes (`#quot;`, `#35;`, `#9829;`) become their character. In sequence diagrams they no longer start a comment that dropped the rest of the text.
+- Flowcharts that were rejected now render: a node and a subgraph sharing an id, dotted links without the leading dash, links that continue on the next line, the `layout: dagre` / `layout: elk` frontmatter hint, and sequence `link`, `links` and `properties` declaring their participant. A subgraph frame widened for its title is no longer cut off at the canvas edge.
+- Flowcharts with long labels, rounded nodes or entity codes render differently from 0.1.18; of the sample SVGs only `flowchart-cross-subgraph-layering` changed. New API: `MermaidText.decodeEntities` and `FlowSubgraph.styles`.
+
+Upgrade all normal modules together to `0.1.19` and HarmonyOS modules to `0.1.19-ohos`.
+
 ## 0.1.18 / 0.1.18-ohos
 
 **Available.** Published by [release workflow 44865360432](https://github.com/botiverse/mermaid-native/actions/runs/44865360432) (Android/iOS plane; the HarmonyOS plane by [44831581726](https://github.com/botiverse/mermaid-native/actions/runs/44831581726)) from tag [`v0.1.18`](https://github.com/botiverse/mermaid-native/tree/v0.1.18). Both planes resolve from the public Maven repository (checked 2026-11-21: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.18`; `mermaid-core` `0.1.18-ohos`).
