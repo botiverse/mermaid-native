@@ -18,8 +18,8 @@
   "sequence": {
    "extracted": 149,
    "skipped": 14,
-   "match": 137,
-   "differs": 11,
+   "match": 138,
+   "differs": 10,
    "native-fails": 0,
    "ref-fails": 1,
    "native": {
@@ -1661,7 +1661,7 @@
   },
   "sequence|6e89604f1cc800ca6ab07a932dbd612273375bf796e40096d903bb7397a98db6|{}": {
    "case": "sequence/072-should-handle-different-line-breaks",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "sequence|4bb2b1d09ef63e1e6b86e7755399a8a53ea29387c3193ad54d890893e4997223|{}": {

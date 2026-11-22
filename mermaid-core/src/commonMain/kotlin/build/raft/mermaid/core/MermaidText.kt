@@ -5,6 +5,8 @@ public object MermaidText {
     private val lineBreak = Regex("</?br\\s*/?>", RegexOption.IGNORE_CASE)
     public fun hasBreaks(text: String): Boolean = lineBreak.containsMatchIn(text)
     public fun splitBreaks(text: String): List<String> = if (hasBreaks(text)) lineBreak.split(text) else listOf(text)
+    /** Restores the characters that Mermaid entity codes (`#quot;`, `#35;`) stand for in parsed text. */
+    public fun decodeEntities(text: String): String = MermaidEntities.decode(text)
     public fun countOccurrence(text: String, substring: String): Int {
         if (substring.isEmpty()) return (text.length - 1).coerceAtLeast(0)
         var count = 0; var start = 0

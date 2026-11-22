@@ -20,6 +20,7 @@ import build.raft.mermaid.core.EntityCardinality
 import build.raft.mermaid.core.EntityRelationshipDiagram
 import build.raft.mermaid.core.EntityKey
 import build.raft.mermaid.core.MermaidDiagram
+import build.raft.mermaid.core.MermaidText
 import build.raft.mermaid.core.MindmapDiagram
 import build.raft.mermaid.core.MindmapNodeShape
 import build.raft.mermaid.core.TimelineDiagram
@@ -153,6 +154,21 @@ private const val STATE_TERMINAL_SIZE = 14.0
 /** Small deterministic layout with no DOM, JavaScript, ELK, or platform state. */
 public object SimpleMermaidLayout : DiagramLayout {
     override fun layout(
+        diagram: MermaidDiagram,
+        textMeasurer: TextMeasurer,
+        config: LayoutConfig,
+    ): LayoutScene {
+        // Parsed text keeps entity codes as placeholders, so layout code never reads them as syntax.
+        val scene = layoutDiagram(diagram, { text, style -> textMeasurer.measure(MermaidText.decodeEntities(text), style) }, config)
+        return scene.copy(
+            commands = scene.commands.map { if (it is DrawText) it.copy(text = MermaidText.decodeEntities(it.text)) else it },
+            accessibilityTitle = scene.accessibilityTitle?.let(MermaidText::decodeEntities),
+            accessibilityDescription = scene.accessibilityDescription?.let(MermaidText::decodeEntities),
+            links = scene.links.map { it.copy(url = MermaidText.decodeEntities(it.url), label = MermaidText.decodeEntities(it.label)) },
+        )
+    }
+
+    private fun layoutDiagram(
         diagram: MermaidDiagram,
         textMeasurer: TextMeasurer,
         config: LayoutConfig,
