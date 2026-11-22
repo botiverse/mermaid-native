@@ -11,7 +11,7 @@ public object MermaidParser {
         val document = try { MermaidFrontmatter.extract(source) } catch (error: MermaidFrontmatterError) {
             return failure(MermaidDiagnosticCode.INVALID_VALUE, error.message ?: "Invalid frontmatter", error.location)
         }
-        val result = parseBody(document.text)
+        val result = parseBody(MermaidEntities.encode(document.text))
         val prefix = source.take(document.bodyOffset).replace("\r\n", "\n").replace('\r', '\n')
         val removedLines = prefix.count { it == '\n' }
         val removedColumns = prefix.length - prefix.lastIndexOf('\n') - 1
