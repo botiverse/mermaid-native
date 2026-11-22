@@ -3019,7 +3019,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true,compoundLayering=!swimlane)
         val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
         // Flowcharts use the dagre-like layered layout with spline edges; swimlanes keep their lanes.
-        val titleSizes=diagram.subgraphs.associate { it.id to flowGroupStyle(it,diagram).text.let { text -> SceneSize(textMeasurer.measure(it.label,text).width,text.fontSize) } }
+        val titles=diagram.subgraphs.associate { it.id to FlowTitleLabel(it,flowGroupStyle(it,diagram).text,textMeasurer) }
+        val titleSizes=titles.mapValues { (_,title) -> SceneSize(title.width,title.height) }
         val layered=if(swimlane)null else flowLayeredLayout(diagram,sizes,textMeasurer,config,titleSizes)
         val placement=layered?.let { FlowPlacement.Result(it.width,it.height,it.nodes,it.groups) } ?: lanePlacement?.placement ?: placer.place()
         val width=placement.width
@@ -3064,10 +3065,11 @@ public object SimpleMermaidLayout : DiagramLayout {
             commands += DrawRect(rect,cornerRadius=if(band!=null)0.0 else 4.0,fill=if(band!=null)SceneColor(DiagramPalette.CANVAS)else groupStyle.fill,stroke=if(band!=null)SceneColor(DiagramPalette.MUTED)else groupStyle.stroke,strokeWidth=groupStyle.strokeWidth)
             if(band!=null)commands += DrawRect(band,0.0,fill=groupStyle.fill,stroke=SceneColor(DiagramPalette.MUTED),strokeWidth=1.0)
             val titleBox=titleBand ?: rect
+            val titleLabel=titles.getValue(subgraph.id)
             val titleY=titleBox.y+minOf(titleBox.height-3.0,6+groupStyle.text.fontSize)
             val titleX=if(band!=null)titleBox.x+titleBox.width/2 else {
                 // Keep the title clear of edges entering through the frame top.
-                val placement=flowTitlePlacement(subgraph.id,diagram,groupRects,rects,titleY,textMeasurer.measure(subgraph.label,groupStyle.text).width,groupStyle.text.fontSize,
+                val placement=flowTitlePlacement(subgraph.id,diagram,groupRects,rects,titleY+titleLabel.height-groupStyle.text.fontSize,titleLabel.width,titleLabel.height,
                     diagram.edges.indices.filter { diagram.edges[it].style!=FlowEdgeStyle.INVISIBLE }.mapNotNull { edgePaths[it] })
                 if(placement.frame!=rect){
                     groupRects[subgraph.id]=placement.frame
@@ -3075,9 +3077,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                 }
                 placement.center
             }
-            val title = DrawText(subgraph.label,ScenePoint(titleX,titleY),TextAnchor.MIDDLE,groupStyle.text)
+            val title=if(titleBand!=null)listOf(DrawText(subgraph.label,ScenePoint(titleX,titleY),TextAnchor.MIDDLE,groupStyle.text))else titleLabel.draw(titleX,titleY)
             commands += title
-            if(config.validateOrthogonalLayout)validationTitles[subgraph.id] = title
+            if(config.validateOrthogonalLayout)validationTitles[subgraph.id] = title.first()
         }
 
         diagram.edges.forEachIndexed { index, edge ->
