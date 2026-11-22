@@ -914,6 +914,13 @@ internal fun flowShapeOutline(shape: FlowNodeShape, r: SceneRect): List<List<Sce
     }
 }
 
+/** The corner radius a rounded or stadium node of [height] is drawn with; 0 for the other shapes. */
+internal fun flowCornerRadius(shape: FlowNodeShape, height: Double): Double = when (shape) {
+    FlowNodeShape.ROUNDED -> min(height / 2, FLOW_ROUND_RADIUS)
+    FlowNodeShape.STADIUM -> height / 2
+    else -> 0.0
+}
+
 /** Where the ray from the node center toward [toward] leaves the node outline. */
 internal fun boundaryPoint(r: SceneRect, shape: FlowNodeShape, toward: ScenePoint): ScenePoint {
     val c = rectCenter(r)
@@ -935,7 +942,18 @@ internal fun boundaryPoint(r: SceneRect, shape: FlowNodeShape, toward: ScenePoin
         shape == FlowNodeShape.DIAMOND -> 1.0 / (abs(dx) / hw + abs(dy) / hh)
         shape == FlowNodeShape.CIRCLE || shape == FlowNodeShape.DOUBLE_CIRCLE || shape == FlowNodeShape.ELLIPSE ->
             1.0 / sqrt((dx * dx) / (hw * hw) + (dy * dy) / (hh * hh))
-        else -> min(if (abs(dx) < 1e-9) Double.MAX_VALUE else hw / abs(dx), if (abs(dy) < 1e-9) Double.MAX_VALUE else hh / abs(dy))
+        else -> {
+            val side = min(if (abs(dx) < 1e-9) Double.MAX_VALUE else hw / abs(dx), if (abs(dy) < 1e-9) Double.MAX_VALUE else hh / abs(dy))
+            // A round corner, as drawn: the ray meets its circle before the side.
+            val radius = min(flowCornerRadius(shape, r.height), hw)
+            val ex = hw - radius; val ey = hh - radius
+            if (radius <= 0.0 || abs(dx) * side <= ex || abs(dy) * side <= ey) side
+            else {
+                val length = dx * dx + dy * dy
+                val along = abs(dx) * ex + abs(dy) * ey
+                (along + sqrt(max(0.0, along * along - length * (ex * ex + ey * ey - radius * radius)))) / length
+            }
+        }
     }
     return ScenePoint(c.x + dx * t, c.y + dy * t)
 }

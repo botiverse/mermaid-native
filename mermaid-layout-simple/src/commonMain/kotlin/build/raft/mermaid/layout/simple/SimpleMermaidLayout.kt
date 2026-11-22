@@ -3139,7 +3139,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.5) }
                     }
                 }
-                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = if(node.shape==FlowNodeShape.ROUNDED)min(rect.height / 2.0, FLOW_ROUND_RADIUS)else rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT), strokeWidth = 1.5)
+                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = flowCornerRadius(node.shape, rect.height), fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT), strokeWidth = 1.5)
                 FlowNodeShape.CIRCLE, FlowNodeShape.ELLIPSE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                 FlowNodeShape.DOUBLE_CIRCLE -> {
                     val cx = rect.x + rect.width / 2.0

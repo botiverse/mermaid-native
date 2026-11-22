@@ -64,4 +64,19 @@ class FlowLabelWrapTest {
             assertTrue(kotlin.math.hypot(half, text.origin.y - ellipse.center.y) <= ellipse.radiusX, text.text)
         }
     }
+
+    @Test fun edgesMeetRoundOutlines() {
+        val r = SceneRect(10.0, 20.0, 300.0, 160.0)
+        for (shape in listOf(FlowNodeShape.STADIUM, FlowNodeShape.ROUNDED)) {
+            val radius = flowCornerRadius(shape, r.height)
+            for (angle in 0 until 360 step 5) {
+                val a = angle * kotlin.math.PI / 180
+                val p = boundaryPoint(r, shape, ScenePoint(160.0 + 1000 * kotlin.math.cos(a), 100.0 + 1000 * kotlin.math.sin(a)))
+                // Distance to the inner rectangle the outline is drawn around at [radius].
+                val dx = maxOf(kotlin.math.abs(p.x - 160.0) - (150.0 - radius), 0.0)
+                val dy = maxOf(kotlin.math.abs(p.y - 100.0) - (80.0 - radius), 0.0)
+                assertEquals(radius, kotlin.math.hypot(dx, dy), 1e-6, "$shape at $angle")
+            }
+        }
+    }
 }
