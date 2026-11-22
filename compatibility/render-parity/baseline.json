@@ -6,8 +6,8 @@
   "flowchart": {
    "extracted": 264,
    "skipped": 6,
-   "match": 199,
-   "differs": 61,
+   "match": 203,
+   "differs": 57,
    "native-fails": 2,
    "ref-fails": 2,
    "native": {
@@ -201,7 +201,7 @@
   },
   "flowchart|94e2b105fbc22b55795278ff106fcabc8a98817b7954f2b18d2dde7d69906a62|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/037-76-elk-handle-unicode-encoded-character-with-html-labels-tru",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "flowchart|00d342dffe0918a8870790d2b4d94e26a80543574f7bcb7e086a4e2e616b13ac|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
@@ -381,7 +381,7 @@
   },
   "flowchart|231dd28ce12f25db47a1732873f3204b5f109b2191585ea8d176f482d51f1194|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
    "case": "flowchart/074-fhd7-should-render-a-flowchart-full-of-icons",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "flowchart|87a0449855a6b1f0201790b6fece163d3adf73cf3e7f9efa219735f42a239193|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
@@ -756,7 +756,7 @@
   },
   "flowchart|02b4d7e4a9306b953e1a4f28330635466776aae46abe577f7856622c8d838471|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/150-65-2-bold-text-from-classes",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "flowchart|0f7c8fabae9a38733488f163908c93a3617c84fc0eece85eebed298db4f930ae|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
@@ -806,7 +806,7 @@
   },
   "flowchart|42014334e3f7c8c585d3ada9643e2d819a43cab6736c18cb6254503c49edb5ec|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/161-76-handle-unicode-encoded-character-with-html-labels-true",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "flowchart|a08e244e09dfc895a6e73378997fa1dc82df79b039634c77ffd4f3b628bdce76|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
