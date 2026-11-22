@@ -17,9 +17,9 @@ This is an independent implementation, not an official Mermaid project. It cover
 | Draw in a Kuikly app | `mermaid-kuikly` | Raft integration plus an independent official Kuikly 2.28.0 Android example; see the verified scope below |
 | Use a browser demo | `mermaid-web` | Kotlin/Wasm playground and Canvas demo; JavaScript loads Wasm and connects browser APIs |
 
-Current release: **0.1.18** (**0.1.18-ohos** for HarmonyOS). The engine modules (core, layout and SVG) are published for every official Kotlin Multiplatform target, and `mermaid-compose` for Android, iOS, desktop JVM and Wasm. Nothing needs a JavaScript runtime; the browser demos use JavaScript only to host Wasm. There is currently no Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
+Current release: **0.1.19** (**0.1.19-ohos** for HarmonyOS). The engine modules (core, layout and SVG) are published for every official Kotlin Multiplatform target, and `mermaid-compose` for Android, iOS, desktop JVM and Wasm. Nothing needs a JavaScript runtime; the browser demos use JavaScript only to host Wasm. There is currently no Swift XCFramework, CocoaPod, or HarmonyOS HAR distribution of this SDK.
 
-**Release vs. main:** published artifacts come from the release tag. The website and repository describe the current main branch, which may contain unreleased APIs. See [releases and upgrading](docs-site/guide/releases.md); do not assume a feature on main is present in 0.1.18. The incomplete 0.1.10 release pair should not be used.
+**Release vs. main:** published artifacts come from the release tag. The website and repository describe the current main branch, which may contain unreleased APIs. See [releases and upgrading](docs-site/guide/releases.md); do not assume a feature on main is present in 0.1.19. The incomplete 0.1.10 release pair should not be used.
 
 ## Quick start: KMP to SVG
 
@@ -43,8 +43,8 @@ Add these dependencies to your shared module:
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("build.raft.mermaid:mermaid-layout-simple:0.1.18")
-            implementation("build.raft.mermaid:mermaid-render-svg:0.1.18")
+            implementation("build.raft.mermaid:mermaid-layout-simple:0.1.19")
+            implementation("build.raft.mermaid:mermaid-render-svg:0.1.19")
         }
     }
 }
