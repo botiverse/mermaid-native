@@ -19,14 +19,16 @@ class ExampleConsumerOptionsTest {
         }
         assertTrue(assertIs<XyChartDiagram>(parse("xychart-beta\nbar [1,2]")).plotColorPalette.isEmpty())
     }
-    @Test fun ticketSubstitutionAndUnsupportedOptionsStayExplicit() {
+    @Test fun ticketSubstitutionUsesSafeLinksOnly() {
         val d=assertIs<KanbanDiagram>(parse("---\nconfig:\n  kanban: {ticketBaseUrl: 'https://example.com/#TICKET#?q=#TICKET#'}\n---\nkanban\n Todo\n  A[Task]@{ticket: 123}"))
         assertEquals("https://example.com/123?q=#TICKET#",d.ticketUrl("123"))
         assertNull(d.ticketUrl("bad\nvalue"))
-        val bad=listOf("kanban: {ticketBaseUrl: 'javascript:alert(1)'}","kanban: {ticketBaseUrl: 'https://user@host/'}","treemap: {valueFormat: '.2f'}","themeVariables: {xyChart: {plotColorPalette: '#12345'}}","themeVariables: {xyChart: {plotColorPalette: '#123,'}}")
-        for(config in bad) {
-            val body=when { config.startsWith("themeVariables") -> "xychart-beta\nbar [1,2]"; config.startsWith("treemap") -> "treemap-beta\n\"A\": 1"; else -> "kanban\n Todo" }
-            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  $config\n---\n$body"))
-        }
+        for(link in listOf("javascript:alert(1)","https://user@host/"))
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  kanban: {ticketBaseUrl: '$link'}\n---\nkanban\n Todo"))
+    }
+    @Test fun valuesNativeCannotUseKeepTheDefault() {
+        assertNull(assertIs<TreemapDiagram>(parse("---\nconfig:\n  treemap: {valueFormat: '.2f'}\n---\ntreemap-beta\n\"A\": 1")).valueFormat)
+        for(palette in listOf("#12345","#123,","red"))
+            assertTrue(assertIs<XyChartDiagram>(parse("---\nconfig:\n  themeVariables: {xyChart: {plotColorPalette: '$palette'}}\n---\nxychart-beta\nbar [1,2]")).plotColorPalette.isEmpty())
     }
 }

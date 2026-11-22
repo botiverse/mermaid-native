@@ -70,17 +70,25 @@ class MermaidFrontmatterTest {
         assertTrue(assertIs<XyChartDiagram>(plain.diagram).showDataLabel)
         assertNull(plain.frontmatter.config)
     }
-    @Test fun unsupportedConfigurationDoesNotSilentlyPass() {
-        val result = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  unknown: {enabled: true}\n---\ngraph TD\nA-->B"))
-        assertContains(result.diagnostics.single().message, "Unsupported Native frontmatter configuration")
+    @Test fun settingsNativeDoesNotApplyDoNotStopTheDiagram() {
+        for (config in listOf(
+            "  unknown: {enabled: true}", "  theme: dark", "  look: handDrawn\n  fontFamily: Arial\n  fontSize: 16",
+            "  themeVariables:\n    primaryColor: '#ff0000'", "  flowchart:\n    nodeSpacing: 250\n    curve: basis",
+            "  layout: elk", "  layout: tidy-tree", "  elk:\n    mergeEdges: true", "  xyChart:\n    width: 900",
+        )) assertIs<FlowchartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n$config\n---\nflowchart LR\nA-->B"), config).diagram)
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\ndisplayMode: compact\n---\ngraph TD\nA-->B"))
+    }
+    @Test fun settingsNativeAppliesStillWorkNextToOthers() {
+        val source = "---\nconfig:\n  theme: dark\n  xyChart:\n    width: 900\n    showDataLabel: false\n  themeVariables:\n    xyChart:\n      backgroundColor: white\n      plotColorPalette: '#ff0000, #0f0'\n---\nxychart-beta\nx-axis [A, B]\nbar [1, 2]"
+        val chart = assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source)).diagram)
+        assertFalse(chart.showDataLabel)
+        assertEquals(listOf("#ff0000", "#0f0"), chart.plotColorPalette)
+        val named = assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(source.replace("'#ff0000, #0f0'", "'red, blue'"))).diagram)
+        assertEquals(assertIs<XyChartDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("xychart-beta\nx-axis [A, B]\nbar [1, 2]")).diagram).plotColorPalette, named.plotColorPalette)
+    }
+    @Test fun aWrongTypeInAnAppliedSettingIsStillReported() {
         val typed = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  sankey:\n    showValues: 'false'\n---\nsankey\nA,B,1"))
         assertContains(typed.diagnostics.single().message, "must be boolean")
-    }
-    @Test fun layoutEngineHintsAreAcceptedAndChecked() {
-        for (config in listOf("  layout: elk", "  layout: dagre", "  layout: elk.layered", "  layout: elk\n  elk:\n    mergeEdges: true"))
-            assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n$config\n---\nflowchart LR\nA-->B"))
-        for (config in listOf("  layout: unknown", "  layout: true", "  elk:\n    mergeEdges: true"))
-            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n$config\n---\nflowchart LR\nA-->B"))
     }
     @Test fun treeIconsReachTheExistingProductionSelectionPolicy() {
         val doc = assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n  treeView:\n    showIcons: true\n    defaultIconPack: custom\n    extensionIcons: {'.ts': typescript}\n---\ntreeView-beta\nroot/\n  app.ts"))

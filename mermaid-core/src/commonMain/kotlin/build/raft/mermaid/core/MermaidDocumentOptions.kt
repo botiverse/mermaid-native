@@ -1,21 +1,17 @@
 package build.raft.mermaid.core
 
-/** Explicit configuration admission: unimplemented settings fail rather than disappear. */
+/**
+ * Applies the settings Native implements. Like Mermaid, anything else in `config` (a theme, spacing,
+ * another diagram's section) is left alone, so it never stops the diagram from being drawn.
+ */
 internal object MermaidDocumentOptions {
     fun apply(original: MermaidDiagram, metadata: MermaidFrontmatterMetadata): MermaidDiagram {
-        require(metadata.displayMode == null) { "Frontmatter displayMode is not implemented by Native" }
         var diagram = original
         val root = metadata.config
         if (root != null) {
             require(root is UsecaseJsonValue.ObjectValue) { "Frontmatter config must be a mapping" }
             for ((section, value) in root.value) {
-                if (section == "layout") {
-                    // Selects an upstream layout engine. Native has one layered layout, so the choice is only checked.
-                    require(value is UsecaseJsonValue.StringValue) { "config.layout must be a string" }
-                    require(value.value == "dagre" || value.value == "elk" || value.value.startsWith("elk.")) { "Unsupported Native frontmatter configuration: layout ${value.value}" }
-                    continue
-                }
-                require(value is UsecaseJsonValue.ObjectValue) { "Frontmatter config.$section must be a mapping" }
+                if (value !is UsecaseJsonValue.ObjectValue) continue // A scalar such as `theme` or `layout`.
                 val fields = value.value
                 fun boolean(key: String, fallback: Boolean): Boolean = fields[key]?.let {
                     require(it is UsecaseJsonValue.BooleanValue) { "config.$section.$key must be boolean" }; it.value
@@ -23,13 +19,9 @@ internal object MermaidDocumentOptions {
                 fun string(key: String, fallback: String): String = fields[key]?.let {
                     require(it is UsecaseJsonValue.StringValue) { "config.$section.$key must be a string" }; it.value
                 } ?: fallback
-                fun allowed(vararg keys: String) { require(fields.keys.all { it in keys }) { "Unsupported Native frontmatter configuration in $section: ${fields.keys.filter { it !in keys }.joinToString()}" } }
                 when (section) {
-                    // Tuning for the ELK engine selected by `layout: elk`; nothing to apply to Native's own layout.
-                    "elk" -> require((root.value["layout"] as? UsecaseJsonValue.StringValue)?.value?.startsWith("elk") == true) { "config.elk requires layout: elk" }
                     "treeView" -> {
-                        allowed("showIcons", "defaultIconPack", "filenameIcons", "extensionIcons")
-                        require(diagram is TreeViewDiagram) { "treeView configuration requires a TreeView diagram" }
+                        if (diagram !is TreeViewDiagram) continue
                         fun icons(key: String): Map<String, String> {
                             val objectValue = fields[key] ?: return emptyMap()
                             require(objectValue is UsecaseJsonValue.ObjectValue) { "config.treeView.$key must be a mapping" }
@@ -38,7 +30,7 @@ internal object MermaidDocumentOptions {
                         diagram = diagram.copy(iconConfig = TreeViewIconConfig(boolean("showIcons", false), string("defaultIconPack", ""), icons("filenameIcons"), icons("extensionIcons")))
                     }
                     "block" -> {
-                        allowed("padding"); require(diagram is BlockDiagram) { "block configuration requires a Block diagram" }
+                        if (diagram !is BlockDiagram) continue
                         val setting = fields["padding"]
                         val padding = if (setting == null) diagram.padding else {
                             require(setting is UsecaseJsonValue.NumberValue && setting.value.isFinite() && setting.value >= 0.0) { "config.block.padding must be a finite non-negative number" }
@@ -47,7 +39,7 @@ internal object MermaidDocumentOptions {
                         diagram = diagram.copy(padding = padding)
                     }
                     "swimlane" -> {
-                        allowed("lineHops"); require(diagram is SwimlaneDiagram) { "swimlane configuration requires a Swimlane diagram" }
+                        if (diagram !is SwimlaneDiagram) continue
                         val setting = fields["lineHops"]
                         val hops = when (setting) {
                             null -> diagram.lineHops
@@ -62,36 +54,32 @@ internal object MermaidDocumentOptions {
                         diagram = diagram.copy(lineHops = hops)
                     }
                     "sankey" -> {
-                        allowed("showValues"); require(diagram is SankeyDiagram) { "sankey configuration requires a Sankey diagram" }
+                        if (diagram !is SankeyDiagram) continue
                         diagram = diagram.copy(showValues = boolean("showValues", diagram.showValues))
                     }
                     "xyChart" -> {
-                        allowed("showDataLabel"); require(diagram is XyChartDiagram) { "xyChart configuration requires an XY chart" }
+                        if (diagram !is XyChartDiagram) continue
                         diagram = diagram.copy(showDataLabel = boolean("showDataLabel", diagram.showDataLabel))
                     }
                     "kanban" -> {
-                        allowed("ticketBaseUrl"); require(diagram is KanbanDiagram) { "kanban configuration requires a Kanban diagram" }
+                        if (diagram !is KanbanDiagram) continue
                         val template = string("ticketBaseUrl", "")
                         require(template.isEmpty() || isSafeMermaidLink(template)) { "Kanban ticketBaseUrl must be an absolute HTTP(S) URL" }
                         diagram = diagram.copy(ticketBaseUrl = template.takeIf { it.isNotEmpty() })
                     }
                     "treemap" -> {
-                        allowed("valueFormat"); require(diagram is TreemapDiagram) { "treemap configuration requires a Treemap diagram" }
-                        val format = string("valueFormat", "")
-                        require(format in listOf("", ",", "$0,0")) { "Native Treemap valueFormat currently supports ',' and '$0,0'" }
-                        diagram = diagram.copy(valueFormat = format.takeIf { it.isNotEmpty() })
+                        if (diagram !is TreemapDiagram) continue
+                        // Another format is drawn as plain numbers.
+                        diagram = diagram.copy(valueFormat = string("valueFormat", "").takeIf { it == "," || it == "$0,0" })
                     }
                     "themeVariables" -> {
-                        allowed("xyChart"); require(diagram is XyChartDiagram) { "Native themeVariables currently requires an XY chart" }
-                        val theme = fields["xyChart"]
-                        require(theme is UsecaseJsonValue.ObjectValue && theme.value.keys.all { it == "plotColorPalette" }) { "Native XY theme supports plotColorPalette only" }
-                        val palette = theme.value["plotColorPalette"]
-                        require(palette is UsecaseJsonValue.StringValue) { "plotColorPalette must be a comma-separated color string" }
+                        if (diagram !is XyChartDiagram) continue
+                        val chart = fields["xyChart"] as? UsecaseJsonValue.ObjectValue ?: continue
+                        val palette = chart.value["plotColorPalette"] as? UsecaseJsonValue.StringValue ?: continue
                         val colors = palette.value.split(',').map { it.trim() }
-                        require(colors.isNotEmpty() && colors.all { Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").fullyMatches(it) }) { "Native plotColorPalette requires hexadecimal colors (3, 6 or 8 digits)" }
-                        diagram = diagram.copy(plotColorPalette = colors)
+                        // Only hexadecimal colors are supported; any other palette keeps the default one.
+                        if (colors.all { Regex("#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})").fullyMatches(it) }) diagram = diagram.copy(plotColorPalette = colors)
                     }
-                    else -> throw IllegalArgumentException("Unsupported Native frontmatter configuration: $section")
                 }
             }
         }
