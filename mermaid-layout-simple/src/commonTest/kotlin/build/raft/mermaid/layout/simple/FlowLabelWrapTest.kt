@@ -47,9 +47,15 @@ class FlowLabelWrapTest {
 
     @Test fun manyLinesStayInsideRoundShapes() {
         val label = "Another line with many words ".repeat(8).trim()
-        for (shape in listOf("A($label)", "A([$label])")) {
-            val box = scene("flowchart TD\n$shape").commands.filterIsInstance<DrawRect>().single { it.rect.width >= 232.0 }
-            assertEquals(20.0, box.cornerRadius, 1e-6, shape)
+        fun box(shape: String) = scene("flowchart TD\n$shape").commands.filterIsInstance<DrawRect>().single { it.rect.width >= 232.0 }
+        assertEquals(20.0, box("A($label)").cornerRadius, 1e-6)
+        val stadium = box("A([$label])")
+        assertEquals(stadium.rect.height / 2, stadium.cornerRadius, 1e-6)
+        val cx = stadium.rect.width / 2 - stadium.cornerRadius
+        for (text in texts(scene("flowchart TD\nA([$label])"))) {
+            val x = measure.measure(text.text, text.style).width / 2 - cx
+            val y = text.origin.y - stadium.rect.y - stadium.cornerRadius
+            assertTrue(x <= 0 || kotlin.math.hypot(x, y) <= stadium.cornerRadius, text.text)
         }
         val circle = scene("flowchart TD\nA(($label))")
         val ellipse = circle.commands.filterIsInstance<DrawEllipse>().first()

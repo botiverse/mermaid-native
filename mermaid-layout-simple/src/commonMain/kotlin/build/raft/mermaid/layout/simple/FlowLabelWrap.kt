@@ -5,7 +5,7 @@ import build.raft.mermaid.core.UnicodeGraphemes
 /** Mermaid wraps flowchart node and edge labels at this width (`flowchart.wrappingWidth`). */
 internal const val FLOW_LABEL_WRAP = 200.0
 
-/** Corner radius of rounded and stadium nodes: a pill around one line, and still clear of the text of several. */
+/** Corner radius of a rounded node: a pill around one line, and still clear of the text of several. */
 internal const val FLOW_ROUND_RADIUS = 20.0
 
 // CSS line breaking: no closing punctuation at the start of a line, no opening punctuation at its end.
