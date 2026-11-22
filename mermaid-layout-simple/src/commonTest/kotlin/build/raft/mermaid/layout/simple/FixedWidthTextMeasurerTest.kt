@@ -70,11 +70,16 @@ class FixedWidthTextMeasurerTest {
         for (direction in listOf("LR", "RL", "TD", "BT")) {
             val result = scene("flowchart $direction\nA[$value]")
             val rect = result.commands.filterIsInstance<DrawRect>().single().rect
-            val text = result.commands.filterIsInstance<DrawText>().single()
-            val expectedWidth = value.length * text.style.fontSize
-            assertTrue(rect.width >= expectedWidth + 24.0)
-            assertTrue(text.origin.x - expectedWidth / 2 >= rect.x)
-            assertTrue(text.origin.x + expectedWidth / 2 <= rect.x + rect.width)
+            val lines = result.commands.filterIsInstance<DrawText>()
+            assertEquals(value, lines.joinToString("") { it.text })
+            assertTrue(lines.size > 1)
+            for (text in lines) {
+                val expectedWidth = text.text.length * text.style.fontSize
+                assertTrue(expectedWidth <= FLOW_LABEL_WRAP)
+                assertTrue(text.origin.x - expectedWidth / 2 >= rect.x + 12.0)
+                assertTrue(text.origin.x + expectedWidth / 2 <= rect.x + rect.width - 12.0)
+                assertTrue(text.origin.y > rect.y && text.origin.y < rect.y + rect.height)
+            }
         }
     }
 

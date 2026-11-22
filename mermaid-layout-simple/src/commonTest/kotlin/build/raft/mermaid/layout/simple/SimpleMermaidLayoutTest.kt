@@ -632,10 +632,15 @@ class SimpleMermaidLayoutTest {
         assertEquals(first, second)
         assertTrue(first.commands.filterIsInstance<DrawRect>().size >= 3)
         assertEquals(1, first.commands.filterIsInstance<DrawPolygon>().count { it.points.size == 4 })
-        assertTrue(first.commands.filterIsInstance<DrawText>().any { it.text == long })
-        val required = FixedWidthTextMeasurer.measure(long, build.raft.mermaid.layout.TextStyle(fontSize = 13.0, fontWeight = 600)).width + 40.0
-        val nodeRect = first.commands.filterIsInstance<DrawRect>().first { it.rect.width >= required }
-        assertTrue(nodeRect.rect.width >= required)
+        // The long label wraps at its hyphens, inside its node.
+        val lines = first.commands.filterIsInstance<DrawText>().filter { it.text.startsWith("handoff-") }
+        assertEquals(long, lines.joinToString("") { it.text })
+        assertTrue(lines.size > 1)
+        val widest = lines.maxOf { FixedWidthTextMeasurer.measure(it.text, it.style).width }
+        val node = first.commands.filterIsInstance<DrawRect>().map { it.rect }.filter { rect ->
+            rect.width >= widest + 24.0 && lines.all { it.origin.x > rect.x && it.origin.x < rect.x + rect.width && it.origin.y > rect.y && it.origin.y < rect.y + rect.height }
+        }
+        assertTrue(node.isNotEmpty())
     }
 
     @Test
