@@ -8,7 +8,7 @@ class FlowMarkdownLabelTest {
     private fun diagram(label: String, markdown: Boolean = true, shape: FlowNodeShape = FlowNodeShape.RECTANGLE) =
         FlowchartDiagram(FlowDirection.TD, listOf(FlowNode("A", label, shape, if(markdown) "markdown" else "text")), emptyList())
     @Test fun styledMeasurementAndDrawingUseTheSameWordWidths() {
-        val measure = TextMeasurer { text, style -> SceneSize(text.length * (if(style.fontWeight==700)20.0 else if(style.italic)15.0 else 10.0),14.0) }
+        val measure = TextMeasurer { text, style -> SceneSize(text.length * (if(style.fontWeight==700)10.0 else if(style.italic)7.5 else 5.0),14.0) }
         val scene=SimpleMermaidLayout.layout(diagram("**Bold** and *italic*"),measure,LayoutConfig())
         val node=scene.commands.filterIsInstance<DrawRect>().single().rect
         val words=scene.commands.filterIsInstance<DrawText>()
@@ -16,7 +16,7 @@ class FlowMarkdownLabelTest {
         assertEquals(700,words[0].style.fontWeight);assertTrue(words[2].style.italic)
         val heavy=diagram("**Bold**").let { it.copy(nodes=it.nodes.map { n->n.copy(styles=listOf("font-weight:900")) }) }
         assertEquals(900,SimpleMermaidLayout.layout(heavy,measure,LayoutConfig()).commands.filterIsInstance<DrawText>().single().style.fontWeight)
-        assertEquals(252.0,node.width,0.0001)
+        assertEquals(142.0,node.width,0.0001)
         assertEquals(node.x+16,words.first().origin.x,0.0001)
         assertEquals(node.x+node.width-16,words.last().let { it.origin.x+measure.measure(it.text,it.style).width },0.0001)
     }

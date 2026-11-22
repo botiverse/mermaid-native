@@ -5,7 +5,14 @@ import build.raft.mermaid.core.MermaidWord
 import build.raft.mermaid.layout.*
 
 /** Shared measurement/drawing contract so styled node text fits the node geometry. */
-internal class FlowMarkdownLabel(source: String, private val base: TextStyle, private val measurer: TextMeasurer, maxWidth: Double? = null) {
+internal class FlowMarkdownLabel(
+    source: String,
+    private val base: TextStyle,
+    private val measurer: TextMeasurer,
+    maxWidth: Double? = null,
+    /** Break only where a browser may, like Mermaid's HTML labels: a longer word stays whole. */
+    wholeWords: Boolean = false,
+) {
     private fun runs(words: List<MermaidMarkdown.Word>): List<MermaidMarkdown.Word> {
         val result = mutableListOf<MermaidMarkdown.Word>()
         for (word in words) {
@@ -28,6 +35,7 @@ internal class FlowMarkdownLabel(source: String, private val base: TextStyle, pr
     }
     private val lines = MermaidMarkdown.lines(source).flatMap { line ->
         if (maxWidth == null || line.isEmpty()) listOf(runs(line))
+        else if (wholeWords) flowWrapWords(line) { width(runs(it)) <= maxWidth }.map(::runs)
         else {
             val tokens = line.flatMap { word ->
                 (if (word.spaceBefore) listOf(MermaidWord(" ")) else emptyList()) + MermaidWord(word.content, word.type.name)
@@ -44,6 +52,8 @@ internal class FlowMarkdownLabel(source: String, private val base: TextStyle, pr
     private fun width(line: List<MermaidMarkdown.Word>) = line.sumOf { space(it) + measurer.measure(it.content, style(it)).width }
     val width: Double = lines.maxOf(::width)
     val lineCount: Int = lines.size
+    /** Whether [maxWidth] broke a line. */
+    val wrapped: Boolean = lines.size > MermaidMarkdown.lines(source).size
     val lineSizes: List<SceneSize> = lines.map { line ->
         SceneSize(width(line), line.maxOfOrNull { measurer.measure(it.content, style(it)).height } ?: measurer.measure("", base).height)
     }
