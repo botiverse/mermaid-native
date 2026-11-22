@@ -135,7 +135,9 @@ fun makeMermaidScene(source: String, onError: (String) -> Unit): LayoutScene? {
 }
 ```
 
-`FixedWidthTextMeasurer` is deterministic and approximate. For accurate host fonts,
+`FixedWidthTextMeasurer` is deterministic and approximate. In Compose, use
+`rememberMermaidTextMeasurer(textStyle)` (or `mermaidTextMeasurer(textMeasurer, textStyle)`)
+from `mermaid-compose` with the style you draw in. For other hosts with accurate fonts,
 provide a `TextMeasurer` that returns `SceneSize` for the supplied text and
 `TextStyle`, in the same units/fonts used for drawing. Cache parsing/layout when
 the source and layout settings are unchanged; do not rebuild the scene on every
