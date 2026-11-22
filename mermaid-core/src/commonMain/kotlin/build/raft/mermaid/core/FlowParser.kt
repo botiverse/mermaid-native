@@ -19,6 +19,7 @@ internal class FlowParser(private val source:String) {
     fun parse():MermaidParseResult = try {
         val statements=statements()
         requireFlow(statements.isNotEmpty(),"Expected flowchart header")
+        offset=statements.first().first
         val header=statements.first().second.trim().split(Regex("\\s+"))
         requireFlow(header.first().lowercase() in setOf("graph","flowchart","flowchart-elk","swimlane-beta"),"Expected flowchart header")
         requireFlow(header.size<=2,"Invalid flowchart header")
