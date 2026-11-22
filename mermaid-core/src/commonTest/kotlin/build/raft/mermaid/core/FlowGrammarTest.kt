@@ -10,6 +10,18 @@ class FlowGrammarTest {
         assertEquals("Label",d.edges[0].label)
         assertEquals(FlowEdgeStyle.INVISIBLE,d.edges[2].style)
     }
+    @Test fun dottedLinksMayOmitTheLeadingDash() {
+        val d=parse("flowchart TD\nR1 .-> R2\nR2 <.-> C\nC <-...-> E4\nP2.5 --> C")
+        assertEquals(listOf("R1" to "R2","R2" to "C","C" to "E4","P2.5" to "C"),d.edges.map { it.sourceId to it.targetId })
+        assertEquals(listOf(FlowEdgeStyle.DOTTED,FlowEdgeStyle.DOTTED,FlowEdgeStyle.DOTTED,FlowEdgeStyle.NORMAL),d.edges.map { it.style })
+        assertEquals(listOf(1,1,3,1),d.edges.map { it.length })
+        assertEquals(listOf(FlowMarker.NONE,FlowMarker.POINT,FlowMarker.POINT,FlowMarker.NONE),d.edges.map { it.fromMarker })
+    }
+    @Test fun linksContinueAcrossLineBreaks() {
+        val d=parse("flowchart TB\na{{\"x\"}}\n--> b\nb -->\r\nc\nx-->y\no---z")
+        assertEquals(listOf("a" to "b","b" to "c","x" to "y","o" to "z"),d.edges.map { it.sourceId to it.targetId })
+        assertEquals(1,parse("flowchart TB\nsubgraph s\na\nend\nb").subgraphs.size)
+    }
     @Test fun arrowsInsideQuotedLabelsAndSemicolonsRemainText() {
         val d=parse("graph TD;A[\"a-->b; c\"] -->|\"quoted; label\"| B[\"end\"]")
         assertEquals("a-->b; c",d.nodes[0].label)

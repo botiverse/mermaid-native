@@ -23,6 +23,11 @@ class SequenceParticipantTest {
             assertIs<MermaidParseResult.Failure>(MermaidParser.parse("sequenceDiagram\nparticipant A@{$it}"),it)
         }
     }
+    @Test fun linksDeclareTheirParticipant() {
+        val d=parse("sequenceDiagram\nlink Alice: Dashboard @ https://dashboard.contoso.com/alice\nlink John: Wiki @ https://wiki.contoso.com/john\nAlice->>John: Hello")
+        assertEquals(listOf("Alice","John"),d.actors.map { it.id })
+        assertEquals("https://wiki.contoso.com/john",d.actors.first { it.id=="John" }.links["Wiki"])
+    }
     @Test fun halfArrowsRetainHeadSideDirectionAndLineStyle() {
         val d=parse("sequenceDiagram\nA -|\\ B: top\nA \\|-- B: lower reverse dotted\nA -// B: lower open")
         assertEquals(SequenceArrowHead.HALF_FILLED_TOP,d.messages[0].arrowHead)

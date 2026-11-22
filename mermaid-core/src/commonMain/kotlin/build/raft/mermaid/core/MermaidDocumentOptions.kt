@@ -9,6 +9,12 @@ internal object MermaidDocumentOptions {
         if (root != null) {
             require(root is UsecaseJsonValue.ObjectValue) { "Frontmatter config must be a mapping" }
             for ((section, value) in root.value) {
+                if (section == "layout") {
+                    // Selects an upstream layout engine. Native has one layered layout, so the choice is only checked.
+                    require(value is UsecaseJsonValue.StringValue) { "config.layout must be a string" }
+                    require(value.value == "dagre" || value.value == "elk" || value.value.startsWith("elk.")) { "Unsupported Native frontmatter configuration: layout ${value.value}" }
+                    continue
+                }
                 require(value is UsecaseJsonValue.ObjectValue) { "Frontmatter config.$section must be a mapping" }
                 val fields = value.value
                 fun boolean(key: String, fallback: Boolean): Boolean = fields[key]?.let {
@@ -19,6 +25,8 @@ internal object MermaidDocumentOptions {
                 } ?: fallback
                 fun allowed(vararg keys: String) { require(fields.keys.all { it in keys }) { "Unsupported Native frontmatter configuration in $section: ${fields.keys.filter { it !in keys }.joinToString()}" } }
                 when (section) {
+                    // Tuning for the ELK engine selected by `layout: elk`; nothing to apply to Native's own layout.
+                    "elk" -> require((root.value["layout"] as? UsecaseJsonValue.StringValue)?.value?.startsWith("elk") == true) { "config.elk requires layout: elk" }
                     "treeView" -> {
                         allowed("showIcons", "defaultIconPack", "filenameIcons", "extensionIcons")
                         require(diagram is TreeViewDiagram) { "treeView configuration requires a TreeView diagram" }
