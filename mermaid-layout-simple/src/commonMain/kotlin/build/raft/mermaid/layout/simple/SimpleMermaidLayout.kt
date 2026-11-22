@@ -3007,9 +3007,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             val text=SceneSize(if(wrapped)max(content,FLOW_LABEL_WRAP)else content,max(nodeStyle.text.fontSize,(markdown?.lineCount ?: lines.size)*nodeStyle.lineHeight-8))
             val width=max(80.0,text.width+32.0)
             val height=max(40.0,text.height+20.0)
+            // Several lines reach the corners of their rectangle: a circle, like an ellipse, contains them.
+            val lineCount=markdown?.lineCount ?: lines.size
+            val circle=max(max(width,height),if(lineCount>1)kotlin.math.hypot(text.width,text.height)+8 else 0.0)
             // A square diamond must contain the complete text rectangle, including its corners.
             val diamondSide=max(80.0,text.width+text.height+32.0)
-            node.id to if(node.shape==FlowNodeShape.DIAMOND)SceneSize(diamondSide,diamondSide)else if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(max(width,height),max(width,height))else if(node.shape == FlowNodeShape.MANUAL_INPUT) SceneSize(width,height*1.5) else if(node.shape in listOf(FlowNodeShape.DOCUMENTS,FlowNodeShape.PROCESSES)) SceneSize(width+10,height+18) else SceneSize(width,height)
+            node.id to if(node.shape==FlowNodeShape.DIAMOND)SceneSize(diamondSide,diamondSide)else if(node.shape==FlowNodeShape.CIRCLE || node.shape==FlowNodeShape.DOUBLE_CIRCLE)SceneSize(circle,circle)else if(node.shape==FlowNodeShape.ELLIPSE && lineCount>1)SceneSize(max(width,text.width*1.415+8),max(height,text.height*1.415+8))else if(node.shape == FlowNodeShape.MANUAL_INPUT) SceneSize(width,height*1.5) else if(node.shape in listOf(FlowNodeShape.DOCUMENTS,FlowNodeShape.PROCESSES)) SceneSize(width+10,height+18) else SceneSize(width,height)
         }
         val placer=FlowPlacement(diagram,sizes,config,textMeasurer,rankByEdges=true,compoundLayering=!swimlane)
         val lanePlacement=if(swimlane)placeSwimlanes(diagram,sizes,config,textMeasurer)else null
@@ -3134,7 +3137,7 @@ public object SimpleMermaidLayout : DiagramLayout {
                         listOf(Triple('l',tl,bl),Triple('t',tl,tr),Triple('r',tr,br),Triple('b',bl,br)).filter { it.first in borders }.forEach { commands+=DrawLine(it.second,it.third,stroke=SceneColor(DiagramPalette.FAINT),strokeWidth=1.5) }
                     }
                 }
-                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT), strokeWidth = 1.5)
+                FlowNodeShape.ROUNDED, FlowNodeShape.STADIUM -> commands += DrawRect(rect, cornerRadius = min(rect.height / 2.0, FLOW_ROUND_RADIUS), fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT), strokeWidth = 1.5)
                 FlowNodeShape.CIRCLE, FlowNodeShape.ELLIPSE -> commands += DrawEllipse(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), rect.width / 2.0, rect.height / 2.0, fill = SceneColor(DiagramPalette.SURFACE_STRONG), stroke = SceneColor(DiagramPalette.FAINT))
                 FlowNodeShape.DOUBLE_CIRCLE -> {
                     val cx = rect.x + rect.width / 2.0
