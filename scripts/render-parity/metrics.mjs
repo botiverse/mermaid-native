@@ -4,7 +4,8 @@
 //
 // Geometry record (both sides, user-space coordinates of the root <svg>):
 // {
-//   width, height,                       // content bounding box size
+//   x, y, width, height,                 // content bounding box
+//   canvas: { x, y, w, h } | null,       // root viewBox; content outside it is clipped
 //   texts:  [{ text, x, y, w, h, role }], // role: node|edgeLabel|cluster|actor|message|note|seqnum|null
 //   nodes:  [{ label, x, y, w, h }],      // semantic nodes (mermaid.js side only)
 //   edges:  [{ points: [[x, y], ...], role }], // role: edge|message|lifeline|null
@@ -22,6 +23,7 @@ export const THRESHOLDS = Object.freeze({
   overlapSlack: 0, // native label overlaps may exceed upstream by this many
   aspectRatioRange: [0.5, 2], // (native w/h) / (upstream w/h)
   areaRatioRange: [0.25, 4], // (native w*h) / (upstream w*h)
+  overflowMax: 1, // px the native content may extend past its viewBox
   edgeEndTrim: 6, // px around polyline endpoints ignored for crossings
 });
 
@@ -236,6 +238,13 @@ function sizeMetrics(ref, nat) {
   return { aspectRatioRatio: round(aspect), areaRatio: round(area) };
 }
 
+/** How far (px) the content extends past the viewBox on its worst side; 0 when nothing is clipped. */
+export function canvasOverflow(geom) {
+  const c = geom.canvas;
+  if (!c || geom.x == null) return 0;
+  return Math.max(0, c.x - geom.x, c.y - geom.y, geom.x + geom.width - (c.x + c.w), geom.y + geom.height - (c.y + c.h));
+}
+
 /** Flowchart metrics from two geometry records. */
 export function flowchartMetrics(ref, nat, source) {
   const dir = flowDirection(source);
@@ -269,6 +278,7 @@ export function flowchartMetrics(ref, nat, source) {
     nativeEdges: natEdges.length,
     refOverlaps: labelOverlaps(ref.texts, refEdges, refNodeTexts).total,
     nativeOverlaps: labelOverlaps(natTexts, natEdges, natNodeTexts).total,
+    nativeOverflow: round(canvasOverflow(nat)),
     ...sizeMetrics(ref, nat),
   };
 }
@@ -348,6 +358,7 @@ export function sequenceMetrics(ref, nat) {
     nativeAutonumber: hasAutonumber(nat),
     refOverlaps: labelOverlaps(ref.texts.filter((t) => t.role !== 'seqnum'), refEdges, refMsgs).total,
     nativeOverlaps: labelOverlaps(natTexts.filter((t) => !SEQ_NUMBER.test(t.text.trim())), natEdges, pairs.map((p) => p.native)).total,
+    nativeOverflow: round(canvasOverflow(nat)),
     ...sizeMetrics(ref, nat),
   };
 }
@@ -381,6 +392,7 @@ export function classify(family, status, metrics) {
     if (m.refAutonumber !== m.nativeAutonumber) { reasons.push(`autonumber ${m.nativeAutonumber} vs ${m.refAutonumber}`); score += 5; }
   }
   if (m.nativeOverlaps > m.refOverlaps + T.overlapSlack) { reasons.push(`label overlaps ${m.nativeOverlaps} vs ${m.refOverlaps}`); score += 3 * (m.nativeOverlaps - m.refOverlaps); }
+  if (m.nativeOverflow > T.overflowMax) { reasons.push(`clipped by ${m.nativeOverflow}px`); score += 10; }
   if (outside(m.aspectRatioRatio, T.aspectRatioRange)) { reasons.push(`aspect ratio x${m.aspectRatioRatio}`); score += 5 * Math.abs(Math.log2(m.aspectRatioRatio || 1e-3)); }
   if (outside(m.areaRatio, T.areaRatioRange)) { reasons.push(`area x${m.areaRatio}`); score += 3 * Math.abs(Math.log2(m.areaRatio || 1e-3)); }
   return { class: reasons.length ? 'differs' : 'match', reasons, score: round(score, 2) };
