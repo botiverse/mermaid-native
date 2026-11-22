@@ -45,6 +45,7 @@ public data class FlowSubgraph(
     val labelType: String = "text",
     val collapsed: Boolean = false,
     val classes: List<String> = emptyList(),
+    val styles: List<String> = emptyList(),
 )
 
 public data class FlowInteraction(val nodeId:String,val value:String,val callback:Boolean=false,val arguments:String?=null,val tooltip:String?=null,val target:String?=null)

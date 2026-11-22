@@ -127,10 +127,18 @@ internal class FlowParser(private val source:String) {
                 }
                 if(c in "[({")closes+=when(c){'['->']';'('->')';else->'}'}
                 else if(closes.lastOrNull()==c)closes.removeAt(closes.lastIndex)
-                if(closes.isEmpty() && (c=='\n' || c=='\r' || c==';')){emit(at);start=at+1}
+                if(closes.isEmpty() && (c=='\n' || c=='\r' || c==';') && (c==';' || !linkContinues(start,at))){emit(at);start=at+1}
             };at++
         }
         if(quote || closes.isNotEmpty()){val leading=source.drop(start).indexOfFirst { !it.isWhitespace() };offset=start+maxOf(0,leading);parsingHeader=out.isEmpty();fail("Unclosed flowchart label")};emit(source.length);return out
+    }
+    /** A link token takes the whitespace around it, so a line may end or start with one. */
+    private fun linkContinues(start:Int,end:Int):Boolean {
+        val line=source.substring(start,end).trim()
+        if(line.isEmpty() || line.takeWhile { !it.isWhitespace() } in LINE_KEYWORDS)return false
+        if(LINK_AT_END.containsMatchIn(line))return true
+        var next=end;while(next<source.length && source[next].isWhitespace())next++
+        return LINK_AT_START.containsMatchIn(source.substring(next,minOf(source.length,source.indexOfAny(charArrayOf('\n','\r'),next).let { if(it<0)source.length else it })))
     }
     private fun unquote(raw:String):Pair<String,String> {
         val text=raw.trim()
@@ -186,6 +194,12 @@ internal class FlowParser(private val source:String) {
             return id
         }
         fun arrowStart(index:Int):Boolean = text.startsWith("--",index)||text.startsWith("==",index)||text.startsWith("-.",index)||text.startsWith("~~~",index)||((text.getOrNull(index) in listOf('<','o','x')) && (text.startsWith("--",index+1)||text.startsWith("==",index+1)||text.startsWith("-.",index+1)))
+        /** Dotted links may omit the leading dash (`.->`); only valid where a link is expected. */
+        fun dottedStart(index:Int):Boolean {
+            var i=index;if(text.getOrNull(i) in listOf('<','o','x'))i++
+            val dots=i;while(text.getOrNull(i)=='.')i++
+            return i>dots && text.getOrNull(i)=='-'
+        }
         fun token():String {
             val start=at
             if(text.getOrNull(at) in listOf('<','o','x'))at++
@@ -195,7 +209,7 @@ internal class FlowParser(private val source:String) {
         }
         fun link():FlowEdge {
             skip();var id:String?=null
-            if(!arrowStart(at)) {val begin=at;while(at<text.length && text[at]!='@' && !text[at].isWhitespace())at++;requireFlow(text.getOrNull(at)=='@',"Expected edge operator");id=text.substring(begin,at++);requireFlow(id.isNotEmpty(),"Empty edge id")}
+            if(!arrowStart(at) && !dottedStart(at)) {val begin=at;while(at<text.length && text[at]!='@' && !text[at].isWhitespace())at++;requireFlow(text.getOrNull(at)=='@',"Expected edge operator");id=text.substring(begin,at++);requireFlow(id.isNotEmpty(),"Empty edge id")}
             val first=token();var last=first;var label:String?=null;var labelType="text";var left=FlowMarker.NONE
             val full=first.endsWith('>')||first.endsWith('o')||first.endsWith('x')||first.count { it=='-' || it=='=' || it=='~' }>=3||first.contains(".-")
             if(!full){
@@ -217,6 +231,10 @@ internal class FlowParser(private val source:String) {
     private fun fail(message:String):Nothing=throw FlowSyntaxError(message)
     private class FlowSyntaxError(message:String):Exception(message)
     companion object {
+        private val LINE_KEYWORDS=setOf("graph","flowchart","flowchart-elk","swimlane-beta","subgraph","end","direction","accTitle:","accDescr:","accDescr","classDef","style","class","click","linkStyle")
+        private val LINK_AT_END=Regex("(--+[-xo>]|==+[=xo>]|-?[.]+-[xo>]?|~~~+)$")
+        // Upstream also reads a leading x or o as a marker; a node named x or o starting a line is more likely.
+        private val LINK_AT_START=Regex("^<?(--|==|-[.]|[.]+-|~~~)")
         private val RESERVED=setOf("graph","flowchart","style","linkStyle","interpolate","classDef","class","_self","_blank","_parent","_top","end","subgraph")
         private val SHAPES=listOf(
             Triple("(((",")))",FlowNodeShape.DOUBLE_CIRCLE),Triple("((","))",FlowNodeShape.CIRCLE),Triple("(-","-)",FlowNodeShape.ELLIPSE),Triple("([","])",FlowNodeShape.STADIUM),

@@ -158,7 +158,7 @@ public object SimpleMermaidLayout : DiagramLayout {
         config: LayoutConfig,
     ): LayoutScene = when (diagram) {
         is build.raft.mermaid.core.InfoDiagram -> layoutInfo(diagram, textMeasurer, config)
-        is FlowchartDiagram -> layoutFlowchart(visibleFlow(diagram), textMeasurer, config).copy(
+        is FlowchartDiagram -> layoutFlowchart(visibleFlow(mergeFlowGroupNodes(diagram)), textMeasurer, config).copy(
             accessibilityTitle = diagram.accessibilityTitle,
             accessibilityDescription = diagram.accessibilityDescription,
         )

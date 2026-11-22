@@ -173,7 +173,8 @@ internal class SequenceParser(private val source: String) {
         val colon = rest.indexOf(':')
         check(colon > 0, "Expected participant data")
         val id = rest.take(colon).trim()
-        val actor = actors[id] ?: fail("Unknown participant: $id")
+        if (id !in actors) participant(id, actor = false)
+        val actor = actors.getValue(id)
         val data = rest.drop(colon + 1).trim()
         val entries = if (command == "link") {
             val at = data.indexOf('@')

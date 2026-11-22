@@ -76,6 +76,12 @@ class MermaidFrontmatterTest {
         val typed = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  sankey:\n    showValues: 'false'\n---\nsankey\nA,B,1"))
         assertContains(typed.diagnostics.single().message, "must be boolean")
     }
+    @Test fun layoutEngineHintsAreAcceptedAndChecked() {
+        for (config in listOf("  layout: elk", "  layout: dagre", "  layout: elk.layered", "  layout: elk\n  elk:\n    mergeEdges: true"))
+            assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n$config\n---\nflowchart LR\nA-->B"))
+        for (config in listOf("  layout: unknown", "  layout: true", "  elk:\n    mergeEdges: true"))
+            assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n$config\n---\nflowchart LR\nA-->B"))
+    }
     @Test fun treeIconsReachTheExistingProductionSelectionPolicy() {
         val doc = assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n  treeView:\n    showIcons: true\n    defaultIconPack: custom\n    extensionIcons: {'.ts': typescript}\n---\ntreeView-beta\nroot/\n  app.ts"))
         val tree = assertIs<TreeViewDiagram>(doc.diagram)
