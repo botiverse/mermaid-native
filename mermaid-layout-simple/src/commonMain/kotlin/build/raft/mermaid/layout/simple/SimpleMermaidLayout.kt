@@ -2990,13 +2990,21 @@ public object SimpleMermaidLayout : DiagramLayout {
             else->listOf("fill:${DiagramPalette.CANVAS}","stroke:${DiagramPalette.BLUE}")
         }) }
         val markdownLabels=diagram.nodes.filter { it.labelType=="markdown" }.associate {
-            it.id to FlowMarkdownLabel(it.label,nodeStyles.getValue(it.id).text,textMeasurer)
+            it.id to FlowMarkdownLabel(it.label,nodeStyles.getValue(it.id).text,textMeasurer,FLOW_LABEL_WRAP,wholeWords=true)
+        }
+        // Like Mermaid, a label wider than the limit wraps.
+        val labelLines=diagram.nodes.associate { node ->
+            val text=nodeStyles.getValue(node.id).text
+            node.id to classNoteLines(node.label).flatMap { line -> flowWrapLine(line) { textMeasurer.measure(it,text).width<=FLOW_LABEL_WRAP } }
         }
         val sizes = diagram.nodes.associate { node ->
             val nodeStyle=nodeStyles.getValue(node.id)
-            val lines=classNoteLines(node.label)
+            val lines=labelLines.getValue(node.id)
             val markdown=markdownLabels[node.id]
-            val text=SceneSize(markdown?.width ?: lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width },max(nodeStyle.text.fontSize,(markdown?.lineCount ?: lines.size)*nodeStyle.lineHeight-8))
+            // A wrapped label takes the whole limit, as Mermaid's HTML label does.
+            val wrapped=markdown?.wrapped ?: (lines.size>classNoteLines(node.label).size)
+            val content=markdown?.width ?: lines.maxOf { textMeasurer.measure(it,nodeStyle.text).width }
+            val text=SceneSize(if(wrapped)max(content,FLOW_LABEL_WRAP)else content,max(nodeStyle.text.fontSize,(markdown?.lineCount ?: lines.size)*nodeStyle.lineHeight-8))
             val width=max(80.0,text.width+32.0)
             val height=max(40.0,text.height+20.0)
             // A square diamond must contain the complete text rectangle, including its corners.
@@ -3088,13 +3096,20 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (edge.toMarker == build.raft.mermaid.core.FlowMarker.POINT) commands += arrowHead(lastFrom, drawn.last(), fill = markerColor)
             else commands += flowMarker(edge.toMarker, lastFrom, drawn.last(),markerColor,edgeStyle.strokeWidth)
             commands += flowMarker(edge.fromMarker, firstFrom, drawn.first(),markerColor,edgeStyle.strokeWidth)
-            edge.label?.takeIf { it.isNotEmpty() }?.let { label ->
+            edge.label?.takeIf { it.isNotEmpty() }?.let edgeLabel@{ label ->
                 val layeredLines=if(layered!=null)flowEdgeLabelLines(label,textMeasurer,style) else emptyList()
+                val markdownLabel=if(layered!=null && edge.labelType=="markdown")flowEdgeMarkdown(label,textMeasurer,style) else null
                 val layeredLabel=layered?.labels?.get(index)?.let { center ->
                     // Mermaid centers the label on the edge over an opaque background, wrapping long text.
-                    val size=flowEdgeLabelSize(layeredLines,textMeasurer,style)
+                    val size=markdownLabel?.let(::flowMarkdownSize) ?: flowEdgeLabelSize(layeredLines,textMeasurer,style)
                     commands += DrawRect(SceneRect(center.x-size.width/2-4.0,center.y-size.height/2-2.0,size.width+8.0,size.height+4.0),
                         fill=SceneColor(DiagramPalette.CANVAS),stroke=SceneColor("none"),strokeWidth=0.0)
+                    if(markdownLabel!=null) {
+                        val words=markdownLabel.draw(SceneRect(center.x-size.width/2,center.y-size.height/2,size.width,size.height),size.height/markdownLabel.lineCount)
+                        commands += words
+                        if(config.validateOrthogonalLayout)words.firstOrNull()?.let { validationLabels[index] = it }
+                        return@edgeLabel
+                    }
                     val lineHeight=size.height/layeredLines.size
                     layeredLines.dropLast(1).forEachIndexed { line,text ->
                         commands += DrawText(text,ScenePoint(center.x,center.y+(line-(layeredLines.size-1)/2.0)*lineHeight+style.fontSize*0.35),TextAnchor.MIDDLE,style)
@@ -3146,7 +3161,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             val markdown=markdownLabels[node.id]
             if(markdown!=null) commands+=markdown.draw(labelRect,nodeStyle.lineHeight)
             else {
-                val lines=classNoteLines(node.label)
+                val lines=labelLines.getValue(node.id)
                 lines.forEachIndexed { index,line -> commands+=DrawText(line,ScenePoint(labelRect.x+labelRect.width/2,labelRect.y+labelRect.height/2+(index-(lines.size-1)/2.0)*nodeStyle.lineHeight+nodeStyle.text.fontSize*0.35),TextAnchor.MIDDLE,nodeStyle.text) }
             }
 

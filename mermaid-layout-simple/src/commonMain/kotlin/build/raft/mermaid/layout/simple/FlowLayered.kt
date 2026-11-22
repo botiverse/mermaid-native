@@ -151,7 +151,8 @@ internal fun flowLayeredLayout(
             val to = resolve(e.targetId) ?: return null
             if (from.first == to.first && e.sourceId != e.targetId) return null
             val label = e.label?.takeIf { it.isNotEmpty() }?.let {
-                val text = flowEdgeLabelSize(flowEdgeLabelLines(it, measurer), measurer)
+                val text = if (e.labelType == "markdown") flowMarkdownSize(flowEdgeMarkdown(it, measurer))
+                    else flowEdgeLabelSize(flowEdgeLabelLines(it, measurer), measurer)
                 SceneSize(text.width + LABEL_PAD_X * 2, text.height + LABEL_PAD_Y * 2)
             }
             specs += EdgeSpec(index, from.first, to.first, e.length.coerceIn(1, 10), label, from.second, to.second)
