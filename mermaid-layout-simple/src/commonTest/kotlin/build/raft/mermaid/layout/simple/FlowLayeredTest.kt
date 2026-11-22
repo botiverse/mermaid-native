@@ -58,6 +58,24 @@ class FlowLayeredTest {
         }
     }
 
+    @Test fun aSubgraphLoopHangsFromItsFrame() {
+        val s = layout("flowchart TD\nsubgraph G [Group]\nA[a]-->B[b]\nend\nG-->|again|G")
+        val frame = s.commands.filterIsInstance<DrawRect>().first { it.cornerRadius == 4.0 }.rect
+        assertEquals(2, s.edgeCurves().size)
+        val loop = s.edgeCurves().single { abs(it.start.y - (frame.y + frame.height)) < 1e-6 }
+        assertEquals(frame.y + frame.height, s.edgeTip(loop).y, 1e-6)
+        assertTrue(loop.samples().all { it.y >= frame.y + frame.height - 1e-6 && it.x > frame.x && it.x < frame.x + frame.width })
+        assertTrue(s.labelBackgrounds().single().y >= loop.samples().maxOf { it.y } - 1e-6)
+        assertTrue(loop.samples().maxOf { it.y } <= s.height)
+    }
+
+    @Test fun aLoopStaysCloseToANodeBesideATallBox() {
+        val alone = layout("flowchart TD\nA[a]-->A")
+        val beside = layout("flowchart TD\nA[a]-->A\nsubgraph G\ndirection TB\nB[b]-->C[c]-->D[d]\nend")
+        fun drop(s: LayoutScene): Double { val box = s.commands.filterIsInstance<DrawRect>().first { it.cornerRadius == 5.0 }.rect; return s.edgeCurves()[0].samples().maxOf { it.y } - box.y - box.height }
+        assertEquals(drop(alone), drop(beside), 1.0)
+    }
+
     @Test fun selfLoopHangsFromItsNodeLikeMermaid() {
         val s = layout("flowchart TD\nA[Idle]-->B[Poll]\nB-->|retry|B\nB-->C[Handle]")
         val poll = s.boxes()[1]
