@@ -85,12 +85,14 @@ internal fun flowLayeredLayout(
     }
     // An edge between a subgraph and its own member (or the subgraph itself)
     // takes no part in the layout; it is drawn afterwards to the frame side.
-    val (inward, edges) = linked.partition { (_, e) ->
+    val (inward, crossing) = linked.partition { (_, e) ->
         (e.sourceId in groups && (e.sourceId == e.targetId || inside(e.targetId, e.sourceId))) ||
             (e.targetId in groups && inside(e.sourceId, e.targetId))
     }
     // Subgraphs no edge crosses are laid out separately, like Mermaid's cluster extraction.
-    val isolated = groups.keys.filter { g -> edges.none { (_, e) -> inside(e.sourceId, g) != inside(e.targetId, g) } }.toSet()
+    val isolated = groups.keys.filter { g -> crossing.none { (_, e) -> inside(e.sourceId, g) != inside(e.targetId, g) } }.toSet()
+    // Such a subgraph is one box, so an edge to itself loops on it like on a node.
+    val edges = crossing + inward.filter { (_, e) -> e.sourceId == e.targetId && e.sourceId in isolated }
     fun isolatedAncestor(chain: List<String>): String? = chain.firstOrNull { it in isolated }
     val levelOfNode = nodeIds.associateWith { isolatedAncestor(groupChain(owner[it])) }
     val levelOfGroup = groups.keys.associateWith { isolatedAncestor(groupChain(parent[it])) }
@@ -806,8 +808,10 @@ private fun layoutLevel(
         val cx = x[v].coerceIn(x[node] - half / 2, x[node] + half / 2)
         val near = rankCenter[rank[node]] + height[node] / 2
         val label = rankSize(spec.label)
-        val labelCenter = rankCenter[rank[v]] + LOOP_DEPTH / 2
-        val turn = if (label != null) labelCenter - label.height / 2 else rankCenter[rank[v]]
+        // A node shorter than its rank keeps the loop close, unless its other edges need the space.
+        val lift = if (predecessors[node].orEmpty().size + successors[node].orEmpty().size > 1) 0.0 else (rankHeight[rank[node]] - height[node]) / 2
+        val labelCenter = rankCenter[rank[v]] + LOOP_DEPTH / 2 - lift
+        val turn = if (label != null) labelCenter - label.height / 2 else rankCenter[rank[v]] - lift
         val spread = min(LOOP_WIDTH / 2 - 2, half / 2)
         val a = scene(cx - spread - 10, turn - 1); val b = scene(cx + spread + 10, turn - 1)
         val start = boundaryPoint(rect, shapes.getValue(spec.from), scene(cx - spread, near))
