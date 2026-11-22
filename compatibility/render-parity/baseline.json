@@ -6,26 +6,25 @@
   "flowchart": {
    "extracted": 264,
    "skipped": 6,
-   "match": 173,
-   "differs": 50,
-   "native-fails": 39,
+   "match": 199,
+   "differs": 61,
+   "native-fails": 2,
    "ref-fails": 2,
    "native": {
-    "ok": 224,
-    "render-error": 17,
-    "parse-error": 23
+    "ok": 261,
+    "parse-error": 3
    }
   },
   "sequence": {
    "extracted": 149,
    "skipped": 14,
    "match": 137,
-   "differs": 10,
-   "native-fails": 1,
+   "differs": 11,
+   "native-fails": 0,
    "ref-fails": 1,
    "native": {
-    "ok": 147,
-    "parse-error": 2
+    "ok": 148,
+    "parse-error": 1
    }
   }
  },
@@ -47,13 +46,13 @@
   },
   "flowchart|b665feafca4ee2b8a52567911219d6799240b0ace15506b5d9c84e6957015b99|{}": {
    "case": "flowchart/004-3-elk-a-link-with-correct-arrowhead-to-a-subgraph",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|d8c15f340c3fe91acae8edecaec89226eb04893d380d89af5af48bbb30d4a05d|{}": {
    "case": "flowchart/005-4-elk-length-of-edges",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|e5f9835d90b429a65021c6c5ac9b999c9049cb05195f95f4e52ee1fd0bcba91a|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
    "case": "flowchart/006-5-elk-should-render-escaped-without-html-labels",
@@ -82,13 +81,13 @@
   },
   "flowchart|1827a866d50885fd2a104e48595b02c4701e03122ec096660a2f3423fb68951c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/012-51-elk-handle-nested-subgraphs-in-reverse-order",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|435d587aecb3a23850b362c74fb40534e2b78ac016285d9cc1647371fef7823e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/013-52-elk-handle-nested-subgraphs-in-several-levels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|60b35fc068932f3d64424071d66f4e34195ec6337e4bc82334481cca89cf213c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/014-53-elk-handle-nested-subgraphs-with-edges-in-and-out",
@@ -122,7 +121,7 @@
   },
   "flowchart|c99545c745fd961a78da14978fd4933d0fb424dcff159aaa470d0e1f93b73cc7|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/020-57-x-handle-nested-subgraphs-with-outgoing-links-5",
-   "class": "match",
+   "class": "differs",
    "native": "ok"
   },
   "flowchart|26a8e0108697045e7d9aa9d86c412ee3210d14b892efa12c93fe57e071b0ad35|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
@@ -147,8 +146,8 @@
   },
   "flowchart|03d26ed0d9a82fda3cf5fb76d47eeb19243e3db6678468b6d15f754b0e20dfcb|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/025-62-elk-should-render-styled-subgraphs",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|87a9f8bde76971e82c05e22f9842ad3efbe016f70784a3ca46b5754a1f4a481f|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/026-63-elk-title-on-subgraphs-should-be-themeable",
@@ -202,8 +201,8 @@
   },
   "flowchart|94e2b105fbc22b55795278ff106fcabc8a98817b7954f2b18d2dde7d69906a62|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/037-76-elk-handle-unicode-encoded-character-with-html-labels-tru",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|00d342dffe0918a8870790d2b4d94e26a80543574f7bcb7e086a4e2e616b13ac|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/038-2050-elk-handling-of-different-rendering-direction-in-subgra",
@@ -282,43 +281,43 @@
   },
   "flowchart|484f244a8d6cd7d678782d540a3fb4659399b98b7ac16ea5ebb1ea4e39dd2e17|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/053-sub-graphs",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|238736e6204bf8964fed45d1fe1bb5a0b405c0cef492995bdfa8c593fe0ff10c|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/058-6088-4-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|0a1909dff6c0914caf7ccbb3c1bc27c272c312bd9b62c617cf017d8879a68ffe|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/055-6088-1-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|b6de4e17ff663694817fd00acdd2670cf55b29aa620d3ad8296e4e2c75bf7e4d|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/056-6088-2-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|76843edb77394cac2ab036ed33d43992258d71636489b58ac8b1d9bf51bb5e73|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/057-6088-3-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|dc547a32c799f5471b6cc4ac17af8c225d8b7620dc248dfadec9a2c8293cfac2|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/059-6088-5-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|d28dbafc93ee5f89455c594af252b17dca869c3ade31669e5d31a95812c84ce4|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/060-6088-6-should-handle-diamond-shape-intersections",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|c584044a2d84cafbb93f2f4e75bb66165acf87e51700b7bacce4814f0eedc9ea|{}": {
    "case": "flowchart/061-6647-elk-should-keep-node-order-when-using-elk-layout-unless",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|373c9d7f968093978db27fd435dc5468e2eced0f4f381718c9070d18c6f312ba|{\"layout\":\"elk\"}": {
    "case": "flowchart/062-render-with-stylized-arrows",
@@ -327,28 +326,28 @@
   },
   "flowchart|892001b030f8c0581eeb1bbdb5a196c54763f4bd41d5ffd93ca96658a7347de7|{}": {
    "case": "flowchart/063-7213-should-render-elk-edges-with-right-angles-not-curves",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|ac3bc5f62e8edb70704f44befdc080ee9a9b6b25cdd97c269512744d8ceb4a53|{}": {
    "case": "flowchart/064-elk-should-merge-edges-within-subgraphs-when-elk-mergeedges",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|b65f07c56e91b215382c8b972129435eda4e0981925b49dc7a7650b1ae0818cd|{}": {
    "case": "flowchart/065-elk-recursive-flow-with-elk-keepentrynodeontop-false-keeps-t",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|0c617acf148fd892a082552a78a8f286a1fbdf71495be5692290f27017bc14d2|{}": {
    "case": "flowchart/066-elk-should-keep-the-entry-node-on-top-when-a-flow-recurses-w",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|fa3b917060e3173d6acad27bc687bbe42152fc28768e0fc6a5e052d56b07a537|{}": {
    "case": "flowchart/067-elk-should-keep-the-entry-node-on-top-of-a-recursive-flow-ne",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|2220967a4ec51c622a2730def146f17b5e8b1bf4eeab1b85d91c6140e7c5b59d|{\"flowchart\":{\"htmlLabels\":false},\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
    "case": "flowchart/068-fhd1-should-render-a-simple-flowchart-no-htmllabels",
@@ -402,8 +401,8 @@
   },
   "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
    "case": "flowchart/078-fhd11-should-render-styled-subgraphs",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|b5ea1a0140a56553777d9870d32338cac52897f11a26998dd918dc31f24c0365|{\"fontFamily\":\"courier\",\"look\":\"handDrawn\"}": {
    "case": "flowchart/079-fhd12-should-render-a-flowchart-with-long-names-and-class-de",
@@ -522,8 +521,8 @@
   },
   "flowchart|b4c59b6df4a92bef9896ab58b3db6a965fd92461c80d57c34e00b658b05ad0be|{\"handDrawnSeed\":1,\"look\":\"handDrawn\"}": {
    "case": "flowchart/102-fdh35-should-honor-minimum-edge-length-as-specified-by-the-u",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false,\"look\":\"handDrawn\"}": {
    "case": "flowchart/103-fdh36-should-render-escaped-without-html-labels",
@@ -562,13 +561,13 @@
   },
   "flowchart|5f4da1ced19308a6313435e59f7a938de80dd6099017c79fcecaccb5eb93e20c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
    "case": "flowchart/110-fdh43-fontawesome-icons-in-edge-labels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
    "case": "flowchart/111-fdh44-fontawesome-icons-in-edge-labels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|972f259eed2cabf5590d85cc550518d5f805290b91a344f2ba34b267eb9bee34|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"look\":\"handDrawn\",\"securityLevel\":\"loose\"}": {
    "case": "flowchart/112-fdh45-fontawesome-icons-in-edge-labels",
@@ -622,13 +621,13 @@
   },
   "flowchart|9d7874390a81227cbfc0f7c2b1ac16245e04fb8e514c6aa3dad77325b4cc65a5|{}": {
    "case": "flowchart/122-3-a-link-with-correct-arrowhead-to-a-subgraph",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|8b61067dd39cfa4531062667f294c2c513b6ec6bd73d1d828711cd22bda85120|{}": {
    "case": "flowchart/123-4-length-of-edges",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|7c292aa3bc8635a2bea8f0dbf80a35a5388878e68f508ea99eadcd2ddad7ff62|{}": {
    "case": "flowchart/124-4b-labeled-open-edges-should-not-have-arrowheads",
@@ -677,13 +676,13 @@
   },
   "flowchart|b8dd007e90b62c775543792047725780c5c73e5e249e3394443f1cc9f00f11f4|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/134-51-handle-nested-subgraphs-in-reverse-order",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|7e92deb7f10de09cab804cba15a967b847a6cc6c2da33f9989f780d4647a42b6|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/135-52-handle-nested-subgraphs-in-several-levels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|8ec0eb96fa9d0ee8d305cab28bbb6709fa147d3a59ea0d9537ec27b8fa869627|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/136-53-handle-nested-subgraphs-with-edges-in-and-out",
@@ -742,8 +741,8 @@
   },
   "flowchart|e4bba004bc5185b53ba64a1369f8c149afe7442a96650fb8000c54e81ba8845e|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/147-62-should-render-styled-subgraphs",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|972f259eed2cabf5590d85cc550518d5f805290b91a344f2ba34b267eb9bee34|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/254-64-fontawesome-icons-in-edge-labels",
@@ -807,8 +806,8 @@
   },
   "flowchart|42014334e3f7c8c585d3ada9643e2d819a43cab6736c18cb6254503c49edb5ec|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/161-76-handle-unicode-encoded-character-with-html-labels-true",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|a08e244e09dfc895a6e73378997fa1dc82df79b039634c77ffd4f3b628bdce76|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/162-2050-handling-of-different-rendering-direction-in-subgraphs",
@@ -857,8 +856,8 @@
   },
   "flowchart|76d659736509ab38bbf77e8fc131995ee8e6d8a500f8df9129faeda8cfbf43ca|{\"flowchart\":{\"nodeSpacing\":1,\"rankSpacing\":1}}": {
    "case": "flowchart/171-3258-should-render-subgraphs-with-main-graph-nodespacing-and",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|11c1666ab5e9ac123e2e4824a2385a4e37b97a8739652f01b00a3e3b4ab7a1c9|{}": {
    "case": "flowchart/172-3258-should-render-subgraphs-with-large-nodespacing-and-rank",
@@ -1027,7 +1026,7 @@
   },
   "flowchart|5c41d9d4e1733abd0dd2387822d307e664df3bb1d22e01bf192840737d676e2c|{\"look\":\"handDrawn\"}": {
    "case": "flowchart/206-should-redirect-a-collapsed-subgraph-using-the-handdrawn-loo",
-   "class": "differs",
+   "class": "match",
    "native": "ok"
   },
   "flowchart|3dadb6336d33aa2aa96891ed44d7c8e10547bf47c31fce35b8261496b622fa30|{}": {
@@ -1092,8 +1091,8 @@
   },
   "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"fontFamily\":\"courier\"}": {
    "case": "flowchart/219-11-should-render-styled-subgraphs",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|b5ea1a0140a56553777d9870d32338cac52897f11a26998dd918dc31f24c0365|{\"fontFamily\":\"courier\"}": {
    "case": "flowchart/220-12-should-render-a-flowchart-with-long-names-and-class-defin",
@@ -1212,8 +1211,8 @@
   },
   "flowchart|b4c59b6df4a92bef9896ab58b3db6a965fd92461c80d57c34e00b658b05ad0be|{}": {
    "case": "flowchart/243-35-should-honor-minimum-edge-length-as-specified-by-the-user",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|71ca3fe1b37484a32045abdee0e8e6091928482b25ded4034be20442c71afbaa|{\"flowchart\":{\"htmlLabels\":false},\"htmlLabels\":false}": {
    "case": "flowchart/244-36-should-render-escaped-without-html-labels",
@@ -1252,13 +1251,13 @@
   },
   "flowchart|5f4da1ced19308a6313435e59f7a938de80dd6099017c79fcecaccb5eb93e20c|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/252-62-fontawesome-icons-in-edge-labels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|1f9509e1e53246b6fa6edc9b8168f10fb5d48c7a3e52cf73bda2a4c9990be933|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/253-63-fontawesome-icons-in-edge-labels",
-   "class": "native-fails",
-   "native": "render-error"
+   "class": "match",
+   "native": "ok"
   },
   "flowchart|ebf84cf974c490ea901e72fa472227ac882a32c396ec32021d4a8d9b62cb0e23|{\"flowchart\":{\"htmlLabels\":true},\"htmlLabels\":true,\"securityLevel\":\"loose\"}": {
    "case": "flowchart/256-66-apply-class-called-default-on-node-called-default",
@@ -1922,8 +1921,8 @@
   },
   "sequence|8a7cb11b210e47fe9b341950349f4a86ce089a22878abbbae1461a312454bc4c|{\"securityLevel\":\"loose\"}": {
    "case": "sequence/124-should-support-actor-links",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "sequence|f705333840b347df8db8b135bca3f19ce77c0c6ce19686f6f978dd19539214ea|{\"logLevel\":0,\"sequence\":{\"mirrorActors\":true,\"noteFontFamily\":\"Arial\",\"noteFontSize\":18}}": {
    "case": "sequence/125-should-support-actor-links-and-properties-experimental-use-w",
