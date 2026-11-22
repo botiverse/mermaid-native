@@ -2,7 +2,7 @@
 
 ## 0.1.19 / 0.1.19-ohos
 
-**Pending publication** from tag `v0.1.19`. Until it is marked Available, use 0.1.18.
+**Available.** Published by [release workflow 45028134918](https://github.com/botiverse/mermaid-native/actions/runs/45028134918) from tag [`v0.1.19`](https://github.com/botiverse/mermaid-native/tree/v0.1.19). Both planes resolve from the public Maven repository (checked 2026-11-22: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.19`; `mermaid-core` `0.1.19-ohos`).
 
 Changes since 0.1.18:
 
