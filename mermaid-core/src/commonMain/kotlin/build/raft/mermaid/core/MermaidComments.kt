@@ -4,6 +4,23 @@ package build.raft.mermaid.core
 public object MermaidComments {
     public fun cleanup(source: String): String = mapped(source).text
 
+    /** Replaces each `%%{...}%%` directive, which may span lines, with blanks, so every other character keeps its place. */
+    internal fun blankDirectives(source: String): String {
+        var start = source.indexOf("%%{")
+        if (start < 0) return source
+        val text = StringBuilder()
+        var cursor = 0
+        while (start >= 0) {
+            val close = source.indexOf("}%%", start)
+            if (close < 0) break
+            text.append(source, cursor, start)
+            cursor = close + 3
+            for (index in start until cursor) text.append(if (source[index] == '\n' || source[index] == '\r') source[index] else ' ')
+            start = source.indexOf("%%{", cursor)
+        }
+        return text.append(source, cursor, source.length).toString()
+    }
+
     // Spell out ECMAScript whitespace so JVM and JS/Wasm use the same set.
     private const val SPACE = "\\t\\n\\u000B\\u000C\\r \\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF"
     private val comments = Regex("^[$SPACE]*%%(?!\\{)[^\\r\\n]+(?:\\r\\n|\\r|\\n)?", RegexOption.MULTILINE)

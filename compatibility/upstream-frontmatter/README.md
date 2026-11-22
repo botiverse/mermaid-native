@@ -28,9 +28,9 @@ validation geometry consistently.
 
 Supported production options in this batch are `sankey.showValues`,
 `xyChart.showDataLabel`, and TreeView `showIcons`, `defaultIconPack`, `filenameIcons`,
-`extensionIcons`. They modify the existing render/selection paths. Unimplemented
-options and `displayMode` return explicit diagnostics; they are never silently
-ignored. Extraction alone preserves arbitrary inert config data. External icon pack
+`extensionIcons`. They modify the existing render/selection paths. Like upstream, any
+other setting (and `displayMode`) has no effect and does not stop the diagram; a wrong
+type in an applied setting returns a diagnostic. Extraction alone preserves arbitrary inert config data. External icon pack
 fetching is not added.
 
 The dependency-free YAML reader supports block mappings/sequences, flow mappings

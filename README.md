@@ -93,7 +93,7 @@ Your app supplies fonts, a viewport, scrolling/zoom gestures, navigation and acc
 ## Compatibility and limitations
 
 - Flowcharts, sequence, class, state, ER, Gantt, pie, XY, Sankey, Treemap and other families are covered within the [declared feature matrix](docs-site/reference/families.md).
-- Unsupported syntax and configuration produce typed diagnostics. Handle failures explicitly; do not treat them as an empty successful diagram.
+- Unsupported syntax produces typed diagnostics; configuration Native does not apply is ignored. Handle failures explicitly; do not treat them as an empty successful diagram.
 - Complex graphs can still overlap. Layout and text appearance are not pixel-identical to upstream Mermaid.
 - Configuration, Markdown, links and accessibility support are bounded. Kuikly hosts implement link activation and semantic accessibility themselves.
 - The standalone [kuikly-examples](kuikly-examples/) build verifies official Kuikly **2.28.0-2.1.21** with Mermaid **0.1.11**: Android emulator rendering of four samples and iOS shared-code compilation. iOS native linking/runtime, HarmonyOS with official Kuikly, H5 and WeChat mini-program integration remain unverified.

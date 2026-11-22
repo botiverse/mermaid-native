@@ -19,9 +19,9 @@ class BlockGridLayoutTest {
         assertEquals(4.0, gap(a), 1e-9); assertEquals(20.0, gap(b), 1e-9)
         assertTrue(b.width > a.width)
     }
-    @Test fun invalidPaddingAndWrongFamilyAreRejected() {
+    @Test fun invalidPaddingIsRejectedAndAnotherFamilyIgnoresIt() {
         for (value in listOf("-1", "true", "bad")) assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  block:\n    padding: $value\n---\nblock-beta\nA"))
-        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("---\nconfig:\n  block:\n    padding: 8\n---\nflowchart LR\nA --> B"))
+        assertIs<MermaidParseResult.Success>(MermaidParser.parse("---\nconfig:\n  block:\n    padding: 8\n---\nflowchart LR\nA --> B"))
     }
     @Test fun siblingsShareMeasuredCellSizeAndOverflowOccupancyStaysOnStartingRow() {
         val a = leaf("a", 200.0, 80.0); val b = leaf("b", 120.0, 20.0, 2); val c = leaf("c")

@@ -33,4 +33,20 @@ class MermaidCommentsTest {
         val failure = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("%% comment; not a diagram"))
         assertEquals(MermaidDiagnosticCode.EMPTY_SOURCE, failure.diagnostics.single().code)
     }
+
+    @Test fun directivesOfAnyLengthDoNotReachTheDiagram() {
+        val plain = MermaidParser.parse("flowchart TD\nA[\"100%\"] --> B")
+        for (init in listOf("%%{init: {'theme': 'dark'}}%%", "%%{\n  init: {\n    'theme': 'base',\n    'themeVariables': { 'primaryColor': '#ff0000' }\n  }\n}%%", "%%{wrap}%%")) {
+            assertEquals(MermaidDiagramType.FLOWCHART, MermaidParser.detectType("$init\nflowchart TD\nA --> B"))
+            val parsed = MermaidParser.parse("$init\nflowchart TD\nA[\"100%\"] --> B")
+            assertEquals(assertIs<MermaidParseResult.Success>(plain).diagram, assertIs<MermaidParseResult.Success>(parsed).diagram)
+        }
+        for (family in listOf("sequenceDiagram\nA->>B: hi", "pie\n\"a\": 1", "classDiagram\nclass A", "erDiagram\nA ||--o{ B : has", "gantt\nsection S\nTask :a1, 2024-01-01, 3d"))
+            assertIs<MermaidParseResult.Success>(MermaidParser.parse("%%{init: {\n  'theme': 'dark'\n}}%%\n$family"), family)
+    }
+
+    @Test fun errorsAfterADirectiveKeepTheirLine() {
+        val error = assertIs<MermaidParseResult.Failure>(MermaidParser.parse("%%{init: {\n  'theme': 'dark'\n}}%%\ngraph SIDEWAYS\nA-->B"))
+        assertEquals(SourceLocation(4, 1), error.diagnostics.first().location)
+    }
 }

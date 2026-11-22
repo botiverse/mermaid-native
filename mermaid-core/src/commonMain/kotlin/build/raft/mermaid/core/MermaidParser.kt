@@ -11,7 +11,7 @@ public object MermaidParser {
         val document = try { MermaidFrontmatter.extract(source) } catch (error: MermaidFrontmatterError) {
             return failure(MermaidDiagnosticCode.INVALID_VALUE, error.message ?: "Invalid frontmatter", error.location)
         }
-        val result = parseBody(MermaidEntities.encode(document.text))
+        val result = parseBody(MermaidEntities.encode(MermaidComments.blankDirectives(document.text)))
         val prefix = source.take(document.bodyOffset).replace("\r\n", "\n").replace('\r', '\n')
         val removedLines = prefix.count { it == '\n' }
         val removedColumns = prefix.length - prefix.lastIndexOf('\n') - 1
@@ -103,7 +103,7 @@ public object MermaidParser {
      * null. YAML frontmatter is recognized; Mermaid init directives are not configuration inputs.
      */
     public fun detectType(source: String): MermaidDiagramType? = try {
-        MermaidFrontmatter.extract(source).text.toStatements().firstOrNull()?.let { detectHeader(it.text) }
+        MermaidComments.blankDirectives(MermaidFrontmatter.extract(source).text).toStatements().firstOrNull()?.let { detectHeader(it.text) }
     } catch (_: MermaidFrontmatterError) { null }
 
     private fun detectHeader(header: String): MermaidDiagramType? {
