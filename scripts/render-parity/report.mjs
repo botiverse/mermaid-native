@@ -69,8 +69,8 @@ function metricCells(r) {
   const m = r.metrics;
   if (!m) return '';
   const pick = r.family === 'flowchart'
-    ? ['direction', 'matchedNodes', 'refNodes', 'labelCoverage', 'rankTau', 'crossAxisTau', 'refCrossings', 'nativeCrossings', 'refOverlaps', 'nativeOverlaps', 'aspectRatioRatio', 'areaRatio']
-    : ['refParticipants', 'participantCoverage', 'participantOrderEqual', 'matchedMessages', 'refMessages', 'messageOrderEqual', 'messageTau', 'refSelfMessages', 'nativeSelfMessages', 'refAutonumber', 'nativeAutonumber', 'refOverlaps', 'nativeOverlaps', 'aspectRatioRatio', 'areaRatio'];
+    ? ['direction', 'matchedNodes', 'refNodes', 'labelCoverage', 'rankTau', 'crossAxisTau', 'refCrossings', 'nativeCrossings', 'refOverlaps', 'nativeOverlaps', 'nativeOverflow', 'aspectRatioRatio', 'areaRatio']
+    : ['refParticipants', 'participantCoverage', 'participantOrderEqual', 'matchedMessages', 'refMessages', 'messageOrderEqual', 'messageTau', 'refSelfMessages', 'nativeSelfMessages', 'refAutonumber', 'nativeAutonumber', 'refOverlaps', 'nativeOverlaps', 'nativeOverflow', 'aspectRatioRatio', 'areaRatio'];
   return pick.map((k) => `<span class="m"><b>${k}</b> ${esc(m[k])}</span>`).join(' ');
 }
 

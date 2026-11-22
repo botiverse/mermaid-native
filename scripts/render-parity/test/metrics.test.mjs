@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  caseKey, classify, compareWithBaseline, countCrossings, countSelfLoops, flowDirection, flowchartMetrics,
+  canvasOverflow, caseKey, classify, compareWithBaseline, countCrossings, countSelfLoops, flowDirection, flowchartMetrics,
   hasAutonumber, kendallTauB, labelOverlaps, matchLabels, mergeStackedTexts, segmentHitsBox, sequenceMetrics,
 } from '../metrics.mjs';
 import { dedent, diffManifests, extractFromSpec, slugify, stableJson } from '../extract-corpus.mjs';
@@ -221,4 +221,23 @@ test('styled runs on one baseline merge before stacked lines', () => {
 test('self-message flag and dotted autonumber badges', () => {
   assert.equal(countSelfLoops([{ role: 'message', self: true, points: [[86, 111], [76, 131]] }, { role: 'message', self: false, points: [[0, 0], [0, 10], [20, 5]] }]), 1);
   assert.equal(hasAutonumber({ texts: [box('10.1', 60, 98, 20, 12)], circles: [{ cx: 68, cy: 104, r: 9, rx: 16.2, ry: 9 }] }), true);
+});
+
+test('content past the viewBox counts as clipped', () => {
+  const canvas = { x: 0, y: 0, w: 200, h: 100 };
+  assert.equal(canvasOverflow({ x: 24, y: 24, width: 152, height: 52, canvas }), 0);
+  assert.equal(canvasOverflow({ x: 24, y: 24, width: 226, height: 52, canvas }), 50);
+  assert.equal(canvasOverflow({ x: -10, y: 24, width: 52, height: 52, canvas }), 10);
+  assert.equal(canvasOverflow({ x: 24, y: 24, width: 52, height: 90, canvas }), 14);
+  assert.equal(canvasOverflow({ x: 24, y: -7, width: 52, height: 52, canvas }), 7);
+  assert.equal(canvasOverflow({ x: 5, y: 5, width: 10, height: 10, canvas: { x: 10, y: 5, w: 10, h: 10 } }), 5);
+  assert.equal(canvasOverflow({ width: 999, height: 999, canvas: null }), 0);
+
+  for (const [family, metrics] of [['flowchart', flowchartMetrics], ['sequence', sequenceMetrics]]) {
+    const geom = (w, native) => ({ x: 0, y: 0, width: w, height: 100, canvas: native ? canvas : null, texts: [], nodes: [], edges: [], circles: [] });
+    const run = (w) => classify(family, { ref: 'ok', native: 'ok' }, metrics(geom(w), geom(w, true), 'flowchart TB'));
+    assert.deepEqual(run(201).reasons, []);
+    assert.equal(run(250).class, 'differs');
+    assert.deepEqual(run(250).reasons, ['clipped by 50px']);
+  }
 });

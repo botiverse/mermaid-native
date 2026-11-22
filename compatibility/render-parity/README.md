@@ -63,9 +63,12 @@ Flowchart:
 - **label overlaps**: text/text box overlaps above 10% of the smaller box, plus
   node labels crossed by an edge.
 - **aspectRatioRatio** = native (w/h) ÷ upstream (w/h); **areaRatio** = native w·h ÷ upstream w·h.
+- **nativeOverflow**: how far native content extends past its own viewBox, where
+  viewers clip it.
 
 Sequence: participant order (top-row labels by x), message label vertical order,
-self-message loops, autonumber presence, label overlaps, aspect and area ratios.
+self-message loops, autonumber presence, label overlaps, nativeOverflow, aspect
+and area ratios.
 
 ## Classes and thresholds
 
@@ -82,6 +85,7 @@ self-message loops, autonumber presence, label overlaps, aspect and area ratios.
 | label overlaps | native ≤ upstream |
 | participant / message order (sequence) | equal |
 | self messages, autonumber (sequence) | equal |
+| nativeOverflow | ≤ 1 px |
 | aspectRatioRatio | 0.5–2 |
 | areaRatio | 0.25–4 |
 

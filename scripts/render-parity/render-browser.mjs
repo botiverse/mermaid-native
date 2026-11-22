@@ -152,7 +152,9 @@ function pageExtract([hostId, flavor]) {
     }
   }
   const b = svg.getBBox();
-  return { width: b.width, height: b.height, texts, nodes, edges, circles };
+  const vb = svg.viewBox.baseVal;
+  const canvas = vb && vb.width ? { x: vb.x, y: vb.y, w: vb.width, h: vb.height } : null;
+  return { x: b.x, y: b.y, width: b.width, height: b.height, canvas, texts, nodes, edges, circles };
 }
 
 const SERVED_TYPES = { '.mjs': 'text/javascript', '.js': 'text/javascript', '.map': 'application/json', '.css': 'text/css' };
