@@ -1,5 +1,20 @@
 # SDK releases and upgrading
 
+## 0.1.20 / 0.1.20-ohos
+
+**Pending publication** from tag `v0.1.20`. Until it is marked Available, use 0.1.19.
+
+Changes since 0.1.19:
+
+- **Behaviour change:** settings Native does not apply no longer make a diagram fail. A theme, `flowchart` spacing, XY chart size, another palette or number format, `displayMode`, or another family's section is ignored and the diagram is drawn. A wrong type in a setting Native applies is still an error. Hosts that used the old error to switch renderers need another check.
+- `%%{init: …}%%` directives may span several lines.
+- Subgraph titles are drawn with their line breaks and markdown emphasis, and the frame makes room for them. Swimlane titles stay on one line.
+- An edge from a subgraph to itself is drawn when no other edge crosses its frame. A node beside a taller subgraph keeps its loop short.
+- Flowchart header errors are reported at the header, not always at line 1.
+- New API in `mermaid-compose`: `rememberMermaidTextMeasurer(textStyle)` and `mermaidTextMeasurer(textMeasurer, textStyle)` lay a diagram out with the font it is drawn in, instead of `FixedWidthTextMeasurer`'s 0.6 em per letter.
+
+Upgrade all normal modules together to `0.1.20` and HarmonyOS modules to `0.1.20-ohos`.
+
 ## 0.1.19 / 0.1.19-ohos
 
 **Available.** Published by [release workflow 45028134918](https://github.com/botiverse/mermaid-native/actions/runs/45028134918) from tag [`v0.1.19`](https://github.com/botiverse/mermaid-native/tree/v0.1.19). Both planes resolve from the public Maven repository (checked 2026-11-22: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.19`; `mermaid-core` `0.1.19-ohos`).

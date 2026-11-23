@@ -7,12 +7,12 @@
    "extracted": 264,
    "skipped": 6,
    "match": 203,
-   "differs": 57,
-   "native-fails": 2,
+   "differs": 58,
+   "native-fails": 1,
    "ref-fails": 2,
    "native": {
-    "ok": 261,
-    "parse-error": 3
+    "ok": 262,
+    "parse-error": 2
    }
   },
   "sequence": {
@@ -861,8 +861,8 @@
   },
   "flowchart|11c1666ab5e9ac123e2e4824a2385a4e37b97a8739652f01b00a3e3b4ab7a1c9|{}": {
    "case": "flowchart/172-3258-should-render-subgraphs-with-large-nodespacing-and-rank",
-   "class": "native-fails",
-   "native": "parse-error"
+   "class": "differs",
+   "native": "ok"
   },
   "flowchart|3073872018d167ca894177fee2465f0ea0336662c5b1cc7ca3b1b46d78353183|{\"flowchart\":{\"titleTopMargin\":0}}": {
    "case": "flowchart/173-with-styling-and-classes",
