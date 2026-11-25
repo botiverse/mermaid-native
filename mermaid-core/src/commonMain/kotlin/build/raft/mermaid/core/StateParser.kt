@@ -121,7 +121,7 @@ internal class StateParser(private val source: String) {
         }
         // HTML-escaped stereotypes (`&lt;&lt;fork&gt;&gt;`) are not stereotypes upstream: a plain state.
         Regex("^(\\S+)\\s+&lt;&lt;\\w+&gt;&gt;$").matchEntire(text)?.let { return state(it.groupValues[1],composite,declared) }
-        Regex("^(\\S+)\\s*\\[\\[(fork|join|choice)]]$").matchEntire(text)?.let { return state("${it.groupValues[1]} <<${it.groupValues[2]}>>",composite,declared) }
+        Regex("^(\\S+)\\s*\\[\\[(fork|join|choice)\\]\\]$").matchEntire(text)?.let { return state("${it.groupValues[1]} <<${it.groupValues[2]}>>",composite,declared) }
         val pseudo=text.indexOf("<<")
         if(pseudo>=0){val id=text.take(pseudo).trim();validateId(id,composite);val type=text.substring(pseudo).trim();return register(id,declared=declared,kind=when(type){"<<choice>>"->StateNodeKind.CHOICE;"<<fork>>"->StateNodeKind.FORK;"<<join>>"->StateNodeKind.JOIN;else->fail("Unsupported state stereotype")})}
         val colon=text.indexOf(':');val id=if(colon<0)text else text.take(colon).trim();validateId(id,composite);register(id,declared=declared)
