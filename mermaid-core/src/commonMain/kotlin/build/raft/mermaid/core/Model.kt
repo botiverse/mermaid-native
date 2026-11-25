@@ -949,7 +949,8 @@ public data class WardleyNode(
     val sourceStrategy: String? = null, val inertia: Boolean = false,
 )
 
-public data class WardleyLink(val from: String, val to: String, val flow: String = "forward", val label: String? = null)
+/** [flow]: "forward", "backward" or "bidirectional" (arrowheads at the target, source or both). */
+public data class WardleyLink(val from: String, val to: String, val flow: String = "forward", val label: String? = null, val dashed: Boolean = false)
 public data class WardleyAnnotation(val id: String, val text: String, val visibility: Double, val evolution: Double)
 
 public data class WardleyEvolution(val component: String, val evolution: Double)
