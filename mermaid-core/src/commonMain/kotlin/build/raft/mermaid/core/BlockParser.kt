@@ -34,40 +34,7 @@ internal class BlockParser(private val source: String) {
         if (statements.firstOrNull()?.second !in setOf("block", "block-beta")) reject("Expected block or block-beta")
         for ((number, text) in statements.drop(1)) {
             line = number
-            val command = text.split(Regex("\\s+"), limit = 2)
-            val keyword = command.first()
-            val body = command.getOrNull(1).orEmpty().trim()
-            fun targetsAndValue(): Pair<List<String>, String> {
-                val match = Regex("^([A-Za-z0-9_]+(?:\\s*,\\s*[A-Za-z0-9_]+)*)\\s+(.+)$").matchEntire(body)
-                    ?: reject("Block $keyword requires identifiers and a value")
-                return match.groupValues[1].split(',').map { it.trim() } to match.groupValues[2].trim()
-            }
-            when {
-                text == "end" -> { if (stack.size == 1) reject("Unexpected block end"); stack.removeAt(stack.lastIndex) }
-                text == "block" || text.startsWith("block:") -> {
-                    val node = if (text == "block") BlockNode(nextId("block"), "") else Cursor(text.substring(6)).let { c -> val n = c.node(false); if (!c.done()) reject("Unexpected composite block suffix"); n }
-                    if (node.id in nodes) reject("Duplicate composite block identifier")
-                    nodes[node.id] = node
-                    val group = Group(node.id, node.label, node.columnSpan); stack.last().children += group; stack += group
-                }
-                keyword == "columns" -> {
-                    val count = if (body == "auto") -1 else body.toIntOrNull()?.takeIf { it in 1..512 } ?: reject("Block columns must be auto or 1..512")
-                    if (!stack.last().columnsDeclared) { stack.last().warningColumns = count; stack.last().columnsDeclared = true }
-                    stack.last().columns = count
-                }
-                keyword == "classDef" -> { val (ids, value) = targetsAndValue(); for (id in ids) classes[id] = value.split(',').map { it.trim() } }
-                keyword == "class" -> { val (ids, value) = targetsAndValue(); for (id in ids) assigned.getOrPut(id) { mutableListOf() }.addAll(value.split(',').map { it.trim() }) }
-                keyword == "style" -> { val (ids, value) = targetsAndValue(); for (id in ids) styles.getOrPut(id) { mutableListOf() }.addAll(value.split(',').map { it.trim() }) }
-                else -> {
-                    val cursor = Cursor(text); var previous: BlockNode? = null
-                    while (!cursor.done()) {
-                        if (cursor.hasArrow()) {
-                            val from = previous ?: reject("Block edge needs a source")
-                            val label = cursor.arrow(); val to = cursor.node(); edges += BlockEdge(from.id, to.id, label); previous = to
-                        } else previous = cursor.node()
-                    }
-                }
-            }
+            statement(text)
         }
         if (stack.size != 1) reject("Unclosed composite block")
         fun decorate(n: BlockNode) = n.copy(classes = assigned[n.id].orEmpty().toList(), styles = styles[n.id].orEmpty().toList())
@@ -82,18 +49,62 @@ internal class BlockParser(private val source: String) {
     } catch (error: IllegalArgumentException) {
         MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error.message ?: "Invalid block syntax", SourceLocation(line, 1))))
     }
+    /** One statement; Mermaid's block grammar is not line-based, so `block BL` opens a group holding BL. */
+    private fun statement(text: String) {
+        val command = text.split(Regex("\\s+"), limit = 2)
+        val keyword = command.first()
+        val body = command.getOrNull(1).orEmpty().trim()
+        fun targetsAndValue(): Pair<List<String>, String> {
+            val match = Regex("^([A-Za-z0-9_]+(?:\\s*,\\s*[A-Za-z0-9_]+)*)\\s+(.+)$").matchEntire(body)
+                ?: reject("Block $keyword requires identifiers and a value")
+            return match.groupValues[1].split(',').map { it.trim() } to match.groupValues[2].trim()
+        }
+        when {
+            text == "end" -> { if (stack.size == 1) reject("Unexpected block end"); stack.removeAt(stack.lastIndex) }
+            keyword == "block" && body.isNotEmpty() -> {
+                val node = BlockNode(nextId("block"), ""); nodes[node.id] = node
+                val group = Group(node.id, ""); stack.last().children += group; stack += group
+                statement(body)
+            }
+            text == "block" || text.startsWith("block:") -> {
+                val node = if (text == "block") BlockNode(nextId("block"), "") else Cursor(text.substring(6)).let { c -> val n = c.node(false); if (!c.done()) reject("Unexpected composite block suffix"); n }
+                if (node.id in nodes) reject("Duplicate composite block identifier")
+                nodes[node.id] = node
+                val group = Group(node.id, node.label, node.columnSpan); stack.last().children += group; stack += group
+            }
+            keyword == "columns" -> {
+                val count = if (body == "auto") -1 else body.toIntOrNull()?.takeIf { it in 1..512 } ?: reject("Block columns must be auto or 1..512")
+                if (!stack.last().columnsDeclared) { stack.last().warningColumns = count; stack.last().columnsDeclared = true }
+                stack.last().columns = count
+            }
+            keyword == "classDef" -> { val (ids, value) = targetsAndValue(); for (id in ids) classes[id] = value.split(',').map { it.trim() } }
+            keyword == "class" -> { val (ids, value) = targetsAndValue(); for (id in ids) assigned.getOrPut(id) { mutableListOf() }.addAll(value.split(',').map { it.trim() }) }
+            keyword == "style" -> { val (ids, value) = targetsAndValue(); for (id in ids) styles.getOrPut(id) { mutableListOf() }.addAll(value.split(',').map { it.trim() }) }
+            else -> {
+                val cursor = Cursor(text); var previous: BlockNode? = null
+                while (!cursor.done()) {
+                    if (cursor.hasArrow()) {
+                        val from = previous ?: reject("Block edge needs a source")
+                        val link = cursor.arrow(); val to = cursor.node()
+                        edges += BlockEdge(from.id, to.id, link.label, link.start, link.end, link.pattern, link.thickness); previous = to
+                    } else previous = cursor.node()
+                }
+            }
+        }
+    }
     private inner class Cursor(private val text: String) {
         private var index = 0
         private fun space() { while (text.getOrNull(index)?.isWhitespace() == true) index++ }
         fun done(): Boolean { space(); return index == text.length }
-        fun hasArrow(): Boolean { space(); return text.startsWith("--", index) }
-        fun arrow(): String? {
+        fun hasArrow(): Boolean { space(); return LINK.matchesAt(text, index) || START_LINK.matchesAt(text, index) }
+        /** Mermaid block links: `-->`, `---`, `--x`, `--o`, `<-->`, `==>`, `-.->`, `~~~`, optionally `-- "label" -->`. */
+        fun arrow(): Link {
             space()
-            if (text.startsWith("-->", index)) { index += 3; return null }
-            if (!text.startsWith("--", index)) reject("Expected block arrow")
-            index += 2; space(); val label = quoted(); space()
-            if (!text.startsWith("-->", index)) reject("Expected --> after block edge label")
-            index += 3; return label
+            LINK.matchAt(text, index)?.let { index += it.value.length; return Link.of(it.value.trim(), null) }
+            val start = START_LINK.matchAt(text, index) ?: reject("Expected block arrow")
+            index += start.value.length; space(); val label = quoted(); space()
+            val end = LINK.matchAt(text, index) ?: reject("Expected --> after block edge label")
+            index += end.value.length; return Link.of(start.value.trim() + end.value.trim(), label)
         }
         private fun quoted(): String {
             val quote = text.getOrNull(index)
@@ -102,20 +113,32 @@ internal class BlockParser(private val source: String) {
             while (index < text.length) { val c = text[index++]; if (!escaped && c == quote) return result.toString(); if (!escaped && c == '\\') escaped = true else { result.append(c); escaped = false } }
             reject("Unclosed block label")
         }
+        private fun hasLinkAt(at: Int): Boolean = LINK.matchesAt(text, at) || START_LINK.matchesAt(text, at)
         fun node(register: Boolean = true): BlockNode {
             space(); val start = index
-            while (text.getOrNull(index)?.let { it.isLetterOrDigit() || it == '_' || it == '-' } == true && !text.startsWith("--", index)) index++
+            // Mermaid's NODE_ID is any run without ([)]{}<>:= quotes or whitespace; Native also keeps single '-'.
+            while (text.getOrNull(index)?.let { !it.isWhitespace() && it !in "()[]{}<>:=\"'" } == true && !hasLinkAt(index) && !text.startsWith("--", index)) index++
             if (start == index) reject("Expected block identifier")
             val originalId = text.substring(start, index); var id = originalId; var label = id; var type = "na"; var directions = emptyList<String>(); var span = 1
             var close = "]"
-            if (text.startsWith("((", index)) { index += 2; type = "circle"; close = "))" }
-            else if (text.startsWith("[(", index)) { index += 2; type = "cylinder"; close = ")]" }
-            else if (text.startsWith("<[", index)) { index += 2; type = "block_arrow" }
-            else if (text.getOrNull(index) == '[') { index++; type = "square" }
+            val opener = if (text.startsWith("<[", index)) "<[" else SHAPES.keys.firstOrNull { text.startsWith(it, index) }
+            if (opener == "<[") { index += 2; type = "block_arrow" }
+            else if (opener != null) { index += opener.length; type = "shape"; close = "" }
             if (type != "na") {
                 space()
-                label = if (text.getOrNull(index) in listOf('"', '\'')) quoted() else { val end = text.indexOf(close, index); if (end < 0) reject("Unclosed block label"); text.substring(index, end).trim().also { if (it.any { c -> c.isWhitespace() } || it.contains('\'')) reject("Block labels containing whitespace require double quotes"); index = end } }
-                space(); if (!text.startsWith(close, index)) reject("Expected $close after block label"); index += close.length
+                // Mermaid pairs `[`, `[/` and `[\` with any of `]`, `/]`, `\]` (`[/"x"]` is type "na");
+                // other mismatched pairs such as `(("x")` stay rejected.
+                val closers = if (type == "shape") SHAPES.getValue(opener!!).keys + (if (opener in LENIENT_OPENERS) LENIENT_CLOSERS else emptyList()) else setOf(close)
+                label = if (text.getOrNull(index) in listOf('"', '\'')) quoted() else {
+                    val end = closers.mapNotNull { c -> text.indexOf(c, index).takeIf { it >= 0 } }.minOrNull() ?: reject("Unclosed block label")
+                    text.substring(index, end).trim().also { if (it.any { c -> c.isWhitespace() } || it.contains('\'')) reject("Block labels containing whitespace require double quotes"); index = end }
+                }
+                space()
+                if (type == "shape") {
+                    val matched = closers.firstOrNull { text.startsWith(it, index) } ?: reject("Expected ${closers.first()} after block label")
+                    close = matched; type = SHAPES.getValue(opener!!)[matched] ?: "na"
+                } else if (!text.startsWith(close, index)) reject("Expected $close after block label")
+                index += close.length
                 if (type == "block_arrow") {
                     if (label.isEmpty()) reject("Block arrow requires a non-empty label")
                     if (text.getOrNull(index) != '>') reject("Block arrow requires directions"); index++; space()
@@ -137,5 +160,40 @@ internal class BlockParser(private val source: String) {
             }
             return node
         }
+    }
+
+    internal class Link(val label: String?, val start: String, val end: String, val pattern: String, val thickness: String) {
+        companion object {
+            /** Mirrors blockDB edgeStrToEdgeStartData / edgeStrToEdgeData / edgeStrToPattern / edgeStrToThickness. */
+            fun of(type: String, label: String?): Link = Link(
+                label,
+                start = if (type.startsWith("<")) "point" else "none",
+                end = when (type.last()) { 'x' -> "cross"; 'o' -> "circle"; '>' -> "point"; else -> "none" },
+                pattern = if (".-" in type) "dotted" else "solid",
+                thickness = if ("==" in type) "thick" else "normal",
+            )
+        }
+    }
+
+    private companion object {
+        val LINK = Regex("<?-{2,}[-xo>]|<?={2,}[=xo>]|<?-?\\.+-[xo>]?|~{3,}")
+        val START_LINK = Regex("<?(?:--|==|-\\.)(?=\\s*\")")
+        val LENIENT_OPENERS = setOf("[", "[/", "[\\")
+        val LENIENT_CLOSERS = listOf("/]", "\\]", "]")
+        /** Opener -> (closer -> type), as in blockDB typeStr2Type; longer openers first. */
+        val SHAPES: Map<String, Map<String, String>> = linkedMapOf(
+            "(((" to mapOf(")))" to "doublecircle"),
+            "((" to mapOf("))" to "circle"),
+            "([" to mapOf("])" to "stadium"),
+            "(" to mapOf(")" to "round"),
+            "{{" to mapOf("}}" to "hexagon"),
+            "{" to mapOf("}" to "diamond"),
+            "[[" to mapOf("]]" to "subroutine"),
+            "[(" to mapOf(")]" to "cylinder"),
+            "[/" to mapOf("/]" to "lean_right", "\\]" to "trapezoid"),
+            "[\\" to mapOf("\\]" to "lean_left", "/]" to "inv_trapezoid"),
+            "[" to mapOf("]" to "square"),
+            ">" to mapOf("]" to "rect_left_inv_arrow"),
+        )
     }
 }

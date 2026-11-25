@@ -1340,6 +1340,8 @@ public object SimpleMermaidLayout : DiagramLayout {
         return LayoutScene(width, height, commands)
     }
 
+    private val BLOCK_POLYGON_SHAPES = setOf("diamond", "hexagon", "lean_right", "lean_left", "trapezoid", "inv_trapezoid", "rect_left_inv_arrow")
+
     private fun layoutBlock(diagram: BlockDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
         val textStyle = TextStyle(fontSize = 14.0, fontWeight = 500)
         val padding = diagram.padding
@@ -1357,7 +1359,9 @@ public object SimpleMermaidLayout : DiagramLayout {
                     val shape = arrow(node)
                     SceneSize(max(shape.width, shape.bounds.width), max(64.0, max(shape.height, shape.bounds.height)))
                 }
-                "circle" -> SceneSize(max(label.width + 32.0, 64.0), max(label.width + 32.0, 64.0))
+                "circle", "doublecircle" -> SceneSize(max(label.width + 32.0, 64.0), max(label.width + 32.0, 64.0))
+                "diamond" -> SceneSize(label.width * 1.5 + 48.0, max(64.0, label.height * 1.5 + 32.0))
+                "hexagon", "lean_right", "lean_left", "trapezoid", "inv_trapezoid", "rect_left_inv_arrow" -> SceneSize(label.width + 64.0, max(64.0, label.height + 32.0))
                 else -> SceneSize(label.width + 32.0, max(64.0, label.height + 32.0))
             }
             return BlockGridLayout.Node(node.id, node.type, node.columns, node.columnSpan, node.children.map(::measured),
@@ -1375,12 +1379,12 @@ public object SimpleMermaidLayout : DiagramLayout {
             nodes.forEach { node ->
                 val size = gridNodes.getValue(node.id).size!!
                 val cellRect = SceneRect(size.x - size.width / 2 + translateX, size.y - size.height / 2 + translateY, size.width, size.height)
-                val rect = if (node.type == "circle") {
+                val rect = if (node.type == "circle" || node.type == "doublecircle") {
                     val diameter = minOf(cellRect.width, cellRect.height)
                     cellRect.copy(x = cellRect.x + (cellRect.width - diameter) / 2.0, y = cellRect.y + (cellRect.height - diameter) / 2.0, width = diameter, height = diameter)
                 } else cellRect
                 placed[node.id] = rect
-                if (node.type == "circle") circleIds += node.id
+                if (node.type == "circle" || node.type == "doublecircle") circleIds += node.id
                 if (node.type == "space") return@forEach
                 val properties = (node.classes.flatMap { diagram.classes[it].orEmpty() } + node.styles).mapNotNull { item ->
                     val split = item.indexOf(':'); if (split <= 0) null else item.substring(0, split).trim() to item.substring(split + 1).trim()
@@ -1408,7 +1412,22 @@ public object SimpleMermaidLayout : DiagramLayout {
                     commands += DrawLine(ScenePoint(rect.x, rect.y + ry), ScenePoint(rect.x, rect.y + rect.height - ry), stroke, strokeWidth)
                     commands += DrawLine(ScenePoint(rect.x + rect.width, rect.y + ry), ScenePoint(rect.x + rect.width, rect.y + rect.height - ry), stroke, strokeWidth)
                     commands += DrawEllipse(ScenePoint(cx, rect.y + ry), rect.width / 2, ry, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
-                } else commands += DrawRect(rect, cornerRadius = 6.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                } else if (node.type == "doublecircle") {
+                    val center = ScenePoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+                    commands += DrawEllipse(center, rect.width / 2, rect.height / 2, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                    commands += DrawEllipse(center, rect.width / 2 - 5.0, rect.height / 2 - 5.0, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                } else if (node.type in BLOCK_POLYGON_SHAPES) {
+                    val points = blockShapePolygon(node.type, rect)
+                    commands += DrawPolygon(points, fill)
+                    commands += DrawPolyline(points + points.first(), stroke, strokeWidth)
+                } else {
+                    val radius = when (node.type) { "round" -> 16.0; "stadium" -> rect.height / 2; else -> 6.0 }
+                    commands += DrawRect(rect, cornerRadius = radius, fill = fill, stroke = stroke, strokeWidth = strokeWidth)
+                    if (node.type == "subroutine") {
+                        commands += DrawLine(ScenePoint(rect.x + 8.0, rect.y), ScenePoint(rect.x + 8.0, rect.y + rect.height), stroke, strokeWidth)
+                        commands += DrawLine(ScenePoint(rect.x + rect.width - 8.0, rect.y), ScenePoint(rect.x + rect.width - 8.0, rect.y + rect.height), stroke, strokeWidth)
+                    }
+                }
                 if (node.label.isNotEmpty()) commands += DrawText(node.label.replace("&nbsp;", " "), ScenePoint(rect.x + rect.width / 2, rect.y + if (node.type == "composite") 24.0 else rect.height / 2 + 6.0), TextAnchor.MIDDLE, textStyle.copy(color = color("color", DiagramPalette.INK)))
                 if (node.type == "composite") draw(node.children)
             }
@@ -1436,7 +1455,10 @@ public object SimpleMermaidLayout : DiagramLayout {
             val touchesArrow = edge.from in arrowPoints || edge.to in arrowPoints
             val a = if (touchesArrow) boundary(edge.from, from, fromCenter, toCenter) else defaultA
             val b = if (touchesArrow) boundary(edge.to, to, toCenter, fromCenter) else defaultB
-            commands += DrawLine(a, b); commands += arrowHead(a, b)
+            val width = if (edge.thickness == "thick") 3.0 else 1.5
+            commands += DrawLine(a, b, strokeWidth = width, pattern = if (edge.pattern == "dotted") StrokePattern.DASHED else StrokePattern.SOLID)
+            commands += blockEdgeEnd(edge.arrowEnd, a, b)
+            commands += blockEdgeEnd(edge.arrowStart, b, a)
             edge.label?.let { commands += DrawText(it, ScenePoint((a.x + b.x) / 2, (a.y + b.y) / 2 - 6.0), TextAnchor.MIDDLE, textStyle) }
         }
         return LayoutScene((bounds.width + config.padding * 2).xyCoordinate(), (bounds.height + config.padding * 2).xyCoordinate(), commands)
@@ -3671,6 +3693,41 @@ public object SimpleMermaidLayout : DiagramLayout {
         }
         return if (cardinality == EntityCardinality.MD_PARENT) marks
         else listOf(DrawLine(anchor, along(16.0))) + marks
+    }
+
+    /** Block edge end marker at [to] ("point", "cross", "circle"; "none" draws nothing). */
+    private fun blockEdgeEnd(kind: String, from: ScenePoint, to: ScenePoint): List<DrawCommand> {
+        val dx = to.x - from.x; val dy = to.y - from.y
+        val length = sqrt(dx * dx + dy * dy).takeIf { it > 0.0 } ?: 1.0
+        val ux = dx / length; val uy = dy / length
+        return when (kind) {
+            "point" -> listOf(arrowHead(from, to))
+            "circle" -> listOf(DrawEllipse(ScenePoint(to.x - ux * 5.0, to.y - uy * 5.0), 4.5, 4.5, fill = SceneColor(DiagramPalette.SECONDARY), stroke = SceneColor(DiagramPalette.SECONDARY)))
+            "cross" -> {
+                val c = ScenePoint(to.x - ux * 6.0, to.y - uy * 6.0); val r = 4.5
+                val ax = (ux - uy) * r; val ay = (uy + ux) * r; val bx = (ux + uy) * r; val by = (uy - ux) * r
+                listOf(
+                    DrawLine(ScenePoint(c.x - ax, c.y - ay), ScenePoint(c.x + ax, c.y + ay), strokeWidth = 2.0),
+                    DrawLine(ScenePoint(c.x - bx, c.y - by), ScenePoint(c.x + bx, c.y + by), strokeWidth = 2.0),
+                )
+            }
+            else -> emptyList()
+        }
+    }
+
+    /** Outline of the polygonal Mermaid block shapes inside [r]. */
+    private fun blockShapePolygon(type: String, r: SceneRect): List<ScenePoint> {
+        val x0 = r.x; val y0 = r.y; val x1 = r.x + r.width; val y1 = r.y + r.height; val cx = r.x + r.width / 2; val cy = r.y + r.height / 2
+        val s = minOf(r.height / 2, r.width / 4)
+        return when (type) {
+            "diamond" -> listOf(ScenePoint(cx, y0), ScenePoint(x1, cy), ScenePoint(cx, y1), ScenePoint(x0, cy))
+            "hexagon" -> listOf(ScenePoint(x0 + s, y0), ScenePoint(x1 - s, y0), ScenePoint(x1, cy), ScenePoint(x1 - s, y1), ScenePoint(x0 + s, y1), ScenePoint(x0, cy))
+            "lean_right" -> listOf(ScenePoint(x0 + s, y0), ScenePoint(x1, y0), ScenePoint(x1 - s, y1), ScenePoint(x0, y1))
+            "lean_left" -> listOf(ScenePoint(x0, y0), ScenePoint(x1 - s, y0), ScenePoint(x1, y1), ScenePoint(x0 + s, y1))
+            "trapezoid" -> listOf(ScenePoint(x0 + s, y0), ScenePoint(x1 - s, y0), ScenePoint(x1, y1), ScenePoint(x0, y1))
+            "inv_trapezoid" -> listOf(ScenePoint(x0, y0), ScenePoint(x1, y0), ScenePoint(x1 - s, y1), ScenePoint(x0 + s, y1))
+            else -> listOf(ScenePoint(x0, y0), ScenePoint(x1, y0), ScenePoint(x1, y1), ScenePoint(x0, y1), ScenePoint(x0 + s, cy)) // rect_left_inv_arrow
+        }
     }
 
     private fun arrowHead(from: ScenePoint, to: ScenePoint, fill: SceneColor = SceneColor(DiagramPalette.SECONDARY)): DrawPolygon {
