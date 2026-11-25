@@ -10,24 +10,27 @@ internal class MindmapParser(private val source: String) {
         fun fail(message: String, line: Int) = MermaidParseResult.Failure(listOf(
             MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, message, SourceLocation(line, 1)),
         ))
-        source.lines().forEachIndexed { index, raw ->
+        val lines = source.lines()
+        var index = -1
+        while (++index < lines.size) {
+            val raw = lines[index]
             val line = index + 1
-            val text = stripComment(raw).trim()
-            if (text.isEmpty()) return@forEachIndexed
+            var text = stripComment(raw).trim()
+            if (text.isEmpty()) continue
             if (!header) {
                 if (!text.equals("mindmap", ignoreCase = true)) return fail("Expected mindmap", line)
-                header = true; return@forEachIndexed
+                header = true; continue
             }
             if (text.startsWith("::icon(") && text.endsWith(')')) {
                 if (nodes.isEmpty()) return fail("Mindmap decoration requires a node", line)
                 val icon = text.substring(7, text.length - 1)
                 if (icon.isNotBlank()) nodes[nodes.lastIndex] = nodes.last().copy(icon = icon)
-                return@forEachIndexed
+                continue
             }
             if (text.startsWith(":::")) {
                 if (nodes.isEmpty()) return fail("Mindmap decoration requires a node", line)
                 nodes[nodes.lastIndex] = nodes.last().copy(cssClasses = text.substring(3).trim())
-                return@forEachIndexed
+                continue
             }
             val indent = raw.takeWhile { it == ' ' || it == '\t' }.length
             val at = text.indexOfFirst { it in "[(){" }
@@ -38,8 +41,12 @@ internal class MindmapParser(private val source: String) {
                 val open = listOf("))", "((", "{{", "(", ")", "[").firstOrNull { text.startsWith(it, at) }
                     ?: return fail("Unsupported mindmap node shape", line)
                 val close = when (open) { "))" -> "(("; "((" -> "))"; "{{" -> "}}"; "(" -> ")"; ")" -> "("; else -> "]" }
+                // A label may span lines (`root[` … `]`), as in the upstream lexer; lines are trimmed.
+                var end = index
+                while (!text.endsWith(close) && end + 1 < lines.size) text += "\n" + stripComment(lines[++end]).trim()
                 if (!text.endsWith(close)) return fail("Unclosed mindmap node label", line)
-                label = unquote(text.substring(at + open.length, text.length - close.length))
+                index = end
+                label = unquote(text.substring(at + open.length, text.length - close.length).trim('\n', ' ', '\t'))
                 explicit = text.substring(0, at).trim().takeIf { it.isNotEmpty() }
                 shape = when (open) {
                     "))" -> MindmapNodeShape.BANG
