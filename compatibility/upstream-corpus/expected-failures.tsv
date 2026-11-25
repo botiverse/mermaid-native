@@ -1,7 +1,4 @@
 case	outcome
-cypress/architecture/007-should-render-an-architecture-diagram-with-group-edges	rejects-valid
-cypress/architecture/008-should-render-an-architecture-diagram-with-edge-labels	rejects-valid
-cypress/architecture/010-should-render-an-architecture-diagram-with-complex-junction	rejects-valid
 cypress/block/003-bl3-should-align-block-widths-and-handle-columns-statement-i	rejects-valid
 cypress/block/004-bl4-should-align-block-widths-and-handle-columns-statements	rejects-valid
 cypress/block/005-bl5-should-align-block-widths-and-handle-columns-statements	rejects-valid

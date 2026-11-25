@@ -66,7 +66,10 @@ internal class ArchitectureParser(private val source: String) {
                 return@forEachIndexed
             }
             EDGE.matchEntire(text)?.let { match ->
-                val edge = ArchitectureEdge(match.groupValues[1], port(match.groupValues[2]), match.groupValues[5], port(match.groupValues[4]), match.groupValues[3] == "-->")
+                val g = match.groupValues
+                val edge = ArchitectureEdge(g[1], port(g[3]), g[8], port(g[7]), g[6] == ">",
+                    label = g[5].takeIf { it.isNotEmpty() }?.let(::decodeLabel), sourceArrow = g[4] == "<",
+                    sourceGroup = g[2].isNotEmpty(), targetGroup = g[9].isNotEmpty())
                 if (edge.sourceId == edge.targetId) return fail("Architecture self edges are not supported", index + 1)
                 if (edge in edges) return fail("Duplicate architecture edge", index + 1)
                 edges += edge; locations["edge${edges.lastIndex}"] = index + 1
@@ -111,6 +114,7 @@ internal class ArchitectureParser(private val source: String) {
         private val JUNCTION = Regex("""^junction\s+([A-Za-z0-9_]+)(?:\s+in\s+([A-Za-z0-9_]+))?\s*(?:%%.*)?$""")
         private val ALIGN = Regex("""^align\s+(row|column)(?:\s+(.*))?$""")
         private val ENTITY = Regex("""^(group|service)\s+([A-Za-z0-9_]+)(?:\(([A-Za-z0-9_:-]+)\))?(?:\[((?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]\r\n]+))\])?(?:\s+in\s+([A-Za-z0-9_]+))?\s*(?:%%.*)?$""")
-        private val EDGE = Regex("""^([A-Za-z0-9_]+):(T|B|L|R)\s*(-->|--)\s*(T|B|L|R):([A-Za-z0-9_]+)\s*(?:%%.*)?$""")
+        /** `a{group}:R <-[label]-> L:b{group}`: optional group modifiers, arrowheads on either side and a title. */
+        private val EDGE = Regex("""^([A-Za-z0-9_]+)(\{group\})?:(T|B|L|R)\s*(<)?(?:--|-\[((?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]\r\n]+))\]-)(>)?\s*(T|B|L|R):([A-Za-z0-9_]+)(\{group\})?\s*(?:%%.*)?$""")
     }
 }

@@ -2048,6 +2048,22 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun architectureEdgeTitlesArrowsAndGroupModifiers() {
+        val d = assertIs<ArchitectureDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "architecture-beta\ngroup g1(cloud)[G1]\ngroup g2(cloud)[G2]\nservice a(server)[A] in g1\nservice b(server)[B] in g2\n" +
+                "a:L -[Label]- R:b\na{group}:R --> L:b{group}\na:T <-- B:b\na:B <-[\"q\"]-> T:b",
+        )).diagram)
+        assertEquals(
+            listOf(
+                ArchitectureEdge("a", ArchitecturePort.LEFT, "b", ArchitecturePort.RIGHT, false, label = "Label"),
+                ArchitectureEdge("a", ArchitecturePort.RIGHT, "b", ArchitecturePort.LEFT, true, sourceGroup = true, targetGroup = true),
+                ArchitectureEdge("a", ArchitecturePort.TOP, "b", ArchitecturePort.BOTTOM, false, sourceArrow = true),
+                ArchitectureEdge("a", ArchitecturePort.BOTTOM, "b", ArchitecturePort.TOP, true, label = "q", sourceArrow = true),
+            ),
+            d.edges,
+        )
+    }
+
     @Test fun malformedArchitectureFailsClosed() {
         listOf(
             "architecture-beta\ngroup api(cloud)[API]\nservice db(database)[Database] in missing",

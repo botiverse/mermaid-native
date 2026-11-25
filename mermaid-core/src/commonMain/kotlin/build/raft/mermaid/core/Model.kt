@@ -731,7 +731,14 @@ public data class ArchitectureEdge(
     val sourcePort: ArchitecturePort,
     val targetId: String,
     val targetPort: ArchitecturePort,
+    /** Arrowhead at the target (`-->`, `->`). */
     val directed: Boolean,
+    val label: String? = null,
+    /** Arrowhead at the source (`<--`). */
+    val sourceArrow: Boolean = false,
+    /** `{group}` modifiers: the edge attaches to the endpoint's group rather than the node. */
+    val sourceGroup: Boolean = false,
+    val targetGroup: Boolean = false,
 )
 
 public data class C4Diagram(
