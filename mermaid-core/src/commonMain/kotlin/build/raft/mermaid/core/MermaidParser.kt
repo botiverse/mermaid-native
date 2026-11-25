@@ -11,7 +11,7 @@ public object MermaidParser {
         val document = try { MermaidFrontmatter.extract(source) } catch (error: MermaidFrontmatterError) {
             return failure(MermaidDiagnosticCode.INVALID_VALUE, error.message ?: "Invalid frontmatter", error.location)
         }
-        val result = parseBody(MermaidEntities.encode(MermaidComments.blankDirectives(document.text)))
+        val result = parseBody(MermaidEntities.encode(MermaidComments.blankDirectives(document.text)), document.metadata)
         val prefix = source.take(document.bodyOffset).replace("\r\n", "\n").replace('\r', '\n')
         val removedLines = prefix.count { it == '\n' }
         val removedColumns = prefix.length - prefix.lastIndexOf('\n') - 1
@@ -26,7 +26,7 @@ public object MermaidParser {
         } else result
     }
 
-    private fun parseBody(source: String): MermaidParseResult {
+    private fun parseBody(source: String, metadata: MermaidFrontmatterMetadata = MermaidFrontmatterMetadata()): MermaidParseResult {
         val statements = source.toStatements()
         val header = statements.firstOrNull()
             ?: return failure(
@@ -47,7 +47,7 @@ public object MermaidParser {
             MermaidDiagramType.TIMELINE -> TimelineParser(source).parse()
             MermaidDiagramType.QUADRANT -> QuadrantParser(source).parseValidated()
             MermaidDiagramType.JOURNEY -> JourneyParser(source).parse()
-            MermaidDiagramType.GITGRAPH -> GitGraphParser(source).parse()
+            MermaidDiagramType.GITGRAPH -> GitGraphParser(source, gitMainBranch(metadata)).parse()
             MermaidDiagramType.REQUIREMENT -> RequirementParser(source).parse()
             MermaidDiagramType.KANBAN -> parseKanban(source)
             MermaidDiagramType.PACKET -> PacketParser(source).parse()
@@ -795,6 +795,13 @@ private fun String.parseSankeyCsvLine(): List<String>? {
     if (quoted) return null
     fields += current.toString()
     return fields
+}
+
+/** `config.gitGraph.mainBranchName` from front matter; history resolution needs it before checkout. */
+private fun gitMainBranch(metadata: MermaidFrontmatterMetadata): String {
+    val root = metadata.config as? UsecaseJsonValue.ObjectValue ?: return "main"
+    val git = root.value["gitGraph"] as? UsecaseJsonValue.ObjectValue ?: return "main"
+    return (git.value["mainBranchName"] as? UsecaseJsonValue.StringValue)?.value?.takeIf { it.isNotBlank() } ?: "main"
 }
 
 internal fun parseIsoDay(value: String): Int? {
