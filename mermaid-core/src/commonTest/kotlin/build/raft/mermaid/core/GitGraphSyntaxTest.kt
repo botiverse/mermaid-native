@@ -7,6 +7,21 @@ import kotlin.test.assertTrue
 
 class GitGraphSyntaxTest {
     @Test
+    fun frontmatterMainBranchNameAndMultilineBranchNames() {
+        val renamed = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "---\nconfig:\n  gitGraph:\n    mainBranchName: 'trunk'\n---\ngitGraph\n  commit id: \"1\"\n  branch develop\n  commit id: \"2\"\n  checkout trunk\n  commit id: \"3\"",
+        )).diagram)
+        assertEquals(listOf("trunk", "develop"), renamed.branches.map { it.name })
+        assertEquals(listOf("trunk", "develop", "trunk"), renamed.commits.map { it.branch })
+
+        val multiline = assertIs<GitGraphDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "gitGraph LR:\n  commit id: \"1\"\n  branch \"Feature A\n(ongoing)\"\n  commit id: \"2\"",
+        )).diagram)
+        assertEquals("Feature A\n(ongoing)", multiline.branches.last().name)
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("gitGraph\n  commit msg: \"never closed"))
+    }
+
+    @Test
     fun recoveredSameLineStatementsRequireSeparatorsBeforeProductionResolution() {
         val source = """
             gitGraph

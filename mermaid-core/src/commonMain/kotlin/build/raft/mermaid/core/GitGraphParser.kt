@@ -1,18 +1,19 @@
 package build.raft.mermaid.core
 
 /** Git history is resolved in the shared model, before any renderer or adapter consumes it. */
-internal class GitGraphParser(private val source: String) {
+/** [mainBranch] is `config.gitGraph.mainBranchName` from front matter (default `main`). */
+internal class GitGraphParser(private val source: String, private val mainBranch: String = "main") {
     fun parse(): MermaidParseResult {
         var lineNumber = 1
         return try {
             val syntax = GitGraphSyntaxParser.parse(source)
             if (syntax.diagnostics.isNotEmpty()) return MermaidParseResult.Failure(syntax.diagnostics)
             val direction = syntax.direction
-            val branches = linkedMapOf("main" to GitGraphBranch("main", null))
-            val heads = linkedMapOf<String, String?>("main" to null)
+            val branches = linkedMapOf(mainBranch to GitGraphBranch(mainBranch, null))
+            val heads = linkedMapOf<String, String?>(mainBranch to null)
             val commits = linkedMapOf<String, GitGraphCommit>()
             val warnings = mutableListOf<String>()
-            var current = "main"; var next = 1; var sequence = 0
+            var current = mainBranch; var next = 1; var sequence = 0
             val title = syntax.title; val accTitle = syntax.accTitle; val accDescription = syntax.accDescription
             fun autoId(): String { while ("commit-$next" in commits) next++; return "commit-${next++}" }
             fun add(commit: GitGraphCommit) { commits[commit.id] = commit.copy(sequence = sequence++); heads[current] = commit.id }

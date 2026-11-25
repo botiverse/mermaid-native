@@ -68,7 +68,9 @@ public object GitGraphSyntaxParser {
             direction = header.groupValues[1].ifEmpty { "LR" }.let(FlowDirection::valueOf)
             var i = headerIndex + 1
             while (i < lines.size) {
-                lineNumber = i + 1; val line = lines[i++].trim()
+                lineNumber = i + 1; var line = lines[i++].trim()
+                // A double-quoted value may span lines (`branch "Feature A\n(ongoing)"`).
+                while (line.count { it == '"' } % 2 == 1 && i < lines.size) line += "\n" + lines[i++].trim()
                 if (line.isBlank() || line.startsWith("%%")) continue
                 if (Regex("^title(?:[\\t ]|$)").containsMatchIn(line)) { title = line.drop(5).substringBefore("%%").trim(); continue }
                 if (Regex("^accTitle[\\t ]*:").containsMatchIn(line)) { accTitle = line.substringAfter(':').substringBefore("%%").trim(); continue }
