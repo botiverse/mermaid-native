@@ -1,0 +1,12 @@
+usecase-beta
+systemBoundary sb1["Payment service"]@{ type: package }:::system
+  Authorize("Authorize payment")
+end
+systemBoundary sb2(Billing)@{
+  type: rect
+}:::billing
+  Invoice[Create invoice]
+end
+systemBoundary sb3("`**Support**`")
+  Refund[Issue refund]
+end

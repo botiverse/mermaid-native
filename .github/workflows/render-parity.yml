@@ -14,6 +14,8 @@ on:
       - 'mermaid-render-svg/**'
       - 'mermaid-web/**'
       - 'compatibility/render-parity/**'
+      - 'compatibility/upstream-corpus/**'
+      - 'scripts/upstream-corpus/**'
       - 'compatibility/upstreams.lock'
       - 'scripts/render-parity/**'
       - '.github/workflows/render-parity.yml'
@@ -37,6 +39,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  upstream-corpus:
+    if: github.event_name != 'workflow_dispatch' || inputs.mermaid_ref == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: scripts/render-parity/package-lock.json
+      - name: Install pinned tools
+        working-directory: scripts/render-parity
+        run: npm ci
+      - name: Unit-test the importer
+        run: node --test scripts/upstream-corpus/extract.test.mjs
+      - name: Verify committed upstream corpus matches the pinned upstream revision
+        run: |
+          scripts/upstream-corpus/fetch-upstream.sh "" build/upstream-corpus-upstream
+          node scripts/upstream-corpus/extract.mjs --mermaid build/upstream-corpus-upstream --check
+
   parity:
     if: github.event_name != 'workflow_dispatch' || inputs.mermaid_ref == ''
     runs-on: ubuntu-latest

@@ -1,0 +1,15 @@
+usecase-beta
+classDef data fill:#eef,stroke:#369
+json Payload@{
+  "2": "second",
+  "1": "first",
+  "colors": ["Red", "Green"],
+  "items": [{ "name": "A" }, {}],
+  "empty": {},
+  "duplicate": "old",
+  "duplicate": "new"
+}:::data
+style Payload stroke-width:4px
+Inspect payloadEdge@--> Payload
+class payloadEdge data
+style payloadEdge stroke:#f00

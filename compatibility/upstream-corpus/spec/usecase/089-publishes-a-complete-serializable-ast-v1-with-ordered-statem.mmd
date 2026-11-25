@@ -1,0 +1,12 @@
+usecase-beta
+
+%% representative
+systemBoundary Auth
+actor User@{ type: hollow } <<Human>>
+Login[Sign in]
+end
+Auth@{ type: package }
+json Payload@{"ok": true}
+Login includeEdge@..> : include Login
+includeEdge@{ animation: fast }
+note for Login "Remember"

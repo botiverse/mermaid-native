@@ -1,0 +1,9 @@
+usecase-beta
+systemBoundary "Authentication System":::system
+  %% boundary comment
+  actor User, Admin("Administrator")
+
+  Login("Sign in"):::critical
+  Report[Generate report]
+end
+User --> Login

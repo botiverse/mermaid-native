@@ -1,0 +1,4 @@
+sequenceDiagram
+actor A@{ "type" : "database" } AS Database Server
+actor B@{ "type" : "queue" } as Message Queue
+A->>B: Send message

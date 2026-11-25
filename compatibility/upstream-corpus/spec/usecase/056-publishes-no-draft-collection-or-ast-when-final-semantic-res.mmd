@@ -1,0 +1,9 @@
+usecase-beta
+direction TB
+classDef important fill:red
+actor User:::important
+Login[Sign in]
+User link@--> Login
+link@{ animation: fast }
+json Payload@{"ok": true}
+note for Missing "late failure"

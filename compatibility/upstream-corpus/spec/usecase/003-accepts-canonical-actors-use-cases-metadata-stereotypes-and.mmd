@@ -1,0 +1,7 @@
+usecase-beta
+actor Admin("Main Administrator")@{ type: hollow, business: true } <<Human>>:::external
+actor "System Administrator", "`**Automation**`"
+Login(Sign in)@{ business: false } <<Primary>>:::critical
+Report[Generate report]
+"Reset password"
+"`**Markdown** use case`"

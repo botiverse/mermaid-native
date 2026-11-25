@@ -1,0 +1,9 @@
+usecase-beta
+classDef system fill:#f8f8ff
+systemBoundary "Payment service":::system
+  Authorize("Authorize payment")
+end
+systemBoundary Billing
+  Invoice[Create invoice]
+end
+Payment_service@{ type: package }

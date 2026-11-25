@@ -1,0 +1,18 @@
+railroad-beta
+title "JSON Subset"
+value = choice(
+    nonterminal("string"),
+    nonterminal("number"),
+    terminal("true"),
+    terminal("false"),
+    terminal("null")
+) ;
+string = sequence(
+    terminal("\""),
+    zeroOrMore(nonterminal("character")),
+    terminal("\"")
+) ;
+number = oneOrMore(nonterminal("digit")) ;
+character = choice(nonterminal("letter"), nonterminal("digit")) ;
+letter = choice(terminal("a"), terminal("b"), terminal("c")) ;
+digit = choice(terminal("0"), terminal("1"), terminal("2")) ;
