@@ -30,6 +30,13 @@ manifest. Copyright Knut Sveidqvist and contributors, under the MIT License
 reproduced in compatibility/render-parity/LICENSE-mermaid.txt. They are used
 only by the CI parity suite and are not included in published artifacts.
 
+Diagram sources under `compatibility/upstream-corpus` are extracted from
+Mermaid's Cypress rendering specs and unit/parser test files at the commit
+recorded in their manifest (provenance per occurrence in provenance.tsv).
+Copyright Knut Sveidqvist and contributors, under the MIT License reproduced in
+compatibility/upstream-corpus/LICENSE-mermaid.txt. They are used only by tests
+and are not included in published artifacts.
+
 Unicode grapheme and East Asian Width property tables, emoji sequence data, and
 conformance cases are derived from Unicode Character Database 17.0.0 and Emoji 17.0, copyright Unicode, Inc., under Unicode License
 v3. The license, exact source URLs and hashes, and reproducible generator are

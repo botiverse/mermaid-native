@@ -1,0 +1,5 @@
+railroad-abnf-beta
+title "URI"
+URI = scheme ":" hier-part ;
+scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ;
+hier-part = "//" authority path-abempty ;

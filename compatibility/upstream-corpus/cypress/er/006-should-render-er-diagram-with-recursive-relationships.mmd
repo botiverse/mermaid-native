@@ -1,0 +1,8 @@
+erDiagram
+EMPLOYEE {
+    int id PK
+    string name
+    int managerId FK
+}
+EMPLOYEE ||--o{ EMPLOYEE : manages
+DEPARTMENT ||--|{ EMPLOYEE : employs

@@ -158,8 +158,12 @@ function walk(node, visit, stack = [], scope = new Scope(null)) {
   if (pushed) stack.pop();
 }
 
-/** Extract snapshot calls from one spec file's text. Returns {cases, skipped}. */
-export function extractFromSpec(code, upstreamPath) {
+/**
+ * Extract snapshot calls from one spec file's text. Returns {cases, skipped}.
+ * With `lenientOptions`, calls whose options are not literal keep their source and get
+ * `options = { $unresolved: reason }` instead of being skipped.
+ */
+export function extractFromSpec(code, upstreamPath, { lenientOptions = false } = {}) {
   const ast = parse(code, {
     sourceType: 'module',
     plugins: upstreamPath.endsWith('.ts') ? ['typescript'] : ['jsx'],
@@ -178,8 +182,15 @@ export function extractFromSpec(code, upstreamPath) {
     const [src, opts] = call.arguments;
     let options = {};
     if (opts) {
-      try { options = literalValue(opts, consts); } catch (e) { return record(`non-literal options (${e.message})`); }
-      if (options === null || typeof options !== 'object' || Array.isArray(options)) return record('options is not an object');
+      try { options = literalValue(opts, consts); } catch (e) {
+        // lenientOptions keeps the (literal) source and marks the options as unresolved.
+        if (!lenientOptions) return record(`non-literal options (${e.message})`);
+        options = { $unresolved: e.message };
+      }
+      if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+        if (!lenientOptions) return record('options is not an object');
+        options = { $unresolved: 'not an object' };
+      }
     }
     const sources = [];
     if (!src) return record('missing source');

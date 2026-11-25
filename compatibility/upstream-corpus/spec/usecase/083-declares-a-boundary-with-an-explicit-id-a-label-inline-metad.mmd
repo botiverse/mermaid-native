@@ -1,0 +1,7 @@
+usecase-beta
+classDef system fill:#f8f8ff
+systemBoundary sb1["Payment service"]@{ type: package }:::system
+  actor Clerk("Payment clerk")
+  Authorize("Authorize payment")
+end
+Clerk --> Authorize

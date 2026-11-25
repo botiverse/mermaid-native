@@ -1,0 +1,6 @@
+sequenceDiagram
+participant A@{ "type" : "boundary", "alias": "Service A" }
+participant B@{ "type" : "control" } as Service B
+participant C@{ "type" : "database" }
+A->>B: Request
+B->>C: Query

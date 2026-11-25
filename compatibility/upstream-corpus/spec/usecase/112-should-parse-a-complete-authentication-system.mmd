@@ -1,0 +1,15 @@
+usecase-beta
+actor User
+actor Admin
+
+systemBoundary "Authentication System"
+  Login
+  Logout
+  Register
+  ResetPassword
+end
+
+User --> Login
+User --> Register
+User --> Logout
+Admin --> Login

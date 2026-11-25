@@ -1,0 +1,11 @@
+usecase-beta
+direction LR
+Auth@{ type: package }
+note for Login "`Requires an **active session**`"
+json Payload@{
+  "fruit": "Apple",
+  "nested": { "brace": "}", "items": [1, 2] }
+}:::data
+classDef external,critical fill:#fff,stroke-width:3px
+class Login,Payload external,critical
+style Login fill:#fee,stroke-dasharray:5\,5
