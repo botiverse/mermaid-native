@@ -11,10 +11,6 @@ cypress/gantt/028-should-render-when-compact-is-true	rejects-valid
 cypress/gantt/029-should-render-a-gantt-diagram-excluding-a-specific-date-in-y	rejects-valid
 cypress/gantt/030-should-render-a-gantt-diagram-excluding-saturday-and-sunday	rejects-valid
 cypress/gantt/031-should-render-a-gantt-diagram-excluding-friday-and-saturday	rejects-valid
-cypress/mindmap/017-square-shape	rejects-valid
-cypress/mindmap/018-rounded-rect-shape	rejects-valid
-cypress/mindmap/019-circle-shape	rejects-valid
-cypress/mindmap/023-formatted-label-with-linebreak-and-a-wrapping-label-and-emoj	rejects-valid
 cypress/misc/026-should-render-a-gantt-diagram	rejects-valid
 cypress/user-journey/010-should-correctly-render-the-user-journey-diagram-title-with	rejects-valid
 spec/architecture/030-should-handle-a-group-title-containing-chinese-characters	accepts-invalid

@@ -999,6 +999,16 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun mindmapLabelsMaySpanLines() {
+        val d = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "mindmap\nroot((\n  The root\n  second line\n))\n  child[\n    A\n  ]\n  other",
+        )).diagram)
+        assertEquals(listOf("The root\nsecond line", "A", "other"), d.nodes.map { it.label })
+        assertEquals(MindmapNodeShape.DOUBLE_CIRCLE, d.nodes[0].shape)
+        assertEquals(listOf(null, d.nodes[0].id, d.nodes[0].id), d.nodes.map { it.parentId })
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("mindmap\nroot[\n  never closed"))
+    }
+
     @Test fun mindmapEmptyIconDecorationDoesNotReserveAnIcon() {
         val empty = assertIs<MindmapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("mindmap\nroot(Root)\n::icon()")).diagram)
         assertEquals(null, empty.nodes.single().icon)
