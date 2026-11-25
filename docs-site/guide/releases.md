@@ -1,5 +1,26 @@
 # SDK releases and upgrading
 
+## 0.1.21 / 0.1.21-ohos
+
+**Pending publication** from tag `v0.1.21`. Until it is marked Available, use 0.1.20.
+
+Changes since 0.1.20:
+
+- Every Mermaid source in the upstream mermaid.js tests (2984 diagrams from its unit and rendering tests) is now checked against mermaid.js on each CI run. Of the diagrams mermaid.js draws, Native now draws 99.8% (97.5% before the fixes below).
+- Diagrams that mermaid.js draws and Native rejected now render:
+  - Block diagrams: every block shape (round, stadium, double circle, diamond, hexagon, subroutine, slanted and trapezoid), the link types `---`, `--x`, `--o`, `<-->`, `==>`, `-.->` and `~~~`, ids such as `id2.1`, and `block X` on one line.
+  - State diagrams: `click` lines (accepted, links are not drawn), `state "Name" as S: description`, `[[choice]]` / `[[fork]]` / `[[join]]`, and a `{` on the line after `state X`.
+  - Gantt charts: any dayjs `dateFormat` (`DD-MM-YYYY`, `MMM D, YYYY`, `HH:mm`, …), `vert` markers drawn as a dashed vertical line, repeated task ids, and an end of `0` or empty.
+  - C4 diagrams: `Deployment_Node` and `Node` boundaries, and `accTitle:` / `accDescr:`. Style and layout directives (`UpdateElementStyle`, `UpdateRelStyle`, `UpdateBoundaryStyle`, `UpdateLayoutConfig`) are accepted and not applied.
+  - Mind maps: node labels whose closing bracket is on a later line.
+  - Architecture diagrams: edge titles (`-[Label]-`), arrowheads at the source (`<--`, `<-->`), and `{group}` edge ends.
+  - Git graphs: `mainBranchName` in front matter, and quoted branch names that span lines.
+  - Wardley maps: the upstream link operators (`+>`, `+<`, `+<>`, `->`, `-.->`, labelled flows `+'text'>`), and links to a component declared later.
+- New fields in `mermaid-core`, all with defaults that keep the old meaning: `BlockEdge.arrowStart`, `arrowEnd`, `pattern`, `thickness`; `ArchitectureEdge.label`, `sourceArrow`, `sourceGroup`, `targetGroup`; `GanttTask.vert`; `C4Diagram.accessibilityTitle`, `accessibilityDescription`; `WardleyLink.dashed`. Code that builds these classes by position needs a rebuild.
+- None of the sample SVGs changed.
+
+Upgrade all normal modules together to `0.1.21` and HarmonyOS modules to `0.1.21-ohos`.
+
 ## 0.1.20 / 0.1.20-ohos
 
 **Available.** Published by [release workflow 45089102887](https://github.com/botiverse/mermaid-native/actions/runs/45089102887) from tag [`v0.1.20`](https://github.com/botiverse/mermaid-native/tree/v0.1.20). Both planes resolve from the public Maven repository (checked 2026-11-23: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.20`; `mermaid-core` `0.1.20-ohos`).
