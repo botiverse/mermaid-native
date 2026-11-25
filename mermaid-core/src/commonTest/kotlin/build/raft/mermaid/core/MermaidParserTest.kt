@@ -1842,6 +1842,38 @@ class MermaidParserTest {
         )
     }
 
+    @Test fun parsesUpstreamBlockShapesLinksAndInlineGroups() {
+        val shapes = assertIs<BlockDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "block\nA(\"r\") B((\"c\")) C(((\"d\"))) D([\"s\"]) E{\"m\"} F{{\"h\"}} G[[\"u\"]] H[(\"y\")]\n" +
+                "I[/\"lr\"/] J[\\\"ll\"\\] K[/\"t\"\\] L[\\\"it\"/] M>\"o\"] N[/\"x\"] id2.1",
+        )).diagram)
+        assertEquals(
+            listOf("round", "circle", "doublecircle", "stadium", "diamond", "hexagon", "subroutine", "cylinder",
+                "lean_right", "lean_left", "trapezoid", "inv_trapezoid", "rect_left_inv_arrow", "na", "na"),
+            shapes.nodes.map { it.type },
+        )
+        assertEquals("id2.1", shapes.nodes.last().id)
+
+        val links = assertIs<BlockDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "block\ncolumns 3\nA space:5\nA --o B\nA --x C\nA --- D\nA <--> E\nA ==> F\nA -.-> G\nA -- \"l\" --> H",
+        )).diagram)
+        assertEquals(
+            listOf(
+                BlockEdge("A", "B", arrowEnd = "circle"), BlockEdge("A", "C", arrowEnd = "cross"), BlockEdge("A", "D", arrowEnd = "none"),
+                BlockEdge("A", "E", arrowStart = "point"), BlockEdge("A", "F", thickness = "thick"),
+                BlockEdge("A", "G", pattern = "dotted"), BlockEdge("A", "H", "l"),
+            ),
+            links.edges,
+        )
+
+        val grouped = assertIs<BlockDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "block\ncolumns 3\nB space\nblock BL\n  D\nend\nBL --> B",
+        )).diagram)
+        val group = grouped.nodes.single { it.type == "composite" }
+        assertEquals(listOf("BL", "D"), group.children.map { it.id })
+        assertEquals(listOf(BlockEdge("BL", "B")), grouped.edges)
+    }
+
     @Test fun malformedBlockFailsClosed() {
         listOf(
             "block\ncolumns 0\na",

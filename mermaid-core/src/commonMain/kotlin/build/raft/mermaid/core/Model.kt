@@ -603,7 +603,15 @@ public data class BlockNode(
     val columns: Int = -1, val directions: List<String> = emptyList(),
     val classes: List<String> = emptyList(), val styles: List<String> = emptyList(),
 )
-public data class BlockEdge(val from: String, val to: String, val label: String? = null)
+/**
+ * [arrowStart]/[arrowEnd]: "point", "cross", "circle" or "none"; [pattern]: "solid" or "dotted";
+ * [thickness]: "normal" or "thick" (Mermaid's `<-->`, `--x`, `--o`, `---`, `-.->`, `==>`).
+ */
+public data class BlockEdge(
+    val from: String, val to: String, val label: String? = null,
+    val arrowStart: String = "none", val arrowEnd: String = "point",
+    val pattern: String = "solid", val thickness: String = "normal",
+)
 
 /** Minimal platform-neutral model for the Mermaid sankey family. */
 public data class SankeyDiagram(
