@@ -7,7 +7,7 @@ package build.raft.mermaid.core
  * the current month, and a missing day is the 1st.
  */
 internal object GanttDateFormat {
-    private val TOKEN = Regex("\\[[^\\]]*]|YYYY|YY|MMMM|MMM|MM|M|Do|DD|D|HH|H|hh|h|mm|m|ss|s|SSS|SS|S|A|a|.", RegexOption.DOT_MATCHES_ALL)
+    private val TOKEN = Regex("\\[[^\\]]*\\]|YYYY|YY|MMMM|MMM|MM|M|Do|DD|D|HH|H|hh|h|mm|m|ss|s|SSS|SS|S|A|a|.")
     private val MONTHS = listOf("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december")
     private const val NUM12 = "(0|[1-9]\\d?)"
 
