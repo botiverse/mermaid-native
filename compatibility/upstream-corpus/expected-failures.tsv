@@ -21,15 +21,6 @@ cypress/block/026-bl26-space-and-an-edge	rejects-valid
 cypress/block/031-bl31-edge-without-arrow-syntax-should-render-with-no-arrowhe	rejects-valid
 cypress/block/034-bl34-hexagon-shape-block-should-span-correctly	rejects-valid
 cypress/block/037-bl37-should-render-all-arrow-types-in-9-columns-grid	rejects-valid
-cypress/c4/015-char-deployment-should-render-a-c4deployment-diagram-with-ne	rejects-valid
-cypress/c4/016-char-deployment-aliases-should-accept-the-node-node-l-node-r	rejects-valid
-cypress/c4/017-char-update-element-style-should-apply-updateelementstyle-co	rejects-valid
-cypress/c4/018-char-update-element-shape-should-apply-the-shape-cylinder-ov	rejects-valid
-cypress/c4/019-char-update-rel-style-should-apply-updaterelstyle-offsets-an	rejects-valid
-cypress/c4/024-c4-1-should-render-a-simple-c4context-diagram	rejects-valid
-cypress/c4/026-c4-3-should-render-a-simple-c4component-diagram	rejects-valid
-cypress/c4/027-c4-4-should-render-a-simple-c4dynamic-diagram	rejects-valid
-cypress/c4/028-c4-5-should-render-a-simple-c4deployment-diagram	rejects-valid
 cypress/error/001-should-render-a-simple-er-diagram	rejects-valid
 cypress/flowchart/169-4023-should-render-html-labels-with-images-and-or-text-corre	rejects-valid
 cypress/gantt/004-should-handle-multiple-dependencies-syntax-with-after-and-un	rejects-valid

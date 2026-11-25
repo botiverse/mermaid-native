@@ -729,7 +729,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             element.description?.let { commands += DrawText(it, point.copy(y = point.y + 20.0).canonical(), anchor = TextAnchor.MIDDLE, style = bodyStyle) }
             element.technology?.let { commands += DrawText("[$it]", point.copy(y = point.y + 38.0).canonical(), anchor = TextAnchor.MIDDLE, style = stereotypeStyle) }
         }
-        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands)
+        return LayoutScene(width.xyCoordinate(), height.xyCoordinate(), commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun c4Stereotype(element: C4Element): String {
@@ -816,7 +816,7 @@ public object SimpleMermaidLayout : DiagramLayout {
             element.description?.let { commands += DrawText(it, ScenePoint(cx, cy + 20.0), TextAnchor.MIDDLE, bodyStyle) }
             element.technology?.let { commands += DrawText("[$it]", ScenePoint(cx, cy + 38.0), TextAnchor.MIDDLE, bodyStyle) }
         }
-        return LayoutScene(width, height, commands)
+        return LayoutScene(width, height, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
     }
 
     private fun layoutArchitecture(diagram: ArchitectureDiagram, textMeasurer: TextMeasurer, config: LayoutConfig): LayoutScene {
