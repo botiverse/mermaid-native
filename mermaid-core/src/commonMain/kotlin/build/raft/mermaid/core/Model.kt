@@ -422,6 +422,8 @@ public data class GanttTask(
     /** Calendar-adjusted end used for rendering; absent when no calendar adjustment applies. */
     val renderEndEpochMillis: Long? = null,
     val manualEndTime: Boolean = false,
+    /** `vert` tag: a vertical marker at the start time instead of a bar; it takes no row. */
+    val vert: Boolean = false,
 )
 public enum class GanttTaskStatus { TODO, DONE, ACTIVE, CRITICAL }
 

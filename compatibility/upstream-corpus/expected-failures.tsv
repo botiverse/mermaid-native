@@ -1,17 +1,7 @@
 case	outcome
 cypress/error/001-should-render-a-simple-er-diagram	rejects-valid
 cypress/flowchart/169-4023-should-render-html-labels-with-images-and-or-text-corre	rejects-valid
-cypress/gantt/004-should-handle-multiple-dependencies-syntax-with-after-and-un	rejects-valid
 cypress/gantt/005-should-fail-rendering-a-gantt-chart-for-issue-1060-with-inva	rejects-valid
-cypress/gantt/013-should-render-a-gantt-diagram-with-a-vert-tag	rejects-valid
-cypress/gantt/014-should-render-vertical-markers-without-creating-extra-rows-a	rejects-valid
-cypress/gantt/015-should-render-a-gantt-diagram-with-tick-is-2-milliseconds	rejects-valid
-cypress/gantt/024-should-render-only-the-day-when-using-dateformat-d	rejects-valid
-cypress/gantt/028-should-render-when-compact-is-true	rejects-valid
-cypress/gantt/029-should-render-a-gantt-diagram-excluding-a-specific-date-in-y	rejects-valid
-cypress/gantt/030-should-render-a-gantt-diagram-excluding-saturday-and-sunday	rejects-valid
-cypress/gantt/031-should-render-a-gantt-diagram-excluding-friday-and-saturday	rejects-valid
-cypress/misc/026-should-render-a-gantt-diagram	rejects-valid
 cypress/user-journey/010-should-correctly-render-the-user-journey-diagram-title-with	rejects-valid
 spec/architecture/030-should-handle-a-group-title-containing-chinese-characters	accepts-invalid
 spec/flowchart/115-should-keep-node-label-text-if-already-defined-when-a-style	accepts-invalid
