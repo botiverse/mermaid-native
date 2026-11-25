@@ -13,6 +13,7 @@ internal class StateParser(private val source: String) {
     private var statementAt = 0
     private var title: String? = null
     private var description: String? = null
+    private var lastDeclared: String? = null
 
     fun parse(): MermaidParseResult = try {
         var header = read()
@@ -21,8 +22,15 @@ internal class StateParser(private val source: String) {
         while (at < source.length) {
             val text = read()
             if (text.isEmpty()) continue
+            val declared=lastDeclared;lastDeclared=null
             when {
                 text == "}" -> { requireState(stack.isNotEmpty(), "Unexpected composite end"); stack.removeAt(stack.lastIndex) }
+                text == "{" -> {
+                    // `state X` followed by `{` on the next line opens X, as in the upstream lexer.
+                    val id=declared ?: fail("Expected composite state")
+                    requireState(id !in stack,"Cyclic composite state");stack+=id
+                }
+                text.startsWith("click ") -> requireState(text.drop(6).trim().substringBefore(' ').let { it.isNotEmpty() && it.none { c -> c in "{};:\"" } },"Expected state identifier") // Links/tooltips are not drawn.
                 text.startsWith("accTitle:") -> title = text.substringAfter(':').trim()
                 text.startsWith("accDescr:") -> description = text.substringAfter(':').trim()
                 text.startsWith("accDescr") && text.endsWith('{') -> {
@@ -59,7 +67,7 @@ internal class StateParser(private val source: String) {
                     val target=text.drop(split+3).trim();val colon=descriptionColon(target);val targetText=if(colon<0)target else target.take(colon).trim();val tokens=targetText.split(Regex("\\s+"));val to=endpoint(tokens.first(),false);tokens.drop(1).forEach { state(it) }
                     transitions+=StateTransition(from,to,if(colon<0)""else target.drop(colon+1).trim())
                 }
-                else -> if(!text.startsWith("state ") && descriptionColon(text)<0 && !text.startsWith('"'))text.split(Regex("\\s+")).forEach { state(it) } else state(text.removePrefix("state "))
+                else -> if(!text.startsWith("state ") && descriptionColon(text)<0 && !text.startsWith('"'))text.split(Regex("\\s+")).forEach { state(it) } else state(text.removePrefix("state ")).also { if(text.startsWith("state ") && descriptionColon(text)<0)lastDeclared=it }
             }
         }
         requireState(stack.isEmpty(),"Unclosed composite state")
@@ -106,8 +114,14 @@ internal class StateParser(private val source: String) {
         if(text.startsWith('"')) {
             val end=text.indexOf('"',1);requireState(end>0,"Unclosed state label")
             val rest=text.drop(end+1).trim();requireState(rest.startsWith("as "),"Expected state alias")
-            val id=rest.drop(3).trim();validateId(id,composite);return register(id,text.substring(1,end),declared=declared)
+            val alias=rest.drop(3).trim();val colon=descriptionColon(alias);val id=if(colon<0)alias else alias.take(colon).trim()
+            validateId(id,composite);register(id,text.substring(1,end),declared=declared)
+            if(colon>=0){val value=alias.drop(colon+1).trim();val old=nodes.getValue(id);nodes[id]=old.copy(description=listOfNotNull(old.description,value).joinToString("\n"))}
+            return id
         }
+        // HTML-escaped stereotypes (`&lt;&lt;fork&gt;&gt;`) are not stereotypes upstream: a plain state.
+        Regex("^(\\S+)\\s+&lt;&lt;\\w+&gt;&gt;$").matchEntire(text)?.let { return state(it.groupValues[1],composite,declared) }
+        Regex("^(\\S+)\\s*\\[\\[(fork|join|choice)]]$").matchEntire(text)?.let { return state("${it.groupValues[1]} <<${it.groupValues[2]}>>",composite,declared) }
         val pseudo=text.indexOf("<<")
         if(pseudo>=0){val id=text.take(pseudo).trim();validateId(id,composite);val type=text.substring(pseudo).trim();return register(id,declared=declared,kind=when(type){"<<choice>>"->StateNodeKind.CHOICE;"<<fork>>"->StateNodeKind.FORK;"<<join>>"->StateNodeKind.JOIN;else->fail("Unsupported state stereotype")})}
         val colon=text.indexOf(':');val id=if(colon<0)text else text.take(colon).trim();validateId(id,composite);register(id,declared=declared)
@@ -149,12 +163,14 @@ internal class StateParser(private val source: String) {
                 if(c==':' && source.getOrNull(at-1)!=':' && source.getOrNull(at+1)!=':')literalText=true
                 if(c=='{' && !literalText){at++;return source.substring(begin,at).trim()}
                 if(c=='}' && !literalText)return source.substring(begin,at).trim()
+                if(c==';' && ENTITY.containsMatchIn(source.substring(maxOf(begin,at-8),at+1))){at++;continue}
                 if(c=='\n' || c==';'){val result=source.substring(begin,at).trim();at++;return result}
             };at++
         }
         requireState(!quote,"Unclosed state string");return source.substring(begin,at).trim()
     }
     private fun requireState(value:Boolean,message:String){if(!value)fail(message)}
+    private companion object { val ENTITY=Regex("&(?:[a-zA-Z]+|#\\d+);$") }
     private fun fail(message:String):Nothing=throw StateSyntaxError(message)
     private class StateSyntaxError(message:String):Exception(message)
 }

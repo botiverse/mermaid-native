@@ -22,6 +22,16 @@ class StateGrammarTest {
         assertEquals("first\nsecond",d.accessibilityDescription)
         assertEquals(FlowDirection.LR,d.states.first().direction)
     }
+    @Test fun upstreamRenderingSyntaxParses() {
+        val d=parse("A: Google\nclick A \"https://google.com\" \"Visit Google\"\nstate \"Some long name\" as S1: The description\n" +
+            "state C [[choice]]\nstate F &lt;&lt;fork&gt;&gt;\nstate G\n{\n  c0\n}")
+        assertEquals("Google",d.states.first { it.id=="A" }.description)
+        assertEquals("Some long name" to "The description",d.states.first { it.id=="S1" }.let { it.label to it.description })
+        assertEquals(StateNodeKind.CHOICE,d.states.first { it.id=="C" }.kind)
+        assertEquals(StateNodeKind.STATE,d.states.first { it.id=="F" }.kind) // mermaid.js draws the escaped stereotype as a plain state
+        assertEquals(listOf("c0"),d.states.first { it.id=="G" }.childIds)
+        listOf("{\n A\n}","A --> B\n{\n C\n}").forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\n$it"),it) }
+    }
     @Test fun unclosedAndCyclicCompositesFailExplicitly() {
         listOf("state A { B","state A { state A { B } }","state invalid name { X }").forEach { assertIs<MermaidParseResult.Failure>(MermaidParser.parse("stateDiagram-v2\n$it")) }
     }
