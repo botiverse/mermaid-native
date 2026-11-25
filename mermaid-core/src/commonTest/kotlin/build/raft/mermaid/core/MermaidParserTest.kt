@@ -2116,9 +2116,18 @@ class MermaidParserTest {
             "C4Context\nPerson(a, \"A\")\nRel(a, missing, \"Uses\")",
             "C4Context\nPerson(a, \"A\")\nRel(a, a, \"Self\")",
             "C4Context\nPerson(a, \"A\")\nBoundary(b, \"Deferred\") {",
-            "C4Context\nPerson(a, \"A\")\nUpdateElementStyle(a, ${'$'}fontColor=\"red\")",
             "C4Context;\nPerson(a, \"A\")",
         ).forEach { source -> assertIs<MermaidParseResult.Failure>(MermaidParser.parse(source), source) }
+    }
+    @Test fun c4DeploymentNodesStyleDirectivesAndAccessibilityParse() {
+        val d = assertIs<C4Diagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "C4Deployment\naccTitle: Deploy\naccDescr: Nodes\nDeployment_Node(dc, \"Data Center\", \"us-east-1\") {\n" +
+                "  Node_L(srv, \"App Server\", \"Ubuntu\") {\n    Container(api, \"API\", \"Java\")\n  }\n}\n" +
+                "UpdateElementStyle(api, ${'$'}fontColor=\"red\")\nUpdateRelStyle(api, api, ${'$'}offsetY=\"-10\")\nUpdateLayoutConfig(${'$'}c4ShapeInRow=\"3\")",
+        )).diagram)
+        assertEquals("Deploy" to "Nodes", d.accessibilityTitle to d.accessibilityDescription)
+        assertEquals(listOf("dc:us-east-1:global", "srv:Ubuntu:dc"), d.boundaries.map { "${it.id}:${it.type}:${it.parentBoundary}" })
+        assertEquals("srv", d.elements.single().parentBoundary)
     }
     @Test fun treeViewRawIndentationAndAnnotationsReachModel() {
         val d = assertIs<TreeViewDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse("treeView-beta\ntitle Project\nroot/\n  'my file.ts' icon(logos:react) :::highlight ## entry point\n      nested\n  sibling")).diagram)

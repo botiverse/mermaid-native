@@ -11,6 +11,8 @@ internal class C4Parser(private val source: String) {
         var title: String? = null
         var type: String? = null
         var pending = ""
+        var accTitle: String? = null
+        var accDescr: String? = null
         fun fail(message: String, line: Int) = MermaidParseResult.Failure(listOf(
             MermaidDiagnostic(MermaidDiagnosticCode.INVALID_VALUE, message, SourceLocation(line, 1)),
         ))
@@ -24,6 +26,8 @@ internal class C4Parser(private val source: String) {
             }
             if (pending.isNotEmpty()) { text = pending + "\n" + text; pending = "" }
             if (text.startsWith("title ") || text.startsWith("title\t")) { title = text.substring(5).trim(); return@forEachIndexed }
+            if (text.startsWith("accTitle:")) { accTitle = text.substringAfter(':').trim(); return@forEachIndexed }
+            if (text.startsWith("accDescr:")) { accDescr = text.substringAfter(':').trim(); return@forEachIndexed }
             if (text == "}") {
                 if (stack.size == 1) return fail("Unmatched C4 boundary close", line)
                 stack.removeAt(stack.lastIndex); return@forEachIndexed
@@ -37,10 +41,13 @@ internal class C4Parser(private val source: String) {
             fun at(n: Int): String? = args.getOrNull(n)?.takeIf { it.name == null }?.value
             val label = args.getOrNull(1) ?: Argument("")
             val attrs = linkedMapOf<String, String>()
-            if (macro in setOf("Boundary", "System_Boundary", "Enterprise_Boundary", "Container_Boundary")) {
+            // Style and layout directives change presentation only; Native draws its own styling.
+            if (macro in setOf("UpdateElementStyle", "UpdateRelStyle", "UpdateBoundaryStyle", "UpdateLayoutConfig")) return@forEachIndexed
+            if (macro in setOf("Boundary", "System_Boundary", "Enterprise_Boundary", "Container_Boundary") || macro in DEPLOYMENT_NODES) {
                 if (match.groupValues[3].isEmpty()) return fail("C4 boundary requires an opening brace", line)
                 if (id in stack || id in elements) return fail("C4 boundary identifier collides with an ancestor or element", line)
-                val defaultType = if (macro == "Container_Boundary") "container" else "system"
+                // Deployment nodes are boundaries whose third argument is the node type (e.g. "Ubuntu 22.04").
+                val defaultType = when { macro == "Container_Boundary" -> "container"; macro in DEPLOYMENT_NODES -> "node"; else -> "system" }
                 args.drop(2).forEachIndexed { i, arg -> attrs[arg.name ?: listOf("type", "tags", "link").getOrElse(i) { "extra$i" }] = arg.value }
                 boundaries[id] = C4Boundary(id, label.value, at(2) ?: defaultType, stack.last(), label.name, attrs.filterKeys { it != "type" })
                 stack += id; return@forEachIndexed
@@ -72,7 +79,10 @@ internal class C4Parser(private val source: String) {
         if (pending.isNotEmpty()) return fail("Unclosed C4 macro", source.lines().size)
         if (stack.size != 1) return fail("Unclosed C4 boundary", source.lines().size)
         if (elements.isEmpty() && boundaries.isEmpty()) return fail("C4 requires at least one element or boundary", 1)
-        return MermaidParseResult.Success(C4Diagram(title, elements.values.toList(), relationships, boundaries.values.toList(), type ?: "C4Context"))
+        return MermaidParseResult.Success(C4Diagram(title, elements.values.toList(), relationships, boundaries.values.toList(), type ?: "C4Context", accTitle, accDescr))
+    }
+    private companion object {
+        val DEPLOYMENT_NODES = setOf("Deployment_Node", "Deployment_Node_L", "Deployment_Node_R", "Node", "Node_L", "Node_R")
     }
     private fun parenthesisBalance(value: String): Int {
         var quote = false; var escape = false; var count = 0

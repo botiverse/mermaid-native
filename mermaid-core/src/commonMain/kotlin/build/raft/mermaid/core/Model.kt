@@ -740,6 +740,8 @@ public data class C4Diagram(
     val relationships: List<C4Relationship>,
     val boundaries: List<C4Boundary> = emptyList(),
     val diagramType: String = "C4Context",
+    val accessibilityTitle: String? = null,
+    val accessibilityDescription: String? = null,
 ) : MermaidDiagram
 public enum class C4ElementKind { PERSON, SYSTEM, CONTAINER, COMPONENT }
 public data class C4Element(
