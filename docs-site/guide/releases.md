@@ -2,7 +2,7 @@
 
 ## 0.1.21 / 0.1.21-ohos
 
-**Pending publication** from tag `v0.1.21`. Until it is marked Available, use 0.1.20.
+**Available.** Published by [release workflow 45582726178](https://github.com/botiverse/mermaid-native/actions/runs/45582726178) from tag [`v0.1.21`](https://github.com/botiverse/mermaid-native/tree/v0.1.21). Both planes resolve from the public Maven repository (checked 2026-11-25: all nine modules, `mermaid-core` through `mermaid-testkit`, at `0.1.21`; `mermaid-core`, `mermaid-layout-api`, `mermaid-layout-simple`, `mermaid-kuikly` and `mermaid-kuikly-compose` at `0.1.21-ohos`).
 
 Changes since 0.1.20:
 
