@@ -402,10 +402,6 @@ class MermaidParserTest {
             "wardley-beta\ntitle Only",
             // Decorators, label offsets, and size are rejected.
             "wardley-beta\nsize [800, 1000]",
-            // Non-basic link styles are rejected.
-            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA --> B",
-            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA +> B",
-            "wardley-beta\ncomponent A [0.1, 0.1]\ncomponent B [0.2, 0.2]\nA -.-> B",
             // Unknown endpoints and self links are rejected.
             "wardley-beta\ncomponent A [0.1, 0.1]\nA -> Ghost",
             "wardley-beta\ncomponent A [0.1, 0.1]\nA -> A",
@@ -2258,6 +2254,20 @@ class MermaidParserTest {
         assertEquals(listOf("Block wide width 2 exceeds configured column width 1"), diagram.warnings)
         assertIs<MermaidParseResult.Success>(MermaidParser.parse("block\n__proto__; constructor"))
         assertIs<MermaidParseResult.Failure>(MermaidParser.parse("block\nblock\nA"))
+    }
+
+    @Test fun wardleyUpstreamLinkOperatorsAndForwardReferences() {
+        val d = assertIs<WardleyMapDiagram>(assertIs<MermaidParseResult.Success>(MermaidParser.parse(
+            "wardley-beta\ncomponent A [0.9, 0.9]\ncomponent B [0.5, 0.5]\nA +> B; +>\nA -.-> B\nA +< B\nA +'backup'<> B\nA --> Later\ncomponent Later [0.2, 0.2]",
+        )).diagram)
+        assertEquals(
+            listOf(
+                WardleyLink("A", "B", "forward", "+>"), WardleyLink("A", "B", dashed = true), WardleyLink("A", "B", "backward"),
+                WardleyLink("A", "B", "bidirectional", "backup"), WardleyLink("A", "Later"),
+            ),
+            d.links,
+        )
+        assertIs<MermaidParseResult.Failure>(MermaidParser.parse("wardley-beta\ncomponent A [0.1, 0.1]\nA +> Ghost"))
     }
 
     @Test fun wardleyOriginalPipelinesStagesAndAnnotations() {

@@ -1,6 +1,9 @@
 package build.raft.mermaid.core
 
 internal class WardleyParser(private val source: String) {
+    private companion object {
+        val LINK = Regex("^(.+?)\\s*(\\+'[^']*'(?:<>|<|>)|\\+<>|\\+>|\\+<|-\\.->|-->|->|>)\\s*([^;]+?)(?:;\\s*(.*))?$")
+    }
     private var line = 1
     private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
     private fun name(raw: String): String {
@@ -19,6 +22,7 @@ internal class WardleyParser(private val source: String) {
         var title: String? = null; var pipeline: String? = null; var annotationBox: WardleyNote? = null; var width: Double? = null; var height: Double? = null
         var stages = listOf("Genesis", "Custom Built", "Product", "Commodity"); var boundaries = emptyList<Double>(); var header = false
         val positioned = Regex("^(.+?)\\s*\\[([^\\]]+)\\](.*)$")
+        val linkLines = mutableListOf<Int>()
         source.lineSequence().forEachIndexed { index, raw ->
             line = index + 1; val text = raw.substringBefore("%%").trim()
             if (text.isEmpty()) return@forEachIndexed
@@ -62,12 +66,19 @@ internal class WardleyParser(private val source: String) {
                     when (match.groupValues[1]) { "note" -> notes += note; "accelerator" -> accelerators += note; else -> deaccelerators += note }
                 }
                 else -> {
-                    val match = Regex("^(.+?)(\\+<>|->)([^;]+?)(?:;\\s*(.*))?$").matchEntire(text) ?: fail("Unsupported Wardley syntax")
-                    val from = name(match.groupValues[1]); val to = name(match.groupValues[3]); if (from !in nodes || to !in nodes || from == to) fail("Unknown or self Wardley link")
-                    links += WardleyLink(from, to, if (match.groupValues[2] == "+<>") "bidirectional" else "forward", match.groupValues[4].ifEmpty { null })
+                    // Upstream link operators: ports `+>` `+<` `+<>`, arrows `->` `-->` `-.->` `>` and
+                    // labelled flows `+'text'>` `+'text'<` `+'text'<>`; `; text` annotates the link.
+                    val match = LINK.matchEntire(text) ?: fail("Unsupported Wardley syntax")
+                    val op = match.groupValues[2]
+                    val flow = when { op.endsWith("<>") -> "bidirectional"; op.endsWith("<") -> "backward"; else -> "forward" }
+                    val flowLabel = Regex("^\\+'([^']*)'").find(op)?.groupValues?.get(1)
+                    links += WardleyLink(name(match.groupValues[1]), name(match.groupValues[3]), flow, flowLabel ?: match.groupValues[4].ifEmpty { null }, dashed = op == "-.->")
+                    linkLines += line
                 }
             }
         }
+        // Links may name components declared later (e.g. inside a following pipeline).
+        links.forEachIndexed { i, link -> if (link.from !in nodes || link.to !in nodes || link.from == link.to) { line = linkLines[i]; fail("Unknown or self Wardley link") } }
         if (!header || nodes.isEmpty() || pipeline != null) fail("Wardley requires components and closed pipelines")
         MermaidParseResult.Success(WardleyMapDiagram(title, nodes.values.toList(), links, evolutions, notes, stages, boundaries, annotations, annotationBox, accelerators, deaccelerators, width, height))
     } catch (error: IllegalArgumentException) { MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX, error.message ?: "Invalid Wardley source", SourceLocation(line, 1)))) }

@@ -3563,9 +3563,9 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.links.forEach { link: WardleyLink ->
             val from = centers.getValue(diagram.nodes.first { it.name == link.from })
             val to = centers.getValue(diagram.nodes.first { it.name == link.to })
-            commands += DrawLine(from, to)
-            commands += arrowHead(from, to)
-            if (link.flow == "bidirectional") commands += arrowHead(to, from)
+            commands += DrawLine(from, to, pattern = if (link.dashed) StrokePattern.DASHED else StrokePattern.SOLID)
+            if (link.flow != "backward") commands += arrowHead(from, to)
+            if (link.flow == "bidirectional" || link.flow == "backward") commands += arrowHead(to, from)
             link.label?.let { commands += DrawText(it, ScenePoint((from.x + to.x) / 2, (from.y + to.y) / 2 - 6.0), TextAnchor.MIDDLE, noteStyle) }
         }
         diagram.evolutions.forEach { evolution: WardleyEvolution ->
