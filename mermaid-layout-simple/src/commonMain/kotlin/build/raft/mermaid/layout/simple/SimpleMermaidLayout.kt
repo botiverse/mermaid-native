@@ -864,8 +864,16 @@ public object SimpleMermaidLayout : DiagramLayout {
         diagram.edges.forEach { edge ->
             val from = servicePoints.getValue(edge.sourceId)
             val to = servicePoints.getValue(edge.targetId)
-            val start = architecturePortPoint(from, edge.sourcePort, if(edge.sourceId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.sourceId in junctionIds)4.0 else 38.0)
-            val end = architecturePortPoint(to, edge.targetPort, if(edge.targetId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.targetId in junctionIds)4.0 else 38.0)
+            // `{group}` edges leave/enter the endpoint's group box on the same side.
+            fun groupPort(id: String, port: ArchitecturePort): ScenePoint? {
+                val groupId = diagram.services.firstOrNull { it.id == id }?.groupId ?: diagram.junctions.firstOrNull { it.id == id }?.groupId ?: return null
+                val rect = groupRects[groupId]?.canonical() ?: return null
+                return architecturePortPoint(ScenePoint(rect.x + rect.width / 2.0, rect.y + rect.height / 2.0), port, rect.width / 2.0, rect.height / 2.0)
+            }
+            val start = (if (edge.sourceGroup) groupPort(edge.sourceId, edge.sourcePort) else null)
+                ?: architecturePortPoint(from, edge.sourcePort, if(edge.sourceId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.sourceId in junctionIds)4.0 else 38.0)
+            val end = (if (edge.targetGroup) groupPort(edge.targetId, edge.targetPort) else null)
+                ?: architecturePortPoint(to, edge.targetPort, if(edge.targetId in junctionIds)4.0 else nodeWidth / 2.0, if(edge.targetId in junctionIds)4.0 else 38.0)
             val startVector = architecturePortVector(edge.sourcePort)
             val endVector = architecturePortVector(edge.targetPort)
             val startOutside = ScenePoint(start.x + startVector.x * 12.0, start.y + startVector.y * 12.0)
@@ -878,6 +886,18 @@ public object SimpleMermaidLayout : DiagramLayout {
             if (edge.directed) {
                 val arrow = arrowHead(endOutside, end)
                 commands += arrow.copy(points = arrow.points.map { it.canonical() })
+            }
+            if (edge.sourceArrow) {
+                val arrow = arrowHead(startOutside, start)
+                commands += arrow.copy(points = arrow.points.map { it.canonical() })
+            }
+            edge.label?.let { label ->
+                // Centre of the longest segment, where the label has the most room.
+                val segment = points.zipWithNext().maxByOrNull { (a, b) -> abs(a.x - b.x) + abs(a.y - b.y) }
+                if (segment != null) {
+                    val mid = ScenePoint((segment.first.x + segment.second.x) / 2.0, (segment.first.y + segment.second.y) / 2.0)
+                    commands += DrawText(label, ScenePoint(mid.x, mid.y - 6.0).canonical(), anchor = TextAnchor.MIDDLE, style = textStyle)
+                }
             }
         }
         diagram.services.forEach { service ->
