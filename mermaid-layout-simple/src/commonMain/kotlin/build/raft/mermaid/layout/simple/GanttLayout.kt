@@ -106,8 +106,10 @@ internal fun layoutGanttTimeline(
     val axisBottom = axisTop + if (showDateAboveClock) 48.0 else 36.0
     val content = mutableListOf<DrawCommand>()
     var y = axisBottom
+    val verts = mutableListOf<GanttTask>()
     for (section in diagram.sections) {
-        if (section.tasks.isEmpty()) continue
+        verts += section.tasks.filter { it.vert }
+        if (section.tasks.none { !it.vert }) continue
         if (section.name.isNotEmpty()) {
             val sectionLines = lines(section.name, heading, labelTextWidth)
             val headerHeight = maxOf(32.0, sectionLines.size * 17.0 + 14.0)
@@ -117,6 +119,7 @@ internal fun layoutGanttTimeline(
             y += headerHeight
         }
         for (task in section.tasks) {
+            if (task.vert) continue
             val labelLines = lines(task.name, body, labelTextWidth)
             val rowHeight = maxOf(42.0, labelLines.size * 18.0 + 18.0)
             val centerY = y + rowHeight / 2
@@ -155,5 +158,13 @@ internal fun layoutGanttTimeline(
     }
     commands += DrawLine(ScenePoint(padding, axisBottom), ScenePoint(right + 12, axisBottom), stroke = border, strokeWidth = 1.0)
     commands += content
-    return LayoutScene(width, bottom + padding, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
+    // `vert` markers: a full-height dashed line at the start time, labelled below the chart.
+    var labelBottom = bottom
+    verts.forEach { task ->
+        val markerX = x(task.startEpochMillis)
+        commands += DrawLine(ScenePoint(markerX, axisBottom), ScenePoint(markerX, bottom), stroke = SceneColor(DiagramPalette.RED), strokeWidth = 1.5, pattern = StrokePattern.DASHED)
+        commands += DrawText(task.name, ScenePoint(markerX, bottom + 16), TextAnchor.MIDDLE, tickStyle)
+        labelBottom = maxOf(labelBottom, bottom + 22)
+    }
+    return LayoutScene(width, labelBottom + padding, commands, diagram.accessibilityTitle, diagram.accessibilityDescription)
 }

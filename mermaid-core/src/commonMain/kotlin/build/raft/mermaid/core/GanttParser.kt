@@ -30,7 +30,7 @@ internal class GanttParser(private val source:String) {
             fun value()=text.substringAfter(' ').trim()
             when {
                 text.startsWith("title ")->title=value()
-                text.startsWith("dateFormat ")->format=value()
+                text.startsWith("dateFormat ")->format=value().removePrefix(":").trim() // `dateFormat    :YYYY-MM-DD` (upstream rendering test)
                 text.startsWith("accTitle:")->accTitle=text.substringAfter(':').trim()
                 text.startsWith("accDescr:")->accDescription=text.substringAfter(':').trim()
                 text.startsWith("accDescr") && '{' in text->{
@@ -52,20 +52,21 @@ internal class GanttParser(private val source:String) {
                 else -> task(text)
             }
         }
-        val byId=pending.associateBy { it.id };requireGantt(byId.size==pending.size,"Duplicate Gantt task id")
-        val resolved=mutableMapOf<String,GanttTask>();val active=mutableSetOf<String>()
-        fun resolve(id:String):GanttTask {
-            resolved[id]?.let { return it };val task=byId[id] ?: fail("Unknown Gantt dependency $id")
-            line=task.line;requireGantt(active.add(id),"Cyclic Gantt dependency")
+        // Repeated ids are allowed upstream; a reference resolves to the last task with that id.
+        val byId=pending.withIndex().associate { (i,p)->p.id to i }
+        val resolved=mutableMapOf<Int,GanttTask>();val active=mutableSetOf<Int>()
+        fun resolve(index:Int):GanttTask {
+            resolved[index]?.let { return it };val task=pending[index]
+            line=task.line;requireGantt(active.add(index),"Cyclic Gantt dependency")
             fun reference(text:String,end:Boolean):Long {
                 val ids=text.substringAfter(' ').trim().split(Regex("\\s+"));requireGantt(ids.isNotEmpty(),"Expected Gantt dependency")
                 val known = ids.filter { it in byId }
                 if (known.isEmpty() && end) return todayEpochMillis
                 requireGantt(known.isNotEmpty(), "Unknown Gantt dependency ${ids.joinToString(" ")}")
-                return known.map { dependency -> val d=resolve(dependency);if(end)d.startEpochMillis+d.durationMillis else d.startEpochMillis }.let { if(end)it.max()else it.min() }
+                return known.map { dependency -> val d=resolve(byId.getValue(dependency));if(end)d.startEpochMillis+d.durationMillis else d.startEpochMillis }.let { if(end)it.max()else it.min() }
             }
             val start=when {
-                task.start==null -> pending.indexOf(task).takeIf { it>0 }?.let { val p=resolve(pending[it-1].id);p.startEpochMillis+p.durationMillis } ?: fail("First Gantt task requires start date")
+                task.start==null -> index.takeIf { it>0 }?.let { val p=resolve(it-1);p.startEpochMillis+p.durationMillis } ?: fail("First Gantt task requires start date")
                 task.start.startsWith("after ")->reference(task.start,true)
                 else -> date(task.start) ?: fail("Invalid date:${task.start}")
             }
@@ -82,6 +83,9 @@ internal class GanttParser(private val source:String) {
                     requireGantt(millis.isFinite() && millis >= 0 && millis <= 100000.0 * GANTT_DAY_MILLIS,"Gantt duration out of range")
                     start + millis.toLong()
                 }
+                // `0` (a milestone idiom) and an empty end after a trailing comma end the task at its start,
+                // as upstream does for any non-date, non-duration end; other garbage still fails closed.
+                task.end=="0" || task.end.isEmpty() -> start
                 else -> (date(task.end) ?: fail("Invalid date:${task.end}")) + if(inclusive)GANTT_DAY_MILLIS else 0L
             }
             // Upstream advances from the day after start, including the end boundary.
@@ -100,22 +104,22 @@ internal class GanttParser(private val source:String) {
             val result = GanttTask(
                 name = task.name, id = task.id, startDay = ganttFloorDay(start),
                 durationDays = (durationMillis / GANTT_DAY_MILLIS).toInt(),
-                status = status, statuses = statuses, milestone = "milestone" in task.tags,
+                status = status, statuses = statuses, milestone = "milestone" in task.tags, vert = "vert" in task.tags,
                 renderDurationDays = (renderDurationMillis / GANTT_DAY_MILLIS).toInt(),
                 startEpochMillis = start, durationMillis = durationMillis,
                 renderDurationMillis = renderDurationMillis,
                 renderEndEpochMillis = renderEnd, manualEndTime = manualEndTime,
             )
-            active.remove(id);resolved[id]=result;return result
+            active.remove(index);resolved[index]=result;return result
         }
-        val tasks=pending.map { resolve(it.id) }
+        val tasks=pending.indices.map { resolve(it) }
         MermaidParseResult.Success(GanttDiagram(title,format,sectionNames.mapIndexed { i,name->GanttSection(name,pending.mapIndexedNotNull { n,p->tasks[n].takeIf { p.section==i } }) },accTitle,accDescription,excludes.toList(),includes.toList(),inclusive,today,axis,tick,weekday,weekend,display,interactions.toList()))
     }catch(e:GanttSyntaxError){MermaidParseResult.Failure(listOf(MermaidDiagnostic(MermaidDiagnosticCode.UNSUPPORTED_SYNTAX,e.message ?: "Invalid Gantt syntax",SourceLocation(line,1))))}
     private fun task(text:String) {
         val colon=text.indexOf(':');requireGantt(colon>0,"Expected Gantt task")
         val tokens=text.drop(colon+1).split(',').map { it.trim() }.toMutableList();val tags=mutableSetOf<String>()
-        while(tokens.firstOrNull() in setOf("done","active","crit","milestone"))tags+=tokens.removeAt(0)
-        requireGantt(tokens.size in 1..3 && tokens.none(String::isEmpty),"Invalid Gantt task fields")
+        while(tokens.firstOrNull() in setOf("done","active","crit","milestone","vert"))tags+=tokens.removeAt(0)
+        requireGantt(tokens.size in 1..3 && tokens.dropLast(1).none(String::isEmpty) && (tokens.size>1 || tokens[0].isNotEmpty()),"Invalid Gantt task fields")
         val id=if(tokens.size==3)tokens.removeAt(0)else "task${++generated}"
         if(sectionNames.isEmpty())sectionNames+=""
         pending+=Pending(text.take(colon).trim(),id,if(tokens.size==2)tokens[0]else null,tokens.last(),sectionNames.lastIndex,tags,line)
@@ -123,10 +127,10 @@ internal class GanttParser(private val source:String) {
     private fun date(text:String):Long? = when(format){
         "YYYY-MM-DD","yyyy-mm-dd" -> parseCalendarDay(text)?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
         "DD-MM-YYYY" -> text.split('-').takeIf { it.size==3 }?.let { parseIsoDay("${it[2]}-${it[1]}-${it[0]}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
-        "ss", "s" -> text.toIntOrNull()?.takeIf { it in 0..59 }?.let { todayEpochMillis + it * 1000L }
         "YYYYMMDD" -> text.takeIf { Regex("\\d{8}").fullyMatches(it) }?.let { parseIsoDay("${it.take(4)}-${it.substring(4,6)}-${it.takeLast(2)}") }?.let { (it.toLong() - GANTT_EPOCH_DAY) * GANTT_DAY_MILLIS }
+        "ss", "s" -> text.toIntOrNull()?.takeIf { it in 0..59 }?.let { todayEpochMillis + it * 1000L }
         "x", "X" -> text.toDoubleOrNull()?.let { it * if(format == "X") 1000 else 1 }?.takeIf { it.isFinite() && it >= -62167219200000.0 && it <= 253402300799999.0 }?.toLong()
-        else -> null
+        else -> GanttDateFormat.parse(text, format, todayEpochMillis)
     }
     private fun parseCalendarDay(text: String): Int? {
         parseIsoDay(text)?.let { return it }
