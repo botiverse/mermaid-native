@@ -53,7 +53,16 @@ internal fun layoutGanttTimeline(
         return "${digits(offset / 3_600_000)}:${digits(offset / 60_000 % 60)}:${digits(offset / 1000 % 60)}.${digits(offset % 1000, 3)}"
     }
     val plotWidth = 640.0
-    val ticks = if (precise) {
+    // Upstream's axis: `axisFormat` (or `%d` for `dateFormat D`) labels d3 ticks; `tickInterval` picks their step.
+    val axisFormat = diagram.axisFormat?.takeIf { it.isNotEmpty() } ?: "%d".takeIf { diagram.dateFormat == "D" }
+    val intervalTicks = diagram.tickInterval?.let { GanttAxis.intervalTicks(it, diagram.weekday, first, first + span) }
+    val ticks = if (intervalTicks != null) {
+        intervalTicks
+    } else if (axisFormat != null) {
+        // d3 may step below what the format shows; a label that repeats the previous one says nothing new.
+        val auto = GanttAxis.autoTicks(first, first + span)
+        auto.filterIndexed { i, time -> i == 0 || GanttAxis.format(axisFormat, time) != GanttAxis.format(axisFormat, auto[i - 1]) }
+    } else if (precise) {
         (0..4).map { first + (span.toDouble() * it / 4).toLong() }.distinct()
     } else {
         val days = (span / dayMillis).toInt()
@@ -66,16 +75,22 @@ internal fun layoutGanttTimeline(
             }
         }
     }
-    val showDateAboveClock = precise && (diagram.dateFormat !in setOf("x", "X") || day(first) != day(last))
-    val tickWidth = ticks.maxOf { textWidth(if (precise) clock(it) else dateLabel(day(it)), tickStyle) }
-    val fullTickWidth = if (showDateAboveClock) maxOf(tickWidth, ticks.maxOf { textWidth(dateLabel(day(it)), tickStyle) }) else tickWidth
+    fun tickLabel(time: Long) = if (axisFormat != null) GanttAxis.format(axisFormat, time)
+        else if (precise) clock(time) else dateLabel(day(time))
+    val showDateAboveClock = axisFormat == null && precise && (diagram.dateFormat !in setOf("x", "X") || day(first) != day(last))
+    fun tickLabelWidth(time: Long) = maxOf(textWidth(tickLabel(time), tickStyle),
+        if (showDateAboveClock) textWidth(dateLabel(day(time)), tickStyle) else 0.0)
+    val fullTickWidth = ticks.maxOfOrNull { tickLabelWidth(it) } ?: 0.0
     val labelTextWidth = maxOf(128.0, minOf(220.0,
         maxOf(tasks.maxOfOrNull { textWidth(it.name, body) } ?: 0.0,
             diagram.sections.maxOfOrNull { textWidth(it.name, heading) } ?: 0.0)))
     val labelColumn = labelTextWidth + 42.0
     val left = padding + labelColumn + fullTickWidth / 2
     val right = left + plotWidth
-    val width = right + maxOf(padding, fullTickWidth / 2 + 12.0)
+    // Upstream's section bands run rightPadding / 2 (37.5) past the plot, which holds half of the last
+    // centered date. Longer labels widen the band.
+    val bandRight = right + maxOf(37.5, fullTickWidth / 2 + 4.0)
+    val width = bandRight + padding
     fun x(time: Long) = left + (time - first).toDouble() / span * plotWidth
 
     // Wrap at measured code-point boundaries, retaining all source text (including long IDs).
@@ -113,7 +128,7 @@ internal fun layoutGanttTimeline(
         if (section.name.isNotEmpty()) {
             val sectionLines = lines(section.name, heading, labelTextWidth)
             val headerHeight = maxOf(32.0, sectionLines.size * 17.0 + 14.0)
-            content += DrawRect(SceneRect(padding, y, right - padding + 12, headerHeight), 4.0,
+            content += DrawRect(SceneRect(padding, y, bandRight - padding, headerHeight), 4.0,
                 fill = SceneColor(DiagramPalette.SURFACE), strokeWidth = 0.0)
             sectionLines.forEachIndexed { i, line -> content += DrawText(line, ScenePoint(padding + 12, y + 21 + i * 17), style = heading) }
             y += headerHeight
@@ -143,20 +158,25 @@ internal fun layoutGanttTimeline(
                     fill = SceneColor(fill), stroke = SceneColor(accent), strokeWidth = 1.0)
             }
             y += rowHeight
-            content += DrawLine(ScenePoint(padding, y), ScenePoint(right + 12, y), stroke = grid, strokeWidth = 1.0)
+            content += DrawLine(ScenePoint(padding, y), ScenePoint(bandRight, y), stroke = grid, strokeWidth = 1.0)
         }
         y += 12.0
     }
     val bottom = maxOf(axisBottom + 42.0, y - 12.0)
     // Faint full-height guides make dates readable without competing with the task bars.
+    // Labels that would touch the previous one are left out, and their guides too once the guides get dense.
+    var labelEnd = Double.NEGATIVE_INFINITY
     for (time in ticks) {
         val tickX = x(time)
-        commands += DrawLine(ScenePoint(tickX, axisBottom), ScenePoint(tickX, bottom), stroke = grid, strokeWidth = 1.0)
+        val half = tickLabelWidth(time) / 2
+        val showLabel = tickX - half >= labelEnd
+        if (showLabel || ticks.size <= 160) commands += DrawLine(ScenePoint(tickX, axisBottom), ScenePoint(tickX, bottom), stroke = grid, strokeWidth = 1.0)
+        if (!showLabel) continue
+        labelEnd = tickX + half + 4.0
         if (showDateAboveClock) commands += DrawText(dateLabel(day(time)), ScenePoint(tickX, axisTop + 14), TextAnchor.MIDDLE, tickStyle)
-        commands += DrawText(if (precise) clock(time) else dateLabel(day(time)),
-            ScenePoint(tickX, axisBottom - 12), TextAnchor.MIDDLE, tickStyle)
+        commands += DrawText(tickLabel(time), ScenePoint(tickX, axisBottom - 12), TextAnchor.MIDDLE, tickStyle)
     }
-    commands += DrawLine(ScenePoint(padding, axisBottom), ScenePoint(right + 12, axisBottom), stroke = border, strokeWidth = 1.0)
+    commands += DrawLine(ScenePoint(padding, axisBottom), ScenePoint(bandRight, axisBottom), stroke = border, strokeWidth = 1.0)
     commands += content
     // `vert` markers: a full-height dashed line at the start time, labelled below the chart.
     var labelBottom = bottom

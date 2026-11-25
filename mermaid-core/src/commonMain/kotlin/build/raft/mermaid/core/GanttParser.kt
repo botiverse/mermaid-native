@@ -43,8 +43,8 @@ internal class GanttParser(private val source:String) {
                 text.startsWith("excludes ")->excludes+=value().lowercase().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
                 text.startsWith("includes ")->includes+=value().lowercase().split(Regex("[,\\s]+")).filter(String::isNotEmpty)
                 text.startsWith("todayMarker ")->today=value()
-                text.startsWith("axisFormat ")->axis=value()
-                text.startsWith("tickInterval ")->tick=value()
+                text.startsWith("axisFormat ")->axis=value().substringBefore(';').substringBefore('#').trim() // as upstream's `[^#\n;]+`
+                text.startsWith("tickInterval ")->tick=value().substringBefore(';').substringBefore('#').trim()
                 text.startsWith("weekday ")->{weekday=value();requireGantt(weekday in days,"Invalid weekday")}
                 text.startsWith("weekend ")->{weekend=value();requireGantt(weekend in days,"Invalid weekend")}
                 text.startsWith("displayMode ")->display=value()
